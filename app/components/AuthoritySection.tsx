@@ -2,17 +2,17 @@
 
 const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
 
+// 3-stat row (removes overflow at any viewport)
 const stats = [
   { num: "200+",   label: "Thyroid Clients" },
-  { num: "10–15kg",label: "Avg Fat Loss" },
+  { num: "10–15kg", label: "Avg Fat Loss" },
   { num: "93%",    label: "Better Energy" },
-  { num: "1-on-1", label: "Personalized" },
 ];
 
 const pillars = [
-  { icon: "🧬", title: "Lab-Guided Protocol",  desc: "Personalized using your thyroid biomarkers, deficiencies, and hormonal patterns." },
-  { icon: "🍱", title: "Indian Nutrition",      desc: "Real dals, rotis, and sabzi — adapted for thyroid fat loss. No foreign diets." },
-  { icon: "📊", title: "Weekly Tracking",       desc: "Weight, inches, energy, sleep, and symptoms — adjusted every week." },
+  { icon: "🧬", title: "Lab-Guided Protocol",  desc: "Personalized to your biomarkers. Not generic advice." },
+  { icon: "🍱", title: "Indian Nutrition",      desc: "Real dals, rotis, sabzi — adapted for thyroid fat loss." },
+  { icon: "📊", title: "Weekly Tracking",       desc: "Weight, inches, energy — adjusted every single week." },
   { icon: "💬", title: "WhatsApp Support",      desc: "Direct access. Real answers. Not a chatbot." },
 ];
 
@@ -21,39 +21,62 @@ export default function AuthoritySection() {
     <section className="section-pad bg-black text-white">
       <div className="container-default">
 
+        {/* Header */}
         <div className="mb-6 text-center">
           <p className="section-label">Why This Works</p>
-          <h2 className="section-title mx-auto max-w-xs md:max-w-sm">
-            Not a Diet Plan. <span className="text-gradient">A Complete System.</span>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Not a Diet Plan.{" "}
+            <span className="text-gradient">A Complete System.</span>
           </h2>
         </div>
 
-        <div className="mb-6 grid grid-cols-4 overflow-hidden rounded-2xl border border-white/[0.07]">
+        {/* Stat row — Hero pattern, 3 stats, no overflow */}
+        <div className="stat-row mx-auto mb-6">
           {stats.map((s, i) => (
-            <div key={s.label} className={`flex flex-col items-center justify-center py-4 px-2 ${i < stats.length - 1 ? "border-r border-white/[0.07]" : ""}`}>
-              <span className="text-xl font-extrabold text-purple-400 leading-none">{s.num}</span>
-              <span className="mt-1 text-center text-[10px] text-gray-500 leading-tight">{s.label}</span>
-            </div>
+            <>
+              <div key={s.label} className="stat-chip">
+                <span className="stat-num">{s.num}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+              {i < stats.length - 1 && (
+                <div key={`div-${i}`} className="stat-divider" aria-hidden="true" />
+              )}
+            </>
           ))}
         </div>
 
+        {/* Pillar cards — 2×2 */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {pillars.map((p) => (
             <div key={p.title} className="glass-card-sm flex gap-3 p-4">
-              <span className="mt-0.5 text-lg leading-none">{p.icon}</span>
+              <span className="mt-0.5 shrink-0 text-lg leading-none" role="img" aria-hidden="true">
+                {p.icon}
+              </span>
               <div>
-                <p className="mb-1 text-sm font-semibold text-white">{p.title}</p>
-                <p className="text-xs leading-relaxed text-gray-400">{p.desc}</p>
+                <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+                  {p.title}
+                </p>
+                <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-400">
+                  {p.desc}
+                </p>
               </div>
             </div>
           ))}
         </div>
 
+        {/* CTA — scarcity below button, not above */}
         <div className="mt-6 text-center">
-          <p className="mb-3 text-xs text-gray-500">Limited coaching spots available this month</p>
-          <button type="button" onClick={() => (window.location.href = CTA_URL)} className="btn-primary">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Claim your free thyroid fat-loss consultation spot"
+          >
             🔥 Claim Your Spot
           </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Limited coaching spots available this month
+          </p>
         </div>
 
       </div>
