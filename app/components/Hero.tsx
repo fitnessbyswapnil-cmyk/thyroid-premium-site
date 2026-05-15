@@ -1,97 +1,102 @@
+// Hero.tsx — Mobile-first premium thyroid fat-loss coaching hero
+// Stack: Next.js · React · Tailwind CSS v4
+// Design: Black + Purple luxury wellness funnel
 "use client";
 
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-black text-white">
 
-      {/* Background Glow */}
-      <div className="absolute left-1/2 top-[-180px] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[110px] md:h-[750px] md:w-[750px] md:blur-[160px]" />
+      {/* ── Background Glow ── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[60vh] overflow-hidden"
+      >
+        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.14] blur-[100px] md:h-[650px] md:w-[650px] md:blur-[140px]" />
+      </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-4 pt-16 pb-10 text-center sm:px-6 md:pt-24 md:pb-16">
+      {/* ── Main Container ── */}
+      <div className="hero-container relative z-10 mx-auto flex max-w-5xl flex-col items-center text-center">
 
-        {/* Badge */}
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-md">
-          <span className="text-[11px] tracking-wide text-gray-300 md:text-sm">
-            ⚡ ONLY 5 SPOTS LEFT THIS MONTH
-          </span>
+        {/* ── 1. URGENCY BADGE ── */}
+        <div className="badge-pill" role="status" aria-live="polite">
+          <span className="badge-dot" aria-hidden="true" />
+          <span>Only 5 Spots Left This Month</span>
         </div>
 
-        {/* Small Supporting Line */}
-        <p className="mb-4 text-xs text-gray-400 md:text-base">
-          ✓ For Indian women struggling with thyroid fat
+        {/* ── 2. EYEBROW ── */}
+        <p className="eyebrow">
+          For Indian women with hypothyroidism
         </p>
 
-        {/* Main Heading */}
-        <h1 className="max-w-4xl text-[44px] font-black leading-[0.95] tracking-[-2px] sm:text-6xl md:text-7xl">
-
-          End
-
-          <span className="mt-2 block text-purple-400">
-            Thyroid Fat
-          </span>
-
-          <span className="block text-purple-400">
-            Struggle
-          </span>
-
-          <span className="mt-2 block text-white">
-            in 90 Days
-          </span>
-
+        {/* ── 3. MAIN HEADLINE ── */}
+        <h1 className="headline">
+          Lose the
+          <span className="headline-accent">Belly Fat.</span>
+          <span className="headline-white">In 90 Days.</span>
         </h1>
 
-        {/* Subheading */}
-        <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-gray-400 sm:text-lg md:mt-7 md:text-2xl">
-
-          Personalized thyroid fat-loss coaching for Indian women.
-
-          <span className="mt-2 block font-semibold text-white">
-            10–15 kg fat loss + energy restored.
-          </span>
-
+        {/* ── 4. SUB-HEADLINE ── */}
+        <p className="subheadline">
+          India&apos;s #1 thyroid fat-loss coaching.{" "}
+          <strong className="subheadline-strong">
+            10–15 kg lost. Clothes fitting. Energy back.
+          </strong>
         </p>
 
-        {/* Benefits */}
-        <div className="mt-7 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 md:mt-10">
-
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left backdrop-blur-sm">
-            <p className="text-sm font-medium text-gray-200 md:text-base">
-              ✓ Belly fat reduction despite hypothyroidism
-            </p>
+        {/* ── 5. STAT CHIPS ROW ── */}
+        <div className="stat-row" aria-label="Program statistics">
+          <div className="stat-chip">
+            <span className="stat-num">200+</span>
+            <span className="stat-label">Women Transformed</span>
           </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left backdrop-blur-sm">
-            <p className="text-sm font-medium text-gray-200 md:text-base">
-              ✓ Energy restoration without starvation diets
-            </p>
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">90</span>
+            <span className="stat-label">Day Program</span>
           </div>
-
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">10–15</span>
+            <span className="stat-label">Kg Fat Loss</span>
+          </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-8 w-full max-w-md md:mt-10">
+        {/* ── 6. OUTCOME BULLETS ── */}
+        <ul className="outcome-list" aria-label="What you will achieve">
+          {[
+            "Stubborn belly fat visibly reduced",
+            "Clothes fitting better within weeks",
+            "No starvation — real food protocol",
+            "Energy & confidence fully restored",
+          ].map((item) => (
+            <li key={item} className="outcome-item">
+              <span className="outcome-check" aria-hidden="true">✓</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
 
+        {/* ── 7. PRIMARY CTA ── */}
+        <div className="cta-wrap">
           <button
             id="cta-hero"
-            className="w-full rounded-[28px] bg-gradient-to-r from-purple-500 to-purple-400 px-6 py-5 text-lg font-bold text-white shadow-[0_0_40px_rgba(168,85,247,0.35)] transition-all duration-300 hover:scale-[1.02]"
+            type="button"
+            aria-label="Book your free 60-minute thyroid fat-loss consultation call"
+            className="cta-button"
             onClick={() =>
-              window.location.href =
-                "https://swapnilumbarkarfitness.in/case-studies/#cta"
+              (window.location.href =
+                "https://swapnilumbarkarfitness.in/case-studies/#cta")
             }
           >
-            🔥 Book FREE Call
-
-            <span className="mt-1 block text-xs font-normal tracking-wide opacity-90">
-              60 MIN • FREE • LIMITED SPOTS
-            </span>
+            🔥 Book FREE Consultation Call
+            <span className="cta-sub">60 Min · Free · Limited Spots</span>
           </button>
 
+          <p className="micro-trust">
+            ★★★★★ Trusted by 200+ hypothyroid women across India
+          </p>
         </div>
-
-        {/* Trust Line */}
-        <p className="mt-6 text-xs text-gray-500 md:text-sm">
-          Trusted by 200+ hypothyroid women
-        </p>
 
       </div>
     </section>
