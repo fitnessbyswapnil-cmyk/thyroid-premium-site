@@ -1,62 +1,90 @@
 "use client";
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL =
+  "https://swapnilumbarkarfitness.in/case-studies/#cta";
 
-// 3-stat row (removes overflow at any viewport)
 const stats = [
-  { num: "200+",   label: "Thyroid Clients" },
-  { num: "10–15kg", label: "Avg Fat Loss" },
-  { num: "93%",    label: "Better Energy" },
+  { num: "200+", label: "Clients" },
+  { num: "10–15kg", label: "Fat Loss" },
+  { num: "93%", label: "Energy Improved" },
 ];
 
 const pillars = [
-  { icon: "🧬", title: "Lab-Guided Protocol",  desc: "Personalized to your biomarkers. Not generic advice." },
-  { icon: "🍱", title: "Indian Nutrition",      desc: "Real dals, rotis, sabzi — adapted for thyroid fat loss." },
-  { icon: "📊", title: "Weekly Tracking",       desc: "Weight, inches, energy — adjusted every single week." },
-  { icon: "💬", title: "WhatsApp Support",      desc: "Direct access. Real answers. Not a chatbot." },
+  {
+    icon: "🧬",
+    title: "Lab-Guided Protocol",
+    desc: "Built around your biomarkers and symptoms.",
+  },
+  {
+    icon: "🍱",
+    title: "Indian Nutrition",
+    desc: "Real meals adapted for thyroid fat loss.",
+  },
+  {
+    icon: "📊",
+    title: "Weekly Tracking",
+    desc: "Progress adjusted week-by-week.",
+  },
+  {
+    icon: "💬",
+    title: "WhatsApp Support",
+    desc: "Direct accountability and guidance.",
+  },
 ];
 
 export default function AuthoritySection() {
   return (
-    <section className="section-pad bg-black text-white">
+    <section className="section-pad bg-[var(--bg-page)] text-white">
       <div className="container-default">
+        <div className="mb-7 text-center">
+          <p className="section-label">
+            Why This Works
+          </p>
 
-        {/* Header */}
-        <div className="mb-6 text-center">
-          <p className="section-label">Why This Works</p>
-          <h2 className="section-title mx-auto max-w-[22ch]">
-            Not a Diet Plan.{" "}
-            <span className="text-gradient">A Complete System.</span>
+          <h2 className="section-title mx-auto max-w-[20ch]">
+            Not Another Diet.{" "}
+            <span className="text-gradient">
+              A Thyroid System.
+            </span>
           </h2>
         </div>
 
-        {/* Stat row — Hero pattern, 3 stats, no overflow */}
-        <div className="stat-row mx-auto mb-6">
+        <div className="stat-row mx-auto mb-7">
           {stats.map((s, i) => (
             <>
               <div key={s.label} className="stat-chip">
                 <span className="stat-num">{s.num}</span>
-                <span className="stat-label">{s.label}</span>
+                <span className="stat-label">
+                  {s.label}
+                </span>
               </div>
+
               {i < stats.length - 1 && (
-                <div key={`div-${i}`} className="stat-divider" aria-hidden="true" />
+                <div
+                  key={i}
+                  className="stat-divider"
+                />
               )}
             </>
           ))}
         </div>
 
-        {/* Pillar cards — 2×2 */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {pillars.map((p) => (
-            <div key={p.title} className="glass-card-sm flex gap-3 p-4">
-              <span className="mt-0.5 shrink-0 text-lg leading-none" role="img" aria-hidden="true">
+            <div
+              key={p.title}
+              className="glass-card-sm flex gap-3 rounded-2xl p-4"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-500/[0.08] text-lg">
                 {p.icon}
-              </span>
+              </div>
+
               <div>
-                <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+                <p className="mb-1 text-sm font-bold text-white">
                   {p.title}
                 </p>
-                <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-400">
+
+                <p className="text-xs leading-relaxed text-[var(--t3)]">
                   {p.desc}
                 </p>
               </div>
@@ -64,21 +92,19 @@ export default function AuthoritySection() {
           ))}
         </div>
 
-        {/* CTA — scarcity below button, not above */}
-        <div className="mt-6 text-center">
+        <div className="mt-7 text-center">
           <button
             type="button"
             onClick={() => window.location.assign(CTA_URL)}
             className="btn-primary"
-            aria-label="Claim your free thyroid fat-loss consultation spot"
           >
             🔥 Claim Your Spot
           </button>
-          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
-            Limited coaching spots available this month
+
+          <p className="mt-2 text-xs text-[var(--t4)]">
+            Limited coaching slots available
           </p>
         </div>
-
       </div>
     </section>
   );
