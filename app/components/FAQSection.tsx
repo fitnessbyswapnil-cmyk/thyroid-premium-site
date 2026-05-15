@@ -35,13 +35,13 @@ export default function FAQSection() {
       <div className="container-narrow">
 
         {/* Header */}
-        <div className="mb-6 text-center">
+        <div className="mb-5 text-center">
           <p className="section-label">FAQs</p>
           <h2 className="section-title mx-auto max-w-[20ch]">Common Questions</h2>
         </div>
 
-        {/* Accordion — no overflow-hidden so focus rings are visible */}
-        <div className="rounded-2xl border border-white/[0.07]">
+        {/* Accordion */}
+        <div className="rounded-[18px] border border-white/[0.07]">
           {faqs.map((faq, i) => {
             const panelId = `faq-panel-${i}`;
             const isOpen = open === i;
@@ -56,12 +56,12 @@ export default function FAQSection() {
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                   onClick={() => setOpen(isOpen ? null : i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left text-[length:var(--text-sm)] font-semibold text-white bg-none border-none cursor-pointer"
-                  style={{ background: "none", border: "none" }}
+                  className="flex w-full items-center justify-between px-4 py-4 text-left font-semibold text-white"
+                  style={{ fontSize: "var(--text-sm)", background: "none", border: "none" }}
                 >
-                  <span>{faq.q}</span>
+                  <span className="pr-2 leading-snug">{faq.q}</span>
                   <span
-                    className="ml-4 shrink-0 text-purple-400 text-base leading-none transition-transform duration-200"
+                    className="shrink-0 text-purple-400 text-lg leading-none transition-transform duration-200"
                     aria-hidden="true"
                     style={{ transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}
                   >
@@ -74,7 +74,8 @@ export default function FAQSection() {
                     id={panelId}
                     role="region"
                     aria-labelledby={`faq-btn-${i}`}
-                    className="px-5 pb-4 text-[length:var(--text-sm)] text-gray-400 leading-relaxed max-w-[52ch]"
+                    className="px-4 pb-4 text-gray-400 leading-relaxed"
+                    style={{ fontSize: "var(--text-sm)" }}
                   >
                     {faq.a}
                   </div>
@@ -85,11 +86,11 @@ export default function FAQSection() {
         </div>
 
         {/* Bottom CTA card */}
-        <div className="mt-5 rounded-2xl border border-purple-500/20 bg-purple-500/[0.06] p-5 text-center">
-          <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+        <div className="mt-4 rounded-[18px] border border-purple-500/20 bg-purple-500/[0.06] p-4 text-center">
+          <p className="mb-1 font-semibold text-white" style={{ fontSize: "var(--text-sm)" }}>
             Still have questions?
           </p>
-          <p className="mb-4 text-[length:var(--text-xs)] text-gray-500">
+          <p className="mb-4 text-gray-500" style={{ fontSize: "var(--text-xs)" }}>
             I&apos;ll answer everything on a free 60-minute call.
           </p>
           <button
@@ -100,7 +101,7 @@ export default function FAQSection() {
           >
             Book a Free Strategy Call →
           </button>
-          <p className="mt-2.5 text-[length:var(--text-xs)] text-gray-600">
+          <p className="mt-2.5 text-gray-600" style={{ fontSize: "var(--text-xs)" }}>
             ACE · FITR · INFS Certified · 200+ Clients
           </p>
         </div>

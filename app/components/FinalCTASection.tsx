@@ -16,52 +16,61 @@ export default function FinalCTASection() {
   return (
     <section className="section-pad bg-black text-white">
 
-      {/* ── Strongest support-section glow — signals conversion climax ── */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[480px] overflow-hidden">
-        <div className="absolute left-1/2 top-[-5%] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/[0.10] blur-[110px] md:h-[680px] md:w-[680px] md:blur-[150px]" />
+      {/* Strongest glow — conversion climax */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[500px]">
+        <div className="absolute left-1/2 top-[-5%] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/[0.12] blur-[120px] md:h-[700px] md:w-[700px] md:blur-[160px]" />
       </div>
 
       <div className="container-narrow relative z-10 text-center">
 
-        {/* ── 1. Urgency badge — prominent, not a footnote ── */}
+        {/* 1. Urgency badge */}
         <div className="badge-pill mx-auto mb-4 w-fit" role="status" aria-live="polite">
           <span className="badge-dot" aria-hidden="true" />
           <span>Only 5 Spots Left This Month</span>
         </div>
 
-        {/* ── 2. Declarative close headline — assumes decision is made ── */}
+        {/* 2. Close headline */}
         <p className="section-label mb-2">Start Today</p>
         <h2 className="section-title mx-auto mb-3 max-w-[24ch]">
           Your Thyroid Transformation{" "}
           <span className="text-gradient">Starts Here.</span>
         </h2>
 
-        <p className="mx-auto mb-6 max-w-[30ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+        <p
+          className="mx-auto mb-5 max-w-[30ch] text-gray-400"
+          style={{ fontSize: "var(--text-sm)", lineHeight: 1.6 }}
+        >
           Book a free 60-min strategy call.{" "}
-          <strong className="text-gray-200 font-semibold">No pressure. No upsells. Just clarity.</strong>
+          <strong className="font-semibold text-gray-200">
+            No pressure. No upsells. Just clarity.
+          </strong>
         </p>
 
-        {/* ── 3. Coach authority card — glass-card for stronger visual weight ── */}
+        {/* 3. Coach authority card */}
         <div className="glass-card mb-4 overflow-hidden">
-          <div className="flex flex-col items-center gap-3 p-5 sm:flex-row sm:text-left">
+          <div className="flex flex-col items-center gap-3 p-4 sm:flex-row sm:text-left">
 
-            {/* Coach photo — replace src with real image path */}
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500/40">
-              {/* Real photo: replace this div with <Image src="/coach.jpg" alt="Swapnil Umbarkar" fill className="object-cover" /> */}
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/30 to-purple-600/20 text-lg font-black text-purple-300">
+            {/* Coach avatar */}
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500/40">
+              {/* Replace with: <Image src="/coach.jpg" alt="Swapnil Umbarkar" fill className="object-cover" /> */}
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/30 to-purple-600/20 font-black text-purple-300"
+                style={{ fontSize: "var(--text-md)" }}
+              >
                 SU
               </div>
             </div>
 
             <div>
-              {/* Authority-first positioning */}
-              <p className="text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-purple-400">
+              <p
+                className="font-semibold uppercase tracking-wider text-purple-400"
+                style={{ fontSize: "var(--text-xs)" }}
+              >
                 India&apos;s Leading Thyroid Fat-Loss Coach
               </p>
-              <p className="mt-0.5 text-[length:var(--text-base)] font-bold text-white">
+              <p className="mt-0.5 font-bold text-white" style={{ fontSize: "var(--text-base)" }}>
                 Swapnil Umbarkar
               </p>
-              <div className="mt-2 flex flex-wrap gap-1.5 sm:justify-start justify-center">
+              <div className="mt-1.5 flex flex-wrap justify-center gap-1.5 sm:justify-start">
                 {certs.map((c) => (
                   <span key={c} className="chip">{c}</span>
                 ))}
@@ -71,22 +80,27 @@ export default function FinalCTASection() {
           </div>
         </div>
 
-        {/* ── 4. What's included — secondary weight to coach card ── */}
-        <div className="mb-6 rounded-2xl border border-purple-500/20 bg-purple-500/[0.06] p-4 text-left">
-          <p className="mb-3 text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-purple-400">
+        {/* 4. What's included */}
+        <div className="mb-5 rounded-[18px] border border-purple-500/20 bg-purple-500/[0.06] p-4 text-left">
+          <p
+            className="mb-3 font-semibold uppercase tracking-wider text-purple-400"
+            style={{ fontSize: "var(--text-xs)" }}
+          >
             Your Free Call Includes
           </p>
-          <ul className="space-y-2.5">
+          <ul className="space-y-2">
             {includes.map((item) => (
               <li key={item} className="flex items-start gap-2.5">
                 <span className="mt-0.5 shrink-0 font-bold leading-none text-purple-500">✓</span>
-                <span className="text-[length:var(--text-xs)] leading-snug text-gray-300">{item}</span>
+                <span className="leading-snug text-gray-300" style={{ fontSize: "var(--text-xs)" }}>
+                  {item}
+                </span>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* ── 5. Primary CTA block ── */}
+        {/* 5. Primary CTA block */}
         <div className="cta-wrap mx-auto">
           <button
             id="cta-final"
@@ -99,12 +113,12 @@ export default function FinalCTASection() {
             <span className="cta-sub">60 Min · Free · Limited Spots This Month</span>
           </button>
 
-          {/* ── 6. Objection handler — addresses cost, commitment, legitimacy ── */}
-          <div className="flex items-center justify-center gap-3">
+          {/* 6. Objection handler */}
+          <div className="flex items-center justify-center gap-2">
             {["No credit card", "Completely free", "No commitment"].map((obj, i) => (
-              <span key={obj} className="flex items-center gap-1.5">
+              <span key={obj} className="flex items-center gap-2">
                 {i > 0 && <span className="h-3 w-px bg-white/10" aria-hidden="true" />}
-                <span className="text-[10px] font-medium uppercase tracking-wider text-gray-600">
+                <span className="text-[9px] font-medium uppercase tracking-wider text-gray-600">
                   {obj}
                 </span>
               </span>

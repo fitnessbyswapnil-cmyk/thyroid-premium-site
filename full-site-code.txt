@@ -1,0 +1,2856 @@
+\n\n===== app/components/Hero.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+export default function Hero() {
+  return (
+    <section className="relative overflow-hidden bg-black text-white">
+
+      {/* ── Background Glow — fixed height prevents clipping on short viewports ── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] overflow-hidden"
+      >
+        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.14] blur-[100px] md:h-[650px] md:w-[650px] md:blur-[140px]" />
+      </div>
+
+      {/* ── Content — uses container-default for consistency with all other sections ── */}
+      <div className="hero-container relative z-10 mx-auto flex max-w-[960px] flex-col items-center text-center">
+
+        {/* ── 1. Urgency Badge ── */}
+        <div className="badge-pill" role="status" aria-live="polite">
+          <span className="badge-dot" aria-hidden="true" />
+          <span>Only 5 Spots Left This Month</span>
+        </div>
+
+        {/* ── 2. Eyebrow ── */}
+        <p className="eyebrow">For Indian women with hypothyroidism</p>
+
+        {/* ── 3. Main Headline ── */}
+        <h1 className="headline">
+          Lose the
+          <span className="headline-accent">Belly Fat.</span>
+          <span className="headline-white">In 90 Days.</span>
+        </h1>
+
+        {/* ── 4. Subheadline ── */}
+        <p className="subheadline">
+          India&apos;s #1 thyroid fat-loss coaching.{" "}
+          <strong className="subheadline-strong">
+            10–15 kg lost. Clothes fitting. Energy back.
+          </strong>
+        </p>
+
+        {/* ── 5. Stat Row ── */}
+        <div className="stat-row" aria-label="Program statistics">
+          <div className="stat-chip">
+            <span className="stat-num">200+</span>
+            <span className="stat-label">Women Transformed</span>
+          </div>
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">90</span>
+            <span className="stat-label">Day Program</span>
+          </div>
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">10–15</span>
+            <span className="stat-label">Kg Fat Loss</span>
+          </div>
+        </div>
+
+        {/* ── 6. Outcome List ── */}
+        <ul className="outcome-list" aria-label="What you will achieve">
+          {[
+            "Stubborn belly fat visibly reduced",
+            "Clothes fitting better within weeks",
+            "No starvation — real Indian food",
+            "Energy & confidence fully restored",
+          ].map((item) => (
+            <li key={item} className="outcome-item">
+              <span className="outcome-check" aria-hidden="true">✓</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* ── 7. CTA Block ── */}
+        <div className="cta-wrap">
+          <button
+            id="cta-hero"
+            type="button"
+            aria-label="Book your free 60-minute thyroid fat-loss consultation call"
+            className="cta-button"
+            onClick={() => window.location.assign(CTA_URL)}
+          >
+            🔥 Book FREE Consultation Call
+            <span className="cta-sub">60 Min · Free · Limited Spots</span>
+          </button>
+          <p className="micro-trust">
+            ★★★★★ Trusted by 200+ hypothyroid women across India
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/VideoTestimonial.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const testimonials = [
+  {
+    // Scorecard stats — shown as 3 compact metrics above the quote
+    stats: [
+      { num: "4.2 kg", label: "Lost" },
+      { num: "3 Wks", label: "Timeline" },
+      { num: "Energy", label: "Restored" },
+    ],
+    quote: "In 3 weeks I saw what 3 years couldn't give me.",
+    name: "Rashmi D.",
+    role: "Hypothyroid Client",
+    videoUrl:
+      "https://swapnilumbarkarfitness.in/wp-content/uploads/2025/08/%F0%9F%8E%A5-Rashmis-3-Week-Thyroid-Fat-Loss-Transformation.mp4",
+  },
+  {
+    stats: [
+      { num: "3.8 kg", label: "Lost" },
+      { num: "2 Inch", label: "Waist ↓" },
+      { num: "Bloat", label: "Gone" },
+    ],
+    quote: "For the first time in years, I feel confident in my body.",
+    name: "Fathima P.",
+    role: "Thyroid Fat Loss Client",
+    videoUrl:
+      "https://swapnilumbarkarfitness.in/wp-content/uploads/2026/05/%F0%9F%8C%B8-Fathimas-2-Week-Thyroid-Fat-Loss-Update.mp4",
+  },
+];
+
+export default function VideoTestimonial() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* ── Atmospheric depth — consistent with Hero and ProblemSection ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-72 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-56 w-80 -translate-x-1/2 rounded-full bg-purple-600/[0.05] blur-[90px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* ── Section Header ── */}
+        <div className="mb-5 text-center md:mb-7">
+          <p className="section-label">Client Stories</p>
+          <h2 className="section-title mx-auto max-w-[28ch]">
+            They Were Stuck.{" "}
+            <span className="text-gradient">Then This Happened.</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-[32ch] text-[length:var(--text-xs)] text-gray-500">
+            Real Indian women. Real hypothyroid transformations. No filters.
+          </p>
+        </div>
+
+        {/* ── Video Cards ── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {testimonials.map((t) => (
+            <div key={t.name} className="glass-card overflow-hidden">
+
+              {/* 1. Scorecard — stat-row style, mirrors Hero numerics */}
+              <div className="flex overflow-hidden border-b border-white/[0.06] bg-white/[0.015]">
+                {t.stats.map((s, i) => (
+                  <div
+                    key={s.label}
+                    className={`flex flex-1 flex-col items-center justify-center py-2.5 ${
+                      i < t.stats.length - 1 ? "border-r border-white/[0.06]" : ""
+                    }`}
+                  >
+                    <span className="text-[length:var(--text-sm)] font-extrabold leading-tight text-purple-400">
+                      {s.num}
+                    </span>
+                    <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-600">
+                      {s.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 2. Quote — ABOVE video to prime emotional frame */}
+              <div className="px-4 pt-3.5 pb-2.5">
+                <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-white">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <p className="mt-1 text-[length:var(--text-xs)] text-gray-500">
+                  — {t.name}, {t.role}
+                </p>
+              </div>
+
+              {/* 3. Video — 4:3 mobile, 16:9 desktop. Rounded-lg sits inside rounded-2xl card */}
+              <div className="mx-3 mb-3 overflow-hidden rounded-lg bg-white/[0.03] aspect-[4/3] md:aspect-video">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover"
+                  aria-label={`Transformation video: ${t.name}`}
+                >
+                  <source src={t.videoUrl} type="video/mp4" />
+                  Your browser does not support video playback.
+                </video>
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+        {/* ── Urgency Strip + CTA ── */}
+        <div className="mt-5 flex flex-col items-center gap-3 md:mt-6">
+          <p className="text-[length:var(--text-xs)] text-gray-500 text-center">
+            ★★★★★ Real results · 200+ women transformed · No filters
+          </p>
+          <button
+            type="button"
+            aria-label="Book your free thyroid fat-loss strategy call"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="cta-button w-full max-w-sm"
+          >
+            🔥 Start Your Transformation
+            <span className="cta-sub">Free 60-Min Call · Limited Spots This Month</span>
+          </button>
+          <p className="text-[length:var(--text-xs)] text-gray-600">
+            No commitment · No upsells · Just clarity
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/SocialProof.tsx =====\n
+"use client";
+
+const items = [
+  { value: "200+",  label: "Women Transformed" },
+  { value: "4.9★",  label: "Average Rating" },
+  { value: "90",    label: "Day Program" },
+  { value: "ACE",   label: "Certified Coach" },
+  { value: "INFS",  label: "Nutrition Certified" },
+];
+
+export default function SocialProof() {
+  return (
+    <section
+      aria-label="Trust indicators"
+      className="relative border-y border-white/[0.06] bg-white/[0.015] py-3 md:py-4"
+    >
+      {/* Horizontal scroll on very small screens; flex-wrap on wider */}
+      <div className="container-default">
+        <div className="scrollbar-hide flex items-center justify-between gap-0 overflow-x-auto">
+          {items.map((item, i) => (
+            <div
+              key={item.label}
+              className={`flex shrink-0 flex-col items-center px-3 md:px-5 ${
+                i < items.length - 1
+                  ? "border-r border-white/[0.07]"
+                  : ""
+              }`}
+            >
+              <span className="text-[length:var(--text-sm)] font-extrabold leading-tight text-purple-400 md:text-[length:var(--text-base)]">
+                {item.value}
+              </span>
+              <span className="mt-0.5 whitespace-nowrap text-[10px] font-medium uppercase tracking-widest text-gray-600 md:text-[11px]">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}\n\n===== app/components/ProblemSection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const problems = [
+  {
+    icon: "⚡",
+    title: "Generic Diets Keep Failing",
+    body: "Advice built for healthy hormones won't move thyroid fat.",
+  },
+  {
+    icon: "🔥",
+    title: "Cutting Calories Backfires",
+    body: "Less food slows thyroid output — fat loss stalls further.",
+  },
+  {
+    icon: "😓",
+    title: "Energy Disappears First",
+    body: "No energy means no consistency. It's not your willpower.",
+  },
+  {
+    icon: "🎯",
+    title: "No One Fixed the Root",
+    body: "Doctors adjusted meds. Trainers blamed effort. Nothing changed.",
+  },
+];
+
+export default function ProblemSection() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* Subtle atmospheric glow */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-64 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-48 w-72 -translate-x-1/2 rounded-full bg-purple-600/[0.06] blur-[80px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* Header */}
+        <div className="mb-5 text-center md:mb-7">
+          <p className="section-label">Why You&apos;re Stuck</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            The Real Reason{" "}
+            <span className="text-gradient">Thyroid Fat Won&apos;t Move</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-[30ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            You did everything right. The problem was never you.
+          </p>
+        </div>
+
+        {/* 2×2 grid */}
+        <div className="grid grid-cols-2 gap-2.5 md:gap-3.5">
+          {problems.map((p) => (
+            <div key={p.title} className="glass-card-sm flex flex-col gap-2 p-3.5 md:p-5">
+              <span className="text-base leading-none md:text-lg" role="img" aria-hidden="true">
+                {p.icon}
+              </span>
+              <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-white">
+                {p.title}
+              </p>
+              <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-500">
+                {p.body}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Validation strip */}
+        <div className="mt-4 flex items-center justify-center gap-2 md:mt-5">
+          <div className="h-px flex-1 bg-white/[0.06]" />
+          <p className="shrink-0 px-3 text-center text-[length:var(--text-xs)] text-gray-600">
+            Thyroid fat loss requires a{" "}
+            <span className="font-semibold text-gray-400">different system entirely</span>
+          </p>
+          <div className="h-px flex-1 bg-white/[0.06]" />
+        </div>
+
+        {/* CTA — btn-primary (not cta-button) to preserve hierarchy */}
+        <div className="mt-5 text-center md:mt-6">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary w-full max-w-sm"
+            aria-label="Book your free thyroid fat-loss strategy call"
+          >
+            🔥 Start Losing the Belly Fat
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Free 60-min call · No commitment · No upsells
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/FAQSection.tsx =====\n
+"use client";
+
+import { useState } from "react";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const faqs = [
+  {
+    q: "I'm already on thyroid medication. Can I still join?",
+    a: "Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.",
+  },
+  {
+    q: "What happens on the free strategy call?",
+    a: "We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.",
+  },
+  {
+    q: "How fast will I see results?",
+    a: "Most clients notice energy and bloating improvements in Week 1–2. Visible fat and inch loss typically starts Week 3–4.",
+  },
+  {
+    q: "Is this suitable for Hashimoto's?",
+    a: "Absolutely. The system is designed for both hypothyroidism and Hashimoto's — with anti-inflammatory nutrition built in.",
+  },
+  {
+    q: "Will I have to follow a strict diet?",
+    a: "No starvation. Real Indian meals. We adapt your existing food culture — no foreign foods, no extreme calorie cutting.",
+  },
+];
+
+export default function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-narrow">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">FAQs</p>
+          <h2 className="section-title mx-auto max-w-[20ch]">Common Questions</h2>
+        </div>
+
+        {/* Accordion — no overflow-hidden so focus rings are visible */}
+        <div className="rounded-2xl border border-white/[0.07]">
+          {faqs.map((faq, i) => {
+            const panelId = `faq-panel-${i}`;
+            const isOpen = open === i;
+            return (
+              <div
+                key={i}
+                className={i < faqs.length - 1 ? "border-b border-white/[0.07]" : ""}
+              >
+                <button
+                  type="button"
+                  id={`faq-btn-${i}`}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left text-[length:var(--text-sm)] font-semibold text-white bg-none border-none cursor-pointer"
+                  style={{ background: "none", border: "none" }}
+                >
+                  <span>{faq.q}</span>
+                  <span
+                    className="ml-4 shrink-0 text-purple-400 text-base leading-none transition-transform duration-200"
+                    aria-hidden="true"
+                    style={{ transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+                  >
+                    +
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={`faq-btn-${i}`}
+                    className="px-5 pb-4 text-[length:var(--text-sm)] text-gray-400 leading-relaxed max-w-[52ch]"
+                  >
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom CTA card */}
+        <div className="mt-5 rounded-2xl border border-purple-500/20 bg-purple-500/[0.06] p-5 text-center">
+          <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+            Still have questions?
+          </p>
+          <p className="mb-4 text-[length:var(--text-xs)] text-gray-500">
+            I&apos;ll answer everything on a free 60-minute call.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Book a free thyroid fat-loss strategy call"
+          >
+            Book a Free Strategy Call →
+          </button>
+          <p className="mt-2.5 text-[length:var(--text-xs)] text-gray-600">
+            ACE · FITR · INFS Certified · 200+ Clients
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/FinalCTASection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const includes = [
+  "Personalized thyroid fat-loss protocol",
+  "Indian nutrition plan for your metabolism",
+  "Weekly tracking — weight, inches & energy",
+  "Direct WhatsApp accountability support",
+  "Symptom & confidence recovery roadmap",
+];
+
+const certs = ["ACE Certified", "FITR Certified", "INFS Certified"];
+
+export default function FinalCTASection() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* ── Strongest support-section glow — signals conversion climax ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[480px] overflow-hidden">
+        <div className="absolute left-1/2 top-[-5%] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/[0.10] blur-[110px] md:h-[680px] md:w-[680px] md:blur-[150px]" />
+      </div>
+
+      <div className="container-narrow relative z-10 text-center">
+
+        {/* ── 1. Urgency badge — prominent, not a footnote ── */}
+        <div className="badge-pill mx-auto mb-4 w-fit" role="status" aria-live="polite">
+          <span className="badge-dot" aria-hidden="true" />
+          <span>Only 5 Spots Left This Month</span>
+        </div>
+
+        {/* ── 2. Declarative close headline — assumes decision is made ── */}
+        <p className="section-label mb-2">Start Today</p>
+        <h2 className="section-title mx-auto mb-3 max-w-[24ch]">
+          Your Thyroid Transformation{" "}
+          <span className="text-gradient">Starts Here.</span>
+        </h2>
+
+        <p className="mx-auto mb-6 max-w-[30ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+          Book a free 60-min strategy call.{" "}
+          <strong className="text-gray-200 font-semibold">No pressure. No upsells. Just clarity.</strong>
+        </p>
+
+        {/* ── 3. Coach authority card — glass-card for stronger visual weight ── */}
+        <div className="glass-card mb-4 overflow-hidden">
+          <div className="flex flex-col items-center gap-3 p-5 sm:flex-row sm:text-left">
+
+            {/* Coach photo — replace src with real image path */}
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500/40">
+              {/* Real photo: replace this div with <Image src="/coach.jpg" alt="Swapnil Umbarkar" fill className="object-cover" /> */}
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/30 to-purple-600/20 text-lg font-black text-purple-300">
+                SU
+              </div>
+            </div>
+
+            <div>
+              {/* Authority-first positioning */}
+              <p className="text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-purple-400">
+                India&apos;s Leading Thyroid Fat-Loss Coach
+              </p>
+              <p className="mt-0.5 text-[length:var(--text-base)] font-bold text-white">
+                Swapnil Umbarkar
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5 sm:justify-start justify-center">
+                {certs.map((c) => (
+                  <span key={c} className="chip">{c}</span>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── 4. What's included — secondary weight to coach card ── */}
+        <div className="mb-6 rounded-2xl border border-purple-500/20 bg-purple-500/[0.06] p-4 text-left">
+          <p className="mb-3 text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-purple-400">
+            Your Free Call Includes
+          </p>
+          <ul className="space-y-2.5">
+            {includes.map((item) => (
+              <li key={item} className="flex items-start gap-2.5">
+                <span className="mt-0.5 shrink-0 font-bold leading-none text-purple-500">✓</span>
+                <span className="text-[length:var(--text-xs)] leading-snug text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ── 5. Primary CTA block ── */}
+        <div className="cta-wrap mx-auto">
+          <button
+            id="cta-final"
+            type="button"
+            aria-label="Book your free thyroid fat-loss strategy call"
+            className="cta-button"
+            onClick={() => window.location.assign(CTA_URL)}
+          >
+            🔥 Book FREE Strategy Call
+            <span className="cta-sub">60 Min · Free · Limited Spots This Month</span>
+          </button>
+
+          {/* ── 6. Objection handler — addresses cost, commitment, legitimacy ── */}
+          <div className="flex items-center justify-center gap-3">
+            {["No credit card", "Completely free", "No commitment"].map((obj, i) => (
+              <span key={obj} className="flex items-center gap-1.5">
+                {i > 0 && <span className="h-3 w-px bg-white/10" aria-hidden="true" />}
+                <span className="text-[10px] font-medium uppercase tracking-wider text-gray-600">
+                  {obj}
+                </span>
+              </span>
+            ))}
+          </div>
+
+          <p className="micro-trust">★★★★★ 200+ thyroid women transformed across India</p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/MoreThanFatLossSection.tsx =====\n
+"use client";
+
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const stories = [
+  {
+    image: "/MoreThanFatLossSection/heenal.png",
+    name: "Heenal S.",
+    result: "15 kg Lost",
+    tags: ["Belly Fat ↓", "Hormones Stable", "Energy Up"],
+    quote: "Finally lost the weight thyroid stole from me for 4 years.",
+  },
+  {
+    image: "/MoreThanFatLossSection/surekha.png",
+    name: "Surekha M.",
+    result: "Bloating Gone",
+    tags: ["Flat Stomach", "Thyroid Fat Lost", "No Fatigue"],
+    quote: "My clothes fit again. I feel like myself.",
+  },
+  {
+    image: "/MoreThanFatLossSection/ashish.png",
+    name: "Priya K.",
+    result: "8 kg Lost",
+    tags: ["Waist Reduced", "Fat Loss", "Confident"],
+    quote: "Belly fat reduced in just 3 weeks. I'm shocked.",
+  },
+  {
+    image: "/MoreThanFatLossSection/nitin.png",
+    name: "Kavita R.",
+    result: "Inches Lost",
+    tags: ["Less Bloating", "Better Energy", "Clothes Fit"],
+    quote: "I stopped hiding in baggy clothes. 60 days changed everything.",
+  },
+  {
+    image: "/MoreThanFatLossSection/heenal.png",
+    name: "Anjali T.",
+    result: "6 kg Lost",
+    tags: ["Flat Belly", "No Starvation", "Thyroid Fat ↓"],
+    quote: "Real food. Real results. No gym needed.",
+  },
+];
+
+export default function MoreThanFatLossSection() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <section className="section-pad bg-black overflow-hidden">
+
+      {/* ── Atmospheric glow — consistent with page depth hierarchy ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[400px] overflow-hidden">
+        <div className="absolute left-1/2 top-[-10%] h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-purple-600/[0.07] blur-[100px] md:h-[580px] md:w-[580px] md:blur-[130px]" />
+      </div>
+
+      <div className="relative z-10">
+
+        {/* ── Section header — fat-loss first ── */}
+        <div className="container-default mb-8 text-center">
+          <p className="section-label">Real Client Transformations</p>
+
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Real Women.{" "}
+            <span className="text-gradient">Real Fat Loss.</span>
+          </h2>
+
+          <p className="mx-auto max-w-[36ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            Indian women with hypothyroidism — losing belly fat, fitting old clothes,
+            and feeling confident again.
+          </p>
+        </div>
+
+        {/* ── Horizontal drag slider ── */}
+        <div className="relative overflow-hidden">
+          <motion.div
+            drag={shouldReduceMotion ? false : "x"}
+            dragConstraints={{ right: 0, left: -(stories.length * 300) }}
+            animate={shouldReduceMotion ? {} : { x: ["0%", "-50%"] }}
+            transition={
+              shouldReduceMotion
+                ? {}
+                : { repeat: Infinity, duration: 32, ease: "linear" }
+            }
+            className="flex gap-4 w-max px-4 cursor-grab active:cursor-grabbing"
+            style={{ willChange: "transform" }}
+          >
+            {[...stories, ...stories].map((story, index) => (
+              <div
+                key={index}
+                className="glass-card w-[260px] sm:w-[300px] flex-shrink-0 overflow-hidden"
+              >
+                {/* ── Image ── */}
+                <div className="relative overflow-hidden rounded-t-[calc(1.25rem-1px)]">
+                  <Image
+                    src={story.image}
+                    alt={`${story.name} thyroid fat loss transformation`}
+                    width={300}
+                    height={380}
+                    loading="lazy"
+                    className="w-full object-cover"
+                    style={{ aspectRatio: "4/5" }}
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+
+                  {/* ── Result badge overlaid on image ── */}
+                  <div className="absolute bottom-3 left-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-black/70 px-3 py-1 backdrop-blur-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-400" aria-hidden="true" />
+                      <span className="text-[length:var(--text-xs)] font-bold text-purple-300">
+                        {story.result}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── Card body — compact ── */}
+                <div className="p-4">
+                  {/* Tags */}
+                  <div className="mb-2.5 flex flex-wrap gap-1.5">
+                    {story.tags.map((tag) => (
+                      <span key={tag} className="result-badge">{tag}</span>
+                    ))}
+                  </div>
+
+                  {/* Quote */}
+                  <p className="mb-1 text-[length:var(--text-xs)] italic leading-snug text-gray-300">
+                    &ldquo;{story.quote}&rdquo;
+                  </p>
+
+                  {/* Name */}
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">
+                    — {story.name}, Hypothyroid Client
+                  </p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* ── Edge fades — narrowed to 64px for maximum content visibility ── */}
+          <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-20" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-20" />
+        </div>
+
+        {/* ── Swipe hint — visible on mobile only ── */}
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-gray-600 md:hidden">
+          ← swipe to see more →
+        </p>
+
+        {/* ── Mid-funnel CTA — captures early-committed visitors ── */}
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-ghost"
+            aria-label="Book a free thyroid fat-loss consultation call"
+          >
+            Start Your Transformation →
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            200+ Indian women transformed · Completely free call
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/WhatsappProofSection.tsx =====\n
+"use client";
+
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+// ── Female thyroid clients only — avatar-matched for target audience ──
+const testimonials = [
+  {
+    image: "/whatsapp-proof/Heenal R4.png",
+    result: "TSH 6.2 → 2.9",
+    tags: ["Thyroid Improved", "Energy Up", "Brain Fog Gone"],
+    headline: "TSH Dropped. Energy Came Back.",
+    name: "Heenal R.",
+  },
+  {
+    image: "/whatsapp-proof/Namarata R9.png",
+    result: "TSH 7.8 → 3.1",
+    tags: ["No More Fatigue", "Focus Restored", "Thyroid Stable"],
+    headline: "Finally Not Tired All The Time.",
+    name: "Namarata S.",
+  },
+  {
+    image: "/whatsapp-proof/Sima R1.png",
+    result: "4 kg Lost",
+    tags: ["Belly Fat ↓", "Fat Loss", "1 Week Results"],
+    headline: "4 kg Gone. Despite Thyroid.",
+    name: "Sima P.",
+  },
+  {
+    image: "/whatsapp-proof/Heenal R4.png",
+    result: "Inches Lost",
+    tags: ["Clothes Fit", "Belly Reduced", "Confidence Up"],
+    headline: "Old Clothes Fit Again.",
+    name: "Priya K.",
+  },
+  {
+    image: "/whatsapp-proof/Namarata R9.png",
+    result: "6 kg Lost",
+    tags: ["No Starvation", "Real Food", "Thyroid Fat ↓"],
+    headline: "Lost 6 kg. Eating Real Indian Food.",
+    name: "Anjali M.",
+  },
+];
+
+export default function WhatsappProofSection() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <section className="section-pad bg-black overflow-hidden">
+
+      {/* ── Atmospheric glow — purple brand system ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[400px] overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.08] blur-[110px] md:h-[600px] md:w-[600px] md:blur-[140px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* ── Section header ── */}
+        <div className="mb-8 text-center">
+
+          {/* Badge — purple system, consistent with Hero and FinalCTA ── */}
+          <div className="badge-pill mx-auto mb-4 w-fit" role="status">
+            <span className="badge-dot" aria-hidden="true" />
+            <span>Real Client Conversations</span>
+          </div>
+
+          <p className="section-label">WhatsApp Proof</p>
+
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Real Messages.{" "}
+            <span className="text-gradient">Real Thyroid Fat Loss.</span>
+          </h2>
+
+          <p className="mx-auto max-w-[34ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            Indian women sharing real progress — belly fat gone, energy back,
+            clothes fitting again.
+          </p>
+        </div>
+
+        {/* ── Horizontal proof slider ── */}
+        <div className="relative overflow-hidden">
+          <motion.div
+            drag={shouldReduceMotion ? false : "x"}
+            dragConstraints={{ right: 0, left: -(testimonials.length * 280) }}
+            animate={shouldReduceMotion ? {} : { x: ["0%", "-50%"] }}
+            transition={
+              shouldReduceMotion
+                ? {}
+                : { duration: 30, ease: "linear", repeat: Infinity }
+            }
+            className="flex gap-4 px-4 w-max cursor-grab active:cursor-grabbing"
+            style={{ willChange: "transform" }}
+          >
+            {[...testimonials, ...testimonials].map((item, index) => (
+              <div
+                key={index}
+                className="glass-card w-[260px] sm:w-[290px] flex-shrink-0 overflow-hidden"
+              >
+                {/* ── Screenshot — full card width, proof-first ── */}
+                <div className="relative overflow-hidden rounded-t-[calc(1.25rem-1px)]">
+                  <Image
+                    src={item.image}
+                    alt={`WhatsApp message: ${item.headline}`}
+                    width={290}
+                    height={420}
+                    loading="lazy"
+                    className="w-full object-cover"
+                    style={{ aspectRatio: "4/5.8" }}
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+                  {/* ── Result chip overlaid on screenshot ── */}
+                  <div className="absolute bottom-3 left-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-black/75 px-3 py-1 backdrop-blur-sm">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-400" aria-hidden="true" />
+                      <span className="text-[10px] font-bold text-purple-300 leading-none">
+                        {item.result}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── Card body — compact ── */}
+                <div className="p-3.5">
+                  {/* Outcome tags */}
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {item.tags.map((tag) => (
+                      <span key={tag} className="result-badge">{tag}</span>
+                    ))}
+                  </div>
+
+                  {/* Headline — tight, punchy */}
+                  <p className="mb-1 text-[length:var(--text-sm)] font-bold leading-snug text-white">
+                    {item.headline}
+                  </p>
+
+                  {/* Client name */}
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">
+                    — {item.name}, Hypothyroid Client
+                  </p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* ── Edge fades — 64px ── */}
+          <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-20" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-20" />
+        </div>
+
+        {/* ── Swipe hint — mobile only ── */}
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-gray-600 md:hidden">
+          ← swipe to see more →
+        </p>
+
+        {/* ── Mid-funnel CTA — peak trust moment ── */}
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-ghost"
+            aria-label="Book a free thyroid fat-loss consultation call"
+          >
+            Book Your Free Call →
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            See how this system can work for your thyroid
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/FrameworkSection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const steps = [
+  { letter: "L", label: "Lab Analysis",      desc: "Find what's actually blocking your fat loss." },
+  { letter: "E", label: "Energy First",       desc: "Restore energy before fat loss begins." },
+  { letter: "A", label: "Adaptive Nutrition", desc: "Real Indian meals. No starvation." },
+  { letter: "N", label: "Navigate & Track",   desc: "Weekly tweaks based on your real data." },
+];
+
+const timeline = [
+  { weeks: "Weeks 1–3",  result: "Energy up. Bloating down. Cravings stabilize." },
+  { weeks: "Weeks 4–8",  result: "Visible inch loss. Fat loss accelerates." },
+  { weeks: "Weeks 9–12", result: "Confident body. Sustainable habits locked in." },
+];
+
+export default function FrameworkSection() {
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-default">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">The Method</p>
+          <h2 className="section-title mx-auto max-w-[24ch]">
+            The Thyroid{" "}
+            <span className="text-gradient">L.E.A.N. Method</span>™
+          </h2>
+          {/* Emotional anchor — outcome-first language */}
+          <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--text-xs)] text-gray-500 leading-relaxed">
+            Built specifically for hypothyroid women.{" "}
+            <span className="text-gray-400 font-medium">The exact 4-step system that works when everything else has failed.</span>
+          </p>
+        </div>
+
+        {/* L.E.A.N. Step cards — 2-col mobile, 4-col desktop */}
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
+          {steps.map((s) => (
+            <div key={s.letter} className="glass-card-sm p-4 text-center">
+              <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/15 text-base font-black text-purple-400 ring-1 ring-purple-500/25">
+                {s.letter}
+              </div>
+              <p className="mb-1 text-[length:var(--text-xs)] font-semibold text-white leading-snug">
+                {s.label}
+              </p>
+              <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-500">
+                {s.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Timeline bar */}
+        <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.07] md:mt-5">
+          <div className="flex flex-col divide-y divide-white/[0.07] sm:flex-row sm:divide-x sm:divide-y-0">
+            {timeline.map((t) => (
+              <div key={t.weeks} className="flex-1 px-4 py-3.5">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-purple-500">
+                  {t.weeks}
+                </p>
+                <p className="text-[length:var(--text-xs)] text-gray-300 leading-relaxed">
+                  {t.result}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA — outcome language */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Book your free thyroid fat-loss strategy call"
+          >
+            Book Free Call — See It Work For You →
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Free call · No commitment
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/ResultsSection.tsx =====\n
+"use client";
+
+import Image from "next/image";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const results = [
+  {
+    name: "Vaidehi S., 34",
+    badges: ["4.8 kg Lost", "2 Inch Waist ↓", "Energy Restored"],
+    quote: "Lost more in 6 weeks than in 2 years of trying alone.",
+    img: "/transformations/Vaidehi 1.png",
+  },
+  {
+    name: "Surekha P., 41",
+    badges: ["3.5 kg Lost", "Belly Fat ↓", "Confidence Back"],
+    quote: "Finally a plan built for thyroid — not just calories.",
+    img: "/transformations/Surekha 3.png",
+  },
+  {
+    name: "Nehamia R., 38",
+    badges: ["5.2 kg Lost", "3 Inch Loss", "Brain Fog Gone"],
+    quote: "My doctor noticed the difference before I even told her.",
+    img: "/transformations/Nehamia 6.png",
+  },
+  {
+    name: "Anjali M., 36",
+    badges: ["4.1 kg Lost", "Bloating Gone", "Cravings Reduced"],
+    quote: "No starvation. Real food. Real results.",
+    img: "/transformations/Nehamia 6.png",
+  },
+];
+
+export default function ResultsSection() {
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-default">
+
+        {/* ── Header ── */}
+        <div className="mb-6 text-center">
+          <p className="section-label">Real Transformations</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            <span className="text-gradient">Visible Fat Loss.</span> Real Women.
+          </h2>
+          <p className="mt-1.5 text-[length:var(--text-xs)] text-gray-500">
+            Not models. Not filters. Real hypothyroid women from India.
+          </p>
+        </div>
+
+        {/* ── Cards: 1-col mobile → 2-col sm → 4-col md ── */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 md:gap-4">
+          {results.map((r) => (
+            <div key={r.name} className="result-card">
+
+              {/* Photo */}
+              <div className="relative w-full overflow-hidden bg-white/[0.04]"
+                   style={{ aspectRatio: "3/4" }}>
+                <Image
+                  src={r.img}
+                  alt={`${r.name} thyroid fat loss transformation`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+                  className="object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Quote — emotion first, largest text in card */}
+              <div className="px-3 pt-3 pb-1">
+                <p className="text-[length:var(--text-sm)] font-medium leading-snug text-white">
+                  &ldquo;{r.quote}&rdquo;
+                </p>
+                <p className="mt-1 text-[length:var(--text-xs)] text-gray-500 font-medium">
+                  — {r.name}
+                </p>
+              </div>
+
+              {/* Badges — max 3, single row with overflow clip */}
+              <div className="result-badges">
+                {r.badges.slice(0, 3).map((b) => (
+                  <span key={b} className="result-badge">{b}</span>
+                ))}
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+        {/* ── CTA ── */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Book a free thyroid fat-loss strategy call"
+          >
+            🔥 Start Your Transformation
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Free strategy call · No obligation
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/ConsultationSection.tsx =====\n
+\n\n===== app/components/AuthoritySection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+// 3-stat row (removes overflow at any viewport)
+const stats = [
+  { num: "200+",   label: "Thyroid Clients" },
+  { num: "10–15kg", label: "Avg Fat Loss" },
+  { num: "93%",    label: "Better Energy" },
+];
+
+const pillars = [
+  { icon: "🧬", title: "Lab-Guided Protocol",  desc: "Personalized to your biomarkers. Not generic advice." },
+  { icon: "🍱", title: "Indian Nutrition",      desc: "Real dals, rotis, sabzi — adapted for thyroid fat loss." },
+  { icon: "📊", title: "Weekly Tracking",       desc: "Weight, inches, energy — adjusted every single week." },
+  { icon: "💬", title: "WhatsApp Support",      desc: "Direct access. Real answers. Not a chatbot." },
+];
+
+export default function AuthoritySection() {
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-default">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">Why This Works</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Not a Diet Plan.{" "}
+            <span className="text-gradient">A Complete System.</span>
+          </h2>
+        </div>
+
+        {/* Stat row — Hero pattern, 3 stats, no overflow */}
+        <div className="stat-row mx-auto mb-6">
+          {stats.map((s, i) => (
+            <>
+              <div key={s.label} className="stat-chip">
+                <span className="stat-num">{s.num}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+              {i < stats.length - 1 && (
+                <div key={`div-${i}`} className="stat-divider" aria-hidden="true" />
+              )}
+            </>
+          ))}
+        </div>
+
+        {/* Pillar cards — 2×2 */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {pillars.map((p) => (
+            <div key={p.title} className="glass-card-sm flex gap-3 p-4">
+              <span className="mt-0.5 shrink-0 text-lg leading-none" role="img" aria-hidden="true">
+                {p.icon}
+              </span>
+              <div>
+                <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+                  {p.title}
+                </p>
+                <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-400">
+                  {p.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA — scarcity below button, not above */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Claim your free thyroid fat-loss consultation spot"
+          >
+            🔥 Claim Your Spot
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Limited coaching spots available this month
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/Hero.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+export default function Hero() {
+  return (
+    <section className="relative overflow-hidden bg-black text-white">
+
+      {/* ── Background Glow — fixed height prevents clipping on short viewports ── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] overflow-hidden"
+      >
+        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.14] blur-[100px] md:h-[650px] md:w-[650px] md:blur-[140px]" />
+      </div>
+
+      {/* ── Content — uses container-default for consistency with all other sections ── */}
+      <div className="hero-container relative z-10 mx-auto flex max-w-[960px] flex-col items-center text-center">
+
+        {/* ── 1. Urgency Badge ── */}
+        <div className="badge-pill" role="status" aria-live="polite">
+          <span className="badge-dot" aria-hidden="true" />
+          <span>Only 5 Spots Left This Month</span>
+        </div>
+
+        {/* ── 2. Eyebrow ── */}
+        <p className="eyebrow">For Indian women with hypothyroidism</p>
+
+        {/* ── 3. Main Headline ── */}
+        <h1 className="headline">
+          Lose the
+          <span className="headline-accent">Belly Fat.</span>
+          <span className="headline-white">In 90 Days.</span>
+        </h1>
+
+        {/* ── 4. Subheadline ── */}
+        <p className="subheadline">
+          India&apos;s #1 thyroid fat-loss coaching.{" "}
+          <strong className="subheadline-strong">
+            10–15 kg lost. Clothes fitting. Energy back.
+          </strong>
+        </p>
+
+        {/* ── 5. Stat Row ── */}
+        <div className="stat-row" aria-label="Program statistics">
+          <div className="stat-chip">
+            <span className="stat-num">200+</span>
+            <span className="stat-label">Women Transformed</span>
+          </div>
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">90</span>
+            <span className="stat-label">Day Program</span>
+          </div>
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">10–15</span>
+            <span className="stat-label">Kg Fat Loss</span>
+          </div>
+        </div>
+
+        {/* ── 6. Outcome List ── */}
+        <ul className="outcome-list" aria-label="What you will achieve">
+          {[
+            "Stubborn belly fat visibly reduced",
+            "Clothes fitting better within weeks",
+            "No starvation — real Indian food",
+            "Energy & confidence fully restored",
+          ].map((item) => (
+            <li key={item} className="outcome-item">
+              <span className="outcome-check" aria-hidden="true">✓</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* ── 7. CTA Block ── */}
+        <div className="cta-wrap">
+          <button
+            id="cta-hero"
+            type="button"
+            aria-label="Book your free 60-minute thyroid fat-loss consultation call"
+            className="cta-button"
+            onClick={() => window.location.assign(CTA_URL)}
+          >
+            🔥 Book FREE Consultation Call
+            <span className="cta-sub">60 Min · Free · Limited Spots</span>
+          </button>
+          <p className="micro-trust">
+            ★★★★★ Trusted by 200+ hypothyroid women across India
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/VideoTestimonial.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const testimonials = [
+  {
+    // Scorecard stats — shown as 3 compact metrics above the quote
+    stats: [
+      { num: "4.2 kg", label: "Lost" },
+      { num: "3 Wks", label: "Timeline" },
+      { num: "Energy", label: "Restored" },
+    ],
+    quote: "In 3 weeks I saw what 3 years couldn't give me.",
+    name: "Rashmi D.",
+    role: "Hypothyroid Client",
+    videoUrl:
+      "https://swapnilumbarkarfitness.in/wp-content/uploads/2025/08/%F0%9F%8E%A5-Rashmis-3-Week-Thyroid-Fat-Loss-Transformation.mp4",
+  },
+  {
+    stats: [
+      { num: "3.8 kg", label: "Lost" },
+      { num: "2 Inch", label: "Waist ↓" },
+      { num: "Bloat", label: "Gone" },
+    ],
+    quote: "For the first time in years, I feel confident in my body.",
+    name: "Fathima P.",
+    role: "Thyroid Fat Loss Client",
+    videoUrl:
+      "https://swapnilumbarkarfitness.in/wp-content/uploads/2026/05/%F0%9F%8C%B8-Fathimas-2-Week-Thyroid-Fat-Loss-Update.mp4",
+  },
+];
+
+export default function VideoTestimonial() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* ── Atmospheric depth — consistent with Hero and ProblemSection ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-72 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-56 w-80 -translate-x-1/2 rounded-full bg-purple-600/[0.05] blur-[90px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* ── Section Header ── */}
+        <div className="mb-5 text-center md:mb-7">
+          <p className="section-label">Client Stories</p>
+          <h2 className="section-title mx-auto max-w-[28ch]">
+            They Were Stuck.{" "}
+            <span className="text-gradient">Then This Happened.</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-[32ch] text-[length:var(--text-xs)] text-gray-500">
+            Real Indian women. Real hypothyroid transformations. No filters.
+          </p>
+        </div>
+
+        {/* ── Video Cards ── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {testimonials.map((t) => (
+            <div key={t.name} className="glass-card overflow-hidden">
+
+              {/* 1. Scorecard — stat-row style, mirrors Hero numerics */}
+              <div className="flex overflow-hidden border-b border-white/[0.06] bg-white/[0.015]">
+                {t.stats.map((s, i) => (
+                  <div
+                    key={s.label}
+                    className={`flex flex-1 flex-col items-center justify-center py-2.5 ${
+                      i < t.stats.length - 1 ? "border-r border-white/[0.06]" : ""
+                    }`}
+                  >
+                    <span className="text-[length:var(--text-sm)] font-extrabold leading-tight text-purple-400">
+                      {s.num}
+                    </span>
+                    <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-600">
+                      {s.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 2. Quote — ABOVE video to prime emotional frame */}
+              <div className="px-4 pt-3.5 pb-2.5">
+                <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-white">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <p className="mt-1 text-[length:var(--text-xs)] text-gray-500">
+                  — {t.name}, {t.role}
+                </p>
+              </div>
+
+              {/* 3. Video — 4:3 mobile, 16:9 desktop. Rounded-lg sits inside rounded-2xl card */}
+              <div className="mx-3 mb-3 overflow-hidden rounded-lg bg-white/[0.03] aspect-[4/3] md:aspect-video">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover"
+                  aria-label={`Transformation video: ${t.name}`}
+                >
+                  <source src={t.videoUrl} type="video/mp4" />
+                  Your browser does not support video playback.
+                </video>
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+        {/* ── Urgency Strip + CTA ── */}
+        <div className="mt-5 flex flex-col items-center gap-3 md:mt-6">
+          <p className="text-[length:var(--text-xs)] text-gray-500 text-center">
+            ★★★★★ Real results · 200+ women transformed · No filters
+          </p>
+          <button
+            type="button"
+            aria-label="Book your free thyroid fat-loss strategy call"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="cta-button w-full max-w-sm"
+          >
+            🔥 Start Your Transformation
+            <span className="cta-sub">Free 60-Min Call · Limited Spots This Month</span>
+          </button>
+          <p className="text-[length:var(--text-xs)] text-gray-600">
+            No commitment · No upsells · Just clarity
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/SocialProof.tsx =====\n
+"use client";
+
+const items = [
+  { value: "200+",  label: "Women Transformed" },
+  { value: "4.9★",  label: "Average Rating" },
+  { value: "90",    label: "Day Program" },
+  { value: "ACE",   label: "Certified Coach" },
+  { value: "INFS",  label: "Nutrition Certified" },
+];
+
+export default function SocialProof() {
+  return (
+    <section
+      aria-label="Trust indicators"
+      className="relative border-y border-white/[0.06] bg-white/[0.015] py-3 md:py-4"
+    >
+      {/* Horizontal scroll on very small screens; flex-wrap on wider */}
+      <div className="container-default">
+        <div className="scrollbar-hide flex items-center justify-between gap-0 overflow-x-auto">
+          {items.map((item, i) => (
+            <div
+              key={item.label}
+              className={`flex shrink-0 flex-col items-center px-3 md:px-5 ${
+                i < items.length - 1
+                  ? "border-r border-white/[0.07]"
+                  : ""
+              }`}
+            >
+              <span className="text-[length:var(--text-sm)] font-extrabold leading-tight text-purple-400 md:text-[length:var(--text-base)]">
+                {item.value}
+              </span>
+              <span className="mt-0.5 whitespace-nowrap text-[10px] font-medium uppercase tracking-widest text-gray-600 md:text-[11px]">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}\n\n===== app/components/ProblemSection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const problems = [
+  {
+    icon: "⚡",
+    title: "Generic Diets Keep Failing",
+    body: "Advice built for healthy hormones won't move thyroid fat.",
+  },
+  {
+    icon: "🔥",
+    title: "Cutting Calories Backfires",
+    body: "Less food slows thyroid output — fat loss stalls further.",
+  },
+  {
+    icon: "😓",
+    title: "Energy Disappears First",
+    body: "No energy means no consistency. It's not your willpower.",
+  },
+  {
+    icon: "🎯",
+    title: "No One Fixed the Root",
+    body: "Doctors adjusted meds. Trainers blamed effort. Nothing changed.",
+  },
+];
+
+export default function ProblemSection() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* Subtle atmospheric glow */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-64 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-48 w-72 -translate-x-1/2 rounded-full bg-purple-600/[0.06] blur-[80px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* Header */}
+        <div className="mb-5 text-center md:mb-7">
+          <p className="section-label">Why You&apos;re Stuck</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            The Real Reason{" "}
+            <span className="text-gradient">Thyroid Fat Won&apos;t Move</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-[30ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            You did everything right. The problem was never you.
+          </p>
+        </div>
+
+        {/* 2×2 grid */}
+        <div className="grid grid-cols-2 gap-2.5 md:gap-3.5">
+          {problems.map((p) => (
+            <div key={p.title} className="glass-card-sm flex flex-col gap-2 p-3.5 md:p-5">
+              <span className="text-base leading-none md:text-lg" role="img" aria-hidden="true">
+                {p.icon}
+              </span>
+              <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-white">
+                {p.title}
+              </p>
+              <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-500">
+                {p.body}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Validation strip */}
+        <div className="mt-4 flex items-center justify-center gap-2 md:mt-5">
+          <div className="h-px flex-1 bg-white/[0.06]" />
+          <p className="shrink-0 px-3 text-center text-[length:var(--text-xs)] text-gray-600">
+            Thyroid fat loss requires a{" "}
+            <span className="font-semibold text-gray-400">different system entirely</span>
+          </p>
+          <div className="h-px flex-1 bg-white/[0.06]" />
+        </div>
+
+        {/* CTA — btn-primary (not cta-button) to preserve hierarchy */}
+        <div className="mt-5 text-center md:mt-6">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary w-full max-w-sm"
+            aria-label="Book your free thyroid fat-loss strategy call"
+          >
+            🔥 Start Losing the Belly Fat
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Free 60-min call · No commitment · No upsells
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/FAQSection.tsx =====\n
+"use client";
+
+import { useState } from "react";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const faqs = [
+  {
+    q: "I'm already on thyroid medication. Can I still join?",
+    a: "Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.",
+  },
+  {
+    q: "What happens on the free strategy call?",
+    a: "We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.",
+  },
+  {
+    q: "How fast will I see results?",
+    a: "Most clients notice energy and bloating improvements in Week 1–2. Visible fat and inch loss typically starts Week 3–4.",
+  },
+  {
+    q: "Is this suitable for Hashimoto's?",
+    a: "Absolutely. The system is designed for both hypothyroidism and Hashimoto's — with anti-inflammatory nutrition built in.",
+  },
+  {
+    q: "Will I have to follow a strict diet?",
+    a: "No starvation. Real Indian meals. We adapt your existing food culture — no foreign foods, no extreme calorie cutting.",
+  },
+];
+
+export default function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-narrow">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">FAQs</p>
+          <h2 className="section-title mx-auto max-w-[20ch]">Common Questions</h2>
+        </div>
+
+        {/* Accordion — no overflow-hidden so focus rings are visible */}
+        <div className="rounded-2xl border border-white/[0.07]">
+          {faqs.map((faq, i) => {
+            const panelId = `faq-panel-${i}`;
+            const isOpen = open === i;
+            return (
+              <div
+                key={i}
+                className={i < faqs.length - 1 ? "border-b border-white/[0.07]" : ""}
+              >
+                <button
+                  type="button"
+                  id={`faq-btn-${i}`}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left text-[length:var(--text-sm)] font-semibold text-white bg-none border-none cursor-pointer"
+                  style={{ background: "none", border: "none" }}
+                >
+                  <span>{faq.q}</span>
+                  <span
+                    className="ml-4 shrink-0 text-purple-400 text-base leading-none transition-transform duration-200"
+                    aria-hidden="true"
+                    style={{ transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+                  >
+                    +
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={`faq-btn-${i}`}
+                    className="px-5 pb-4 text-[length:var(--text-sm)] text-gray-400 leading-relaxed max-w-[52ch]"
+                  >
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom CTA card */}
+        <div className="mt-5 rounded-2xl border border-purple-500/20 bg-purple-500/[0.06] p-5 text-center">
+          <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+            Still have questions?
+          </p>
+          <p className="mb-4 text-[length:var(--text-xs)] text-gray-500">
+            I&apos;ll answer everything on a free 60-minute call.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Book a free thyroid fat-loss strategy call"
+          >
+            Book a Free Strategy Call →
+          </button>
+          <p className="mt-2.5 text-[length:var(--text-xs)] text-gray-600">
+            ACE · FITR · INFS Certified · 200+ Clients
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/FinalCTASection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const includes = [
+  "Personalized thyroid fat-loss protocol",
+  "Indian nutrition plan for your metabolism",
+  "Weekly tracking — weight, inches & energy",
+  "Direct WhatsApp accountability support",
+  "Symptom & confidence recovery roadmap",
+];
+
+const certs = ["ACE Certified", "FITR Certified", "INFS Certified"];
+
+export default function FinalCTASection() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* ── Strongest support-section glow — signals conversion climax ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[480px] overflow-hidden">
+        <div className="absolute left-1/2 top-[-5%] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/[0.10] blur-[110px] md:h-[680px] md:w-[680px] md:blur-[150px]" />
+      </div>
+
+      <div className="container-narrow relative z-10 text-center">
+
+        {/* ── 1. Urgency badge — prominent, not a footnote ── */}
+        <div className="badge-pill mx-auto mb-4 w-fit" role="status" aria-live="polite">
+          <span className="badge-dot" aria-hidden="true" />
+          <span>Only 5 Spots Left This Month</span>
+        </div>
+
+        {/* ── 2. Declarative close headline — assumes decision is made ── */}
+        <p className="section-label mb-2">Start Today</p>
+        <h2 className="section-title mx-auto mb-3 max-w-[24ch]">
+          Your Thyroid Transformation{" "}
+          <span className="text-gradient">Starts Here.</span>
+        </h2>
+
+        <p className="mx-auto mb-6 max-w-[30ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+          Book a free 60-min strategy call.{" "}
+          <strong className="text-gray-200 font-semibold">No pressure. No upsells. Just clarity.</strong>
+        </p>
+
+        {/* ── 3. Coach authority card — glass-card for stronger visual weight ── */}
+        <div className="glass-card mb-4 overflow-hidden">
+          <div className="flex flex-col items-center gap-3 p-5 sm:flex-row sm:text-left">
+
+            {/* Coach photo — replace src with real image path */}
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500/40">
+              {/* Real photo: replace this div with <Image src="/coach.jpg" alt="Swapnil Umbarkar" fill className="object-cover" /> */}
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/30 to-purple-600/20 text-lg font-black text-purple-300">
+                SU
+              </div>
+            </div>
+
+            <div>
+              {/* Authority-first positioning */}
+              <p className="text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-purple-400">
+                India&apos;s Leading Thyroid Fat-Loss Coach
+              </p>
+              <p className="mt-0.5 text-[length:var(--text-base)] font-bold text-white">
+                Swapnil Umbarkar
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5 sm:justify-start justify-center">
+                {certs.map((c) => (
+                  <span key={c} className="chip">{c}</span>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── 4. What's included — secondary weight to coach card ── */}
+        <div className="mb-6 rounded-2xl border border-purple-500/20 bg-purple-500/[0.06] p-4 text-left">
+          <p className="mb-3 text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-purple-400">
+            Your Free Call Includes
+          </p>
+          <ul className="space-y-2.5">
+            {includes.map((item) => (
+              <li key={item} className="flex items-start gap-2.5">
+                <span className="mt-0.5 shrink-0 font-bold leading-none text-purple-500">✓</span>
+                <span className="text-[length:var(--text-xs)] leading-snug text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ── 5. Primary CTA block ── */}
+        <div className="cta-wrap mx-auto">
+          <button
+            id="cta-final"
+            type="button"
+            aria-label="Book your free thyroid fat-loss strategy call"
+            className="cta-button"
+            onClick={() => window.location.assign(CTA_URL)}
+          >
+            🔥 Book FREE Strategy Call
+            <span className="cta-sub">60 Min · Free · Limited Spots This Month</span>
+          </button>
+
+          {/* ── 6. Objection handler — addresses cost, commitment, legitimacy ── */}
+          <div className="flex items-center justify-center gap-3">
+            {["No credit card", "Completely free", "No commitment"].map((obj, i) => (
+              <span key={obj} className="flex items-center gap-1.5">
+                {i > 0 && <span className="h-3 w-px bg-white/10" aria-hidden="true" />}
+                <span className="text-[10px] font-medium uppercase tracking-wider text-gray-600">
+                  {obj}
+                </span>
+              </span>
+            ))}
+          </div>
+
+          <p className="micro-trust">★★★★★ 200+ thyroid women transformed across India</p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/MoreThanFatLossSection.tsx =====\n
+"use client";
+
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const stories = [
+  {
+    image: "/MoreThanFatLossSection/heenal.png",
+    name: "Heenal S.",
+    result: "15 kg Lost",
+    tags: ["Belly Fat ↓", "Hormones Stable", "Energy Up"],
+    quote: "Finally lost the weight thyroid stole from me for 4 years.",
+  },
+  {
+    image: "/MoreThanFatLossSection/surekha.png",
+    name: "Surekha M.",
+    result: "Bloating Gone",
+    tags: ["Flat Stomach", "Thyroid Fat Lost", "No Fatigue"],
+    quote: "My clothes fit again. I feel like myself.",
+  },
+  {
+    image: "/MoreThanFatLossSection/ashish.png",
+    name: "Priya K.",
+    result: "8 kg Lost",
+    tags: ["Waist Reduced", "Fat Loss", "Confident"],
+    quote: "Belly fat reduced in just 3 weeks. I'm shocked.",
+  },
+  {
+    image: "/MoreThanFatLossSection/nitin.png",
+    name: "Kavita R.",
+    result: "Inches Lost",
+    tags: ["Less Bloating", "Better Energy", "Clothes Fit"],
+    quote: "I stopped hiding in baggy clothes. 60 days changed everything.",
+  },
+  {
+    image: "/MoreThanFatLossSection/heenal.png",
+    name: "Anjali T.",
+    result: "6 kg Lost",
+    tags: ["Flat Belly", "No Starvation", "Thyroid Fat ↓"],
+    quote: "Real food. Real results. No gym needed.",
+  },
+];
+
+export default function MoreThanFatLossSection() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <section className="section-pad bg-black overflow-hidden">
+
+      {/* ── Atmospheric glow — consistent with page depth hierarchy ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[400px] overflow-hidden">
+        <div className="absolute left-1/2 top-[-10%] h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-purple-600/[0.07] blur-[100px] md:h-[580px] md:w-[580px] md:blur-[130px]" />
+      </div>
+
+      <div className="relative z-10">
+
+        {/* ── Section header — fat-loss first ── */}
+        <div className="container-default mb-8 text-center">
+          <p className="section-label">Real Client Transformations</p>
+
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Real Women.{" "}
+            <span className="text-gradient">Real Fat Loss.</span>
+          </h2>
+
+          <p className="mx-auto max-w-[36ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            Indian women with hypothyroidism — losing belly fat, fitting old clothes,
+            and feeling confident again.
+          </p>
+        </div>
+
+        {/* ── Horizontal drag slider ── */}
+        <div className="relative overflow-hidden">
+          <motion.div
+            drag={shouldReduceMotion ? false : "x"}
+            dragConstraints={{ right: 0, left: -(stories.length * 300) }}
+            animate={shouldReduceMotion ? {} : { x: ["0%", "-50%"] }}
+            transition={
+              shouldReduceMotion
+                ? {}
+                : { repeat: Infinity, duration: 32, ease: "linear" }
+            }
+            className="flex gap-4 w-max px-4 cursor-grab active:cursor-grabbing"
+            style={{ willChange: "transform" }}
+          >
+            {[...stories, ...stories].map((story, index) => (
+              <div
+                key={index}
+                className="glass-card w-[260px] sm:w-[300px] flex-shrink-0 overflow-hidden"
+              >
+                {/* ── Image ── */}
+                <div className="relative overflow-hidden rounded-t-[calc(1.25rem-1px)]">
+                  <Image
+                    src={story.image}
+                    alt={`${story.name} thyroid fat loss transformation`}
+                    width={300}
+                    height={380}
+                    loading="lazy"
+                    className="w-full object-cover"
+                    style={{ aspectRatio: "4/5" }}
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+
+                  {/* ── Result badge overlaid on image ── */}
+                  <div className="absolute bottom-3 left-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-black/70 px-3 py-1 backdrop-blur-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-400" aria-hidden="true" />
+                      <span className="text-[length:var(--text-xs)] font-bold text-purple-300">
+                        {story.result}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── Card body — compact ── */}
+                <div className="p-4">
+                  {/* Tags */}
+                  <div className="mb-2.5 flex flex-wrap gap-1.5">
+                    {story.tags.map((tag) => (
+                      <span key={tag} className="result-badge">{tag}</span>
+                    ))}
+                  </div>
+
+                  {/* Quote */}
+                  <p className="mb-1 text-[length:var(--text-xs)] italic leading-snug text-gray-300">
+                    &ldquo;{story.quote}&rdquo;
+                  </p>
+
+                  {/* Name */}
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">
+                    — {story.name}, Hypothyroid Client
+                  </p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* ── Edge fades — narrowed to 64px for maximum content visibility ── */}
+          <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-20" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-20" />
+        </div>
+
+        {/* ── Swipe hint — visible on mobile only ── */}
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-gray-600 md:hidden">
+          ← swipe to see more →
+        </p>
+
+        {/* ── Mid-funnel CTA — captures early-committed visitors ── */}
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-ghost"
+            aria-label="Book a free thyroid fat-loss consultation call"
+          >
+            Start Your Transformation →
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            200+ Indian women transformed · Completely free call
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/WhatsappProofSection.tsx =====\n
+"use client";
+
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+// ── Female thyroid clients only — avatar-matched for target audience ──
+const testimonials = [
+  {
+    image: "/whatsapp-proof/Heenal R4.png",
+    result: "TSH 6.2 → 2.9",
+    tags: ["Thyroid Improved", "Energy Up", "Brain Fog Gone"],
+    headline: "TSH Dropped. Energy Came Back.",
+    name: "Heenal R.",
+  },
+  {
+    image: "/whatsapp-proof/Namarata R9.png",
+    result: "TSH 7.8 → 3.1",
+    tags: ["No More Fatigue", "Focus Restored", "Thyroid Stable"],
+    headline: "Finally Not Tired All The Time.",
+    name: "Namarata S.",
+  },
+  {
+    image: "/whatsapp-proof/Sima R1.png",
+    result: "4 kg Lost",
+    tags: ["Belly Fat ↓", "Fat Loss", "1 Week Results"],
+    headline: "4 kg Gone. Despite Thyroid.",
+    name: "Sima P.",
+  },
+  {
+    image: "/whatsapp-proof/Heenal R4.png",
+    result: "Inches Lost",
+    tags: ["Clothes Fit", "Belly Reduced", "Confidence Up"],
+    headline: "Old Clothes Fit Again.",
+    name: "Priya K.",
+  },
+  {
+    image: "/whatsapp-proof/Namarata R9.png",
+    result: "6 kg Lost",
+    tags: ["No Starvation", "Real Food", "Thyroid Fat ↓"],
+    headline: "Lost 6 kg. Eating Real Indian Food.",
+    name: "Anjali M.",
+  },
+];
+
+export default function WhatsappProofSection() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <section className="section-pad bg-black overflow-hidden">
+
+      {/* ── Atmospheric glow — purple brand system ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[400px] overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.08] blur-[110px] md:h-[600px] md:w-[600px] md:blur-[140px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* ── Section header ── */}
+        <div className="mb-8 text-center">
+
+          {/* Badge — purple system, consistent with Hero and FinalCTA ── */}
+          <div className="badge-pill mx-auto mb-4 w-fit" role="status">
+            <span className="badge-dot" aria-hidden="true" />
+            <span>Real Client Conversations</span>
+          </div>
+
+          <p className="section-label">WhatsApp Proof</p>
+
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Real Messages.{" "}
+            <span className="text-gradient">Real Thyroid Fat Loss.</span>
+          </h2>
+
+          <p className="mx-auto max-w-[34ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            Indian women sharing real progress — belly fat gone, energy back,
+            clothes fitting again.
+          </p>
+        </div>
+
+        {/* ── Horizontal proof slider ── */}
+        <div className="relative overflow-hidden">
+          <motion.div
+            drag={shouldReduceMotion ? false : "x"}
+            dragConstraints={{ right: 0, left: -(testimonials.length * 280) }}
+            animate={shouldReduceMotion ? {} : { x: ["0%", "-50%"] }}
+            transition={
+              shouldReduceMotion
+                ? {}
+                : { duration: 30, ease: "linear", repeat: Infinity }
+            }
+            className="flex gap-4 px-4 w-max cursor-grab active:cursor-grabbing"
+            style={{ willChange: "transform" }}
+          >
+            {[...testimonials, ...testimonials].map((item, index) => (
+              <div
+                key={index}
+                className="glass-card w-[260px] sm:w-[290px] flex-shrink-0 overflow-hidden"
+              >
+                {/* ── Screenshot — full card width, proof-first ── */}
+                <div className="relative overflow-hidden rounded-t-[calc(1.25rem-1px)]">
+                  <Image
+                    src={item.image}
+                    alt={`WhatsApp message: ${item.headline}`}
+                    width={290}
+                    height={420}
+                    loading="lazy"
+                    className="w-full object-cover"
+                    style={{ aspectRatio: "4/5.8" }}
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+                  {/* ── Result chip overlaid on screenshot ── */}
+                  <div className="absolute bottom-3 left-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-black/75 px-3 py-1 backdrop-blur-sm">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-400" aria-hidden="true" />
+                      <span className="text-[10px] font-bold text-purple-300 leading-none">
+                        {item.result}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── Card body — compact ── */}
+                <div className="p-3.5">
+                  {/* Outcome tags */}
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {item.tags.map((tag) => (
+                      <span key={tag} className="result-badge">{tag}</span>
+                    ))}
+                  </div>
+
+                  {/* Headline — tight, punchy */}
+                  <p className="mb-1 text-[length:var(--text-sm)] font-bold leading-snug text-white">
+                    {item.headline}
+                  </p>
+
+                  {/* Client name */}
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">
+                    — {item.name}, Hypothyroid Client
+                  </p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* ── Edge fades — 64px ── */}
+          <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-20" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-20" />
+        </div>
+
+        {/* ── Swipe hint — mobile only ── */}
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-gray-600 md:hidden">
+          ← swipe to see more →
+        </p>
+
+        {/* ── Mid-funnel CTA — peak trust moment ── */}
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-ghost"
+            aria-label="Book a free thyroid fat-loss consultation call"
+          >
+            Book Your Free Call →
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            See how this system can work for your thyroid
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/FrameworkSection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const steps = [
+  { letter: "L", label: "Lab Analysis",      desc: "Find what's actually blocking your fat loss." },
+  { letter: "E", label: "Energy First",       desc: "Restore energy before fat loss begins." },
+  { letter: "A", label: "Adaptive Nutrition", desc: "Real Indian meals. No starvation." },
+  { letter: "N", label: "Navigate & Track",   desc: "Weekly tweaks based on your real data." },
+];
+
+const timeline = [
+  { weeks: "Weeks 1–3",  result: "Energy up. Bloating down. Cravings stabilize." },
+  { weeks: "Weeks 4–8",  result: "Visible inch loss. Fat loss accelerates." },
+  { weeks: "Weeks 9–12", result: "Confident body. Sustainable habits locked in." },
+];
+
+export default function FrameworkSection() {
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-default">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">The Method</p>
+          <h2 className="section-title mx-auto max-w-[24ch]">
+            The Thyroid{" "}
+            <span className="text-gradient">L.E.A.N. Method</span>™
+          </h2>
+          {/* Emotional anchor — outcome-first language */}
+          <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--text-xs)] text-gray-500 leading-relaxed">
+            Built specifically for hypothyroid women.{" "}
+            <span className="text-gray-400 font-medium">The exact 4-step system that works when everything else has failed.</span>
+          </p>
+        </div>
+
+        {/* L.E.A.N. Step cards — 2-col mobile, 4-col desktop */}
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
+          {steps.map((s) => (
+            <div key={s.letter} className="glass-card-sm p-4 text-center">
+              <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/15 text-base font-black text-purple-400 ring-1 ring-purple-500/25">
+                {s.letter}
+              </div>
+              <p className="mb-1 text-[length:var(--text-xs)] font-semibold text-white leading-snug">
+                {s.label}
+              </p>
+              <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-500">
+                {s.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Timeline bar */}
+        <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.07] md:mt-5">
+          <div className="flex flex-col divide-y divide-white/[0.07] sm:flex-row sm:divide-x sm:divide-y-0">
+            {timeline.map((t) => (
+              <div key={t.weeks} className="flex-1 px-4 py-3.5">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-purple-500">
+                  {t.weeks}
+                </p>
+                <p className="text-[length:var(--text-xs)] text-gray-300 leading-relaxed">
+                  {t.result}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA — outcome language */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Book your free thyroid fat-loss strategy call"
+          >
+            Book Free Call — See It Work For You →
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Free call · No commitment
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/ResultsSection.tsx =====\n
+"use client";
+
+import Image from "next/image";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const results = [
+  {
+    name: "Vaidehi S., 34",
+    badges: ["4.8 kg Lost", "2 Inch Waist ↓", "Energy Restored"],
+    quote: "Lost more in 6 weeks than in 2 years of trying alone.",
+    img: "/transformations/Vaidehi 1.png",
+  },
+  {
+    name: "Surekha P., 41",
+    badges: ["3.5 kg Lost", "Belly Fat ↓", "Confidence Back"],
+    quote: "Finally a plan built for thyroid — not just calories.",
+    img: "/transformations/Surekha 3.png",
+  },
+  {
+    name: "Nehamia R., 38",
+    badges: ["5.2 kg Lost", "3 Inch Loss", "Brain Fog Gone"],
+    quote: "My doctor noticed the difference before I even told her.",
+    img: "/transformations/Nehamia 6.png",
+  },
+  {
+    name: "Anjali M., 36",
+    badges: ["4.1 kg Lost", "Bloating Gone", "Cravings Reduced"],
+    quote: "No starvation. Real food. Real results.",
+    img: "/transformations/Nehamia 6.png",
+  },
+];
+
+export default function ResultsSection() {
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-default">
+
+        {/* ── Header ── */}
+        <div className="mb-6 text-center">
+          <p className="section-label">Real Transformations</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            <span className="text-gradient">Visible Fat Loss.</span> Real Women.
+          </h2>
+          <p className="mt-1.5 text-[length:var(--text-xs)] text-gray-500">
+            Not models. Not filters. Real hypothyroid women from India.
+          </p>
+        </div>
+
+        {/* ── Cards: 1-col mobile → 2-col sm → 4-col md ── */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 md:gap-4">
+          {results.map((r) => (
+            <div key={r.name} className="result-card">
+
+              {/* Photo */}
+              <div className="relative w-full overflow-hidden bg-white/[0.04]"
+                   style={{ aspectRatio: "3/4" }}>
+                <Image
+                  src={r.img}
+                  alt={`${r.name} thyroid fat loss transformation`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+                  className="object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Quote — emotion first, largest text in card */}
+              <div className="px-3 pt-3 pb-1">
+                <p className="text-[length:var(--text-sm)] font-medium leading-snug text-white">
+                  &ldquo;{r.quote}&rdquo;
+                </p>
+                <p className="mt-1 text-[length:var(--text-xs)] text-gray-500 font-medium">
+                  — {r.name}
+                </p>
+              </div>
+
+              {/* Badges — max 3, single row with overflow clip */}
+              <div className="result-badges">
+                {r.badges.slice(0, 3).map((b) => (
+                  <span key={b} className="result-badge">{b}</span>
+                ))}
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+        {/* ── CTA ── */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Book a free thyroid fat-loss strategy call"
+          >
+            🔥 Start Your Transformation
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Free strategy call · No obligation
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/ConsultationSection.tsx =====\n
+\n\n===== app/components/AuthoritySection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+// 3-stat row (removes overflow at any viewport)
+const stats = [
+  { num: "200+",   label: "Thyroid Clients" },
+  { num: "10–15kg", label: "Avg Fat Loss" },
+  { num: "93%",    label: "Better Energy" },
+];
+
+const pillars = [
+  { icon: "🧬", title: "Lab-Guided Protocol",  desc: "Personalized to your biomarkers. Not generic advice." },
+  { icon: "🍱", title: "Indian Nutrition",      desc: "Real dals, rotis, sabzi — adapted for thyroid fat loss." },
+  { icon: "📊", title: "Weekly Tracking",       desc: "Weight, inches, energy — adjusted every single week." },
+  { icon: "💬", title: "WhatsApp Support",      desc: "Direct access. Real answers. Not a chatbot." },
+];
+
+export default function AuthoritySection() {
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-default">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">Why This Works</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Not a Diet Plan.{" "}
+            <span className="text-gradient">A Complete System.</span>
+          </h2>
+        </div>
+
+        {/* Stat row — Hero pattern, 3 stats, no overflow */}
+        <div className="stat-row mx-auto mb-6">
+          {stats.map((s, i) => (
+            <>
+              <div key={s.label} className="stat-chip">
+                <span className="stat-num">{s.num}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+              {i < stats.length - 1 && (
+                <div key={`div-${i}`} className="stat-divider" aria-hidden="true" />
+              )}
+            </>
+          ))}
+        </div>
+
+        {/* Pillar cards — 2×2 */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {pillars.map((p) => (
+            <div key={p.title} className="glass-card-sm flex gap-3 p-4">
+              <span className="mt-0.5 shrink-0 text-lg leading-none" role="img" aria-hidden="true">
+                {p.icon}
+              </span>
+              <div>
+                <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+                  {p.title}
+                </p>
+                <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-400">
+                  {p.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA — scarcity below button, not above */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Claim your free thyroid fat-loss consultation spot"
+          >
+            🔥 Claim Your Spot
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Limited coaching spots available this month
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/layout.tsx =====\n
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+\n\n===== app/page.tsx =====\n
+import Hero from "./components/Hero";
+import ProblemSection from "./components/ProblemSection";
+import ResultsSection from "./components/ResultsSection";
+import VideoTestimonial from "./components/VideoTestimonial";
+import FrameworkSection from "./components/FrameworkSection";
+import AuthoritySection from "./components/AuthoritySection";
+import FAQSection from "./components/FAQSection";
+import FinalCTASection from "./components/FinalCTASection";
+import SocialProof from "./components/SocialProof";
+import MoreThanFatLossSection from "./components/MoreThanFatLossSection";
+import WhatsappProofSection from "./components/WhatsappProofSection";
+
+export default function Home() {
+  return (
+    <main>
+      <Hero />
+      <SocialProof />
+      <ProblemSection />
+      <ResultsSection />
+      <VideoTestimonial />
+      <FrameworkSection />
+      <AuthoritySection />
+      <FAQSection />
+      <WhatsappProofSection />
+      <FinalCTASection />
+    </main>
+  );
+}\n\n===== app/globals.css =====\n
+/* ══════════════════════════════════════════════════════════════════
+   globals.css — Premium Thyroid Fat-Loss Coaching
+   Stack  : Next.js 15 · React · Tailwind CSS v4 · Vercel
+   Palette: Pure black + Purple luxury (#a855f7 / #c084fc)
+   Fonts  : Geist Sans via Next.js
+   Mobile : 375px first → 640 → 1024 → 1280
+   ══════════════════════════════════════════════════════════════════ */
+
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --text-xs:   clamp(0.75rem,   0.70rem + 0.25vw, 0.875rem);
+  --text-sm:   clamp(0.8125rem, 0.78rem + 0.30vw, 1rem);
+  --text-base: clamp(0.9375rem, 0.90rem + 0.20vw, 1.0625rem);
+  --text-lg:   clamp(1.0625rem, 0.95rem + 0.60vw, 1.375rem);
+  --text-xl:   clamp(1.375rem,  1.00rem + 1.50vw, 2rem);
+  --text-hero: clamp(2.375rem,  1.50rem + 3.80vw, 4.25rem);
+
+  --space-1: 0.25rem; --space-2: 0.5rem;  --space-3: 0.75rem;
+  --space-4: 1rem;    --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem;    --space-10: 2.5rem; --space-12: 3rem;
+  --space-16: 4rem;   --space-20: 5rem;   --space-24: 6rem;
+
+  --p400: #c084fc;  --p500: #a855f7;  --p600: #9333ea;
+  --p-glow:   rgba(168,85,247,0.38);
+  --p-glow-lg:rgba(168,85,247,0.55);
+  --p-subtle: rgba(168,85,247,0.07);
+  --p-border: rgba(168,85,247,0.20);
+  --p-border-strong: rgba(168,85,247,0.32);
+
+  --s1: rgba(255,255,255,0.025);
+  --s2: rgba(255,255,255,0.040);
+  --s3: rgba(255,255,255,0.060);
+  --b-soft: rgba(255,255,255,0.07);
+  --b-mid:  rgba(255,255,255,0.10);
+
+  --t1: #ffffff; --t2: #d1d5db; --t3: #9ca3af;
+  --t4: #6b7280; --t5: #4b5563;
+
+  --r-sm: 0.375rem; --r-md: 0.5rem;  --r-lg: 0.75rem;
+  --r-xl: 1rem;     --r-2xl: 1.25rem; --r-full: 9999px;
+
+  --ease: cubic-bezier(0.16,1,0.3,1);
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+
+html {
+  scroll-behavior:smooth;
+  -webkit-text-size-adjust:none; text-size-adjust:none;
+  scroll-padding-top:var(--space-16);
+}
+
+html,body {
+  width:100%; overflow-x:hidden;
+  background:#000; color:#fff;
+  font-family:var(--font-sans,"Arial",sans-serif);
+  font-size:var(--text-base); line-height:1.58;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+
+img,video { display:block; max-width:100%; height:auto; }
+section { position:relative; width:100%; }
+h1,h2,h3,h4,h5,h6 { text-wrap:balance; line-height:1.1; }
+p,li,figcaption { text-wrap:pretty; }
+button,a { -webkit-tap-highlight-color:transparent; cursor:pointer; }
+
+button {
+  border:none; background:none; font:inherit; color:inherit;
+  transition:transform 180ms var(--ease),opacity 180ms var(--ease),box-shadow 180ms var(--ease);
+}
+button:active { transform:scale(0.97); opacity:0.92; }
+a { color:inherit; text-decoration:none; transition:opacity 180ms var(--ease); }
+
+:focus-visible { outline:2px solid var(--p500); outline-offset:3px; border-radius:var(--r-sm); }
+::selection { background:rgba(168,85,247,0.28); color:#fff; }
+
+.scrollbar-hide::-webkit-scrollbar { display:none; }
+.scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
+.break-safe { overflow-wrap:break-word; word-break:break-word; }
+
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    animation-duration:0.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:0.01ms!important;
+    scroll-behavior:auto!important;
+  }
+}
+
+/* ══ HERO ══════════════════════════════════════════════════════════ */
+
+.hero-container { padding: 4rem 1rem 2.75rem; }
+@media (min-width:640px)  { .hero-container { padding: 5rem 1.5rem 3.25rem; } }
+@media (min-width:1024px) { .hero-container { padding: 7rem 2rem 5rem; } }
+
+.badge-pill {
+  display:inline-flex; align-items:center; gap:0.375rem;
+  padding:0.28rem 0.875rem; border-radius:var(--r-full);
+  border:1px solid var(--p-border); background:var(--p-subtle);
+  color:#d8b4fe; font-size:var(--text-xs); font-weight:500;
+  letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.875rem;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+}
+.badge-dot {
+  width:6px; height:6px; border-radius:50%; background:var(--p500);
+  box-shadow:0 0 7px rgba(168,85,247,0.85); flex-shrink:0;
+  animation:badge-pulse 2s ease-in-out infinite;
+}
+@keyframes badge-pulse {
+  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.78)}
+}
+
+.eyebrow { font-size:var(--text-xs); color:var(--t3); letter-spacing:0.025em; margin-bottom:0.875rem; }
+
+.headline {
+  font-size:var(--text-hero); font-weight:900;
+  letter-spacing:-0.035em; line-height:0.92; margin-bottom:1.125rem;
+  display:flex; flex-direction:column; align-items:center; gap:0.06em;
+}
+.headline-accent {
+  background:linear-gradient(135deg,#c084fc 0%,#a855f7 55%,#9333ea 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; display:block;
+}
+.headline-white { color:#fff; display:block; }
+
+.subheadline { font-size:var(--text-base); color:var(--t3); max-width:34ch; line-height:1.62; margin-bottom:1.5rem; }
+@media (min-width:640px) { .subheadline { font-size:var(--text-lg); max-width:42ch; } }
+.subheadline-strong { color:#fff; font-weight:600; }
+
+.stat-row {
+  display:flex; align-items:center; justify-content:center;
+  width:100%; max-width:360px; border:1px solid var(--b-soft);
+  border-radius:var(--r-xl); background:var(--s1); overflow:hidden;
+  margin-bottom:1.5rem; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.stat-chip { flex:1; display:flex; flex-direction:column; align-items:center; padding:0.75rem 0.375rem; gap:0.1rem; }
+.stat-num  { font-size:var(--text-xl); font-weight:800; color:var(--p400); line-height:1; letter-spacing:-0.03em; }
+.stat-label{ font-size:var(--text-xs); color:var(--t4); line-height:1.25; text-align:center; }
+.stat-divider { width:1px; height:2.5rem; background:var(--b-soft); flex-shrink:0; }
+
+.outcome-list {
+  list-style:none; display:flex; flex-direction:column; gap:0.45rem;
+  width:100%; max-width:320px; margin-bottom:1.75rem; text-align:left;
+}
+.outcome-item { display:flex; align-items:flex-start; gap:0.5rem; font-size:var(--text-sm); color:var(--t2); line-height:1.48; }
+.outcome-check { color:var(--p500); font-weight:700; line-height:1.48; flex-shrink:0; }
+
+.cta-wrap { width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:0.75rem; }
+
+.cta-button {
+  width:100%; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:0.2rem; min-height:64px; padding:1rem 1.5rem;
+  border-radius:28px; background:linear-gradient(135deg,var(--p500) 0%,var(--p600) 100%);
+  color:#fff; font-size:var(--text-base); font-weight:700;
+  letter-spacing:0.01em; border:none;
+  box-shadow:0 0 32px var(--p-glow),0 4px 16px rgba(147,51,234,0.28); cursor:pointer;
+}
+.cta-button:hover {
+  box-shadow:0 0 52px var(--p-glow-lg),0 8px 28px rgba(147,51,234,0.40);
+  transform:translateY(-1px) scale(1.015);
+}
+.cta-button:active { transform:scale(0.97); opacity:0.93; }
+.cta-sub { display:block; font-size:var(--text-xs); font-weight:400; opacity:0.82; letter-spacing:0.08em; text-transform:uppercase; }
+.micro-trust { font-size:var(--text-xs); color:var(--t5); text-align:center; line-height:1.45; }
+
+/* ══ GLOBAL UTILITIES ══════════════════════════════════════════════ */
+
+.section-pad    { padding-block:clamp(2.5rem,6vw,5.5rem); padding-inline:clamp(1rem,4vw,2rem); }
+.section-pad-sm { padding-block:clamp(1.5rem,4vw,3.5rem); padding-inline:clamp(1rem,4vw,2rem); }
+.container-mobile  { width:100%; padding-inline:clamp(0.875rem,4vw,1.5rem); }
+.container-narrow  { max-width:640px; margin-inline:auto; padding-inline:clamp(1rem,4vw,2rem); }
+.container-default { max-width:960px; margin-inline:auto; padding-inline:clamp(1rem,4vw,2rem); }
+
+.glass-card    { background:var(--s1); border:1px solid var(--b-soft); border-radius:var(--r-2xl); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.glass-card-sm { background:var(--s1); border:1px solid var(--b-soft); border-radius:var(--r-xl);  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.purple-card   { background:var(--p-subtle); border:1px solid var(--p-border); border-radius:var(--r-2xl); }
+
+.section-label { font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.12em; color:var(--p500); font-weight:600; margin-bottom:0.5rem; }
+.section-title { font-size:var(--text-xl); font-weight:800; letter-spacing:-0.025em; line-height:1.1; color:#fff; margin-bottom:0.75rem; }
+.section-body  { font-size:var(--text-sm); color:var(--t3); line-height:1.65; max-width:38ch; }
+.divider       { width:100%; height:1px; background:var(--b-soft); }
+
+.text-gradient {
+  background:linear-gradient(135deg,var(--p400) 0%,var(--p500) 55%,var(--p600) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+
+.btn-primary {
+  display:inline-flex; align-items:center; justify-content:center; gap:0.5rem;
+  min-height:52px; padding:0.875rem 1.75rem; border-radius:var(--r-full);
+  background:linear-gradient(135deg,var(--p500) 0%,var(--p600) 100%);
+  color:#fff; font-size:var(--text-sm); font-weight:700; letter-spacing:0.01em; border:none;
+  box-shadow:0 0 24px var(--p-glow);
+  transition:transform 180ms var(--ease),box-shadow 180ms var(--ease);
+}
+.btn-primary:hover { transform:translateY(-1px) scale(1.02); box-shadow:0 0 40px var(--p-glow-lg); }
+
+.btn-ghost {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:48px; padding:0.75rem 1.5rem; border-radius:var(--r-full);
+  border:1px solid var(--p-border); background:transparent; color:var(--p400);
+  font-size:var(--text-sm); font-weight:600;
+  transition:border-color 180ms var(--ease),background 180ms var(--ease);
+}
+.btn-ghost:hover { border-color:var(--p-border-strong); background:var(--p-subtle); }
+
+/* ══ RESULT CARDS ══════════════════════════════════════════════════ */
+
+.result-card { background:var(--s1); border:1px solid var(--b-soft); border-radius:var(--r-xl); overflow:hidden; display:flex; flex-direction:column; }
+.result-badges { display:flex; flex-wrap:wrap; gap:0.35rem; padding:0.75rem 0.75rem 0.5rem; }
+.result-badge {
+  background:rgba(168,85,247,0.12); border:1px solid var(--p-border);
+  border-radius:var(--r-full); padding:0.18rem 0.55rem;
+  font-size:var(--text-xs); color:var(--p400); font-weight:600; white-space:nowrap;
+}
+.result-meta { padding:0 0.75rem 0.75rem; display:flex; flex-direction:column; gap:0.25rem; }
+.result-quote { font-size:var(--text-xs); color:var(--t3); font-style:italic; line-height:1.5; }
+.result-name  { font-size:var(--text-xs); color:var(--t4); font-weight:500; }
+
+/* ══ CHIP LIST ══════════════════════════════════════════════════════ */
+
+.chip-list { display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; }
+.chip { display:inline-flex; align-items:center; gap:0.3rem; padding:0.3rem 0.75rem; border-radius:var(--r-full); border:1px solid var(--b-mid); background:var(--s2); font-size:var(--text-xs); color:var(--t2); font-weight:500; white-space:nowrap; }
+
+/* ══ STICKY BOTTOM CTA ═════════════════════════════════════════════ */
+
+.sticky-cta-bar { position:fixed; bottom:0; left:0; right:0; z-index:50; padding:0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom)); background:rgba(0,0,0,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-top:1px solid var(--b-soft); display:none; }
+@media (max-width:768px) { .sticky-cta-bar { display:flex; align-items:center; gap:0.75rem; } }
+
+/* ══ FAQ ════════════════════════════════════════════════════════════ */
+
+.faq-item { border-bottom:1px solid var(--b-soft); }
+.faq-question { width:100%; display:flex; align-items:center; justify-content:space-between; padding:0.875rem 0; font-size:var(--text-sm); font-weight:600; color:#fff; text-align:left; cursor:pointer; background:none; border:none; }
+.faq-answer { font-size:var(--text-sm); color:var(--t3); line-height:1.65; padding-bottom:0.875rem; max-width:52ch; }
+
+/* ══ MOBILE OVERRIDES ══════════════════════════════════════════════ */
+
+@media (max-width:640px) {
+  h1 { letter-spacing:-0.04em; }
+  .cta-button { font-size:var(--text-sm); }
+  .section-title { font-size:var(--text-lg); }
+}
+/* =========================
+   GLOBAL LAYOUT SYSTEM
+========================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #000;
+  color: white;
+  overflow-x: hidden;
+}
+
+/* =========================
+   CONTAINERS
+========================= */
+
+.container-main {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+.container-narrow {
+  width: 100%;
+  max-width: 860px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+/* =========================
+   SECTION SPACING
+========================= */
+
+.section-pad {
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+@media (max-width: 768px) {
+  .section-pad {
+    padding-top: 52px;
+    padding-bottom: 52px;
+  }
+}
+
+/* =========================
+   TEXT UTILITIES
+========================= */
+
+.text-gradient {
+  background: linear-gradient(
+    to bottom,
+    #ffffff,
+    #c084fc
+  );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.section-label {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #c084fc;
+}
+
+/* =========================
+   CARD SYSTEM
+========================= */
+
+.card-dark {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+}
+
+/* =========================
+   MOBILE OPTIMIZATION
+========================= */
+
+@media (max-width: 640px) {
+
+  h1 {
+    letter-spacing: -0.04em;
+  }
+
+  p {
+    line-height: 1.55;
+  }
+
+}
