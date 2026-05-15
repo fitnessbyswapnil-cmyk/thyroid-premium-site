@@ -1,96 +1,73 @@
 "use client";
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL =
+  "https://swapnilumbarkarfitness.in/case-studies/#cta";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-black text-white">
-
-      {/* ── Background Glow — fixed height prevents clipping on short viewports ── */}
+    <section className="relative overflow-hidden bg-[var(--bg-page)] text-white">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[480px] overflow-hidden"
       >
-        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.14] blur-[100px] md:h-[650px] md:w-[650px] md:blur-[140px]" />
+        <div className="absolute left-1/2 top-[-10%] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-500/10 blur-[120px]" />
       </div>
 
-      {/* ── Content — uses container-default for consistency with all other sections ── */}
-      <div className="hero-container relative z-10 mx-auto flex max-w-[960px] flex-col items-center text-center">
-
-        {/* ── 1. Urgency Badge ── */}
-        <div className="badge-pill" role="status" aria-live="polite">
-          <span className="badge-dot" aria-hidden="true" />
-          <span>Only 5 Spots Left This Month</span>
+      <div className="container-default relative z-10 flex min-h-screen flex-col items-center justify-center py-24 text-center md:py-32">
+        <div className="badge-pill mb-6">
+          <span className="badge-dot" />
+          Only 5 Spots Left This Month
         </div>
 
-        {/* ── 2. Eyebrow ── */}
-        <p className="eyebrow">For Indian women with hypothyroidism</p>
-
-        {/* ── 3. Main Headline ── */}
-        <h1 className="headline">
-          Lose the
-          <span className="headline-accent">Belly Fat.</span>
-          <span className="headline-white">In 90 Days.</span>
-        </h1>
-
-        {/* ── 4. Subheadline ── */}
-        <p className="subheadline">
-          India&apos;s #1 thyroid fat-loss coaching.{" "}
-          <strong className="subheadline-strong">
-            10–15 kg lost. Clothes fitting. Energy back.
-          </strong>
+        <p className="section-label">
+          For Indian women with hypothyroidism
         </p>
 
-        {/* ── 5. Stat Row ── */}
-        <div className="stat-row" aria-label="Program statistics">
-          <div className="stat-chip">
-            <span className="stat-num">200+</span>
-            <span className="stat-label">Women Transformed</span>
-          </div>
-          <div className="stat-divider" aria-hidden="true" />
-          <div className="stat-chip">
-            <span className="stat-num">90</span>
-            <span className="stat-label">Day Program</span>
-          </div>
-          <div className="stat-divider" aria-hidden="true" />
-          <div className="stat-chip">
-            <span className="stat-num">10–15</span>
-            <span className="stat-label">Kg Fat Loss</span>
-          </div>
+        <h1 className="max-w-[11ch] text-[length:var(--text-hero)] font-black leading-[0.92] tracking-[-0.06em] text-white">
+          Lose The{" "}
+          <span className="text-gradient">
+            Thyroid Belly Fat.
+          </span>{" "}
+          Sustainably.
+        </h1>
+
+        <p className="mt-6 max-w-[34ch] text-[length:var(--text-base)] leading-relaxed text-[var(--t2)]">
+          India’s premium thyroid fat-loss coaching for women
+          who are exhausted by failed diets, low energy, and
+          stubborn weight gain.
+        </p>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          {[
+            "10–15 kg fat loss",
+            "Real Indian food",
+            "Energy restored",
+          ].map((item) => (
+            <div
+              key={item}
+              className="rounded-full border border-white/6 bg-white/5 px-4 py-2 text-[0.78rem] font-semibold text-[var(--t2)]"
+            >
+              {item}
+            </div>
+          ))}
         </div>
 
-        {/* ── 6. Outcome List ── */}
-        <ul className="outcome-list" aria-label="What you will achieve">
-          {[
-            "Stubborn belly fat visibly reduced",
-            "Clothes fitting better within weeks",
-            "No starvation — real Indian food",
-            "Energy & confidence fully restored",
-          ].map((item) => (
-            <li key={item} className="outcome-item">
-              <span className="outcome-check" aria-hidden="true">✓</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-
-        {/* ── 7. CTA Block ── */}
-        <div className="cta-wrap">
+        <div className="mt-10 w-full max-w-md">
           <button
-            id="cta-hero"
-            type="button"
-            aria-label="Book your free 60-minute thyroid fat-loss consultation call"
             className="cta-button"
             onClick={() => window.location.assign(CTA_URL)}
           >
-            🔥 Book FREE Consultation Call
-            <span className="cta-sub">60 Min · Free · Limited Spots</span>
+            🔥 Book FREE Strategy Call
+            <span className="cta-sub">
+              60 Min Consultation · Limited Spots
+            </span>
           </button>
-          <p className="micro-trust">
-            ★★★★★ Trusted by 200+ hypothyroid women across India
+
+          <p className="micro-trust mt-4">
+            ★★★★★ Trusted by 200+ hypothyroid women across
+            India
           </p>
         </div>
-
       </div>
     </section>
   );

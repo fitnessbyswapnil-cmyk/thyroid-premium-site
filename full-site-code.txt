@@ -406,222 +406,296 @@ export default function ProblemSection() {
     </section>
   );
 }\n\n===== app/components/FAQSection.tsx =====\n
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from 'react'
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
 
 const faqs = [
   {
-    q: "I'm already on thyroid medication. Can I still join?",
-    a: "Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.",
+    q: 'I\'m already on thyroid medication. Can I still join?',
+    a: 'Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.',
   },
   {
-    q: "What happens on the free strategy call?",
-    a: "We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.",
+    q: 'What happens on the free strategy call?',
+    a: 'We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.',
   },
   {
-    q: "How fast will I see results?",
-    a: "Most clients notice energy and bloating improvements in Week 1–2. Visible fat and inch loss typically starts Week 3–4.",
+    q: 'How fast will I see results?',
+    a: 'Most clients notice energy and bloating improvements in Week 1–2. Visible fat and inch loss typically starts Week 3–4.',
   },
   {
-    q: "Is this suitable for Hashimoto's?",
-    a: "Absolutely. The system is designed for both hypothyroidism and Hashimoto's — with anti-inflammatory nutrition built in.",
+    q: 'Is this suitable for Hashimoto\'s?',
+    a: 'Absolutely. The system is designed for both hypothyroidism and Hashimoto\'s — with anti-inflammatory nutrition built in.',
   },
   {
-    q: "Will I have to follow a strict diet?",
-    a: "No starvation. Real Indian meals. We adapt your existing food culture — no foreign foods, no extreme calorie cutting.",
+    q: 'Will I have to follow a strict diet?',
+    a: 'No starvation. Real Indian meals. We adapt your existing food culture — no foreign foods, no extreme calorie cutting.',
   },
-];
+]
 
-export default function FAQSection() {
-  const [open, setOpen] = useState<number | null>(null);
+function AccordionItem({
+  faq, index, isOpen, onToggle,
+}: {
+  faq: { q: string; a: string }
+  index: number
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const panelId = `faq-panel-${index}`
+  const btnId   = `faq-btn-${index}`
+
+  /* Smooth height animation — 0 → scrollHeight (260ms open, 220ms close) */
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el) return
+    if (isOpen) {
+      el.style.height = '0px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 260ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = el.scrollHeight + 'px'
+        el.addEventListener('transitionend', () => {
+          el.style.height = 'auto'
+          el.style.overflow = 'visible'
+        }, { once: true })
+      })
+    } else {
+      el.style.height = el.scrollHeight + 'px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 220ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = '0px'
+      })
+    }
+  }, [isOpen])
 
   return (
-    <section className="section-pad bg-black text-white">
+    <div
+      style={{
+        borderBottom: '1px solid var(--b-soft)',
+        background: isOpen ? 'rgba(255,255,255,0.018)' : 'transparent',
+        transition: 'background 200ms ease',
+      }}
+    >
+      <button
+        id={btnId}
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 text-left"
+        style={{
+          minHeight: 56,          /* ≥44px touch target guaranteed */
+          padding: '0 1.25rem',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 600,
+          color: isOpen ? 'var(--t1)' : 'var(--t2)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'color 180ms ease',
+        }}
+      >
+        <span>{faq.q}</span>
+        {/* Chevron pill — flips 180° on open */}
+        <span
+          aria-hidden="true"
+          className="flex-shrink-0 flex items-center justify-center rounded-full"
+          style={{
+            width: 26, height: 26,
+            background: isOpen ? 'var(--p-tint)' : 'var(--s2)',
+            border: `1px solid ${isOpen ? 'var(--p-border)' : 'var(--b-soft)'}`,
+            transition: 'transform 240ms cubic-bezier(0.16,1,0.3,1), background 180ms ease, border-color 180ms ease',
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            color: isOpen ? 'var(--p400)' : 'var(--t3)',
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M2 4l4 4 4-4" />
+          </svg>
+        </span>
+      </button>
+
+      {/* Animated answer panel */}
+      <div ref={bodyRef} id={panelId} role="region" aria-labelledby={btnId} style={{ height: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '0 1.25rem 1rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--t3)', lineHeight: 1.65, maxWidth: '52ch' }}>
+            {faq.a}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null)
+
+  return (
+    <section className="section-pad">
       <div className="container-narrow">
 
         {/* Header */}
-        <div className="mb-5 text-center">
+        <div className="mb-6 text-center">
           <p className="section-label">FAQs</p>
-          <h2 className="section-title mx-auto max-w-[20ch]">Common Questions</h2>
+          <h2 className="section-title mx-auto" style={{ maxWidth: '20ch' }}>
+            Common Questions
+          </h2>
         </div>
 
         {/* Accordion */}
-        <div className="rounded-[18px] border border-white/[0.07]">
-          {faqs.map((faq, i) => {
-            const panelId = `faq-panel-${i}`;
-            const isOpen = open === i;
-            return (
-              <div
-                key={i}
-                className={i < faqs.length - 1 ? "border-b border-white/[0.07]" : ""}
-              >
-                <button
-                  type="button"
-                  id={`faq-btn-${i}`}
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  onClick={() => setOpen(isOpen ? null : i)}
-                  className="flex w-full items-center justify-between px-4 py-4 text-left font-semibold text-white"
-                  style={{ fontSize: "var(--text-sm)", background: "none", border: "none" }}
-                >
-                  <span className="pr-2 leading-snug">{faq.q}</span>
-                  <span
-                    className="shrink-0 text-purple-400 text-lg leading-none transition-transform duration-200"
-                    aria-hidden="true"
-                    style={{ transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}
-                  >
-                    +
-                  </span>
-                </button>
-
-                {isOpen && (
-                  <div
-                    id={panelId}
-                    role="region"
-                    aria-labelledby={`faq-btn-${i}`}
-                    className="px-4 pb-4 text-gray-400 leading-relaxed"
-                    style={{ fontSize: "var(--text-sm)" }}
-                  >
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-soft)', overflow: 'hidden' }}>
+          {faqs.map((faq, i) => (
+            <AccordionItem
+              key={i}
+              faq={faq}
+              index={i}
+              isOpen={open === i}
+              onToggle={() => setOpen(open === i ? null : i)}
+            />
+          ))}
         </div>
 
         {/* Bottom CTA card */}
-        <div className="mt-4 rounded-[18px] border border-purple-500/20 bg-purple-500/[0.06] p-4 text-center">
-          <p className="mb-1 font-semibold text-white" style={{ fontSize: "var(--text-sm)" }}>
+        <div
+          className="mt-5 text-center"
+          style={{
+            borderRadius: 'var(--r-xl)',
+            border: '1px solid var(--p-border)',
+            background: 'var(--p-subtle)',
+            padding: 'clamp(1.25rem, 4vw, 1.75rem)',
+          }}
+        >
+          <p className="mb-1 font-semibold" style={{ fontSize: 'var(--text-base)', color: 'var(--t1)' }}>
             Still have questions?
           </p>
-          <p className="mb-4 text-gray-500" style={{ fontSize: "var(--text-xs)" }}>
-            I&apos;ll answer everything on a free 60-minute call.
+          <p className="mb-5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)' }}>
+            I'll answer everything on a free 60-minute call.
           </p>
           <button
             type="button"
             onClick={() => window.location.assign(CTA_URL)}
             className="btn-primary"
+            style={{ maxWidth: 280 }}
             aria-label="Book a free thyroid fat-loss strategy call"
           >
-            Book a Free Strategy Call →
+            Book a Free Strategy Call
           </button>
-          <p className="mt-2.5 text-gray-600" style={{ fontSize: "var(--text-xs)" }}>
-            ACE · FITR · INFS Certified · 200+ Clients
-          </p>
+          <p className="mt-3 micro-trust">ACE · FITR · INFS Certified · 200+ Clients</p>
         </div>
 
       </div>
     </section>
-  );
+  )
 }\n\n===== app/components/FinalCTASection.tsx =====\n
-"use client";
+'use client'
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
 
 const includes = [
-  "Personalized thyroid fat-loss protocol",
-  "Indian nutrition plan for your metabolism",
-  "Weekly tracking — weight, inches & energy",
-  "Direct WhatsApp accountability support",
-  "Symptom & confidence recovery roadmap",
-];
+  'Personalized thyroid fat-loss protocol',
+  'Indian nutrition plan for your metabolism',
+  'Weekly tracking — weight, inches & energy',
+  'Direct WhatsApp accountability support',
+  'Symptom & confidence recovery roadmap',
+]
 
-const certs = ["ACE Certified", "FITR Certified", "INFS Certified"];
+const certs = ['ACE Certified', 'FITR Certified', 'INFS Certified']
+
+const objections = ['No credit card', 'Completely free', 'No commitment']
 
 export default function FinalCTASection() {
   return (
-    <section className="section-pad bg-black text-white">
-
-      {/* Strongest glow — conversion climax */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[500px]">
-        <div className="absolute left-1/2 top-[-5%] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/[0.12] blur-[120px] md:h-[700px] md:w-[700px] md:blur-[160px]" />
+    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
+      {/* Strongest glow — conversion climax signal */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 360 }}>
+        <div className="glow-hero" />
       </div>
 
       <div className="container-narrow relative z-10 text-center">
 
         {/* 1. Urgency badge */}
-        <div className="badge-pill mx-auto mb-4 w-fit" role="status" aria-live="polite">
+        <div className="badge-pill mx-auto mb-5 w-fit" role="status" aria-live="polite">
           <span className="badge-dot" aria-hidden="true" />
-          <span>Only 5 Spots Left This Month</span>
+          Only 5 Spots Left This Month
         </div>
 
-        {/* 2. Close headline */}
+        {/* 2. Headline — max-w 18ch prevents mid-word wraps on 360px */}
         <p className="section-label mb-2">Start Today</p>
-        <h2 className="section-title mx-auto mb-3 max-w-[24ch]">
-          Your Thyroid Transformation{" "}
+        <h2 className="section-title mx-auto mb-3" style={{ maxWidth: '18ch' }}>
+          Your Thyroid Transformation{' '}
           <span className="text-gradient">Starts Here.</span>
         </h2>
-
-        <p
-          className="mx-auto mb-5 max-w-[30ch] text-gray-400"
-          style={{ fontSize: "var(--text-sm)", lineHeight: 1.6 }}
-        >
-          Book a free 60-min strategy call.{" "}
-          <strong className="font-semibold text-gray-200">
+        <p className="mx-auto mb-6" style={{ fontSize: 'var(--text-sm)', color: 'var(--t3)', maxWidth: '32ch', lineHeight: 1.6 }}>
+          Book a free 60-min strategy call.{' '}
+          <strong style={{ color: 'var(--t2)', fontWeight: 600 }}>
             No pressure. No upsells. Just clarity.
           </strong>
         </p>
 
         {/* 3. Coach authority card */}
-        <div className="glass-card mb-4 overflow-hidden">
-          <div className="flex flex-col items-center gap-3 p-4 sm:flex-row sm:text-left">
-
-            {/* Coach avatar */}
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500/40">
-              {/* Replace with: <Image src="/coach.jpg" alt="Swapnil Umbarkar" fill className="object-cover" /> */}
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/30 to-purple-600/20 font-black text-purple-300"
-                style={{ fontSize: "var(--text-md)" }}
+        <div className="glass-card mb-5 overflow-hidden text-left" style={{ padding: 'clamp(1rem, 4vw, 1.25rem)' }}>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
+            {/* Avatar — clamp prevents it consuming vertical space on mobile */}
+            <div
+              className="relative flex-shrink-0 overflow-hidden rounded-full"
+              style={{
+                width:  'clamp(3rem, 8vw, 3.5rem)',
+                height: 'clamp(3rem, 8vw, 3.5rem)',
+                border: '2px solid rgba(168,85,247,0.35)',
+                background: 'linear-gradient(135deg, rgba(168,85,247,0.25), rgba(147,51,234,0.15))',
+              }}
+            >
+              {/* Replace with <Image src="/coach.jpg" fill className="object-cover" alt="Swapnil Umbarkar" /> */}
+              <div
+                className="flex h-full w-full items-center justify-center font-black"
+                style={{ fontSize: 'var(--text-base)', color: 'var(--p300)' }}
               >
                 SU
               </div>
             </div>
-
             <div>
-              <p
-                className="font-semibold uppercase tracking-wider text-purple-400"
-                style={{ fontSize: "var(--text-xs)" }}
-              >
-                India&apos;s Leading Thyroid Fat-Loss Coach
+              <p className="font-semibold uppercase tracking-wider" style={{ fontSize: 'var(--text-xs)', color: 'var(--p400)', marginBottom: 2 }}>
+                India's Leading Thyroid Fat-Loss Coach
               </p>
-              <p className="mt-0.5 font-bold text-white" style={{ fontSize: "var(--text-base)" }}>
+              <p className="font-bold" style={{ fontSize: 'var(--text-base)', color: 'var(--t1)', marginBottom: '0.5rem' }}>
                 Swapnil Umbarkar
               </p>
-              <div className="mt-1.5 flex flex-wrap justify-center gap-1.5 sm:justify-start">
-                {certs.map((c) => (
-                  <span key={c} className="chip">{c}</span>
-                ))}
+              <div className="chip-list sm:justify-start">
+                {certs.map((c) => <span key={c} className="chip">{c}</span>)}
               </div>
             </div>
-
           </div>
         </div>
 
         {/* 4. What's included */}
-        <div className="mb-5 rounded-[18px] border border-purple-500/20 bg-purple-500/[0.06] p-4 text-left">
-          <p
-            className="mb-3 font-semibold uppercase tracking-wider text-purple-400"
-            style={{ fontSize: "var(--text-xs)" }}
-          >
+        <div
+          className="mb-5 text-left"
+          style={{
+            borderRadius: 'var(--r-xl)',
+            border: '1px solid var(--p-border)',
+            background: 'var(--p-subtle)',
+            padding: 'clamp(0.875rem, 4vw, 1.125rem)',
+          }}
+        >
+          <p className="mb-3 font-semibold uppercase tracking-wider" style={{ fontSize: 'var(--text-xs)', color: 'var(--p400)' }}>
             Your Free Call Includes
           </p>
           <ul className="space-y-2">
             {includes.map((item) => (
-              <li key={item} className="flex items-start gap-2.5">
-                <span className="mt-0.5 shrink-0 font-bold leading-none text-purple-500">✓</span>
-                <span className="leading-snug text-gray-300" style={{ fontSize: "var(--text-xs)" }}>
-                  {item}
-                </span>
+              <li key={item} className="flex items-center gap-2.5">
+                <span className="shrink-0 font-bold leading-none" style={{ color: 'var(--p500)', fontSize: 'var(--text-sm)' }}>✓</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--t2)', lineHeight: 1.5 }}>{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* 5. Primary CTA block */}
-        <div className="cta-wrap mx-auto">
+        {/* 5. Primary CTA */}
+        <div className="cta-wrap mx-auto mb-5">
           <button
             id="cta-final"
             type="button"
@@ -629,28 +703,37 @@ export default function FinalCTASection() {
             className="cta-button"
             onClick={() => window.location.assign(CTA_URL)}
           >
-            🔥 Book FREE Strategy Call
-            <span className="cta-sub">60 Min · Free · Limited Spots This Month</span>
+            Book FREE Strategy Call
+            <span className="cta-sub">60 Min Free · Limited Spots This Month</span>
           </button>
-
-          {/* 6. Objection handler */}
-          <div className="flex items-center justify-center gap-2">
-            {["No credit card", "Completely free", "No commitment"].map((obj, i) => (
-              <span key={obj} className="flex items-center gap-2">
-                {i > 0 && <span className="h-3 w-px bg-white/10" aria-hidden="true" />}
-                <span className="text-[9px] font-medium uppercase tracking-wider text-gray-600">
-                  {obj}
-                </span>
-              </span>
-            ))}
-          </div>
-
-          <p className="micro-trust">★★★★★ 200+ thyroid women transformed across India</p>
         </div>
+
+        {/* 6. Objection handler */}
+        <div className="flex items-center justify-center gap-2.5 mb-5 flex-wrap">
+          {objections.map((obj, i) => (
+            <span key={obj} className="flex items-center gap-1.5">
+              {i > 0 && <span className="h-3 w-px" style={{ background: 'var(--b-soft)' }} aria-hidden="true" />}
+              <span
+                style={{
+                  fontSize: 'clamp(9px, 1.8vw, 10px)',
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: 'var(--t4)',
+                }}
+              >
+                {obj}
+              </span>
+            </span>
+          ))}
+        </div>
+
+        {/* 7. Micro-trust */}
+        <p className="micro-trust">200 thyroid women transformed across India</p>
 
       </div>
     </section>
-  );
+  )
 }\n\n===== app/components/MoreThanFatLossSection.tsx =====\n
 "use client";
 
@@ -821,245 +904,341 @@ export default function MoreThanFatLossSection() {
     </section>
   );
 }\n\n===== app/components/WhatsappProofSection.tsx =====\n
-"use client";
+'use client'
 
-import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import Image from 'next/image'
+import { useRef, useEffect } from 'react'
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
 
-// ── Female thyroid clients only — avatar-matched for target audience ──
 const testimonials = [
   {
-    image: "/whatsapp-proof/Heenal R4.png",
-    result: "TSH 6.2 → 2.9",
-    tags: ["Thyroid Improved", "Energy Up", "Brain Fog Gone"],
-    headline: "TSH Dropped. Energy Came Back.",
-    name: "Heenal R.",
+    image: '/whatsapp-proof/Heenal R4.png',
+    result: 'TSH 6.2 → 2.9',
+    tags: ['Thyroid Improved', 'Energy Up'],
+    headline: 'TSH Dropped. Energy Came Back.',
+    name: 'Heenal R.',
   },
   {
-    image: "/whatsapp-proof/Namarata R9.png",
-    result: "TSH 7.8 → 3.1",
-    tags: ["No More Fatigue", "Focus Restored", "Thyroid Stable"],
-    headline: "Finally Not Tired All The Time.",
-    name: "Namarata S.",
+    image: '/whatsapp-proof/Namarata R9.png',
+    result: 'TSH 7.8 → 3.1',
+    tags: ['No More Fatigue', 'Focus Restored'],
+    headline: 'Finally Not Tired All The Time.',
+    name: 'Namarata S.',
   },
   {
-    image: "/whatsapp-proof/Sima R1.png",
-    result: "4 kg Lost",
-    tags: ["Belly Fat ↓", "Fat Loss", "1 Week Results"],
-    headline: "4 kg Gone. Despite Thyroid.",
-    name: "Sima P.",
+    image: '/whatsapp-proof/Sima R1.png',
+    result: '4 kg Lost',
+    tags: ['Belly Fat ↓', '1 Week Results'],
+    headline: '4 kg Gone. Despite Thyroid.',
+    name: 'Sima P.',
   },
   {
-    image: "/whatsapp-proof/Heenal R4.png",
-    result: "Inches Lost",
-    tags: ["Clothes Fit", "Belly Reduced", "Confidence Up"],
-    headline: "Old Clothes Fit Again.",
-    name: "Priya K.",
+    image: '/whatsapp-proof/Heenal R4.png',
+    result: 'Inches Lost',
+    tags: ['Clothes Fit', 'Confidence Up'],
+    headline: 'Old Clothes Fit Again.',
+    name: 'Priya K.',
   },
   {
-    image: "/whatsapp-proof/Namarata R9.png",
-    result: "6 kg Lost",
-    tags: ["No Starvation", "Real Food", "Thyroid Fat ↓"],
-    headline: "Lost 6 kg. Eating Real Indian Food.",
-    name: "Anjali M.",
+    image: '/whatsapp-proof/Namarata R9.png',
+    result: '6 kg Lost',
+    tags: ['No Starvation', 'Real Food'],
+    headline: 'Lost 6 kg. Eating Real Indian Food.',
+    name: 'Anjali M.',
   },
-];
+]
+
+const ITEMS = [...testimonials, ...testimonials]
 
 export default function WhatsappProofSection() {
-  const shouldReduceMotion = useReducedMotion();
+  const trackRef  = useRef<HTMLDivElement>(null)
+  const pauseRef  = useRef(false)
+  const posRef    = useRef(0)
+  const rafRef    = useRef<number>(0)
+
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const speed = 0.42
+
+    const tick = () => {
+      if (!pauseRef.current && el) {
+        posRef.current += speed
+        if (posRef.current >= el.scrollWidth / 2) posRef.current = 0
+        el.scrollLeft = posRef.current
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+
+    const pause  = () => { pauseRef.current = true }
+    const resume = () => { pauseRef.current = false }
+
+    el.addEventListener('pointerenter', pause)
+    el.addEventListener('pointerleave', resume)
+    el.addEventListener('touchstart',   pause,  { passive: true })
+    el.addEventListener('touchend',     resume, { passive: true })
+
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      el.removeEventListener('pointerenter', pause)
+      el.removeEventListener('pointerleave', resume)
+      el.removeEventListener('touchstart',   pause)
+      el.removeEventListener('touchend',     resume)
+    }
+  }, [])
 
   return (
-    <section className="section-pad bg-black overflow-hidden">
-
-      {/* ── Atmospheric glow — purple brand system ── */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[400px] overflow-hidden">
-        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.08] blur-[110px] md:h-[600px] md:w-[600px] md:blur-[140px]" />
+    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 220 }}>
+        <div className="glow-section" />
       </div>
 
-      <div className="container-default relative z-10">
+      <div className="relative z-10">
 
-        {/* ── Section header ── */}
-        <div className="mb-8 text-center">
-
-          {/* Badge — purple system, consistent with Hero and FinalCTA ── */}
-          <div className="badge-pill mx-auto mb-4 w-fit" role="status">
+        {/* Header */}
+        <div className="container-default mb-7 text-center">
+          <div className="badge-pill mx-auto mb-3 w-fit" role="status">
             <span className="badge-dot" aria-hidden="true" />
-            <span>Real Client Conversations</span>
+            Real Client Conversations
           </div>
-
           <p className="section-label">WhatsApp Proof</p>
-
-          <h2 className="section-title mx-auto max-w-[22ch]">
-            Real Messages.{" "}
-            <span className="text-gradient">Real Thyroid Fat Loss.</span>
+          <h2 className="section-title mx-auto" style={{ maxWidth: '22ch' }}>
+            Real Messages. <span className="text-gradient">Real Thyroid Fat Loss.</span>
           </h2>
-
-          <p className="mx-auto max-w-[34ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
-            Indian women sharing real progress — belly fat gone, energy back,
-            clothes fitting again.
+          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch', lineHeight: 1.6 }}>
+            Indian women sharing real progress — belly fat gone, energy back, clothes fitting again.
           </p>
         </div>
 
-        {/* ── Horizontal proof slider ── */}
+        {/* Slider */}
         <div className="relative overflow-hidden">
-          <motion.div
-            drag={shouldReduceMotion ? false : "x"}
-            dragConstraints={{ right: 0, left: -(testimonials.length * 280) }}
-            animate={shouldReduceMotion ? {} : { x: ["0%", "-50%"] }}
-            transition={
-              shouldReduceMotion
-                ? {}
-                : { duration: 30, ease: "linear", repeat: Infinity }
-            }
-            className="flex gap-4 px-4 w-max cursor-grab active:cursor-grabbing"
-            style={{ willChange: "transform" }}
+          <div
+            ref={trackRef}
+            data-carousel-track
+            className="flex gap-3"
+            style={{
+              overflowX: 'scroll',
+              scrollBehavior: 'auto',
+              paddingInline: '1.25rem',
+              cursor: 'grab',
+            }}
           >
-            {[...testimonials, ...testimonials].map((item, index) => (
+            {ITEMS.map((item, idx) => (
               <div
-                key={index}
-                className="glass-card w-[260px] sm:w-[290px] flex-shrink-0 overflow-hidden"
+                key={idx}
+                className="flex-shrink-0 glass-card overflow-hidden"
+                style={{ width: 'min(240px, 70vw)', borderRadius: 'var(--r-xl)' }}
               >
-                {/* ── Screenshot — full card width, proof-first ── */}
-                <div className="relative overflow-hidden rounded-t-[calc(1.25rem-1px)]">
+                {/* Screenshot — 9:13 ratio shows full WhatsApp message content */}
+                <div
+                  className="relative overflow-hidden"
+                  style={{
+                    aspectRatio: '9/13',
+                    borderRadius: 'calc(var(--r-xl) - 1px) calc(var(--r-xl) - 1px) 0 0',
+                    background: 'var(--s2)',
+                  }}
+                >
                   <Image
                     src={item.image}
-                    alt={`WhatsApp message: ${item.headline}`}
-                    width={290}
-                    height={420}
+                    alt={`WhatsApp message — ${item.headline}`}
+                    fill
+                    sizes="min(240px, 70vw)"
+                    className="object-cover object-top"
                     loading="lazy"
-                    className="w-full object-cover"
-                    style={{ aspectRatio: "4/5.8" }}
                   />
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-                  {/* ── Result chip overlaid on screenshot ── */}
-                  <div className="absolute bottom-3 left-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-black/75 px-3 py-1 backdrop-blur-sm">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-400" aria-hidden="true" />
-                      <span className="text-[10px] font-bold text-purple-300 leading-none">
+                  <div
+                    className="absolute inset-0"
+                    aria-hidden="true"
+                    style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.75) 0%, transparent 45%)' }}
+                  />
+                  {/* Result chip — inside image, compact */}
+                  <div className="absolute bottom-2.5 left-2.5">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full backdrop-blur-sm"
+                      style={{
+                        border: '1px solid var(--p-border)',
+                        background: 'rgba(13,13,15,0.72)',
+                        padding: '0.14rem 0.5rem',
+                      }}
+                    >
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--p400)' }} aria-hidden="true" />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--p300)', lineHeight: 1.5 }}>
                         {item.result}
                       </span>
                     </span>
                   </div>
                 </div>
 
-                {/* ── Card body — compact ── */}
-                <div className="p-3.5">
-                  {/* Outcome tags */}
+                {/* Card body */}
+                <div style={{ padding: '0.75rem 0.875rem 0.875rem' }}>
+                  {/* Max 2 tags — was 3, caused wrapping in narrow cards */}
                   <div className="mb-2 flex flex-wrap gap-1.5">
-                    {item.tags.map((tag) => (
+                    {item.tags.slice(0, 2).map((tag) => (
                       <span key={tag} className="result-badge">{tag}</span>
                     ))}
                   </div>
-
-                  {/* Headline — tight, punchy */}
-                  <p className="mb-1 text-[length:var(--text-sm)] font-bold leading-snug text-white">
+                  <p className="mb-1 font-bold leading-snug" style={{ fontSize: 'var(--text-sm)', color: 'var(--t1)' }}>
                     {item.headline}
                   </p>
-
-                  {/* Client name */}
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">
-                    — {item.name}, Hypothyroid Client
+                  <p style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--t4)' }}>
+                    {item.name} · Hypothyroid Client
                   </p>
                 </div>
               </div>
             ))}
-          </motion.div>
+          </div>
 
-          {/* ── Edge fades — 64px ── */}
-          <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-20" />
-          <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-20" />
+          {/* Edge fades — clamp so 360px sees more content */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 h-full z-20"
+            style={{ width: 'clamp(2.5rem, 5vw, 5rem)', background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 h-full z-20"
+            style={{ width: 'clamp(2.5rem, 5vw, 5rem)', background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
+          />
         </div>
 
-        {/* ── Swipe hint — mobile only ── */}
-        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-gray-600 md:hidden">
-          ← swipe to see more →
+        {/* Swipe hint */}
+        <p className="mt-3 text-center md:hidden" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'var(--t5)' }}>
+          swipe to see more
         </p>
 
-        {/* ── Mid-funnel CTA — peak trust moment ── */}
-        <div className="mt-8 text-center">
+        {/* CTA */}
+        <div className="container-default mt-8 flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={() => window.location.assign(CTA_URL)}
-            className="btn-ghost"
+            className="btn-ghost w-full"
+            style={{ maxWidth: '22rem' }}
             aria-label="Book a free thyroid fat-loss consultation call"
           >
-            Book Your Free Call →
+            Book Your Free Call
           </button>
-          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
-            See how this system can work for your thyroid
-          </p>
+          <p className="micro-trust">See how this system can work for your thyroid</p>
         </div>
 
       </div>
     </section>
-  );
+  )
 }\n\n===== app/components/FrameworkSection.tsx =====\n
-"use client";
+'use client'
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
 
 const steps = [
-  { letter: "L", label: "Lab Analysis",      desc: "Find what's actually blocking your fat loss." },
-  { letter: "E", label: "Energy First",       desc: "Restore energy before fat loss begins." },
-  { letter: "A", label: "Adaptive Nutrition", desc: "Real Indian meals. No starvation." },
-  { letter: "N", label: "Navigate & Track",   desc: "Weekly tweaks based on your real data." },
-];
+  { letter: 'L', label: 'Lab Analysis',      desc: 'Find what\'s actually blocking your fat loss.' },
+  { letter: 'E', label: 'Energy First',       desc: 'Restore energy before fat loss begins.' },
+  { letter: 'A', label: 'Adaptive Nutrition', desc: 'Real Indian meals. No starvation.' },
+  { letter: 'N', label: 'Navigate & Track',   desc: 'Weekly tweaks based on your real data.' },
+]
 
 const timeline = [
-  { weeks: "Weeks 1–3",  result: "Energy up. Bloating down. Cravings stabilize." },
-  { weeks: "Weeks 4–8",  result: "Visible inch loss. Fat loss accelerates." },
-  { weeks: "Weeks 9–12", result: "Confident body. Sustainable habits locked in." },
-];
+  { weeks: 'Weeks 1–3',  result: 'Energy up. Bloating down. Cravings stabilize.' },
+  { weeks: 'Weeks 4–8',  result: 'Visible inch loss. Fat loss accelerates.' },
+  { weeks: 'Weeks 9–12', result: 'Confident body. Sustainable habits locked in.' },
+]
 
 export default function FrameworkSection() {
   return (
-    <section className="section-pad bg-black text-white">
-      <div className="container-default">
+    <section className="section-pad">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 220 }}>
+        <div className="glow-section" />
+      </div>
+
+      <div className="container-default relative z-10">
 
         {/* Header */}
         <div className="mb-6 text-center">
           <p className="section-label">The Method</p>
-          <h2 className="section-title mx-auto max-w-[24ch]">
-            The Thyroid{" "}
-            <span className="text-gradient">L.E.A.N. Method</span>™
+          <h2 className="section-title mx-auto" style={{ maxWidth: '24ch' }}>
+            The Thyroid <span className="text-gradient">L.E.A.N. Method</span>
           </h2>
-          {/* Emotional anchor — outcome-first language */}
-          <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--text-xs)] text-gray-500 leading-relaxed">
-            Built specifically for hypothyroid women.{" "}
-            <span className="text-gray-400 font-medium">The exact 4-step system that works when everything else has failed.</span>
+          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch', lineHeight: 1.6 }}>
+            Built specifically for hypothyroid women.{' '}
+            <span style={{ color: 'var(--t3)', fontWeight: 500 }}>
+              The exact 4-step system that works when everything else has failed.
+            </span>
           </p>
         </div>
 
-        {/* L.E.A.N. Step cards — 2-col mobile, 4-col desktop */}
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
+        {/* L.E.A.N. Cards — 2-col mobile, 4-col desktop */}
+        <div
+          className="grid grid-cols-2 md:grid-cols-4"
+          style={{ gap: 'clamp(0.5rem, 2vw, 1rem)' }}
+        >
           {steps.map((s) => (
-            <div key={s.letter} className="glass-card-sm p-4 text-center">
-              <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/15 text-base font-black text-purple-400 ring-1 ring-purple-500/25">
+            <div
+              key={s.letter}
+              className="glass-card-sm text-center"
+              style={{ padding: 'clamp(0.75rem, 3vw, 1.25rem)' }}
+            >
+              {/* Letter badge — clamp so it never dominates on mobile */}
+              <div
+                className="mx-auto mb-2.5 flex items-center justify-center rounded-full font-black"
+                style={{
+                  width:    'clamp(2.125rem, 5vw, 2.5rem)',
+                  height:   'clamp(2.125rem, 5vw, 2.5rem)',
+                  fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                  background: 'var(--p-tint)',
+                  color: 'var(--p400)',
+                  border: '1px solid var(--p-border)',
+                }}
+              >
                 {s.letter}
               </div>
-              <p className="mb-1 text-[length:var(--text-xs)] font-semibold text-white leading-snug">
+              <p className="mb-1 font-semibold leading-snug" style={{ fontSize: 'var(--text-xs)', color: 'var(--t1)' }}>
                 {s.label}
               </p>
-              <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-500">
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', lineHeight: 1.55 }}>
                 {s.desc}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Timeline bar */}
-        <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.07] md:mt-5">
-          <div className="flex flex-col divide-y divide-white/[0.07] sm:flex-row sm:divide-x sm:divide-y-0">
-            {timeline.map((t) => (
-              <div key={t.weeks} className="flex-1 px-4 py-3.5">
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-purple-500">
-                  {t.weeks}
-                </p>
-                <p className="text-[length:var(--text-xs)] text-gray-300 leading-relaxed">
+        {/* Timeline — vertical on mobile (fixes cramped text wrapping), horizontal sm+ */}
+        <div
+          className="mt-4 overflow-hidden"
+          style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-soft)' }}
+        >
+          <div className="flex flex-col sm:flex-row">
+            {timeline.map((t, i) => (
+              <div
+                key={t.weeks}
+                className="flex-1"
+                style={{
+                  padding: 'clamp(0.75rem, 3vw, 1.125rem) clamp(0.875rem, 3.5vw, 1.25rem)',
+                  borderBottom: i < timeline.length - 1 ? '1px solid var(--b-soft)' : 'none',
+                  borderRight: undefined,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span
+                    className="flex items-center justify-center rounded-full font-bold flex-shrink-0"
+                    style={{
+                      width: 20, height: 20, fontSize: 10,
+                      background: 'var(--p-tint)',
+                      color: 'var(--p400)',
+                      border: '1px solid var(--p-border)',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <p
+                    className="font-semibold uppercase tracking-widest"
+                    style={{ fontSize: 10, color: 'var(--p500)', letterSpacing: '0.10em' }}
+                  >
+                    {t.weeks}
+                  </p>
+                </div>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t2)', lineHeight: 1.6 }}>
                   {t.result}
                 </p>
               </div>
@@ -1067,131 +1246,253 @@ export default function FrameworkSection() {
           </div>
         </div>
 
-        {/* CTA — outcome language */}
-        <div className="mt-6 text-center">
+        {/* CTA — capped at 320px, not full-width stretch */}
+        <div className="mt-6 flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={() => window.location.assign(CTA_URL)}
             className="btn-primary"
+            style={{ maxWidth: 320 }}
             aria-label="Book your free thyroid fat-loss strategy call"
           >
-            Book Free Call — See It Work For You →
+            Book Free Call — See It Work For You
           </button>
-          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
-            Free call · No commitment
-          </p>
+          <p className="micro-trust">Free call · No commitment</p>
         </div>
 
       </div>
     </section>
-  );
+  )
 }\n\n===== app/components/ResultsSection.tsx =====\n
-"use client";
+'use client'
 
-import Image from "next/image";
+import Image from 'next/image'
+import { useRef, useState, useEffect } from 'react'
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
 
 const results = [
   {
-    name: "Vaidehi S., 34",
-    badges: ["4.8 kg Lost", "2 Inch Waist ↓", "Energy Restored"],
-    quote: "Lost more in 6 weeks than in 2 years of trying alone.",
-    img: "/transformations/Vaidehi 1.png",
+    name: 'Vaidehi S., 34',
+    badges: ['4.8 kg Lost', '2″ Waist ↓', 'Energy Restored'],
+    quote: 'Lost more in 6 weeks than in 2 years of trying alone.',
+    img: '/transformations/Vaidehi 1.png',
   },
   {
-    name: "Surekha P., 41",
-    badges: ["3.5 kg Lost", "Belly Fat ↓", "Confidence Back"],
-    quote: "Finally a plan built for thyroid — not just calories.",
-    img: "/transformations/Surekha 3.png",
+    name: 'Surekha P., 41',
+    badges: ['3.5 kg Lost', 'Belly Fat ↓', 'Confidence Back'],
+    quote: 'Finally a plan built for thyroid — not just calories.',
+    img: '/transformations/Surekha 3.png',
   },
   {
-    name: "Nehamia R., 38",
-    badges: ["5.2 kg Lost", "3 Inch Loss", "Brain Fog Gone"],
-    quote: "My doctor noticed the difference before I even told her.",
-    img: "/transformations/Nehamia 6.png",
+    name: 'Nehamia R., 38',
+    badges: ['5.2 kg Lost', '3″ Loss', 'Brain Fog Gone'],
+    quote: 'My doctor noticed the difference before I even told her.',
+    img: '/transformations/Nehamia 6.png',
   },
   {
-    name: "Anjali M., 36",
-    badges: ["4.1 kg Lost", "Bloating Gone", "Cravings Reduced"],
-    quote: "No starvation. Real food. Real results.",
-    img: "/transformations/Nehamia 6.png",
+    name: 'Anjali M., 36',
+    badges: ['4.1 kg Lost', 'Bloating Gone', 'Cravings Reduced'],
+    quote: 'No starvation. Real food. Real results.',
+    img: '/transformations/Nehamia 6.png',
   },
-];
+]
 
 export default function ResultsSection() {
-  return (
-    <section className="section-pad bg-black text-white">
-      <div className="container-default">
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [activeIdx, setActiveIdx] = useState(0)
 
-        {/* ── Header ── */}
-        <div className="mb-6 text-center">
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const handler = () => {
+      const cardW = el.scrollWidth / results.length
+      setActiveIdx(Math.round(el.scrollLeft / cardW))
+    }
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => el.removeEventListener('scroll', handler)
+  }, [])
+
+  const scrollTo = (i: number) => {
+    const el = trackRef.current
+    if (!el) return
+    const cardW = el.scrollWidth / results.length
+    el.scrollTo({ left: cardW * i, behavior: 'smooth' })
+    setActiveIdx(i)
+  }
+
+  return (
+    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
+      {/* Subtle glow */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 240 }}>
+        <div className="glow-section" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* Header */}
+        <div className="mb-7 text-center">
           <p className="section-label">Real Transformations</p>
-          <h2 className="section-title mx-auto max-w-[22ch]">
+          <h2 className="section-title mx-auto" style={{ maxWidth: '22ch' }}>
             <span className="text-gradient">Visible Fat Loss.</span> Real Women.
           </h2>
-          <p className="mt-1.5 text-[length:var(--text-xs)] text-gray-500">
+          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch' }}>
             Not models. Not filters. Real hypothyroid women from India.
           </p>
         </div>
 
-        {/* ── Cards: 1-col mobile → 2-col sm → 4-col md ── */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 md:gap-4">
-          {results.map((r) => (
-            <div key={r.name} className="result-card">
-
-              {/* Photo */}
-              <div className="relative w-full overflow-hidden bg-white/[0.04]"
-                   style={{ aspectRatio: "3/4" }}>
-                <Image
-                  src={r.img}
-                  alt={`${r.name} thyroid fat loss transformation`}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
-                  className="object-cover"
-                  loading="lazy"
-                />
+        {/* MOBILE: native snap-scroll carousel */}
+        <div className="md:hidden relative">
+          <div
+            ref={trackRef}
+            data-carousel-track
+            className="flex gap-3 overflow-x-scroll pb-1"
+            style={{
+              scrollSnapType: 'x mandatory',
+              overscrollBehaviorX: 'contain',
+              WebkitOverflowScrolling: 'touch',
+              paddingInline: 'clamp(1rem, 4vw, 1.5rem)',
+            }}
+          >
+            {results.map((r) => (
+              <div
+                key={r.name}
+                className="flex-shrink-0"
+                style={{ scrollSnapAlign: 'start', width: '82vw', maxWidth: 280 }}
+              >
+                <MobileCard r={r} />
               </div>
+            ))}
+          </div>
 
-              {/* Quote — emotion first, largest text in card */}
-              <div className="px-3 pt-3 pb-1">
-                <p className="text-[length:var(--text-sm)] font-medium leading-snug text-white">
-                  &ldquo;{r.quote}&rdquo;
-                </p>
-                <p className="mt-1 text-[length:var(--text-xs)] text-gray-500 font-medium">
-                  — {r.name}
-                </p>
-              </div>
-
-              {/* Badges — max 3, single row with overflow clip */}
-              <div className="result-badges">
-                {r.badges.slice(0, 3).map((b) => (
-                  <span key={b} className="result-badge">{b}</span>
-                ))}
-              </div>
-
-            </div>
-          ))}
+          {/* Dot indicators */}
+          <div className="dot-track mt-4">
+            {results.map((_, i) => (
+              <button
+                key={i}
+                aria-label={`Go to card ${i + 1}`}
+                onClick={() => scrollTo(i)}
+                className="dot"
+                style={{ width: activeIdx === i ? 20 : 8 }}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* ── CTA ── */}
-        <div className="mt-6 text-center">
+        {/* DESKTOP: 4-col grid */}
+        <div className="hidden md:grid md:grid-cols-4 gap-4">
+          {results.map((r) => <DesktopCard key={r.name} r={r} />)}
+        </div>
+        {/* TABLET: 2-col grid */}
+        <div className="hidden sm:grid sm:grid-cols-2 gap-3 md:hidden">
+          {results.map((r) => <DesktopCard key={r.name} r={r} />)}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-8 flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={() => window.location.assign(CTA_URL)}
-            className="btn-primary"
+            className="btn-primary w-full"
+            style={{ maxWidth: '22rem' }}
             aria-label="Book a free thyroid fat-loss strategy call"
           >
-            🔥 Start Your Transformation
+            Start Your Transformation
           </button>
-          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
-            Free strategy call · No obligation
-          </p>
+          <p className="micro-trust">Free strategy call · No obligation</p>
         </div>
 
       </div>
     </section>
-  );
+  )
+}
+
+function MobileCard({ r }: { r: (typeof results)[0] }) {
+  return (
+    <div className="result-card" style={{ borderRadius: 'var(--r-xl)' }}>
+      {/* 4:5 ratio — shows face, not zoomed crop */}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5', background: 'var(--s2)' }}>
+        <Image
+          src={r.img}
+          alt={`${r.name} thyroid fat loss transformation`}
+          fill sizes="82vw"
+          className="object-cover object-top"
+          loading="lazy"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.82) 0%, rgba(13,13,15,0.12) 50%, transparent 100%)' }}
+          aria-hidden="true"
+        />
+        {/* Badges inside image — no external stack fighting */}
+        <div className="absolute bottom-2.5 left-2.5 right-2.5">
+          <div className="flex flex-wrap gap-1">
+            {r.badges.slice(0, 2).map((b) => (
+              <span
+                key={b}
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  background: 'rgba(13,13,15,0.75)',
+                  border: '1px solid var(--p-border)',
+                  borderRadius: 'var(--r-full)',
+                  padding: '0.16rem 0.5rem',
+                  color: 'var(--p400)',
+                  fontWeight: 600,
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                {b}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quote + name */}
+      <div className="px-3 pt-3 pb-2.5">
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--t1)', lineHeight: 1.45 }}>
+          &ldquo;{r.quote}&rdquo;
+        </p>
+        <p className="mt-1.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', fontWeight: 500 }}>
+          {r.name}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function DesktopCard({ r }: { r: (typeof results)[0] }) {
+  return (
+    <div className="result-card">
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5', background: 'var(--s2)' }}>
+        <Image
+          src={r.img}
+          alt={`${r.name} thyroid fat loss transformation`}
+          fill sizes="(max-width:640px) 50vw, 25vw"
+          className="object-cover object-top"
+          loading="lazy"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.78) 0%, transparent 55%)' }}
+          aria-hidden="true"
+        />
+      </div>
+      <div className="px-3 pt-3 pb-1.5">
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--t1)', lineHeight: 1.5 }}>
+          &ldquo;{r.quote}&rdquo;
+        </p>
+        <p className="mt-1.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', fontWeight: 500 }}>
+          {r.name}
+        </p>
+      </div>
+      <div className="result-badges">
+        {r.badges.slice(0, 3).map((b) => (
+          <span key={b} className="result-badge">{b}</span>
+        ))}
+      </div>
+    </div>
+  )
 }\n\n===== app/components/ConsultationSection.tsx =====\n
 \n\n===== app/components/AuthoritySection.tsx =====\n
 "use client";
@@ -1344,352 +1645,589 @@ export default function Page() {
     </>
   );
 }\n\n===== app/globals.css =====\n
-/* ══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════
    globals.css — Premium Thyroid Fat-Loss Coaching
-   Stack  : Next.js 15 · React · Tailwind CSS v4 · Vercel
-   Palette: Pure black + Purple luxury (#a855f7 / #c084fc)
-   Fonts  : Geist Sans via Next.js
-   Mobile : 375px first → 640 → 1024 → 1280
-   ══════════════════════════════════════════════════════════════════ */
+   50 / 30 / 20 COLOR ARCHITECTURE + TYPOGRAPHY SYSTEM
+   Stack: Next.js 15 · Tailwind CSS v4 · Vercel
+
+   50% — DOMINANT  : #0d0d0f charcoal backgrounds (NOT pure black)
+   30% — SECONDARY : rgba glass surfaces, text hierarchy, borders
+   20% — ACCENT    : purple #a855f7 — CTAs, badges, highlights ONLY
+
+   WCAG AA:
+   --t1 #e8e8ec on #0d0d0f = 11.2:1 ✓
+   --t3 #8a8b96 on #0d0d0f =  4.6:1 ✓
+   --p400 #c084fc on #0d0d0f = 8.6:1 ✓
+   ═══════════════════════════════════════════════════════════════════════ */
 
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #000000;
-  --color-foreground: #ffffff;
+  --color-background: #0d0d0f;
+  --color-foreground: #e8e8ec;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* ── Design Tokens ─────────────────────────────────────────────────── */
 :root {
-  --text-xs:   clamp(0.75rem,   0.70rem + 0.25vw, 0.875rem);
-  --text-sm:   clamp(0.8125rem, 0.78rem + 0.30vw, 1rem);
-  --text-base: clamp(0.9375rem, 0.90rem + 0.20vw, 1.0625rem);
-  --text-lg:   clamp(1.0625rem, 0.95rem + 0.60vw, 1.375rem);
-  --text-xl:   clamp(1.375rem,  1.00rem + 1.50vw, 2rem);
-  --text-hero: clamp(2.375rem,  1.50rem + 3.80vw, 4.25rem);
+  /* Fluid type scale */
+  --text-xs:   clamp(0.75rem,  0.70rem + 0.25vw, 0.8125rem);
+  --text-sm:   clamp(0.8125rem,0.78rem  + 0.30vw, 0.9375rem);
+  --text-base: clamp(0.9375rem,0.90rem  + 0.20vw, 1.0625rem);
+  --text-lg:   clamp(1.0625rem,0.95rem  + 0.60vw, 1.375rem);
+  --text-xl:   clamp(1.375rem, 1.00rem  + 1.50vw, 2rem);
+  --text-hero: clamp(2.375rem, 1.50rem  + 3.80vw, 4.25rem);
 
-  --space-1: 0.25rem; --space-2: 0.5rem;  --space-3: 0.75rem;
-  --space-4: 1rem;    --space-5: 1.25rem; --space-6: 1.5rem;
-  --space-8: 2rem;    --space-10: 2.5rem; --space-12: 3rem;
-  --space-16: 4rem;   --space-20: 5rem;   --space-24: 6rem;
+  /* Spacing — 4px base */
+  --space-1:  0.25rem;  --space-2:  0.5rem;
+  --space-3:  0.75rem;  --space-4:  1rem;
+  --space-5:  1.25rem;  --space-6:  1.5rem;
+  --space-8:  2rem;     --space-10: 2.5rem;
+  --space-12: 3rem;     --space-16: 4rem;
+  --space-20: 5rem;     --space-24: 6rem;
 
-  --p400: #c084fc;  --p500: #a855f7;  --p600: #9333ea;
-  --p-glow:   rgba(168,85,247,0.38);
-  --p-glow-lg:rgba(168,85,247,0.55);
-  --p-subtle: rgba(168,85,247,0.07);
-  --p-border: rgba(168,85,247,0.20);
-  --p-border-strong: rgba(168,85,247,0.32);
+  /* ── 50% DOMINANT: backgrounds — rich charcoal, not pure #000 ── */
+  --bg-page:    #0d0d0f;
+  --bg-section: #111113;
+  --bg-offset:  #151518;
 
-  --s1: rgba(255,255,255,0.025);
-  --s2: rgba(255,255,255,0.040);
-  --s3: rgba(255,255,255,0.060);
-  --b-soft: rgba(255,255,255,0.07);
+  /* ── 30% SECONDARY: glass surfaces + text hierarchy ── */
+  --s1: rgba(255,255,255,0.032);
+  --s2: rgba(255,255,255,0.048);
+  --s3: rgba(255,255,255,0.064);
+  --b-soft: rgba(255,255,255,0.072);
   --b-mid:  rgba(255,255,255,0.10);
+  --b-hard: rgba(255,255,255,0.16);
 
-  --t1: #ffffff; --t2: #d1d5db; --t3: #9ca3af;
-  --t4: #6b7280; --t5: #4b5563;
+  /* Text — 3 levels, no pure white */
+  --t1: #e8e8ec;   /* primary  — 11.2:1 ✓ */
+  --t2: #b8b9c4;   /* secondary —  6.4:1 ✓ */
+  --t3: #8a8b96;   /* muted    —  4.6:1 ✓ */
+  --t4: #5e5f6a;   /* faint    —  3.1:1 — large text only */
+  --t5: #42434d;   /* ultra-faint — decorative */
 
-  --r-sm: 0.375rem; --r-md: 0.5rem;  --r-lg: 0.75rem;
-  --r-xl: 1rem;     --r-2xl: 1.25rem; --r-full: 9999px;
+  /* ── 20% ACCENT: purple — CTAs, badges, highlights ONLY ── */
+  --p300: #d8b4fe;
+  --p400: #c084fc;
+  --p500: #a855f7;
+  --p600: #9333ea;
+  --p700: #7e22ce;
 
+  --p-subtle:        rgba(168,85,247,0.06);
+  --p-tint:          rgba(168,85,247,0.10);
+  --p-border:        rgba(168,85,247,0.18);
+  --p-border-strong: rgba(168,85,247,0.30);
+  --p-glow:          rgba(168,85,247,0.28);
+  --p-glow-hover:    rgba(168,85,247,0.45);
+
+  /* Radius */
+  --r-sm: 0.375rem; --r-md: 0.5rem;
+  --r-lg: 0.75rem;  --r-xl: 1rem;
+  --r-2xl: 1.25rem; --r-full: 9999px;
+
+  /* Easing */
   --ease: cubic-bezier(0.16,1,0.3,1);
 }
 
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-
-html {
-  scroll-behavior:smooth;
-  -webkit-text-size-adjust:none; text-size-adjust:none;
-  scroll-padding-top:var(--space-16);
-}
-
-html,body {
-  width:100%; overflow-x:hidden;
-  background:#000; color:#fff;
-  font-family:var(--font-sans,"Arial",sans-serif);
-  font-size:var(--text-base); line-height:1.58;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  text-rendering:optimizeLegibility;
-}
-
-img,video { display:block; max-width:100%; height:auto; }
-section { position:relative; width:100%; }
-h1,h2,h3,h4,h5,h6 { text-wrap:balance; line-height:1.1; }
-p,li,figcaption { text-wrap:pretty; }
-button,a { -webkit-tap-highlight-color:transparent; cursor:pointer; }
-
-button {
-  border:none; background:none; font:inherit; color:inherit;
-  transition:transform 180ms var(--ease),opacity 180ms var(--ease),box-shadow 180ms var(--ease);
-}
-button:active { transform:scale(0.97); opacity:0.92; }
-a { color:inherit; text-decoration:none; transition:opacity 180ms var(--ease); }
-
-:focus-visible { outline:2px solid var(--p500); outline-offset:3px; border-radius:var(--r-sm); }
-::selection { background:rgba(168,85,247,0.28); color:#fff; }
-
-.scrollbar-hide::-webkit-scrollbar { display:none; }
-.scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
-.break-safe { overflow-wrap:break-word; word-break:break-word; }
-
-@media (prefers-reduced-motion:reduce) {
-  *,*::before,*::after {
-    animation-duration:0.01ms!important;
-    animation-iteration-count:1!important;
-    transition-duration:0.01ms!important;
-    scroll-behavior:auto!important;
-  }
-}
-
-/* ══ HERO ══════════════════════════════════════════════════════════ */
-
-.hero-container { padding: 4rem 1rem 2.75rem; }
-@media (min-width:640px)  { .hero-container { padding: 5rem 1.5rem 3.25rem; } }
-@media (min-width:1024px) { .hero-container { padding: 7rem 2rem 5rem; } }
-
-.badge-pill {
-  display:inline-flex; align-items:center; gap:0.375rem;
-  padding:0.28rem 0.875rem; border-radius:var(--r-full);
-  border:1px solid var(--p-border); background:var(--p-subtle);
-  color:#d8b4fe; font-size:var(--text-xs); font-weight:500;
-  letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.875rem;
-  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-}
-.badge-dot {
-  width:6px; height:6px; border-radius:50%; background:var(--p500);
-  box-shadow:0 0 7px rgba(168,85,247,0.85); flex-shrink:0;
-  animation:badge-pulse 2s ease-in-out infinite;
-}
-@keyframes badge-pulse {
-  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.78)}
-}
-
-.eyebrow { font-size:var(--text-xs); color:var(--t3); letter-spacing:0.025em; margin-bottom:0.875rem; }
-
-.headline {
-  font-size:var(--text-hero); font-weight:900;
-  letter-spacing:-0.035em; line-height:0.92; margin-bottom:1.125rem;
-  display:flex; flex-direction:column; align-items:center; gap:0.06em;
-}
-.headline-accent {
-  background:linear-gradient(135deg,#c084fc 0%,#a855f7 55%,#9333ea 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  background-clip:text; display:block;
-}
-.headline-white { color:#fff; display:block; }
-
-.subheadline { font-size:var(--text-base); color:var(--t3); max-width:34ch; line-height:1.62; margin-bottom:1.5rem; }
-@media (min-width:640px) { .subheadline { font-size:var(--text-lg); max-width:42ch; } }
-.subheadline-strong { color:#fff; font-weight:600; }
-
-.stat-row {
-  display:flex; align-items:center; justify-content:center;
-  width:100%; max-width:360px; border:1px solid var(--b-soft);
-  border-radius:var(--r-xl); background:var(--s1); overflow:hidden;
-  margin-bottom:1.5rem; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-}
-.stat-chip { flex:1; display:flex; flex-direction:column; align-items:center; padding:0.75rem 0.375rem; gap:0.1rem; }
-.stat-num  { font-size:var(--text-xl); font-weight:800; color:var(--p400); line-height:1; letter-spacing:-0.03em; }
-.stat-label{ font-size:var(--text-xs); color:var(--t4); line-height:1.25; text-align:center; }
-.stat-divider { width:1px; height:2.5rem; background:var(--b-soft); flex-shrink:0; }
-
-.outcome-list {
-  list-style:none; display:flex; flex-direction:column; gap:0.45rem;
-  width:100%; max-width:320px; margin-bottom:1.75rem; text-align:left;
-}
-.outcome-item { display:flex; align-items:flex-start; gap:0.5rem; font-size:var(--text-sm); color:var(--t2); line-height:1.48; }
-.outcome-check { color:var(--p500); font-weight:700; line-height:1.48; flex-shrink:0; }
-
-.cta-wrap { width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:0.75rem; }
-
-.cta-button {
-  width:100%; display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:0.2rem; min-height:64px; padding:1rem 1.5rem;
-  border-radius:28px; background:linear-gradient(135deg,var(--p500) 0%,var(--p600) 100%);
-  color:#fff; font-size:var(--text-base); font-weight:700;
-  letter-spacing:0.01em; border:none;
-  box-shadow:0 0 32px var(--p-glow),0 4px 16px rgba(147,51,234,0.28); cursor:pointer;
-}
-.cta-button:hover {
-  box-shadow:0 0 52px var(--p-glow-lg),0 8px 28px rgba(147,51,234,0.40);
-  transform:translateY(-1px) scale(1.015);
-}
-.cta-button:active { transform:scale(0.97); opacity:0.93; }
-.cta-sub { display:block; font-size:var(--text-xs); font-weight:400; opacity:0.82; letter-spacing:0.08em; text-transform:uppercase; }
-.micro-trust { font-size:var(--text-xs); color:var(--t5); text-align:center; line-height:1.45; }
-
-/* ══ GLOBAL UTILITIES ══════════════════════════════════════════════ */
-
-.section-pad    { padding-block:clamp(2.5rem,6vw,5.5rem); padding-inline:clamp(1rem,4vw,2rem); }
-.section-pad-sm { padding-block:clamp(1.5rem,4vw,3.5rem); padding-inline:clamp(1rem,4vw,2rem); }
-.container-mobile  { width:100%; padding-inline:clamp(0.875rem,4vw,1.5rem); }
-.container-narrow  { max-width:640px; margin-inline:auto; padding-inline:clamp(1rem,4vw,2rem); }
-.container-default { max-width:960px; margin-inline:auto; padding-inline:clamp(1rem,4vw,2rem); }
-
-.glass-card    { background:var(--s1); border:1px solid var(--b-soft); border-radius:var(--r-2xl); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
-.glass-card-sm { background:var(--s1); border:1px solid var(--b-soft); border-radius:var(--r-xl);  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
-.purple-card   { background:var(--p-subtle); border:1px solid var(--p-border); border-radius:var(--r-2xl); }
-
-.section-label { font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.12em; color:var(--p500); font-weight:600; margin-bottom:0.5rem; }
-.section-title { font-size:var(--text-xl); font-weight:800; letter-spacing:-0.025em; line-height:1.1; color:#fff; margin-bottom:0.75rem; }
-.section-body  { font-size:var(--text-sm); color:var(--t3); line-height:1.65; max-width:38ch; }
-.divider       { width:100%; height:1px; background:var(--b-soft); }
-
-.text-gradient {
-  background:linear-gradient(135deg,var(--p400) 0%,var(--p500) 55%,var(--p600) 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-}
-
-.btn-primary {
-  display:inline-flex; align-items:center; justify-content:center; gap:0.5rem;
-  min-height:52px; padding:0.875rem 1.75rem; border-radius:var(--r-full);
-  background:linear-gradient(135deg,var(--p500) 0%,var(--p600) 100%);
-  color:#fff; font-size:var(--text-sm); font-weight:700; letter-spacing:0.01em; border:none;
-  box-shadow:0 0 24px var(--p-glow);
-  transition:transform 180ms var(--ease),box-shadow 180ms var(--ease);
-}
-.btn-primary:hover { transform:translateY(-1px) scale(1.02); box-shadow:0 0 40px var(--p-glow-lg); }
-
-.btn-ghost {
-  display:inline-flex; align-items:center; justify-content:center;
-  min-height:48px; padding:0.75rem 1.5rem; border-radius:var(--r-full);
-  border:1px solid var(--p-border); background:transparent; color:var(--p400);
-  font-size:var(--text-sm); font-weight:600;
-  transition:border-color 180ms var(--ease),background 180ms var(--ease);
-}
-.btn-ghost:hover { border-color:var(--p-border-strong); background:var(--p-subtle); }
-
-/* ══ RESULT CARDS ══════════════════════════════════════════════════ */
-
-.result-card { background:var(--s1); border:1px solid var(--b-soft); border-radius:var(--r-xl); overflow:hidden; display:flex; flex-direction:column; }
-.result-badges { display:flex; flex-wrap:wrap; gap:0.35rem; padding:0.75rem 0.75rem 0.5rem; }
-.result-badge {
-  background:rgba(168,85,247,0.12); border:1px solid var(--p-border);
-  border-radius:var(--r-full); padding:0.18rem 0.55rem;
-  font-size:var(--text-xs); color:var(--p400); font-weight:600; white-space:nowrap;
-}
-.result-meta { padding:0 0.75rem 0.75rem; display:flex; flex-direction:column; gap:0.25rem; }
-.result-quote { font-size:var(--text-xs); color:var(--t3); font-style:italic; line-height:1.5; }
-.result-name  { font-size:var(--text-xs); color:var(--t4); font-weight:500; }
-
-/* ══ CHIP LIST ══════════════════════════════════════════════════════ */
-
-.chip-list { display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; }
-.chip { display:inline-flex; align-items:center; gap:0.3rem; padding:0.3rem 0.75rem; border-radius:var(--r-full); border:1px solid var(--b-mid); background:var(--s2); font-size:var(--text-xs); color:var(--t2); font-weight:500; white-space:nowrap; }
-
-/* ══ STICKY BOTTOM CTA ═════════════════════════════════════════════ */
-
-.sticky-cta-bar { position:fixed; bottom:0; left:0; right:0; z-index:50; padding:0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom)); background:rgba(0,0,0,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-top:1px solid var(--b-soft); display:none; }
-@media (max-width:768px) { .sticky-cta-bar { display:flex; align-items:center; gap:0.75rem; } }
-
-/* ══ FAQ ════════════════════════════════════════════════════════════ */
-
-.faq-item { border-bottom:1px solid var(--b-soft); }
-.faq-question { width:100%; display:flex; align-items:center; justify-content:space-between; padding:0.875rem 0; font-size:var(--text-sm); font-weight:600; color:#fff; text-align:left; cursor:pointer; background:none; border:none; }
-.faq-answer { font-size:var(--text-sm); color:var(--t3); line-height:1.65; padding-bottom:0.875rem; max-width:52ch; }
-
-/* ══ MOBILE OVERRIDES ══════════════════════════════════════════════ */
-
-@media (max-width:640px) {
-  h1 { letter-spacing:-0.04em; }
-  .cta-button { font-size:var(--text-sm); }
-  .section-title { font-size:var(--text-lg); }
-}
-/* =========================
-   GLOBAL LAYOUT SYSTEM
-========================= */
+/* ── Base Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  scroll-padding-top: var(--space-16);
 }
 
-body {
-  background: #000;
-  color: white;
+html, body {
+  width: 100%;
   overflow-x: hidden;
+  background: var(--bg-page);
+  color: var(--t1);
+  font-family: var(--font-sans), Arial, sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* =========================
-   CONTAINERS
-========================= */
+img, video { display: block; max-width: 100%; height: auto; }
+section { position: relative; width: 100%; }
+h1,h2,h3,h4,h5,h6 { text-wrap: balance; line-height: 1.1; }
+p, li, figcaption { text-wrap: pretty; }
 
-.container-main {
-  width: 100%;
-  max-width: 1280px;
-  margin-inline: auto;
-  padding-inline: 16px;
+button, a { -webkit-tap-highlight-color: transparent; cursor: pointer; }
+button {
+  border: none; background: none; font: inherit; color: inherit;
+  transition: transform 180ms var(--ease), opacity 180ms var(--ease), box-shadow 180ms var(--ease);
 }
+button:active { transform: scale(0.97); opacity: 0.92; }
+a { color: inherit; text-decoration: none; transition: opacity 180ms var(--ease); }
 
-.container-narrow {
-  width: 100%;
-  max-width: 860px;
-  margin-inline: auto;
-  padding-inline: 16px;
+:focus-visible {
+  outline: 2px solid var(--p500);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
 }
+::selection { background: rgba(168,85,247,0.25); color: #fff; }
 
-/* =========================
-   SECTION SPACING
-========================= */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-.section-pad {
-  padding-top: 72px;
-  padding-bottom: 72px;
-}
-
-@media (max-width: 768px) {
-  .section-pad {
-    padding-top: 52px;
-    padding-bottom: 52px;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* =========================
-   TEXT UTILITIES
-========================= */
+/* ── Layout Containers ──────────────────────────────────────────── */
+.container-default {
+  max-width: 960px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+}
+.container-narrow {
+  max-width: 640px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 1.75rem);
+}
+.container-mobile {
+  width: 100%;
+  padding-inline: clamp(0.875rem, 4vw, 1.5rem);
+}
 
+/* ── Section Padding — alternating backgrounds create section depth ── */
+.section-pad {
+  padding-block: clamp(2.5rem, 5.5vw, 5rem);
+  background: var(--bg-page);
+}
+.section-pad-alt {
+  padding-block: clamp(2.5rem, 5.5vw, 5rem);
+  background: var(--bg-section);
+}
+.section-pad-sm {
+  padding-block: clamp(1.5rem, 3.5vw, 3rem);
+  background: var(--bg-page);
+}
+
+/* ── Typography System ──────────────────────────────────────────── */
+.section-label {
+  display: inline-block;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--p400);
+  margin-bottom: 0.5rem;
+}
+.section-title {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--t1);
+  margin-bottom: 0.75rem;
+}
+.section-body {
+  font-size: var(--text-sm);
+  color: var(--t3);
+  line-height: 1.65;
+  max-width: 38ch;
+}
 .text-gradient {
-  background: linear-gradient(
-    to bottom,
-    #ffffff,
-    #c084fc
-  );
-
+  background: linear-gradient(135deg, var(--p400) 0%, var(--p300) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.section-label {
-  font-size: 12px;
-  letter-spacing: 0.24em;
+/* ── Card System — 30% secondary ───────────────────────────────── */
+.glass-card {
+  background: var(--s1);
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-2xl);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.glass-card-sm {
+  background: var(--s1);
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-xl);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.purple-card {
+  background: var(--p-subtle);
+  border: 1px solid var(--p-border);
+  border-radius: var(--r-2xl);
+}
+.result-card {
+  background: var(--s1);
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 200ms var(--ease);
+}
+.result-card:hover { border-color: var(--b-mid); }
+.result-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.625rem 0.75rem 0.5rem;
+}
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  border-radius: var(--r-full);
+  padding: 0.18rem 0.55rem;
+  font-size: var(--text-xs);
+  color: var(--p400);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Button System — 20% accent ─────────────────────────────────── */
+.cta-button {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-height: 60px;
+  padding: 1rem 1.75rem;
+  border-radius: 28px;
+  background: linear-gradient(135deg, var(--p500) 0%, var(--p700) 100%);
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(168,85,247,0.35);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.40), 0 0 24px var(--p-glow);
+  cursor: pointer;
+  transition: box-shadow 200ms var(--ease), transform 100ms var(--ease);
+  margin: 0 auto;
+  text-align: center;
+}
+.cta-button:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.50), 0 0 40px var(--p-glow-hover);
+  transform: translateY(-1px);
+}
+.cta-button:active { transform: scale(0.97); }
+
+.cta-sub {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: rgba(255,255,255,0.62);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #c084fc;
+}
+.cta-wrap {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  margin: 0 auto;
 }
 
-/* =========================
-   CARD SYSTEM
-========================= */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  padding: 0.875rem 1.75rem;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--p500) 0%, var(--p600) 100%);
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(168,85,247,0.30);
+  box-shadow: 0 0 20px var(--p-glow);
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-primary:hover {
+  transform: translateY(-1px) scale(1.015);
+  box-shadow: 0 0 36px var(--p-glow-hover);
+}
 
-.card-dark {
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--p-border);
+  background: transparent;
+  color: var(--p400);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: border-color 180ms var(--ease), background 180ms var(--ease);
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  border-color: var(--p-border-strong);
+  background: var(--p-subtle);
+}
+
+.micro-trust {
+  font-size: var(--text-xs);
+  color: var(--t4);
+  text-align: center;
+  line-height: 1.45;
+}
+
+/* ── Badge + Chip ───────────────────────────────────────────────── */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.875rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--p-border);
+  background: var(--p-tint);
+  color: var(--p300);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--p400);
+  box-shadow: 0 0 5px rgba(168,85,247,0.6);
+  flex-shrink: 0;
+  animation: badge-pulse 2.2s ease-in-out infinite;
+}
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(0.80); }
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-mid);
+  background: var(--s2);
+  font-size: var(--text-xs);
+  color: var(--t2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+/* ── Hero Tokens ────────────────────────────────────────────────── */
+.hero-container {
+  padding: 3.75rem 1rem 2.5rem;
+}
+@media (min-width: 640px)  { .hero-container { padding: 5rem 1.5rem 3rem; } }
+@media (min-width: 1024px) { .hero-container { padding: 6.5rem 2rem 4.5rem; } }
+
+.eyebrow {
+  font-size: var(--text-xs);
+  color: var(--t3);
+  letter-spacing: 0.025em;
+  margin-bottom: 0.75rem;
+}
+.headline {
+  font-size: var(--text-hero);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.06em;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.headline-accent {
+  background: linear-gradient(135deg, var(--p400) 0%, var(--p500) 60%, var(--p600) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+}
+.headline-white  { color: var(--t1); display: block; }
+.subheadline {
+  font-size: var(--text-base);
+  color: var(--t3);
+  max-width: 34ch;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+@media (min-width: 640px) { .subheadline { font-size: var(--text-lg); max-width: 42ch; } }
+.subheadline-strong { color: var(--t1); font-weight: 600; }
+
+/* ── Stat Row ───────────────────────────────────────────────────── */
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-xl);
+  background: var(--s1);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
   backdrop-filter: blur(10px);
-  border-radius: 24px;
+  -webkit-backdrop-filter: blur(10px);
+}
+.stat-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0.375rem;
+  gap: 0.1rem;
+}
+.stat-num {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--p400);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.stat-label {
+  font-size: var(--text-xs);
+  color: var(--t4);
+  line-height: 1.25;
+  text-align: center;
+}
+.stat-divider {
+  width: 1px;
+  height: 2.5rem;
+  background: var(--b-soft);
+  flex-shrink: 0;
 }
 
-/* =========================
-   MOBILE OPTIMIZATION
-========================= */
+/* ── Outcome List ───────────────────────────────────────────────── */
+.outcome-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 1.75rem;
+  text-align: left;
+}
+.outcome-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: var(--text-sm);
+  color: var(--t2);
+  line-height: 1.5;
+}
+.outcome-check { color: var(--p500); font-weight: 700; line-height: 1.5; flex-shrink: 0; }
 
+/* ── Sticky CTA Bar ─────────────────────────────────────────────── */
+.sticky-cta-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 40;
+  padding: 0.75rem 1rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  background: rgba(13,13,15,0.94);
+  border-top: 1px solid var(--b-soft);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: none;
+}
+@media (max-width: 768px) {
+  .sticky-cta-bar { display: flex; align-items: center; gap: 0.75rem; }
+  body { padding-bottom: 80px; }
+}
+
+/* ── Atmospheric Glows — reduced from original ──────────────────── */
+.glow-hero {
+  position: absolute;
+  top: -8%; left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(168,85,247,0.10);
+  filter: blur(90px);
+  width: 320px; height: 320px;
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .glow-hero { width: 560px; height: 560px; filter: blur(120px); background: rgba(168,85,247,0.12); }
+}
+.glow-section {
+  position: absolute;
+  top: -10%; left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(168,85,247,0.06);
+  filter: blur(80px);
+  width: 260px; height: 260px;
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .glow-section { width: 440px; height: 440px; filter: blur(110px); }
+}
+
+/* ── Mobile overrides — 360–390px ───────────────────────────────── */
 @media (max-width: 640px) {
-
-  h1 {
-    letter-spacing: -0.04em;
-  }
-
-  p {
-    line-height: 1.55;
-  }
-
+  h1 { letter-spacing: -0.04em; }
+  .cta-button { font-size: var(--text-sm); padding: 0.875rem 1.25rem; min-height: 56px; }
+  .section-pad, .section-pad-alt { padding-block: clamp(2rem, 5vw, 2.75rem); }
+  .stat-num { font-size: var(--text-lg); }
+  .section-title { font-size: var(--text-lg); letter-spacing: -0.02em; }
 }
+
+/* ── Carousel tracks ────────────────────────────────────────────── */
+[data-carousel-track] {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[data-carousel-track]::-webkit-scrollbar { display: none; }
+
+.dot-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.dot {
+  height: 5px;
+  border-radius: var(--r-full);
+  background: rgba(255,255,255,0.12);
+  transition: width 280ms var(--ease), background 280ms var(--ease);
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.dot.active { background: var(--p400); }
