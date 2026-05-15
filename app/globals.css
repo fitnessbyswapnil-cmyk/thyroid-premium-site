@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Theme Variables */
+/* Theme */
 :root {
   --background: #000000;
   --foreground: #ffffff;
@@ -15,18 +15,23 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Base Reset */
+/* Reset */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* HTML + BODY */
+/* Base */
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   width: 100%;
   overflow-x: hidden;
+
   background: #000;
   color: #fff;
 
@@ -35,53 +40,50 @@ body {
     Helvetica,
     sans-serif;
 
-  scroll-behavior: smooth;
-
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Remove Mobile Blue Highlight */
+/* Better Typography */
+body {
+  line-height: 1.45;
+}
+
+/* Media */
+img,
+video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Sections */
+section {
+  position: relative;
+  width: 100%;
+}
+
+/* Links + Buttons */
 button,
-a,
-input,
-textarea,
-select {
+a {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Images */
-img,
-video {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Section Defaults */
-section {
+/* Better Mobile Containers */
+.container-mobile {
   width: 100%;
-  position: relative;
-}
-
-/* Container */
-.container-custom {
-  width: 100%;
-  max-width: 1280px;
-  margin-inline: auto;
-
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 @media (min-width: 640px) {
-  .container-custom {
-    padding-left: 20px;
-    padding-right: 20px;
+  .container-mobile {
+    padding-left: 22px;
+    padding-right: 22px;
   }
 }
 
-/* Scrollbar Hide */
+/* Scrollbar */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -91,23 +93,14 @@ section {
   scrollbar-width: none;
 }
 
-/* Better Mobile Typography */
-@media (max-width: 640px) {
-  body {
-    font-size: 15px;
-    line-height: 1.45;
-  }
-}
-
-/* Prevent Layout Breaking */
+/* Prevent Weird Overflow */
 .break-safe {
   overflow-wrap: break-word;
   word-break: break-word;
 }
 
-/* Smooth Buttons */
+/* Smooth Button Click */
 button {
-  cursor: pointer;
   transition:
     transform 0.2s ease,
     opacity 0.2s ease;
@@ -115,4 +108,17 @@ button {
 
 button:active {
   transform: scale(0.98);
+}
+
+/* Mobile Optimization */
+@media (max-width: 640px) {
+
+  h1 {
+    letter-spacing: -1.8px;
+  }
+
+  p {
+    line-height: 1.5;
+  }
+
 }
