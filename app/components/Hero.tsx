@@ -4,27 +4,27 @@ export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-black text-white">
 
-      {/* Background Glow */}
-      <div className="absolute left-1/2 top-[-200px] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px] md:h-[800px] md:w-[800px]" />
+      {/* Glow */}
+      <div className="absolute left-1/2 top-[-180px] h-[450px] w-[450px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px] md:h-[800px] md:w-[800px]" />
 
       <div className="relative z-10 section-padding">
 
-        <div className="section-container flex min-h-screen flex-col items-center justify-center text-center">
+        <div className="section-container flex min-h-[92vh] flex-col items-center justify-center text-center">
 
           {/* Badge */}
-          <div className="card-glass mb-7 inline-flex items-center gap-2 px-5 py-2.5">
+          <div className="card-glass mb-5 inline-flex items-center gap-2 px-4 py-2 md:px-5">
             <span className="text-[11px] tracking-wide text-gray-300 md:text-sm">
               ⚡ ONLY 5 SPOTS LEFT THIS MONTH
             </span>
           </div>
 
           {/* Supporting Text */}
-          <p className="mb-6 text-sm text-gray-400 md:text-base">
+          <p className="mb-5 text-sm text-gray-400 md:text-base">
             ✓ For busy Indian women with hypothyroidism
           </p>
 
           {/* Heading */}
-          <h1 className="max-w-5xl text-[44px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="max-w-5xl text-[42px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl md:text-6xl lg:text-7xl">
 
             End
 
@@ -39,24 +39,44 @@ export default function Hero() {
           </h1>
 
           {/* Subtitle */}
-          <p className="mx-auto mt-7 max-w-3xl text-[16px] leading-[1.7] text-gray-400 sm:text-lg md:mt-8 md:text-2xl">
+          <p className="mx-auto mt-6 max-w-2xl text-[15px] leading-[1.7] text-gray-400 sm:text-lg md:mt-8 md:text-2xl">
 
-            Personalized coaching that addresses your unique thyroid type.
-            Not generic diets.
+            Personalized thyroid fat-loss coaching for Indian women.
 
-            <span className="mt-4 block font-semibold text-white">
+            <span className="mt-3 block font-semibold text-white">
               10–15 kg weight loss + restored energy.
             </span>
 
           </p>
 
-          {/* Benefits */}
-          <div className="mt-10 grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 md:mt-14">
+          {/* MOBILE BENEFITS */}
+          <div className="mt-7 flex w-full flex-col gap-3 md:hidden">
+
+            <div className="card-glass flex items-center gap-3 p-4 text-left">
+              <span className="text-purple-400">✓</span>
+
+              <p className="text-sm text-gray-200">
+                Belly fat reduction despite hypothyroidism
+              </p>
+            </div>
+
+            <div className="card-glass flex items-center gap-3 p-4 text-left">
+              <span className="text-purple-400">✓</span>
+
+              <p className="text-sm text-gray-200">
+                Energy restoration without starvation diets
+              </p>
+            </div>
+
+          </div>
+
+          {/* DESKTOP BENEFITS */}
+          <div className="mt-10 hidden w-full max-w-5xl grid-cols-2 gap-4 md:grid md:mt-14">
 
             <div className="card-glass flex items-start gap-3 p-5 text-left">
               <span className="mt-1 text-purple-400">✓</span>
 
-              <p className="text-sm leading-[1.7] text-gray-200 md:text-base">
+              <p className="text-base leading-[1.7] text-gray-200">
                 <strong>Flatten stubborn belly fat</strong> despite hypothyroidism
               </p>
             </div>
@@ -64,7 +84,7 @@ export default function Hero() {
             <div className="card-glass flex items-start gap-3 p-5 text-left">
               <span className="mt-1 text-purple-400">✓</span>
 
-              <p className="text-sm leading-[1.7] text-gray-200 md:text-base">
+              <p className="text-base leading-[1.7] text-gray-200">
                 <strong>All-day energy restoration</strong> — no more brain fog
               </p>
             </div>
@@ -72,7 +92,7 @@ export default function Hero() {
             <div className="card-glass flex items-start gap-3 p-5 text-left">
               <span className="mt-1 text-purple-400">✓</span>
 
-              <p className="text-sm leading-[1.7] text-gray-200 md:text-base">
+              <p className="text-base leading-[1.7] text-gray-200">
                 <strong>Indian home food you love</strong> — no starvation diets
               </p>
             </div>
@@ -80,7 +100,7 @@ export default function Hero() {
             <div className="card-glass flex items-start gap-3 p-5 text-left">
               <span className="mt-1 text-purple-400">✓</span>
 
-              <p className="text-sm leading-[1.7] text-gray-200 md:text-base">
+              <p className="text-base leading-[1.7] text-gray-200">
                 <strong>Lab-guided coaching</strong> optimized to your thyroid type
               </p>
             </div>
@@ -88,7 +108,7 @@ export default function Hero() {
           </div>
 
           {/* CTA */}
-          <div className="mt-10 flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:justify-center md:mt-14">
+          <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-center md:mt-12">
 
             <button
               id="cta-hero"
@@ -112,7 +132,7 @@ export default function Hero() {
           </div>
 
           {/* Trust */}
-          <p className="mt-8 text-center text-sm text-gray-500">
+          <p className="mt-7 text-center text-sm text-gray-500">
             Trusted by 200+ hypothyroid women across India
           </p>
 
