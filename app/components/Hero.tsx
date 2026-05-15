@@ -4,139 +4,118 @@ export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-black text-white">
 
-      {/* Glow */}
-      <div className="absolute left-1/2 top-[-180px] h-[450px] w-[450px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px] md:h-[800px] md:w-[800px]" />
+      {/* Background Glow */}
+      <div className="absolute left-1/2 top-[-180px] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px] md:h-[700px] md:w-[700px]" />
 
-      <div className="relative z-10 section-padding">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-3 py-14 text-center sm:px-5 md:px-8 md:py-24">
 
-        <div className="section-container flex min-h-[92vh] flex-col items-center justify-center text-center">
+        {/* Top Badge */}
+        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-md">
+          <span className="text-[11px] tracking-wide text-gray-300 sm:text-xs md:text-sm">
+            ⚡ ONLY 5 SPOTS LEFT THIS MONTH
+          </span>
+        </div>
 
-          {/* Badge */}
-          <div className="card-glass mb-5 inline-flex items-center gap-2 px-4 py-2 md:px-5">
-            <span className="text-[11px] tracking-wide text-gray-300 md:text-sm">
-              ⚡ ONLY 5 SPOTS LEFT THIS MONTH
-            </span>
+        {/* Supporting Line */}
+        <p className="mb-5 text-sm text-gray-400 md:text-base">
+          ✓ For Indian women struggling with thyroid fat
+        </p>
+
+        {/* Main Headline */}
+        <h1 className="max-w-5xl text-[52px] font-bold leading-[0.92] tracking-[-2px] sm:text-6xl md:text-7xl lg:text-8xl">
+
+          End
+
+          <span className="mt-2 block text-purple-400">
+            Thyroid Fat
+          </span>
+
+          <span className="block text-purple-400">
+            Struggle
+          </span>
+
+          <span className="mt-3 block text-white">
+            in 90 Days
+          </span>
+
+        </h1>
+
+        {/* Subheadline */}
+        <p className="mx-auto mt-6 max-w-2xl text-[18px] leading-relaxed text-gray-400 sm:text-xl md:mt-8 md:text-2xl">
+
+          Thyroid-specific coaching for stubborn fat loss.
+
+          <span className="mt-3 block font-semibold text-white">
+            Lose 10–15 kg. Feel confident again.
+          </span>
+
+        </p>
+
+        {/* Benefits */}
+        <div className="mt-8 grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2 md:mt-10">
+
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left backdrop-blur-md">
+            <span className="text-purple-400">✓</span>
+
+            <p className="text-sm text-gray-200 md:text-base">
+              Reduced belly fat
+            </p>
           </div>
 
-          {/* Supporting Text */}
-          <p className="mb-5 text-sm text-gray-400 md:text-base">
-            ✓ For busy Indian women with hypothyroidism
-          </p>
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left backdrop-blur-md">
+            <span className="text-purple-400">✓</span>
 
-          {/* Heading */}
-          <h1 className="max-w-5xl text-[42px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl md:text-6xl lg:text-7xl">
-
-            End
-
-            <span className="mt-2 block text-purple-400">
-              Thyroid Fat Struggle
-            </span>
-
-            <span className="mt-2 block text-white">
-              in 90 Days
-            </span>
-
-          </h1>
-
-          {/* Subtitle */}
-          <p className="mx-auto mt-6 max-w-2xl text-[15px] leading-[1.7] text-gray-400 sm:text-lg md:mt-8 md:text-2xl">
-
-            Personalized thyroid fat-loss coaching for Indian women.
-
-            <span className="mt-3 block font-semibold text-white">
-              10–15 kg weight loss + restored energy.
-            </span>
-
-          </p>
-
-          {/* MOBILE BENEFITS */}
-          <div className="mt-7 flex w-full flex-col gap-3 md:hidden">
-
-            <div className="card-glass flex items-center gap-3 p-4 text-left">
-              <span className="text-purple-400">✓</span>
-
-              <p className="text-sm text-gray-200">
-                Belly fat reduction despite hypothyroidism
-              </p>
-            </div>
-
-            <div className="card-glass flex items-center gap-3 p-4 text-left">
-              <span className="text-purple-400">✓</span>
-
-              <p className="text-sm text-gray-200">
-                Energy restoration without starvation diets
-              </p>
-            </div>
-
+            <p className="text-sm text-gray-200 md:text-base">
+              Faster inch loss
+            </p>
           </div>
 
-          {/* DESKTOP BENEFITS */}
-          <div className="mt-10 hidden w-full max-w-5xl grid-cols-2 gap-4 md:grid md:mt-14">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left backdrop-blur-md">
+            <span className="text-purple-400">✓</span>
 
-            <div className="card-glass flex items-start gap-3 p-5 text-left">
-              <span className="mt-1 text-purple-400">✓</span>
-
-              <p className="text-base leading-[1.7] text-gray-200">
-                <strong>Flatten stubborn belly fat</strong> despite hypothyroidism
-              </p>
-            </div>
-
-            <div className="card-glass flex items-start gap-3 p-5 text-left">
-              <span className="mt-1 text-purple-400">✓</span>
-
-              <p className="text-base leading-[1.7] text-gray-200">
-                <strong>All-day energy restoration</strong> — no more brain fog
-              </p>
-            </div>
-
-            <div className="card-glass flex items-start gap-3 p-5 text-left">
-              <span className="mt-1 text-purple-400">✓</span>
-
-              <p className="text-base leading-[1.7] text-gray-200">
-                <strong>Indian home food you love</strong> — no starvation diets
-              </p>
-            </div>
-
-            <div className="card-glass flex items-start gap-3 p-5 text-left">
-              <span className="mt-1 text-purple-400">✓</span>
-
-              <p className="text-base leading-[1.7] text-gray-200">
-                <strong>Lab-guided coaching</strong> optimized to your thyroid type
-              </p>
-            </div>
-
+            <p className="text-sm text-gray-200 md:text-base">
+              No starvation diets
+            </p>
           </div>
 
-          {/* CTA */}
-          <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-center md:mt-12">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left backdrop-blur-md">
+            <span className="text-purple-400">✓</span>
 
-            <button
-              id="cta-hero"
-              className="primary-button w-full px-8 py-5 text-base shadow-[0_0_50px_rgba(168,85,247,0.35)] sm:w-auto sm:text-lg"
-              onClick={() =>
-                window.location.href =
-                  "https://swapnilumbarkarfitness.in/case-studies/#cta"
-              }
-            >
-              🔥 Book FREE Call
-
-              <span className="mt-1 block text-xs font-normal opacity-80">
-                60 MIN • FREE • LIMITED SPOTS
-              </span>
-            </button>
-
-            <button className="secondary-button w-full px-8 py-5 text-base sm:w-auto sm:text-lg">
-              View Transformations
-            </button>
-
+            <p className="text-sm text-gray-200 md:text-base">
+              More daily energy
+            </p>
           </div>
-
-          {/* Trust */}
-          <p className="mt-7 text-center text-sm text-gray-500">
-            Trusted by 200+ hypothyroid women across India
-          </p>
 
         </div>
+
+        {/* CTA */}
+        <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row md:mt-10">
+
+          <button
+            id="cta-hero"
+            className="w-full rounded-3xl bg-purple-500 px-6 py-5 text-lg font-semibold text-white shadow-[0_0_40px_rgba(168,85,247,0.45)] transition-all duration-300 hover:bg-purple-400 sm:w-auto sm:px-10"
+            onClick={() =>
+              window.location.href =
+                "https://swapnilumbarkarfitness.in/case-studies/#cta"
+            }
+          >
+            🔥 Book FREE Call
+
+            <span className="mt-1 block text-xs font-normal opacity-80">
+              FREE • LIMITED SPOTS
+            </span>
+          </button>
+
+          <button className="w-full rounded-3xl border border-white/10 bg-white/5 px-6 py-5 text-lg text-white backdrop-blur-md transition-all duration-300 hover:bg-white/10 sm:w-auto sm:px-10">
+            View Results
+          </button>
+
+        </div>
+
+        {/* Trust Line */}
+        <p className="mt-7 text-sm text-gray-500">
+          Trusted by 200+ women across India
+        </p>
 
       </div>
     </section>
