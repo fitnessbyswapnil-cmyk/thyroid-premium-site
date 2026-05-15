@@ -251,3 +251,99 @@ a { color:inherit; text-decoration:none; transition:opacity 180ms var(--ease); }
   .cta-button { font-size:var(--text-sm); }
   .section-title { font-size:var(--text-lg); }
 }
+/* =========================
+   GLOBAL LAYOUT SYSTEM
+========================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #000;
+  color: white;
+  overflow-x: hidden;
+}
+
+/* =========================
+   CONTAINERS
+========================= */
+
+.container-main {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+.container-narrow {
+  width: 100%;
+  max-width: 860px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+/* =========================
+   SECTION SPACING
+========================= */
+
+.section-pad {
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+@media (max-width: 768px) {
+  .section-pad {
+    padding-top: 52px;
+    padding-bottom: 52px;
+  }
+}
+
+/* =========================
+   TEXT UTILITIES
+========================= */
+
+.text-gradient {
+  background: linear-gradient(
+    to bottom,
+    #ffffff,
+    #c084fc
+  );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.section-label {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #c084fc;
+}
+
+/* =========================
+   CARD SYSTEM
+========================= */
+
+.card-dark {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+}
+
+/* =========================
+   MOBILE OPTIMIZATION
+========================= */
+
+@media (max-width: 640px) {
+
+  h1 {
+    letter-spacing: -0.04em;
+  }
+
+  p {
+    line-height: 1.55;
+  }
+
+}
