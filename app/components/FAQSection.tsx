@@ -1,112 +1,185 @@
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from 'react'
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
 
 const faqs = [
   {
-    q: "I'm already on thyroid medication. Can I still join?",
-    a: "Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.",
+    q: 'I\'m already on thyroid medication. Can I still join?',
+    a: 'Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.',
   },
   {
-    q: "What happens on the free strategy call?",
-    a: "We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.",
+    q: 'What happens on the free strategy call?',
+    a: 'We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.',
   },
   {
-    q: "How fast will I see results?",
-    a: "Most clients notice energy and bloating improvements in Week 1–2. Visible fat and inch loss typically starts Week 3–4.",
+    q: 'How fast will I see results?',
+    a: 'Most clients notice energy and bloating improvements in Week 1–2. Visible fat and inch loss typically starts Week 3–4.',
   },
   {
-    q: "Is this suitable for Hashimoto's?",
-    a: "Absolutely. The system is designed for both hypothyroidism and Hashimoto's — with anti-inflammatory nutrition built in.",
+    q: 'Is this suitable for Hashimoto\'s?',
+    a: 'Absolutely. The system is designed for both hypothyroidism and Hashimoto\'s — with anti-inflammatory nutrition built in.',
   },
   {
-    q: "Will I have to follow a strict diet?",
-    a: "No starvation. Real Indian meals. We adapt your existing food culture — no foreign foods, no extreme calorie cutting.",
+    q: 'Will I have to follow a strict diet?',
+    a: 'No starvation. Real Indian meals. We adapt your existing food culture — no foreign foods, no extreme calorie cutting.',
   },
-];
+]
 
-export default function FAQSection() {
-  const [open, setOpen] = useState<number | null>(null);
+function AccordionItem({
+  faq, index, isOpen, onToggle,
+}: {
+  faq: { q: string; a: string }
+  index: number
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const panelId = `faq-panel-${index}`
+  const btnId   = `faq-btn-${index}`
+
+  /* Smooth height animation — 0 → scrollHeight (260ms open, 220ms close) */
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el) return
+    if (isOpen) {
+      el.style.height = '0px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 260ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = el.scrollHeight + 'px'
+        el.addEventListener('transitionend', () => {
+          el.style.height = 'auto'
+          el.style.overflow = 'visible'
+        }, { once: true })
+      })
+    } else {
+      el.style.height = el.scrollHeight + 'px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 220ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = '0px'
+      })
+    }
+  }, [isOpen])
 
   return (
-    <section className="section-pad bg-black text-white">
+    <div
+      style={{
+        borderBottom: '1px solid var(--b-soft)',
+        background: isOpen ? 'rgba(255,255,255,0.018)' : 'transparent',
+        transition: 'background 200ms ease',
+      }}
+    >
+      <button
+        id={btnId}
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 text-left"
+        style={{
+          minHeight: 56,          /* ≥44px touch target guaranteed */
+          padding: '0 1.25rem',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 600,
+          color: isOpen ? 'var(--t1)' : 'var(--t2)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'color 180ms ease',
+        }}
+      >
+        <span>{faq.q}</span>
+        {/* Chevron pill — flips 180° on open */}
+        <span
+          aria-hidden="true"
+          className="flex-shrink-0 flex items-center justify-center rounded-full"
+          style={{
+            width: 26, height: 26,
+            background: isOpen ? 'var(--p-tint)' : 'var(--s2)',
+            border: `1px solid ${isOpen ? 'var(--p-border)' : 'var(--b-soft)'}`,
+            transition: 'transform 240ms cubic-bezier(0.16,1,0.3,1), background 180ms ease, border-color 180ms ease',
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            color: isOpen ? 'var(--p400)' : 'var(--t3)',
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M2 4l4 4 4-4" />
+          </svg>
+        </span>
+      </button>
+
+      {/* Animated answer panel */}
+      <div ref={bodyRef} id={panelId} role="region" aria-labelledby={btnId} style={{ height: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '0 1.25rem 1rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--t3)', lineHeight: 1.65, maxWidth: '52ch' }}>
+            {faq.a}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null)
+
+  return (
+    <section className="section-pad">
       <div className="container-narrow">
 
         {/* Header */}
-        <div className="mb-5 text-center">
+        <div className="mb-6 text-center">
           <p className="section-label">FAQs</p>
-          <h2 className="section-title mx-auto max-w-[20ch]">Common Questions</h2>
+          <h2 className="section-title mx-auto" style={{ maxWidth: '20ch' }}>
+            Common Questions
+          </h2>
         </div>
 
         {/* Accordion */}
-        <div className="rounded-[18px] border border-white/[0.07]">
-          {faqs.map((faq, i) => {
-            const panelId = `faq-panel-${i}`;
-            const isOpen = open === i;
-            return (
-              <div
-                key={i}
-                className={i < faqs.length - 1 ? "border-b border-white/[0.07]" : ""}
-              >
-                <button
-                  type="button"
-                  id={`faq-btn-${i}`}
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  onClick={() => setOpen(isOpen ? null : i)}
-                  className="flex w-full items-center justify-between px-4 py-4 text-left font-semibold text-white"
-                  style={{ fontSize: "var(--text-sm)", background: "none", border: "none" }}
-                >
-                  <span className="pr-2 leading-snug">{faq.q}</span>
-                  <span
-                    className="shrink-0 text-purple-400 text-lg leading-none transition-transform duration-200"
-                    aria-hidden="true"
-                    style={{ transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}
-                  >
-                    +
-                  </span>
-                </button>
-
-                {isOpen && (
-                  <div
-                    id={panelId}
-                    role="region"
-                    aria-labelledby={`faq-btn-${i}`}
-                    className="px-4 pb-4 text-gray-400 leading-relaxed"
-                    style={{ fontSize: "var(--text-sm)" }}
-                  >
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-soft)', overflow: 'hidden' }}>
+          {faqs.map((faq, i) => (
+            <AccordionItem
+              key={i}
+              faq={faq}
+              index={i}
+              isOpen={open === i}
+              onToggle={() => setOpen(open === i ? null : i)}
+            />
+          ))}
         </div>
 
         {/* Bottom CTA card */}
-        <div className="mt-4 rounded-[18px] border border-purple-500/20 bg-purple-500/[0.06] p-4 text-center">
-          <p className="mb-1 font-semibold text-white" style={{ fontSize: "var(--text-sm)" }}>
+        <div
+          className="mt-5 text-center"
+          style={{
+            borderRadius: 'var(--r-xl)',
+            border: '1px solid var(--p-border)',
+            background: 'var(--p-subtle)',
+            padding: 'clamp(1.25rem, 4vw, 1.75rem)',
+          }}
+        >
+          <p className="mb-1 font-semibold" style={{ fontSize: 'var(--text-base)', color: 'var(--t1)' }}>
             Still have questions?
           </p>
-          <p className="mb-4 text-gray-500" style={{ fontSize: "var(--text-xs)" }}>
-            I&apos;ll answer everything on a free 60-minute call.
+          <p className="mb-5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)' }}>
+            I'll answer everything on a free 60-minute call.
           </p>
           <button
             type="button"
             onClick={() => window.location.assign(CTA_URL)}
             className="btn-primary"
+            style={{ maxWidth: 280 }}
             aria-label="Book a free thyroid fat-loss strategy call"
           >
-            Book a Free Strategy Call →
+            Book a Free Strategy Call
           </button>
-          <p className="mt-2.5 text-gray-600" style={{ fontSize: "var(--text-xs)" }}>
-            ACE · FITR · INFS Certified · 200+ Clients
-          </p>
+          <p className="mt-3 micro-trust">ACE · FITR · INFS Certified · 200+ Clients</p>
         </div>
 
       </div>
     </section>
-  );
+  )
 }

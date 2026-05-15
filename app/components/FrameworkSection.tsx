@@ -1,65 +1,114 @@
-"use client";
+'use client'
 
-const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
 
 const steps = [
-  { letter: "L", label: "Lab Analysis",      desc: "Find what's actually blocking your fat loss." },
-  { letter: "E", label: "Energy First",       desc: "Restore energy before fat loss begins." },
-  { letter: "A", label: "Adaptive Nutrition", desc: "Real Indian meals. No starvation." },
-  { letter: "N", label: "Navigate & Track",   desc: "Weekly tweaks based on your real data." },
-];
+  { letter: 'L', label: 'Lab Analysis',      desc: 'Find what\'s actually blocking your fat loss.' },
+  { letter: 'E', label: 'Energy First',       desc: 'Restore energy before fat loss begins.' },
+  { letter: 'A', label: 'Adaptive Nutrition', desc: 'Real Indian meals. No starvation.' },
+  { letter: 'N', label: 'Navigate & Track',   desc: 'Weekly tweaks based on your real data.' },
+]
 
 const timeline = [
-  { weeks: "Weeks 1–3",  result: "Energy up. Bloating down. Cravings stabilize." },
-  { weeks: "Weeks 4–8",  result: "Visible inch loss. Fat loss accelerates." },
-  { weeks: "Weeks 9–12", result: "Confident body. Sustainable habits locked in." },
-];
+  { weeks: 'Weeks 1–3',  result: 'Energy up. Bloating down. Cravings stabilize.' },
+  { weeks: 'Weeks 4–8',  result: 'Visible inch loss. Fat loss accelerates.' },
+  { weeks: 'Weeks 9–12', result: 'Confident body. Sustainable habits locked in.' },
+]
 
 export default function FrameworkSection() {
   return (
-    <section className="section-pad bg-black text-white">
-      <div className="container-default">
+    <section className="section-pad">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 220 }}>
+        <div className="glow-section" />
+      </div>
+
+      <div className="container-default relative z-10">
 
         {/* Header */}
         <div className="mb-6 text-center">
           <p className="section-label">The Method</p>
-          <h2 className="section-title mx-auto max-w-[24ch]">
-            The Thyroid{" "}
-            <span className="text-gradient">L.E.A.N. Method</span>™
+          <h2 className="section-title mx-auto" style={{ maxWidth: '24ch' }}>
+            The Thyroid <span className="text-gradient">L.E.A.N. Method</span>
           </h2>
-          {/* Emotional anchor — outcome-first language */}
-          <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--text-xs)] text-gray-500 leading-relaxed">
-            Built specifically for hypothyroid women.{" "}
-            <span className="text-gray-400 font-medium">The exact 4-step system that works when everything else has failed.</span>
+          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch', lineHeight: 1.6 }}>
+            Built specifically for hypothyroid women.{' '}
+            <span style={{ color: 'var(--t3)', fontWeight: 500 }}>
+              The exact 4-step system that works when everything else has failed.
+            </span>
           </p>
         </div>
 
-        {/* L.E.A.N. Step cards — 2-col mobile, 4-col desktop */}
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">
+        {/* L.E.A.N. Cards — 2-col mobile, 4-col desktop */}
+        <div
+          className="grid grid-cols-2 md:grid-cols-4"
+          style={{ gap: 'clamp(0.5rem, 2vw, 1rem)' }}
+        >
           {steps.map((s) => (
-            <div key={s.letter} className="glass-card-sm p-4 text-center">
-              <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/15 text-base font-black text-purple-400 ring-1 ring-purple-500/25">
+            <div
+              key={s.letter}
+              className="glass-card-sm text-center"
+              style={{ padding: 'clamp(0.75rem, 3vw, 1.25rem)' }}
+            >
+              {/* Letter badge — clamp so it never dominates on mobile */}
+              <div
+                className="mx-auto mb-2.5 flex items-center justify-center rounded-full font-black"
+                style={{
+                  width:    'clamp(2.125rem, 5vw, 2.5rem)',
+                  height:   'clamp(2.125rem, 5vw, 2.5rem)',
+                  fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                  background: 'var(--p-tint)',
+                  color: 'var(--p400)',
+                  border: '1px solid var(--p-border)',
+                }}
+              >
                 {s.letter}
               </div>
-              <p className="mb-1 text-[length:var(--text-xs)] font-semibold text-white leading-snug">
+              <p className="mb-1 font-semibold leading-snug" style={{ fontSize: 'var(--text-xs)', color: 'var(--t1)' }}>
                 {s.label}
               </p>
-              <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-500">
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', lineHeight: 1.55 }}>
                 {s.desc}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Timeline bar */}
-        <div className="mt-4 overflow-hidden rounded-2xl border border-white/[0.07] md:mt-5">
-          <div className="flex flex-col divide-y divide-white/[0.07] sm:flex-row sm:divide-x sm:divide-y-0">
-            {timeline.map((t) => (
-              <div key={t.weeks} className="flex-1 px-4 py-3.5">
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-purple-500">
-                  {t.weeks}
-                </p>
-                <p className="text-[length:var(--text-xs)] text-gray-300 leading-relaxed">
+        {/* Timeline — vertical on mobile (fixes cramped text wrapping), horizontal sm+ */}
+        <div
+          className="mt-4 overflow-hidden"
+          style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-soft)' }}
+        >
+          <div className="flex flex-col sm:flex-row">
+            {timeline.map((t, i) => (
+              <div
+                key={t.weeks}
+                className="flex-1"
+                style={{
+                  padding: 'clamp(0.75rem, 3vw, 1.125rem) clamp(0.875rem, 3.5vw, 1.25rem)',
+                  borderBottom: i < timeline.length - 1 ? '1px solid var(--b-soft)' : 'none',
+                  borderRight: undefined,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span
+                    className="flex items-center justify-center rounded-full font-bold flex-shrink-0"
+                    style={{
+                      width: 20, height: 20, fontSize: 10,
+                      background: 'var(--p-tint)',
+                      color: 'var(--p400)',
+                      border: '1px solid var(--p-border)',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <p
+                    className="font-semibold uppercase tracking-widest"
+                    style={{ fontSize: 10, color: 'var(--p500)', letterSpacing: '0.10em' }}
+                  >
+                    {t.weeks}
+                  </p>
+                </div>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t2)', lineHeight: 1.6 }}>
                   {t.result}
                 </p>
               </div>
@@ -67,22 +116,21 @@ export default function FrameworkSection() {
           </div>
         </div>
 
-        {/* CTA — outcome language */}
-        <div className="mt-6 text-center">
+        {/* CTA — capped at 320px, not full-width stretch */}
+        <div className="mt-6 flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={() => window.location.assign(CTA_URL)}
             className="btn-primary"
+            style={{ maxWidth: 320 }}
             aria-label="Book your free thyroid fat-loss strategy call"
           >
-            Book Free Call — See It Work For You →
+            Book Free Call — See It Work For You
           </button>
-          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
-            Free call · No commitment
-          </p>
+          <p className="micro-trust">Free call · No commitment</p>
         </div>
 
       </div>
     </section>
-  );
+  )
 }
