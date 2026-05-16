@@ -47,28 +47,28 @@ function StoryCard({
     return (
       <article
         className="
-          glass-card
           overflow-hidden
           rounded-[32px]
           border
           border-white/[0.06]
-          bg-white/[0.02]
+          bg-[#0b0716]
           backdrop-blur-xl
+          shadow-[0_25px_60px_rgba(0,0,0,0.55)]
         "
       >
-        <div className="grid grid-cols-[minmax(140px,170px)_1fr]">
+        <div className="grid grid-cols-[170px_1fr]">
           {/* IMAGE */}
-          <div className="relative min-h-[320px] overflow-hidden">
+          <div className="relative min-h-[340px] overflow-hidden">
             <Image
               src={story.image}
               alt={`${story.name} transformation`}
               fill
               loading="lazy"
-              className="object-cover object-center"
+              className="object-cover object-top"
             />
 
             <div
-              className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent"
+              className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"
               aria-hidden="true"
             />
 
@@ -107,45 +107,30 @@ function StoryCard({
   return (
     <article
       className="
-        glass-card
         overflow-hidden
         rounded-[32px]
         border
         border-white/[0.06]
-        bg-white/[0.02]
-        backdrop-blur-xl
+        bg-[#0b0716]
+        shadow-[0_25px_60px_rgba(0,0,0,0.55)]
       "
     >
-      {/* IMAGE SECTION */}
-      <div className="relative overflow-hidden">
-        {/* FIXED HEIGHT FOR MOBILE */}
-        <div className="relative h-[420px] w-full">
+      {/* IMAGE CONTAINER */}
+      <div className="relative">
+        {/* FIXED FULL CARD IMAGE HEIGHT */}
+        <div className="relative h-[560px] w-full">
           <Image
             src={story.image}
             alt={`${story.name} transformation`}
             fill
             loading="lazy"
-            className="object-cover object-top"
+            className="object-contain object-top"
           />
-
-          {/* DARK OVERLAY */}
-          <div
-            className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"
-            aria-hidden="true"
-          />
-
-          {/* RESULT CHIP */}
-          <div className="absolute bottom-4 left-4">
-            <span className="premium-chip">
-              <span className="premium-chip-dot" aria-hidden="true" />
-              {story.result}
-            </span>
-          </div>
         </div>
       </div>
 
-      {/* CONTENT SECTION */}
-      <div className="bg-[rgba(10,5,25,0.92)] px-4 pb-5 pt-4">
+      {/* BOTTOM CONTENT */}
+      <div className="border-t border-white/[0.05] bg-[rgba(10,5,25,0.95)] px-5 pb-5 pt-4">
         {/* TAGS */}
         <div className="mb-3 flex flex-wrap gap-2">
           {story.tags.map((tag) => (
