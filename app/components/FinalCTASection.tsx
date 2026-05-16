@@ -1,7 +1,8 @@
 "use client";
 
-import CtaButton from "./CtaButton";
+import SectionCta from "./SectionCta";
 import ScarcityBadge from "./ScarcityBadge";
+import SectionHeader from "./SectionHeader";
 import { useScarcity } from "../context/ScarcityProvider";
 
 const includes = [
@@ -24,11 +25,11 @@ export default function FinalCTASection() {
   const { scarcityShort } = useScarcity();
 
   return (
-    <section className="section-pad" style={{ background: "var(--bg-section)" }}>
+    <section className="section-pad relative bg-[var(--bg-section)] text-white">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden"
-        style={{ height: 360 }}
+        style={{ height: 320 }}
       >
         <div className="glow-hero" />
       </div>
@@ -36,30 +37,20 @@ export default function FinalCTASection() {
       <div className="container-narrow relative z-10 text-center">
         <ScarcityBadge className="mx-auto mb-5 w-fit" />
 
-        <p className="section-label mb-2">Private Coaching Intake</p>
-        <h2 className="section-title mx-auto mb-3" style={{ maxWidth: "18ch" }}>
-          Your Thyroid Transformation{" "}
-          <span className="text-gradient">Starts Here.</span>
-        </h2>
-        <p
-          className="mx-auto mb-6"
-          style={{
-            fontSize: "var(--text-sm)",
-            color: "var(--t3)",
-            maxWidth: "34ch",
-            lineHeight: 1.65,
-          }}
-        >
-          Reserve a private ₹299 strategy session.{" "}
-          <strong style={{ color: "var(--t2)", fontWeight: 600 }}>
-            No pressure. No upsells. Just clarity on your next step.
-          </strong>
-        </p>
+        <SectionHeader
+          className="!mb-6"
+          label="Private Coaching Intake"
+          title={
+            <>
+              Your Thyroid Transformation{" "}
+              <span className="text-gradient">Starts Here.</span>
+            </>
+          }
+          lead="Reserve a private ₹299 strategy session — no pressure, no upsells, just clarity on your next step."
+          titleMaxCh="18ch"
+        />
 
-        <div
-          className="glass-card mb-5 overflow-hidden text-left"
-          style={{ padding: "clamp(1rem, 4vw, 1.25rem)" }}
-        >
+        <article className="glass-card mb-5 overflow-hidden rounded-[var(--r-xl)] p-[clamp(1rem,4vw,1.25rem)] text-left">
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
             <div
               className="relative flex-shrink-0 overflow-hidden rounded-full"
@@ -68,7 +59,7 @@ export default function FinalCTASection() {
                 height: "clamp(3rem, 8vw, 3.5rem)",
                 border: "2px solid rgba(168,85,247,0.35)",
                 background:
-                  "linear-gradient(135deg, rgba(168,85,247,0.25), rgba(147,51,234,0.15))",
+                  "linear-gradient(135deg, rgba(168,85,247,0.22), rgba(147,51,234,0.12))",
               }}
             >
               <div
@@ -79,24 +70,10 @@ export default function FinalCTASection() {
               </div>
             </div>
             <div>
-              <p
-                className="font-semibold uppercase tracking-wider"
-                style={{
-                  fontSize: "var(--text-xs)",
-                  color: "var(--p400)",
-                  marginBottom: 2,
-                }}
-              >
+              <p className="mb-0.5 text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-[var(--p400)]">
                 India&apos;s Leading Thyroid Fat-Loss Coach
               </p>
-              <p
-                className="font-bold"
-                style={{
-                  fontSize: "var(--text-base)",
-                  color: "var(--t1)",
-                  marginBottom: "0.5rem",
-                }}
-              >
+              <p className="mb-2 text-[length:var(--text-base)] font-bold text-[var(--t1)]">
                 Swapnil Umbarkar
               </p>
               <div className="chip-list sm:justify-start">
@@ -108,39 +85,22 @@ export default function FinalCTASection() {
               </div>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div
-          className="mb-5 text-left"
-          style={{
-            borderRadius: "var(--r-xl)",
-            border: "1px solid var(--p-border)",
-            background: "var(--p-subtle)",
-            padding: "clamp(0.875rem, 4vw, 1.125rem)",
-          }}
-        >
-          <p
-            className="mb-3 font-semibold uppercase tracking-wider"
-            style={{ fontSize: "var(--text-xs)", color: "var(--p400)" }}
-          >
+        <div className="mb-5 rounded-[var(--r-xl)] border border-[var(--p-border)] bg-[var(--p-subtle)] p-[clamp(0.875rem,4vw,1.125rem)] text-left">
+          <p className="mb-3 text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-[var(--p400)]">
             Your ₹299 Session Includes
           </p>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {includes.map((item) => (
-              <li key={item} className="flex items-center gap-2.5">
+              <li key={item} className="flex items-start gap-2.5">
                 <span
-                  className="shrink-0 font-bold leading-none"
-                  style={{ color: "var(--p500)", fontSize: "var(--text-sm)" }}
+                  className="shrink-0 font-bold leading-none text-[var(--p500)]"
+                  style={{ fontSize: "var(--text-sm)" }}
                 >
                   ✓
                 </span>
-                <span
-                  style={{
-                    fontSize: "var(--text-xs)",
-                    color: "var(--t2)",
-                    lineHeight: 1.5,
-                  }}
-                >
+                <span className="text-[length:var(--text-xs)] leading-relaxed text-[var(--t2)]">
                   {item}
                 </span>
               </li>
@@ -148,35 +108,26 @@ export default function FinalCTASection() {
           </ul>
         </div>
 
-        <div className="cta-wrap mx-auto mb-5">
-          <CtaButton
-            id="cta-final"
-            variant="primary"
-            label="Reserve Your Thyroid Consultation"
-            sublabel={`₹299 private session · ${scarcityShort}`}
-            ariaLabel="Reserve your 299 rupee thyroid consultation"
-          />
-        </div>
+        <SectionCta
+          id="cta-final"
+          variant="primary"
+          className="mx-auto mb-5"
+          buttonClassName="w-full"
+          label="Reserve Your Thyroid Consultation"
+          sublabel={`₹299 private session · ${scarcityShort}`}
+          ariaLabel="Reserve your 299 rupee thyroid consultation"
+        />
 
         <div className="mb-5 flex flex-wrap items-center justify-center gap-2.5">
           {objections.map((obj, i) => (
             <span key={obj} className="flex items-center gap-1.5">
-              {i > 0 && (
+              {i > 0 ? (
                 <span
-                  className="h-3 w-px"
-                  style={{ background: "var(--b-soft)" }}
+                  className="h-3 w-px bg-[var(--b-soft)]"
                   aria-hidden="true"
                 />
-              )}
-              <span
-                style={{
-                  fontSize: "clamp(9px, 1.8vw, 10px)",
-                  fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "var(--t4)",
-                }}
-              >
+              ) : null}
+              <span className="text-[clamp(9px,1.8vw,10px)] font-medium uppercase tracking-[0.08em] text-[var(--t4)]">
                 {obj}
               </span>
             </span>

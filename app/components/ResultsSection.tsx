@@ -3,28 +3,33 @@
 import Image from 'next/image'
 import { useRef, useState, useEffect } from 'react'
 
-import CtaButton from './CtaButton'
+import SectionCta from './SectionCta'
+import SectionHeader from './SectionHeader'
 
 const results = [
   {
+    id: 'vaidehi',
     name: 'Vaidehi S., 34',
     badges: ['4.8 kg Lost', '2″ Waist ↓', 'Energy Restored'],
     quote: 'Lost more in 6 weeks than in 2 years of trying alone.',
     img: '/transformations/Vaidehi 1.png',
   },
   {
+    id: 'surekha',
     name: 'Surekha P., 41',
     badges: ['3.5 kg Lost', 'Belly Fat ↓', 'Confidence Back'],
     quote: 'Finally a plan built for thyroid — not just calories.',
     img: '/transformations/Surekha 3.png',
   },
   {
+    id: 'nehamia',
     name: 'Nehamia R., 38',
     badges: ['5.2 kg Lost', '3″ Loss', 'Brain Fog Gone'],
     quote: 'My doctor noticed the difference before I even told her.',
     img: '/transformations/Nehamia 6.png',
   },
   {
+    id: 'anjali',
     name: 'Anjali M., 36',
     badges: ['4.1 kg Lost', 'Bloating Gone', 'Cravings Reduced'],
     quote: 'No starvation. Real food. Real results.',
@@ -56,55 +61,49 @@ export default function ResultsSection() {
   }
 
   return (
-    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
-      {/* Subtle glow */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 240 }}>
+    <section className="section-pad relative bg-[var(--bg-section)] text-white">
+      <div aria-hidden="true" className="section-glow">
         <div className="glow-section" />
       </div>
 
       <div className="container-default relative z-10">
+        <SectionHeader
+          label="Real Transformations"
+          title={
+            <>
+              <span className="text-gradient">Visible Fat Loss.</span> Real
+              Women.
+            </>
+          }
+          lead="Not models. Not filters. Real hypothyroid women from Mumbai, Delhi, Bangalore — and across India."
+          titleMaxCh="22ch"
+        />
 
-        {/* Header */}
-        <div className="mb-7 text-center">
-          <p className="section-label">Real Transformations</p>
-          <h2 className="section-title mx-auto" style={{ maxWidth: '22ch' }}>
-            <span className="text-gradient">Visible Fat Loss.</span> Real Women.
-          </h2>
-          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch' }}>
-            Not models. Not filters. Real hypothyroid women from India.
-          </p>
-        </div>
-
-        {/* MOBILE: native snap-scroll carousel */}
-        <div className="md:hidden relative">
+        <div className="relative md:hidden">
           <div
             ref={trackRef}
             data-carousel-track
-            className="flex gap-3 overflow-x-scroll pb-1"
-            style={{
-              scrollSnapType: 'x mandatory',
-              overscrollBehaviorX: 'contain',
-              WebkitOverflowScrolling: 'touch',
-              paddingInline: 'clamp(1rem, 4vw, 1.5rem)',
-            }}
+            className="flex gap-3 overflow-x-auto pb-1 -mx-[clamp(1rem,4vw,2rem)] px-[clamp(1rem,4vw,2rem)]"
+            style={{ scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain' }}
           >
             {results.map((r) => (
               <div
-                key={r.name}
+                key={r.id}
                 className="flex-shrink-0"
-                style={{ scrollSnapAlign: 'start', width: '82vw', maxWidth: 280 }}
+                style={{ scrollSnapAlign: 'start', width: 'min(82vw, 280px)' }}
               >
-                <MobileCard r={r} />
+                <ResultCard r={r} sizes="82vw" />
               </div>
             ))}
           </div>
 
-          {/* Dot indicators */}
           <div className="dot-track mt-4">
-            {results.map((_, i) => (
+            {results.map((r, i) => (
               <button
-                key={i}
-                aria-label={`Go to card ${i + 1}`}
+                key={r.id}
+                type="button"
+                aria-label={`Go to transformation ${i + 1}`}
+                aria-current={activeIdx === i}
                 onClick={() => scrollTo(i)}
                 className="dot"
                 style={{ width: activeIdx === i ? 20 : 8 }}
@@ -113,117 +112,85 @@ export default function ResultsSection() {
           </div>
         </div>
 
-        {/* DESKTOP: 4-col grid */}
-        <div className="hidden md:grid md:grid-cols-4 gap-4">
-          {results.map((r) => <DesktopCard key={r.name} r={r} />)}
+        <div className="hidden gap-4 md:grid md:grid-cols-4">
+          {results.map((r) => (
+            <ResultCard key={r.id} r={r} sizes="25vw" />
+          ))}
         </div>
-        {/* TABLET: 2-col grid */}
+
         <div className="hidden sm:grid sm:grid-cols-2 gap-3 md:hidden">
-          {results.map((r) => <DesktopCard key={r.name} r={r} />)}
+          {results.map((r) => (
+            <ResultCard key={r.id} r={r} sizes="50vw" />
+          ))}
         </div>
 
-        {/* CTA */}
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <CtaButton
-            variant="secondary"
-            className="w-full"
-            style={{ maxWidth: '22rem' }}
-            label="Start Your Thyroid Transformation"
-            sublabel="Begin with a ₹299 private strategy session"
-            ariaLabel="Start your thyroid transformation"
-          />
-          <p className="micro-trust">Premium coaching · Qualified applicants only</p>
-        </div>
-
+        <SectionCta
+          label="Start Your Thyroid Transformation"
+          sublabel="Begin with a ₹299 private strategy session"
+          trust="Premium coaching · Qualified applicants only"
+          buttonClassName="w-full"
+          style={{ maxWidth: '22rem' }}
+          ariaLabel="Start your thyroid transformation"
+        />
       </div>
     </section>
   )
 }
 
-function MobileCard({ r }: { r: (typeof results)[0] }) {
+function ResultCard({
+  r,
+  sizes,
+}: {
+  r: (typeof results)[0]
+  sizes: string
+}) {
   return (
-    <div className="result-card" style={{ borderRadius: 'var(--r-xl)' }}>
-      {/* 4:5 ratio — shows face, not zoomed crop */}
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5', background: 'var(--s2)' }}>
+    <article className="result-card h-full">
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ aspectRatio: '4/5', background: 'var(--s2)' }}
+      >
         <Image
           src={r.img}
           alt={`${r.name} thyroid fat loss transformation`}
-          fill sizes="82vw"
+          fill
+          sizes={sizes}
           className="object-cover object-top"
           loading="lazy"
         />
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.82) 0%, rgba(13,13,15,0.12) 50%, transparent 100%)' }}
           aria-hidden="true"
+          style={{
+            background:
+              'linear-gradient(to top, rgba(15,16,18,0.85) 0%, rgba(15,16,18,0.15) 48%, transparent 100%)',
+          }}
         />
-        {/* Badges inside image — no external stack fighting */}
-        <div className="absolute bottom-2.5 left-2.5 right-2.5">
-          <div className="flex flex-wrap gap-1">
-            {r.badges.slice(0, 2).map((b) => (
-              <span
-                key={b}
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  background: 'rgba(13,13,15,0.75)',
-                  border: '1px solid var(--p-border)',
-                  borderRadius: 'var(--r-full)',
-                  padding: '0.16rem 0.5rem',
-                  color: 'var(--p400)',
-                  fontWeight: 600,
-                  backdropFilter: 'blur(4px)',
-                }}
-              >
-                {b}
-              </span>
-            ))}
-          </div>
+        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex flex-wrap gap-1">
+          {r.badges.slice(0, 2).map((b) => (
+            <span key={b} className="result-badge">
+              {b}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Quote + name */}
-      <div className="px-3 pt-3 pb-2.5">
-        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--t1)', lineHeight: 1.45 }}>
+      <div className="flex flex-1 flex-col px-3.5 py-3">
+        <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-[var(--t1)]">
           &ldquo;{r.quote}&rdquo;
         </p>
-        <p className="mt-1.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', fontWeight: 500 }}>
+        <p className="mt-2 text-[length:var(--text-xs)] font-medium text-[var(--t4)]">
           {r.name}
         </p>
       </div>
-    </div>
-  )
-}
 
-function DesktopCard({ r }: { r: (typeof results)[0] }) {
-  return (
-    <div className="result-card">
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5', background: 'var(--s2)' }}>
-        <Image
-          src={r.img}
-          alt={`${r.name} thyroid fat loss transformation`}
-          fill sizes="(max-width:640px) 50vw, 25vw"
-          className="object-cover object-top"
-          loading="lazy"
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.78) 0%, transparent 55%)' }}
-          aria-hidden="true"
-        />
-      </div>
-      <div className="px-3 pt-3 pb-1.5">
-        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--t1)', lineHeight: 1.5 }}>
-          &ldquo;{r.quote}&rdquo;
-        </p>
-        <p className="mt-1.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', fontWeight: 500 }}>
-          {r.name}
-        </p>
-      </div>
-      <div className="result-badges">
+      <div className="result-badges hidden sm:flex">
         {r.badges.slice(0, 3).map((b) => (
-          <span key={b} className="result-badge">{b}</span>
+          <span key={b} className="result-badge">
+            {b}
+          </span>
         ))}
       </div>
-    </div>
+    </article>
   )
 }

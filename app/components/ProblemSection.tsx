@@ -1,93 +1,71 @@
 "use client";
 
-import CtaButton from "./CtaButton";
+import SectionCta from "./SectionCta";
+import SectionHeader from "./SectionHeader";
 
 const problems = [
   {
-    icon: "⚡",
+    icon: "🥗",
     title: "Generic Diets Keep Failing",
-    body: "Advice built for healthy hormones won't move thyroid fat.",
+    body: "Plans built for healthy hormones rarely move stubborn thyroid fat.",
   },
   {
-    icon: "🔥",
+    icon: "⚖️",
     title: "Cutting Calories Backfires",
-    body: "Less food slows thyroid output and stalls fat loss.",
+    body: "Eating less can slow your thyroid further — and stall progress.",
   },
   {
-    icon: "😓",
-    title: "Energy Disappears First",
-    body: "Low energy destroys consistency and motivation.",
+    icon: "😴",
+    title: "Energy Drops First",
+    body: "When you're exhausted, consistency feels impossible every week.",
   },
   {
-    icon: "🎯",
-    title: "Nobody Fixed the Root Cause",
-    body: "Medication changed. Plans changed. Results never did.",
+    icon: "💜",
+    title: "Nobody Addressed the Root",
+    body: "Medication changed. Diets changed. Your body still didn't respond.",
   },
 ];
 
 export default function ProblemSection() {
   return (
-    <section className="section-pad bg-[var(--bg-page)] text-white">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-52 overflow-hidden"
-      >
-        <div className="absolute left-1/2 top-0 h-44 w-64 -translate-x-1/2 rounded-full bg-purple-500/[0.05] blur-[80px]" />
+    <section className="section-pad relative bg-[var(--bg-page)] text-white">
+      <div aria-hidden="true" className="section-glow">
+        <div className="glow-section" />
       </div>
 
       <div className="container-default relative z-10">
-        <div className="mb-7 text-center">
-          <p className="section-label">
-            Why You Feel Stuck
-          </p>
-
-          <h2 className="section-title mx-auto max-w-[18ch]">
-            The Real Reason{" "}
-            <span className="text-gradient">
-              Thyroid Fat Won’t Move
-            </span>
-          </h2>
-
-          <p className="mx-auto mt-3 max-w-[31ch] text-sm leading-relaxed text-[var(--t3)]">
-            It was never laziness. Your body needed a
-            different system.
-          </p>
-        </div>
+        <SectionHeader
+          label="Why You Feel Stuck"
+          title={
+            <>
+              The Real Reason{" "}
+              <span className="text-gradient">Thyroid Fat Won&apos;t Move</span>
+            </>
+          }
+          lead="It was never laziness. Your body needed a coach who understands hypothyroid fat loss."
+          titleMaxCh="18ch"
+        />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {problems.map((p) => (
-            <div
-              key={p.title}
-              className="glass-card-sm rounded-2xl p-4"
-            >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/[0.08] text-lg">
-                {p.icon}
-              </div>
-
-              <p className="mb-1.5 text-sm font-bold leading-snug text-white">
+            <article key={p.title} className="glass-card-sm rounded-[var(--r-xl)] p-4">
+              <div className="icon-ring mb-3">{p.icon}</div>
+              <p className="mb-1.5 text-sm font-bold leading-snug text-[var(--t1)]">
                 {p.title}
               </p>
-
-              <p className="text-xs leading-relaxed text-[var(--t3)]">
-                {p.body}
-              </p>
-            </div>
+              <p className="text-xs leading-relaxed text-[var(--t3)]">{p.body}</p>
+            </article>
           ))}
         </div>
 
-        <div className="mt-7 text-center">
-          <CtaButton
-            variant="secondary"
-            className="w-full max-w-sm"
-            label="Book Your ₹299 Thyroid Assessment"
-            sublabel="Private consultation · Limited weekly slots"
-            ariaLabel="Book your 299 rupee thyroid assessment"
-          />
-
-          <p className="mt-2 text-xs text-[var(--t4)]">
-            Qualified intake · No obligation after your session
-          </p>
-        </div>
+        <SectionCta
+          className="mx-auto max-w-sm"
+          buttonClassName="w-full"
+          label="Book Your ₹299 Thyroid Assessment"
+          sublabel="Private consultation · Limited weekly slots"
+          trust="Qualified intake · No obligation after your session"
+          ariaLabel="Book your 299 rupee thyroid assessment"
+        />
       </div>
     </section>
   );

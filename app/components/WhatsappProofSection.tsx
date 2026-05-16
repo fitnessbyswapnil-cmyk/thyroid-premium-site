@@ -3,10 +3,12 @@
 import Image from 'next/image'
 import { useRef, useEffect } from 'react'
 
-import CtaButton from './CtaButton'
+import SectionCta from './SectionCta'
+import SectionHeader from './SectionHeader'
 
 const testimonials = [
   {
+    id: 'heenal',
     image: '/whatsapp-proof/Heenal R4.png',
     result: 'TSH 6.2 → 2.9',
     tags: ['Thyroid Improved', 'Energy Up'],
@@ -14,6 +16,7 @@ const testimonials = [
     name: 'Heenal R.',
   },
   {
+    id: 'namarata',
     image: '/whatsapp-proof/Namarata R9.png',
     result: 'TSH 7.8 → 3.1',
     tags: ['No More Fatigue', 'Focus Restored'],
@@ -21,6 +24,7 @@ const testimonials = [
     name: 'Namarata S.',
   },
   {
+    id: 'sima',
     image: '/whatsapp-proof/Sima R1.png',
     result: '4 kg Lost',
     tags: ['Belly Fat ↓', '1 Week Results'],
@@ -28,6 +32,7 @@ const testimonials = [
     name: 'Sima P.',
   },
   {
+    id: 'priya',
     image: '/whatsapp-proof/Heenal R4.png',
     result: 'Inches Lost',
     tags: ['Clothes Fit', 'Confidence Up'],
@@ -35,6 +40,7 @@ const testimonials = [
     name: 'Priya K.',
   },
   {
+    id: 'anjali',
     image: '/whatsapp-proof/Namarata R9.png',
     result: '6 kg Lost',
     tags: ['No Starvation', 'Real Food'],
@@ -46,20 +52,20 @@ const testimonials = [
 const ITEMS = [...testimonials, ...testimonials]
 
 export default function WhatsappProofSection() {
-  const trackRef  = useRef<HTMLDivElement>(null)
-  const pauseRef  = useRef(false)
-  const posRef    = useRef(0)
-  const rafRef    = useRef<number>(0)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const pauseRef = useRef(false)
+  const posRef = useRef(0)
+  const rafRef = useRef<number>(0)
 
   useEffect(() => {
     const el = trackRef.current
     if (!el) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const speed = 0.42
+    const speed = 0.38
 
     const tick = () => {
-      if (!pauseRef.current && el) {
+      if (!pauseRef.current) {
         posRef.current += speed
         if (posRef.current >= el.scrollWidth / 2) posRef.current = 0
         el.scrollLeft = posRef.current
@@ -68,66 +74,61 @@ export default function WhatsappProofSection() {
     }
     rafRef.current = requestAnimationFrame(tick)
 
-    const pause  = () => { pauseRef.current = true }
+    const pause = () => { pauseRef.current = true }
     const resume = () => { pauseRef.current = false }
 
     el.addEventListener('pointerenter', pause)
     el.addEventListener('pointerleave', resume)
-    el.addEventListener('touchstart',   pause,  { passive: true })
-    el.addEventListener('touchend',     resume, { passive: true })
+    el.addEventListener('touchstart', pause, { passive: true })
+    el.addEventListener('touchend', resume, { passive: true })
 
     return () => {
       cancelAnimationFrame(rafRef.current)
       el.removeEventListener('pointerenter', pause)
       el.removeEventListener('pointerleave', resume)
-      el.removeEventListener('touchstart',   pause)
-      el.removeEventListener('touchend',     resume)
+      el.removeEventListener('touchstart', pause)
+      el.removeEventListener('touchend', resume)
     }
   }, [])
 
   return (
-    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 220 }}>
+    <section className="section-pad relative bg-[var(--bg-section)] text-white">
+      <div aria-hidden="true" className="section-glow">
         <div className="glow-section" />
       </div>
 
       <div className="relative z-10">
-
-        {/* Header */}
-        <div className="container-default mb-7 text-center">
-          <div className="badge-pill mx-auto mb-3 w-fit" role="status">
-            <span className="badge-dot" aria-hidden="true" />
+        <div className="container-default mb-6 text-center md:mb-7">
+          <div className="badge-pill mx-auto mb-4 w-fit" role="status">
+            <span className="badge-dot shrink-0" aria-hidden="true" />
             Real Client Conversations
           </div>
-          <p className="section-label">WhatsApp Proof</p>
-          <h2 className="section-title mx-auto" style={{ maxWidth: '22ch' }}>
-            Real Messages. <span className="text-gradient">Real Thyroid Fat Loss.</span>
-          </h2>
-          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch', lineHeight: 1.6 }}>
-            Indian women sharing real progress — belly fat gone, energy back, clothes fitting again.
-          </p>
+          <SectionHeader
+            className="!mb-0"
+            label="WhatsApp Proof"
+            title={
+              <>
+                Real Messages.{' '}
+                <span className="text-gradient">Real Thyroid Fat Loss.</span>
+              </>
+            }
+            lead="Indian women sharing real progress — belly fat down, energy back, clothes fitting again."
+            titleMaxCh="22ch"
+          />
         </div>
 
-        {/* Slider */}
         <div className="relative overflow-hidden">
           <div
             ref={trackRef}
             data-carousel-track
-            className="flex gap-3"
-            style={{
-              overflowX: 'scroll',
-              scrollBehavior: 'auto',
-              paddingInline: '1.25rem',
-              cursor: 'grab',
-            }}
+            className="flex gap-3 overflow-x-auto px-[clamp(1rem,4vw,2rem)]"
           >
             {ITEMS.map((item, idx) => (
-              <div
-                key={`${item.name}-${item.headline}-${idx}`}
-                className="flex-shrink-0 glass-card overflow-hidden"
-                style={{ width: 'min(240px, 70vw)', borderRadius: 'var(--r-xl)' }}
+              <article
+                key={`${item.id}-${idx}`}
+                className="glass-card flex-shrink-0 overflow-hidden"
+                style={{ width: 'min(240px, 72vw)', borderRadius: 'var(--r-xl)' }}
               >
-                {/* Screenshot — 9:13 ratio shows full WhatsApp message content */}
                 <div
                   className="relative overflow-hidden"
                   style={{
@@ -140,83 +141,77 @@ export default function WhatsappProofSection() {
                     src={item.image}
                     alt={`WhatsApp message — ${item.headline}`}
                     fill
-                    sizes="min(240px, 70vw)"
+                    sizes="min(240px, 72vw)"
                     className="object-cover object-top"
                     loading="lazy"
                   />
                   <div
                     className="absolute inset-0"
                     aria-hidden="true"
-                    style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.75) 0%, transparent 45%)' }}
+                    style={{
+                      background:
+                        'linear-gradient(to top, rgba(15,16,18,0.78) 0%, transparent 48%)',
+                    }}
                   />
-                  {/* Result chip — inside image, compact */}
                   <div className="absolute bottom-2.5 left-2.5">
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full backdrop-blur-sm"
-                      style={{
-                        border: '1px solid var(--p-border)',
-                        background: 'rgba(13,13,15,0.72)',
-                        padding: '0.14rem 0.5rem',
-                      }}
-                    >
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--p400)' }} aria-hidden="true" />
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--p300)', lineHeight: 1.5 }}>
-                        {item.result}
-                      </span>
+                    <span className="premium-chip">
+                      <span className="premium-chip-dot" aria-hidden="true" />
+                      {item.result}
                     </span>
                   </div>
                 </div>
 
-                {/* Card body */}
-                <div style={{ padding: '0.75rem 0.875rem 0.875rem' }}>
-                  {/* Max 2 tags — was 3, caused wrapping in narrow cards */}
+                <div className="p-3.5">
                   <div className="mb-2 flex flex-wrap gap-1.5">
                     {item.tags.slice(0, 2).map((tag) => (
-                      <span key={tag} className="result-badge">{tag}</span>
+                      <span key={tag} className="result-badge">
+                        {tag}
+                      </span>
                     ))}
                   </div>
-                  <p className="mb-1 font-bold leading-snug" style={{ fontSize: 'var(--text-sm)', color: 'var(--t1)' }}>
+                  <p className="mb-1 text-sm font-bold leading-snug text-[var(--t1)]">
                     {item.headline}
                   </p>
-                  <p style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--t4)' }}>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--t4)]">
                     {item.name} · Hypothyroid Client
                   </p>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
 
-          {/* Edge fades — clamp so 360px sees more content */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0 h-full z-20"
-            style={{ width: 'clamp(2.5rem, 5vw, 5rem)', background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
+            className="pointer-events-none absolute left-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
+            style={{
+              background: 'linear-gradient(to right, var(--bg-section), transparent)',
+            }}
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 h-full z-20"
-            style={{ width: 'clamp(2.5rem, 5vw, 5rem)', background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
+            className="pointer-events-none absolute right-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
+            style={{
+              background: 'linear-gradient(to left, var(--bg-section), transparent)',
+            }}
           />
         </div>
 
-        {/* Swipe hint */}
-        <p className="mt-3 text-center md:hidden" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'var(--t5)' }}>
-          swipe to see more
+        <p className="mt-3 text-center text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--t5)] md:hidden">
+          Swipe to see more
         </p>
 
-        {/* CTA */}
-        <div className="container-default mt-8 flex flex-col items-center gap-3">
-          <CtaButton
+        <div className="container-default">
+          <SectionCta
             variant="ghost"
-            className="w-full"
+            className="mx-auto"
+            buttonClassName="w-full"
             style={{ maxWidth: '22rem' }}
             label="Apply For Your ₹299 Strategy Session"
             sublabel="See if this coaching program fits you"
+            trust="Premium thyroid coaching · Not a diet plan PDF"
             ariaLabel="Apply for your 299 rupee strategy session"
           />
-          <p className="micro-trust">Premium thyroid coaching · Not a diet plan PDF</p>
         </div>
-
       </div>
     </section>
   )

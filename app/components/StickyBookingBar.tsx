@@ -13,8 +13,23 @@ export default function StickyBookingBar() {
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!visible) {
+      document.body.style.paddingBottom = "";
+      return;
+    }
+
+    document.body.style.paddingBottom =
+      "calc(5.25rem + env(safe-area-inset-bottom))";
+
+    return () => {
+      document.body.style.paddingBottom = "";
+    };
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -22,9 +37,9 @@ export default function StickyBookingBar() {
     <div
       role="complementary"
       aria-label="Reserve thyroid consultation"
-      className="fixed inset-x-0 bottom-3 z-50 flex justify-center px-3 md:bottom-4"
+      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:pb-4"
     >
-      <div className="sticky-cta-bar flex w-full max-w-[420px] items-center gap-3 rounded-[1.6rem] border border-white/[0.06] bg-[rgba(17,17,19,0.88)] px-3.5 py-2.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
+      <div className="flex w-full max-w-[420px] items-center gap-3 rounded-[1.5rem] border border-white/[0.08] bg-[rgba(15,16,18,0.92)] px-3.5 py-2.5 shadow-[0_10px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <div className="min-w-0 flex-1">
           <p className="truncate text-[12px] font-semibold tracking-[-0.01em] text-[var(--t1)]">
             ₹299 Thyroid Strategy Session

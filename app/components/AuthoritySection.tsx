@@ -1,106 +1,96 @@
 "use client";
 
 import { Fragment } from "react";
-import CtaButton from "./CtaButton";
+
+import SectionCta from "./SectionCta";
+import SectionHeader from "./SectionHeader";
 
 const stats = [
-  { num: "200+", label: "Clients" },
-  { num: "10–15kg", label: "Fat Loss" },
+  { num: "200+", label: "Women Coached" },
+  { num: "10–15 kg", label: "Avg. Fat Loss" },
   { num: "93%", label: "Energy Improved" },
 ];
 
 const pillars = [
   {
-    icon: "🧬",
-    title: "Lab-Guided Protocol",
-    desc: "Built around your biomarkers and symptoms.",
+    icon: "🎯",
+    title: "Personalized Coaching",
+    desc: "A plan built around your thyroid, schedule, and lifestyle.",
   },
   {
     icon: "🍱",
-    title: "Indian Nutrition",
-    desc: "Real meals adapted for thyroid fat loss.",
+    title: "Real Indian Nutrition",
+    desc: "Home meals adapted for sustainable thyroid fat loss.",
   },
   {
     icon: "📊",
-    title: "Weekly Tracking",
-    desc: "Progress adjusted week-by-week.",
+    title: "Weekly Accountability",
+    desc: "Progress reviewed and adjusted every week.",
   },
   {
     icon: "💬",
-    title: "WhatsApp Support",
-    desc: "Direct accountability and guidance.",
+    title: "Direct WhatsApp Support",
+    desc: "Daily guidance when you need clarity or motivation.",
   },
 ];
 
 export default function AuthoritySection() {
   return (
-    <section className="section-pad bg-[var(--bg-page)] text-white">
-      <div className="container-default">
-        <div className="mb-7 text-center">
-          <p className="section-label">
-            Why This Works
-          </p>
+    <section className="section-pad relative bg-[var(--bg-page)] text-white">
+      <div aria-hidden="true" className="section-glow">
+        <div className="glow-section" />
+      </div>
 
-          <h2 className="section-title mx-auto max-w-[20ch]">
-            Not Another Diet.{" "}
-            <span className="text-gradient">
-              A Thyroid System.
-            </span>
-          </h2>
-        </div>
+      <div className="container-default relative z-10">
+        <SectionHeader
+          label="Why This Works"
+          title={
+            <>
+              Not Another Diet.{" "}
+              <span className="text-gradient">A Thyroid System.</span>
+            </>
+          }
+          lead="Premium coaching designed for hypothyroid women who need structure, not another generic meal plan."
+          titleMaxCh="20ch"
+        />
 
         <div className="stat-row mx-auto mb-7">
           {stats.map((s, i) => (
             <Fragment key={s.label}>
               <div className="stat-chip">
                 <span className="stat-num">{s.num}</span>
-                <span className="stat-label">
-                  {s.label}
-                </span>
+                <span className="stat-label">{s.label}</span>
               </div>
-
-              {i < stats.length - 1 && (
+              {i < stats.length - 1 ? (
                 <div className="stat-divider" aria-hidden="true" />
-              )}
+              ) : null}
             </Fragment>
           ))}
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {pillars.map((p) => (
-            <div
+            <article
               key={p.title}
-              className="glass-card-sm flex gap-3 rounded-2xl p-4"
+              className="glass-card-sm flex gap-3 rounded-[var(--r-xl)] p-4"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-500/[0.08] text-lg">
-                {p.icon}
-              </div>
-
+              <div className="icon-ring">{p.icon}</div>
               <div>
-                <p className="mb-1 text-sm font-bold text-white">
-                  {p.title}
-                </p>
-
-                <p className="text-xs leading-relaxed text-[var(--t3)]">
-                  {p.desc}
-                </p>
+                <p className="mb-1 text-sm font-bold text-[var(--t1)]">{p.title}</p>
+                <p className="text-xs leading-relaxed text-[var(--t3)]">{p.desc}</p>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
-        <div className="mt-7 text-center">
-          <CtaButton
-            variant="secondary"
-            label="Apply For Private Coaching"
-            sublabel="₹299 consultation · Limited weekly intake"
-            ariaLabel="Apply for private thyroid coaching"
-          />
-
-          <p className="mt-2 text-xs text-[var(--t4)]">
-            Applications closing soon · Select clients only
-          </p>
-        </div>
+        <SectionCta
+          className="mx-auto max-w-sm"
+          buttonClassName="w-full"
+          label="Apply For Private Coaching"
+          sublabel="₹299 consultation · Limited weekly intake"
+          trust="Applications closing soon · Select clients only"
+          ariaLabel="Apply for private thyroid coaching"
+        />
       </div>
     </section>
   );
