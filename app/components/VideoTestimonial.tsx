@@ -32,9 +32,12 @@ const testimonials = [
 
 export default function VideoTestimonial() {
   return (
-    <section className="section-pad relative bg-[var(--bg-page)] text-white">
-      <div aria-hidden="true" className="section-glow">
-        <div className="glow-section" />
+    <section className="section-pad relative overflow-hidden bg-[var(--bg-page)] text-white">
+      {/* Atmospheric background layers */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[var(--p300)] opacity-[0.06] blur-[120px]" />
+        <div className="absolute bottom-0 left-0 h-[400px] w-[500px] rounded-full bg-purple-900 opacity-[0.08] blur-[100px]" />
+        <div className="absolute bottom-0 right-0 h-[400px] w-[500px] rounded-full bg-violet-950 opacity-[0.07] blur-[100px]" />
       </div>
 
       <div className="container-default relative z-10">
@@ -50,37 +53,77 @@ export default function VideoTestimonial() {
           titleMaxCh="20ch"
         />
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {testimonials.map((t) => (
             <article
               key={t.name}
-              className="glass-card overflow-hidden rounded-[var(--r-xl)]"
+              className="glass-card group relative overflow-hidden rounded-[var(--r-xl)]"
+              style={{
+                background:
+                  "linear-gradient(145deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)",
+                boxShadow:
+                  "0 0 0 1px rgba(255,255,255,0.07), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1)",
+              }}
             >
-              <div className="relative aspect-[4/4.6] overflow-hidden bg-white/[0.03] sm:aspect-[4/5] md:aspect-video">
+              {/* Video container — cinematic 9:16-ish on mobile, wider on sm+ */}
+              <div className="relative w-full overflow-hidden bg-black"
+                style={{ aspectRatio: "9/14" }}
+              >
+                {/* Video fills frame edge-to-edge, top-anchored for faces */}
                 <video
                   controls
                   playsInline
                   preload="metadata"
-                  className="h-full w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover object-top"
                   aria-label={`Transformation video: ${t.name}`}
                 >
                   <source src={t.videoUrl} type="video/mp4" />
                 </video>
 
-                <div className="absolute inset-x-2.5 top-2.5 flex overflow-hidden rounded-full border border-white/[0.08] bg-black/55 backdrop-blur-md">
+                {/* Cinematic top vignette so stats pill reads cleanly */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 top-0 h-28"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%)",
+                  }}
+                />
+
+                {/* Bottom vignette — bleeds into the quote card below */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-24"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(10,5,25,0.85) 0%, rgba(0,0,0,0) 100%)",
+                  }}
+                />
+
+                {/* Stats pill — premium frosted glass */}
+                <div
+                  className="absolute inset-x-3 top-3 flex overflow-hidden rounded-full"
+                  style={{
+                    background: "rgba(0,0,0,0.5)",
+                    backdropFilter: "blur(16px) saturate(1.4)",
+                    WebkitBackdropFilter: "blur(16px) saturate(1.4)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+                  }}
+                >
                   {t.stats.map((s, i) => (
                     <div
                       key={`${t.name}-${s.label}-${i}`}
-                      className={`flex flex-1 flex-col items-center justify-center py-1.5 ${
+                      className={`flex flex-1 flex-col items-center justify-center py-2 ${
                         i !== t.stats.length - 1
-                          ? "border-r border-white/[0.06]"
+                          ? "border-r border-white/[0.08]"
                           : ""
                       }`}
                     >
-                      <span className="text-[11px] font-bold leading-none text-[var(--p300)]">
+                      <span className="text-[12px] font-extrabold leading-none tracking-tight text-[var(--p300)]">
                         {s.num}
                       </span>
-                      <span className="mt-0.5 text-[8px] font-medium uppercase tracking-[0.14em] text-white/55">
+                      <span className="mt-[3px] text-[8.5px] font-semibold uppercase tracking-[0.16em] text-white/50">
                         {s.label}
                       </span>
                     </div>
@@ -88,19 +131,51 @@ export default function VideoTestimonial() {
                 </div>
               </div>
 
-              <div className="px-4 pb-4 pt-3">
-                <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-[var(--t1)]">
+              {/* Quote block */}
+              <div
+                className="relative px-5 pb-5 pt-4"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(10,5,25,0.6) 0%, rgba(10,5,25,0.85) 100%)",
+                }}
+              >
+                {/* Decorative left accent */}
+                <div
+                  aria-hidden="true"
+                  className="absolute left-5 top-4 h-full w-[2px] rounded-full"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, var(--p300), transparent)",
+                    maxHeight: "48px",
+                    opacity: 0.7,
+                  }}
+                />
+                <p className="pl-4 text-[length:var(--text-sm)] font-semibold leading-snug text-white/90">
                   &ldquo;{t.quote}&rdquo;
                 </p>
-                <p className="mt-1.5 text-[0.72rem] text-[var(--t4)]">
-                  — {t.name}, {t.role}
-                </p>
+                <div className="mt-2.5 flex items-center gap-2.5 pl-4">
+                  {/* Avatar initial badge */}
+                  <div
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, var(--p300), #7c3aed)",
+                    }}
+                  >
+                    {t.name.charAt(0)}
+                  </div>
+                  <p className="text-[0.72rem] leading-none text-white/45">
+                    <span className="text-white/70 font-medium">{t.name}</span>
+                    {" · "}
+                    {t.role}
+                  </p>
+                </div>
               </div>
             </article>
           ))}
         </div>
 
-        <div className="cta-wrap section-cta mx-auto max-w-sm">
+        <div className="cta-wrap section-cta mx-auto mt-10 max-w-sm">
           <p className="micro-trust text-center">
             <span className="text-[var(--p300)]" aria-hidden="true">
               ★★★★★
