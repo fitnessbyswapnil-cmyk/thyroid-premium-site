@@ -31,7 +31,7 @@ export default function Hero() {
         <div className="absolute left-1/2 top-[12%] h-[90px] w-[min(88vw,400px)] -translate-x-1/2 rounded-full bg-[#c026d3]/[0.045] blur-[72px]" />
       </div>
 
-      <div className="container-default relative z-10 flex flex-col items-center pb-[clamp(3.5rem,8vw,5.5rem)] pt-[clamp(2.5rem,6vw,4rem)] text-center">
+      <div className="container-default relative z-10 flex flex-col items-center pb-[clamp(4rem,9vw,6rem)] pt-[clamp(3rem,7vw,4.5rem)] text-center">
 
         {/* 1 — Scarcity signal */}
         <ScarcityBadge className="mb-6 sm:mb-7" />
@@ -52,7 +52,7 @@ export default function Hero() {
         </h1>
 
         {/* 4 — Subheadline: validates first, identifies audience, 22 words */}
-        <p className="mt-5 max-w-[28ch] text-pretty text-[length:var(--text-sm)] leading-[1.72] text-[var(--t2)] sm:mt-6 sm:max-w-[36ch] sm:text-[length:var(--text-base)]">
+        <p className="mt-6 max-w-[28ch] text-pretty text-[length:var(--text-sm)] leading-[1.72] text-[var(--t2)] sm:mt-7 sm:max-w-[36ch] sm:text-[length:var(--text-base)]">
           You&apos;ve done everything right. The problem was always the
           plan &mdash; not you. Built for Indian women with hypothyroidism.
         </p>
@@ -88,7 +88,7 @@ export default function Hero() {
 
         {/* 6 — Outcome chips */}
         <ul
-          className="mt-5 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:max-w-none"
+          className="mt-6 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:mt-7 sm:max-w-none"
           aria-label="What you can expect"
         >
           {OUTCOMES.map((item) => (
@@ -117,10 +117,10 @@ export default function Hero() {
         </ul>
 
         {/* 7 — CTA block */}
-        <div className="cta-wrap relative mt-9 w-full max-w-[min(100%,21rem)] sm:mt-10 sm:max-w-sm">
+        <div className="cta-wrap relative mt-10 w-full max-w-[min(100%,21rem)] sm:mt-11 sm:max-w-sm">
           <CtaButton
             variant="primary"
-            className="relative z-[1] min-h-[58px]"
+            className="relative z-[1]"
             label="Book My ₹299 Thyroid Strategy Session"
             sublabel="Private · 30 min · Zero obligation"
             ariaLabel="Book your 299 rupee thyroid strategy session"

@@ -319,18 +319,18 @@ a {
 
 .cta-button {
   width: 100%;
-  min-height: 56px;
+  min-height: 52px;
 
   border-radius: 999px;
 
-  padding: 0.9rem 1.25rem;
+  padding: 0.78rem 1.1rem;
 
   background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
 
   color: white;
 
   font-weight: 800;
-  font-size: clamp(0.92rem, 2.6vw, 0.98rem);
+  font-size: clamp(0.88rem, 2.4vw, 0.95rem);
 
   letter-spacing: -0.02em;
 
@@ -363,9 +363,9 @@ a {
 }
 
 .cta-sub {
-  font-size: 0.74rem;
+  font-size: 0.71rem;
   font-weight: 500;
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 /* SECONDARY BUTTON */
