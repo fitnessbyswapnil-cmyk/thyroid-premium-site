@@ -75,7 +75,8 @@ export default function Hero() {
               ★★★★★
             </span>
             <span className="text-[var(--t3)]">
-              Trusted by 200+ hypothyroid women across India
+              Trusted by 200+ hypothyroid women · Led by Swapnil Umbarkar,
+              thyroid fat-loss specialist
             </span>
           </p>
         </div>

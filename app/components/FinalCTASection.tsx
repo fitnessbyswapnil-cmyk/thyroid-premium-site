@@ -1,9 +1,16 @@
 "use client";
 
+import Image from "next/image";
+
+import {
+  CERTIFICATIONS,
+  COACH_IMAGE,
+  COACH_NAME,
+} from "../lib/authority";
+import { useScarcity } from "../context/ScarcityProvider";
 import SectionCta from "./SectionCta";
 import ScarcityBadge from "./ScarcityBadge";
 import SectionHeader from "./SectionHeader";
-import { useScarcity } from "../context/ScarcityProvider";
 
 const includes = [
   "Personalized thyroid fat-loss roadmap",
@@ -13,7 +20,7 @@ const includes = [
   "Clarity on your 90-day transformation path",
 ];
 
-const certs = ["ACE Certified", "FITR Certified", "INFS Certified"];
+const certChips = CERTIFICATIONS.map((c) => c.short);
 
 const objections = [
   "₹299 consultation",
@@ -52,32 +59,24 @@ export default function FinalCTASection() {
 
         <article className="glass-card mb-5 overflow-hidden rounded-[var(--r-xl)] p-[clamp(1rem,4vw,1.25rem)] text-left">
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
-            <div
-              className="relative flex-shrink-0 overflow-hidden rounded-full"
-              style={{
-                width: "clamp(3rem, 8vw, 3.5rem)",
-                height: "clamp(3rem, 8vw, 3.5rem)",
-                border: "2px solid rgba(168,85,247,0.35)",
-                background:
-                  "linear-gradient(135deg, rgba(168,85,247,0.22), rgba(147,51,234,0.12))",
-              }}
-            >
-              <div
-                className="flex h-full w-full items-center justify-center font-black"
-                style={{ fontSize: "var(--text-base)", color: "var(--p300)" }}
-              >
-                SU
-              </div>
+            <div className="relative h-[clamp(3.25rem,9vw,3.75rem)] w-[clamp(3.25rem,9vw,3.75rem)] shrink-0 overflow-hidden rounded-full border-2 border-[var(--p-border)] bg-[var(--s2)]">
+              <Image
+                src={COACH_IMAGE}
+                alt={COACH_NAME}
+                fill
+                sizes="64px"
+                className="object-cover object-top"
+              />
             </div>
             <div>
               <p className="mb-0.5 text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-[var(--p400)]">
-                India&apos;s Leading Thyroid Fat-Loss Coach
+                Thyroid Fat-Loss Specialist
               </p>
               <p className="mb-2 text-[length:var(--text-base)] font-bold text-[var(--t1)]">
-                Swapnil Umbarkar
+                {COACH_NAME}
               </p>
               <div className="chip-list sm:justify-start">
-                {certs.map((c) => (
+                {certChips.map((c) => (
                   <span key={c} className="chip">
                     {c}
                   </span>

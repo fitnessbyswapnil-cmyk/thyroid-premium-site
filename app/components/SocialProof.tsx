@@ -33,9 +33,9 @@ export default function SocialProof() {
           ))}
         </div>
 
-        <p className="mx-auto mt-3 max-w-[34ch] text-center text-pretty text-[0.72rem] leading-relaxed text-[var(--t4)] sm:text-xs">
-          Trusted by hypothyroid women across India who were tired of failed
-          diets — and ready for real coaching.
+        <p className="mx-auto mt-3 max-w-[36ch] text-center text-pretty text-[0.72rem] leading-relaxed text-[var(--t4)] sm:text-xs">
+          Expert-led thyroid coaching for Indian women — not another generic
+          diet plan.
         </p>
       </div>
     </section>

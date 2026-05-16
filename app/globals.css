@@ -697,6 +697,90 @@ a {
   font-size: 1.05rem;
 }
 
+.coach-portrait-wrap {
+  position: relative;
+  width: min(68vw, 200px);
+  margin-inline: auto;
+}
+
+@media (min-width: 640px) {
+  .coach-portrait-wrap {
+    width: 200px;
+    margin-inline: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .coach-portrait-wrap {
+    width: 228px;
+  }
+}
+
+.coach-portrait-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -0.65rem;
+  border-radius: 1.75rem;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(168, 85, 247, 0.14) 0%,
+    transparent 72%
+  );
+}
+
+.cert-strip {
+  display: flex;
+  gap: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cert-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.cert-card {
+  flex: 0 0 auto;
+  width: min(38vw, 148px);
+  scroll-snap-align: start;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--b-soft);
+  background: var(--s1);
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+@media (min-width: 768px) {
+  .cert-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.65rem;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .cert-card {
+    width: auto;
+  }
+}
+
+.cert-card-image {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cert-card-label {
+  padding: 0.5rem 0.55rem 0.6rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--t3);
+  text-align: center;
+}
+
 /* CHIPS */
 
 .chip {
