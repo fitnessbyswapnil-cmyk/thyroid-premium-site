@@ -45,38 +45,56 @@ function StoryCard({
 }) {
   if (layout === "horizontal") {
     return (
-      <article className="glass-card overflow-hidden rounded-[var(--r-xl)]">
-        <div className="grid grid-cols-[minmax(120px,140px)_1fr]">
-          <div className="relative min-h-[220px] overflow-hidden">
+      <article
+        className="
+          glass-card
+          overflow-hidden
+          rounded-[32px]
+          border
+          border-white/[0.06]
+          bg-white/[0.02]
+          backdrop-blur-xl
+        "
+      >
+        <div className="grid grid-cols-[minmax(140px,170px)_1fr]">
+          {/* IMAGE */}
+          <div className="relative min-h-[320px] overflow-hidden">
             <Image
               src={story.image}
               alt={`${story.name} transformation`}
               fill
               loading="lazy"
-              className="object-cover"
+              className="object-cover object-center"
             />
+
             <div
-              className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
+              className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent"
               aria-hidden="true"
             />
-            <div className="absolute bottom-3 left-3">
+
+            {/* RESULT CHIP */}
+            <div className="absolute bottom-4 left-4">
               <span className="premium-chip">
                 <span className="premium-chip-dot" aria-hidden="true" />
                 {story.result}
               </span>
             </div>
           </div>
-          <div className="flex flex-col justify-center p-5">
-            <div className="mb-3 flex flex-wrap gap-1.5">
+
+          {/* CONTENT */}
+          <div className="flex flex-col justify-center p-6">
+            <div className="mb-4 flex flex-wrap gap-2">
               {story.tags.map((tag) => (
                 <span key={tag} className="result-badge">
                   {tag}
                 </span>
               ))}
             </div>
-            <p className="mb-3 text-sm font-medium leading-relaxed text-[var(--t2)]">
+
+            <p className="mb-5 text-[15px] font-medium leading-relaxed text-[var(--t2)]">
               &ldquo;{story.quote}&rdquo;
             </p>
+
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--t4)]">
               {story.name}
             </p>
@@ -87,37 +105,62 @@ function StoryCard({
   }
 
   return (
-    <article className="glass-card overflow-hidden rounded-[var(--r-xl)]">
-      <div className="relative aspect-[4/4.2] overflow-hidden">
-        <Image
-          src={story.image}
-          alt={`${story.name} transformation`}
-          fill
-          loading="lazy"
-          className="object-cover"
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent"
-          aria-hidden="true"
-        />
-        <div className="absolute bottom-3 left-3">
-          <span className="premium-chip">
-            <span className="premium-chip-dot" aria-hidden="true" />
-            {story.result}
-          </span>
+    <article
+      className="
+        glass-card
+        overflow-hidden
+        rounded-[32px]
+        border
+        border-white/[0.06]
+        bg-white/[0.02]
+        backdrop-blur-xl
+      "
+    >
+      {/* IMAGE SECTION */}
+      <div className="relative overflow-hidden">
+        {/* FIXED HEIGHT FOR MOBILE */}
+        <div className="relative h-[420px] w-full">
+          <Image
+            src={story.image}
+            alt={`${story.name} transformation`}
+            fill
+            loading="lazy"
+            className="object-cover object-top"
+          />
+
+          {/* DARK OVERLAY */}
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"
+            aria-hidden="true"
+          />
+
+          {/* RESULT CHIP */}
+          <div className="absolute bottom-4 left-4">
+            <span className="premium-chip">
+              <span className="premium-chip-dot" aria-hidden="true" />
+              {story.result}
+            </span>
+          </div>
         </div>
       </div>
-      <div className="p-4">
-        <div className="mb-2.5 flex flex-wrap gap-1.5">
+
+      {/* CONTENT SECTION */}
+      <div className="bg-[rgba(10,5,25,0.92)] px-4 pb-5 pt-4">
+        {/* TAGS */}
+        <div className="mb-3 flex flex-wrap gap-2">
           {story.tags.map((tag) => (
             <span key={tag} className="result-badge">
               {tag}
             </span>
           ))}
         </div>
-        <p className="mb-2 text-sm leading-relaxed text-[var(--t2)]">
+
+        {/* QUOTE */}
+        <p className="mb-3 text-[14px] leading-relaxed text-[var(--t2)]">
           &ldquo;{story.quote}&rdquo;
         </p>
+
+        {/* NAME */}
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--t4)]">
           {story.name}
         </p>
@@ -129,6 +172,7 @@ function StoryCard({
 export default function MoreThanFatLossSection() {
   return (
     <section className="section-pad relative overflow-hidden bg-[var(--bg-page)] text-white">
+      {/* BACKGROUND GLOW */}
       <div aria-hidden="true" className="section-glow">
         <div className="absolute left-1/2 top-[-12%] h-[220px] w-[220px] -translate-x-1/2 rounded-full bg-[var(--p500)]/[0.07] blur-[80px]" />
       </div>
@@ -139,31 +183,46 @@ export default function MoreThanFatLossSection() {
           title={
             <>
               More Than Weight Loss.{" "}
-              <span className="text-gradient">Confidence Returned.</span>
+              <span className="text-gradient">
+                Confidence Returned.
+              </span>
             </>
           }
           lead="These women didn't just lose belly fat — they got their energy, confidence, and daily life back."
           titleMaxCh="18ch"
         />
 
-        <div className="hidden gap-4 md:grid md:grid-cols-2">
+        {/* DESKTOP */}
+        <div className="hidden gap-6 md:grid md:grid-cols-2">
           {stories.map((story) => (
-            <StoryCard key={story.name} story={story} layout="horizontal" />
+            <StoryCard
+              key={story.name}
+              story={story}
+              layout="horizontal"
+            />
           ))}
         </div>
 
-        <div className="space-y-3 md:hidden">
+        {/* MOBILE */}
+        <div className="space-y-5 md:hidden">
           {stories.map((story) => (
-            <StoryCard key={story.name} story={story} layout="stacked" />
+            <StoryCard
+              key={story.name}
+              story={story}
+              layout="stacked"
+            />
           ))}
         </div>
 
-        <SectionCta
-          variant="ghost"
-          label="Start Your Thyroid Transformation →"
-          trust="200+ Indian women · Premium coaching results"
-          ariaLabel="Start your thyroid transformation"
-        />
+        {/* CTA */}
+        <div className="mt-12">
+          <SectionCta
+            variant="ghost"
+            label="Start Your Thyroid Transformation →"
+            trust="200+ Indian women · Premium coaching results"
+            ariaLabel="Start your thyroid transformation"
+          />
+        </div>
       </div>
     </section>
   );
