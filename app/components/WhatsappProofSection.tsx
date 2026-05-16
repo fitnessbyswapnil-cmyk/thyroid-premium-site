@@ -67,23 +67,35 @@ export default function WhatsappProofSection() {
     const tick = () => {
       if (!pauseRef.current) {
         posRef.current += speed
-        if (posRef.current >= el.scrollWidth / 2) posRef.current = 0
+
+        if (posRef.current >= el.scrollWidth / 2) {
+          posRef.current = 0
+        }
+
         el.scrollLeft = posRef.current
       }
+
       rafRef.current = requestAnimationFrame(tick)
     }
+
     rafRef.current = requestAnimationFrame(tick)
 
-    const pause = () => { pauseRef.current = true }
-    const resume = () => { pauseRef.current = false }
+    const pause = () => {
+      pauseRef.current = true
+    }
+
+    const resume = () => {
+      pauseRef.current = false
+    }
 
     el.addEventListener('pointerenter', pause)
     el.addEventListener('pointerleave', resume)
     el.addEventListener('touchstart', pause, { passive: true })
-    el.addEventListener('touchend', resume, { passive: true })
+    el.addEventListener('touchend', resume)
 
     return () => {
       cancelAnimationFrame(rafRef.current)
+
       el.removeEventListener('pointerenter', pause)
       el.removeEventListener('pointerleave', resume)
       el.removeEventListener('touchstart', pause)
@@ -92,24 +104,29 @@ export default function WhatsappProofSection() {
   }, [])
 
   return (
-    <section className="section-pad relative bg-[var(--bg-section)] text-white">
+    <section className="section-pad relative overflow-hidden bg-[var(--bg-section)] text-white">
+      {/* BACKGROUND GLOW */}
       <div aria-hidden="true" className="section-glow">
         <div className="glow-section" />
       </div>
 
       <div className="relative z-10">
-        <div className="container-default mb-6 text-center md:mb-7">
+        {/* HEADER */}
+        <div className="container-default mb-7 text-center">
           <div className="badge-pill mx-auto mb-4 w-fit" role="status">
             <span className="badge-dot shrink-0" aria-hidden="true" />
             Real Client Conversations
           </div>
+
           <SectionHeader
             className="!mb-0"
             label="WhatsApp Proof"
             title={
               <>
                 Real Messages.{' '}
-                <span className="text-gradient">Real Thyroid Fat Loss.</span>
+                <span className="text-gradient">
+                  Real Thyroid Fat Loss.
+                </span>
               </>
             }
             lead="Indian women sharing real progress — belly fat down, energy back, clothes fitting again."
@@ -117,62 +134,135 @@ export default function WhatsappProofSection() {
           />
         </div>
 
+        {/* CAROUSEL */}
         <div className="relative overflow-hidden">
           <div
             ref={trackRef}
             data-carousel-track
-            className="flex gap-3 overflow-x-auto px-[clamp(1rem,4vw,2rem)]"
+            className="
+              flex
+              gap-4
+              overflow-x-auto
+              px-[clamp(1rem,4vw,2rem)]
+              pb-2
+              scrollbar-hide
+            "
           >
             {ITEMS.map((item, idx) => (
               <article
                 key={`${item.id}-${idx}`}
-                className="glass-card flex-shrink-0 overflow-hidden"
-                style={{ width: 'min(240px, 72vw)', borderRadius: 'var(--r-xl)' }}
+                className="
+                  glass-card
+                  flex-shrink-0
+                  overflow-hidden
+                  border
+                  border-white/[0.06]
+                  bg-[#0b0716]
+                  shadow-[0_25px_60px_rgba(0,0,0,0.5)]
+                "
+                style={{
+                  width: 'min(255px, 74vw)',
+                  borderRadius: '32px',
+                }}
               >
+                {/* IMAGE AREA */}
                 <div
                   className="relative overflow-hidden"
                   style={{
-                    aspectRatio: '9/13',
-                    borderRadius: 'calc(var(--r-xl) - 1px) calc(var(--r-xl) - 1px) 0 0',
-                    background: 'var(--s2)',
+                    aspectRatio: '9 / 14',
+                    background: '#050505',
                   }}
                 >
+                  {/* IMAGE */}
                   <Image
                     src={item.image}
                     alt={`WhatsApp message — ${item.headline}`}
                     fill
-                    sizes="min(240px, 72vw)"
-                    className="object-cover object-top"
+                    sizes="(max-width:768px) 74vw, 255px"
+                    className="object-contain object-top"
                     loading="lazy"
                   />
+
+                  {/* TOP OVERLAY */}
                   <div
-                    className="absolute inset-0"
                     aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-28"
                     style={{
                       background:
-                        'linear-gradient(to top, rgba(15,16,18,0.78) 0%, transparent 48%)',
+                        'linear-gradient(to bottom, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.45) 55%, transparent 100%)',
                     }}
                   />
-                  <div className="absolute bottom-2.5 left-2.5">
+
+                  {/* BOTTOM OVERLAY */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-x-0 bottom-0 h-36"
+                    style={{
+                      background:
+                        'linear-gradient(to top, rgba(8,8,12,0.95) 0%, rgba(8,8,12,0.72) 45%, transparent 100%)',
+                    }}
+                  />
+
+                  {/* RESULT CHIP */}
+                  <div className="absolute bottom-3 left-3 z-20">
                     <span className="premium-chip">
-                      <span className="premium-chip-dot" aria-hidden="true" />
+                      <span
+                        className="premium-chip-dot"
+                        aria-hidden="true"
+                      />
                       {item.result}
                     </span>
                   </div>
                 </div>
 
-                <div className="p-3.5">
-                  <div className="mb-2 flex flex-wrap gap-1.5">
+                {/* CONTENT AREA */}
+                <div className="bg-[rgba(10,5,25,0.96)] px-4 pb-4 pt-3">
+                  {/* TAGS */}
+                  <div className="mb-2.5 flex flex-wrap gap-1.5">
                     {item.tags.slice(0, 2).map((tag) => (
-                      <span key={tag} className="result-badge">
+                      <span
+                        key={tag}
+                        className="
+                          rounded-full
+                          border
+                          border-[var(--p500)]/20
+                          bg-[var(--p500)]/10
+                          px-2.5
+                          py-1
+                          text-[10px]
+                          font-medium
+                          text-[var(--t2)]
+                          backdrop-blur-sm
+                        "
+                      >
                         {tag}
                       </span>
                     ))}
                   </div>
-                  <p className="mb-1 text-sm font-bold leading-snug text-[var(--t1)]">
+
+                  {/* HEADLINE */}
+                  <p
+                    className="
+                      mb-2
+                      text-[15px]
+                      font-bold
+                      leading-[1.3]
+                      text-[var(--t1)]
+                    "
+                  >
                     {item.headline}
                   </p>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--t4)]">
+
+                  {/* CLIENT NAME */}
+                  <p
+                    className="
+                      text-[10px]
+                      font-medium
+                      uppercase
+                      tracking-[0.08em]
+                      text-[var(--t4)]
+                    "
+                  >
                     {item.name} · Hypothyroid Client
                   </p>
                 </div>
@@ -180,26 +270,49 @@ export default function WhatsappProofSection() {
             ))}
           </div>
 
+          {/* LEFT FADE */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
+            className="
+              pointer-events-none
+              absolute
+              left-0
+              top-0
+              z-20
+              h-full
+              w-[clamp(1.5rem,4vw,3rem)]
+            "
             style={{
-              background: 'linear-gradient(to right, var(--bg-section), transparent)',
+              background:
+                'linear-gradient(to right, var(--bg-section), transparent)',
             }}
           />
+
+          {/* RIGHT FADE */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
+            className="
+              pointer-events-none
+              absolute
+              right-0
+              top-0
+              z-20
+              h-full
+              w-[clamp(1.5rem,4vw,3rem)]
+            "
             style={{
-              background: 'linear-gradient(to left, var(--bg-section), transparent)',
+              background:
+                'linear-gradient(to left, var(--bg-section), transparent)',
             }}
           />
         </div>
 
+        {/* MOBILE HINT */}
         <p className="mt-3 text-center text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--t5)] md:hidden">
           Swipe to see more
         </p>
 
+        {/* CTA */}
         <div className="container-default">
           <SectionCta
             variant="ghost"
