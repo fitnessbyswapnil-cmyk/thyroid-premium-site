@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 
-const CTA_URL =
-  "https://swapnilumbarkarfitness.in/case-studies/#cta";
+import CtaButton from "./CtaButton";
 
 const stories = [
   {
@@ -214,19 +213,14 @@ export default function MoreThanFatLossSection() {
         {/* CTA */}
         <div className="mt-8 text-center">
 
-          <button
-            type="button"
-            onClick={() =>
-              window.location.assign(CTA_URL)
-            }
-            className="btn-ghost"
-            aria-label="Book a free thyroid fat-loss consultation call"
-          >
-            Start Your Transformation →
-          </button>
+          <CtaButton
+            variant="ghost"
+            label="Start Your Thyroid Transformation →"
+            ariaLabel="Start your thyroid transformation"
+          />
 
           <p className="mt-2 text-xs text-[var(--t4)]">
-            200+ Indian women transformed
+            200+ Indian women · Premium coaching results
           </p>
         </div>
 

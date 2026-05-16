@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useRef, useState, useEffect } from 'react'
 
-const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+import CtaButton from './CtaButton'
 
 const results = [
   {
@@ -124,16 +124,15 @@ export default function ResultsSection() {
 
         {/* CTA */}
         <div className="mt-8 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={() => window.location.assign(CTA_URL)}
-            className="btn-primary w-full"
+          <CtaButton
+            variant="secondary"
+            className="w-full"
             style={{ maxWidth: '22rem' }}
-            aria-label="Book a free thyroid fat-loss strategy call"
-          >
-            Start Your Transformation
-          </button>
-          <p className="micro-trust">Free strategy call · No obligation</p>
+            label="Start Your Thyroid Transformation"
+            sublabel="Begin with a ₹299 private strategy session"
+            ariaLabel="Start your thyroid transformation"
+          />
+          <p className="micro-trust">Premium coaching · Qualified applicants only</p>
         </div>
 
       </div>

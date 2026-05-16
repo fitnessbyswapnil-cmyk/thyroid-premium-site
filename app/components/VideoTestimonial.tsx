@@ -1,7 +1,6 @@
 "use client";
 
-const CTA_URL =
-  "https://swapnilumbarkarfitness.in/case-studies/#cta";
+import CtaButton from "./CtaButton";
 
 const testimonials = [
   {
@@ -94,7 +93,7 @@ export default function VideoTestimonial() {
 
                   {t.stats.map((s, i) => (
                     <div
-                      key={s.label}
+                      key={`${t.name}-${s.label}-${i}`}
                       className={`flex flex-1 flex-col items-center justify-center py-1.5 ${
                         i !== t.stats.length - 1
                           ? "border-r border-white/[0.06]"
@@ -135,23 +134,16 @@ export default function VideoTestimonial() {
             ★★★★★ 200+ women transformed across India
           </p>
 
-          <button
-            type="button"
-            aria-label="Book your free thyroid fat-loss strategy call"
-            onClick={() =>
-              window.location.assign(CTA_URL)
-            }
-            className="cta-button w-full max-w-sm"
-          >
-            🔥 Start Your Transformation
-
-            <span className="cta-sub">
-              Free 60-Min Call · Limited Spots
-            </span>
-          </button>
+          <CtaButton
+            variant="primary"
+            className="w-full max-w-sm"
+            label="Apply For Private Coaching"
+            sublabel="₹299 strategy session · Limited coaching intake"
+            ariaLabel="Apply for private thyroid coaching"
+          />
 
           <p className="text-[11px] text-[var(--t5)]">
-            No pressure · No upsells
+            No pressure · Personalized fit review
           </p>
         </div>
 

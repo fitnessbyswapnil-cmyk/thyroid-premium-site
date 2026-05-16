@@ -1,6 +1,6 @@
 'use client'
 
-const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+import CtaButton from './CtaButton'
 
 const steps = [
   { letter: 'L', label: 'Lab Analysis',      desc: 'Find what\'s actually blocking your fat loss.' },
@@ -118,16 +118,14 @@ export default function FrameworkSection() {
 
         {/* CTA — capped at 320px, not full-width stretch */}
         <div className="mt-6 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={() => window.location.assign(CTA_URL)}
-            className="btn-primary"
+          <CtaButton
+            variant="secondary"
             style={{ maxWidth: 320 }}
-            aria-label="Book your free thyroid fat-loss strategy call"
-          >
-            Book Free Call — See It Work For You
-          </button>
-          <p className="micro-trust">Free call · No commitment</p>
+            label="Reserve Your Thyroid Consultation"
+            sublabel="₹299 session · See how coaching fits your life"
+            ariaLabel="Reserve your thyroid consultation"
+          />
+          <p className="micro-trust">Applications closing soon · Limited intake</p>
         </div>
 
       </div>

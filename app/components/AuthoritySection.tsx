@@ -1,7 +1,7 @@
 "use client";
 
-const CTA_URL =
-  "https://swapnilumbarkarfitness.in/case-studies/#cta";
+import { Fragment } from "react";
+import CtaButton from "./CtaButton";
 
 const stats = [
   { num: "200+", label: "Clients" },
@@ -51,8 +51,8 @@ export default function AuthoritySection() {
 
         <div className="stat-row mx-auto mb-7">
           {stats.map((s, i) => (
-            <>
-              <div key={s.label} className="stat-chip">
+            <Fragment key={s.label}>
+              <div className="stat-chip">
                 <span className="stat-num">{s.num}</span>
                 <span className="stat-label">
                   {s.label}
@@ -60,12 +60,9 @@ export default function AuthoritySection() {
               </div>
 
               {i < stats.length - 1 && (
-                <div
-                  key={i}
-                  className="stat-divider"
-                />
+                <div className="stat-divider" aria-hidden="true" />
               )}
-            </>
+            </Fragment>
           ))}
         </div>
 
@@ -93,16 +90,15 @@ export default function AuthoritySection() {
         </div>
 
         <div className="mt-7 text-center">
-          <button
-            type="button"
-            onClick={() => window.location.assign(CTA_URL)}
-            className="btn-primary"
-          >
-            🔥 Claim Your Spot
-          </button>
+          <CtaButton
+            variant="secondary"
+            label="Apply For Private Coaching"
+            sublabel="₹299 consultation · Limited weekly intake"
+            ariaLabel="Apply for private thyroid coaching"
+          />
 
           <p className="mt-2 text-xs text-[var(--t4)]">
-            Limited coaching slots available
+            Applications closing soon · Select clients only
           </p>
         </div>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
-const CTA_URL =
-  "https://swapnilumbarkarfitness.in/case-studies/#cta";
+import CtaButton from "./CtaButton";
 
 const problems = [
   {
@@ -77,16 +76,16 @@ export default function ProblemSection() {
         </div>
 
         <div className="mt-7 text-center">
-          <button
-            type="button"
-            onClick={() => window.location.assign(CTA_URL)}
-            className="btn-primary w-full max-w-sm"
-          >
-            🔥 Start Your Transformation
-          </button>
+          <CtaButton
+            variant="secondary"
+            className="w-full max-w-sm"
+            label="Book Your ₹299 Thyroid Assessment"
+            sublabel="Private consultation · Limited weekly slots"
+            ariaLabel="Book your 299 rupee thyroid assessment"
+          />
 
           <p className="mt-2 text-xs text-[var(--t4)]">
-            Free consultation · No pressure
+            Qualified intake · No obligation after your session
           </p>
         </div>
       </div>

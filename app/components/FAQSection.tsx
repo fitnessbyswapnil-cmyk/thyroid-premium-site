@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 
-const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+import CtaButton from './CtaButton'
 
 const faqs = [
   {
@@ -10,8 +10,8 @@ const faqs = [
     a: 'Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.',
   },
   {
-    q: 'What happens on the free strategy call?',
-    a: 'We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.',
+    q: 'What happens in the ₹299 strategy session?',
+    a: 'We review your thyroid history, struggles, and goals — then map whether premium coaching is the right fit. No pressure, no hard sell.',
   },
   {
     q: 'How fast will I see results?',
@@ -142,7 +142,7 @@ export default function FAQSection() {
         <div style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-soft)', overflow: 'hidden' }}>
           {faqs.map((faq, i) => (
             <AccordionItem
-              key={i}
+              key={faq.q}
               faq={faq}
               index={i}
               isOpen={open === i}
@@ -165,17 +165,15 @@ export default function FAQSection() {
             Still have questions?
           </p>
           <p className="mb-5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)' }}>
-            I'll answer everything on a free 60-minute call.
+            Get clarity on your thyroid fat-loss path in a private ₹299 session.
           </p>
-          <button
-            type="button"
-            onClick={() => window.location.assign(CTA_URL)}
-            className="btn-primary"
+          <CtaButton
+            variant="secondary"
             style={{ maxWidth: 280 }}
-            aria-label="Book a free thyroid fat-loss strategy call"
-          >
-            Book a Free Strategy Call
-          </button>
+            label="Book Your ₹299 Thyroid Assessment"
+            sublabel="See if this program fits you"
+            ariaLabel="Book your 299 rupee thyroid assessment"
+          />
           <p className="mt-3 micro-trust">ACE · FITR · INFS Certified · 200+ Clients</p>
         </div>
 

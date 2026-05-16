@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useRef, useEffect } from 'react'
 
-const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+import CtaButton from './CtaButton'
 
 const testimonials = [
   {
@@ -123,7 +123,7 @@ export default function WhatsappProofSection() {
           >
             {ITEMS.map((item, idx) => (
               <div
-                key={idx}
+                key={`${item.name}-${item.headline}-${idx}`}
                 className="flex-shrink-0 glass-card overflow-hidden"
                 style={{ width: 'min(240px, 70vw)', borderRadius: 'var(--r-xl)' }}
               >
@@ -206,16 +206,15 @@ export default function WhatsappProofSection() {
 
         {/* CTA */}
         <div className="container-default mt-8 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={() => window.location.assign(CTA_URL)}
-            className="btn-ghost w-full"
+          <CtaButton
+            variant="ghost"
+            className="w-full"
             style={{ maxWidth: '22rem' }}
-            aria-label="Book a free thyroid fat-loss consultation call"
-          >
-            Book Your Free Call
-          </button>
-          <p className="micro-trust">See how this system can work for your thyroid</p>
+            label="Apply For Your ₹299 Strategy Session"
+            sublabel="See if this coaching program fits you"
+            ariaLabel="Apply for your 299 rupee strategy session"
+          />
+          <p className="micro-trust">Premium thyroid coaching · Not a diet plan PDF</p>
         </div>
 
       </div>
