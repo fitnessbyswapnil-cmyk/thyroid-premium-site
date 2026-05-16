@@ -1,318 +1,312 @@
-"use client";
+'use client'
 
-import { useRef, useState, useEffect } from "react";
-import CtaButton from "./CtaButton";
-import SectionHeader from "./SectionHeader";
+import Image from 'next/image'
+import { useRef, useEffect } from 'react'
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-// Replace imgSrc with your actual hosted screenshot URLs
-const PROOFS = [
+import SectionCta from './SectionCta'
+import SectionHeader from './SectionHeader'
+
+const testimonials = [
   {
-    id: "namarata",
-    metric: "TSH 7.8 → 3.1",
-    headline: "Finally Not Tired\nAll The Time.",
-    tags: ["No More Fatigue", "Focus Restored"],
-    name: "Namarata S.",
-    role: "Hypothyroid Client",
-    imgSrc: "https://swapnilumbarkarfitness.in/wp-content/uploads/namarata-whatsapp.jpg",
-    imgPosition: "center top",
+    id: 'heenal',
+    image: '/whatsapp-proof/Heenal R4.png',
+    result: 'TSH 6.2 → 2.9',
+    tags: ['Thyroid Improved', 'Energy Up'],
+    headline: 'TSH Dropped. Energy Came Back.',
+    name: 'Heenal R.',
   },
   {
-    id: "sima",
-    metric: "4 KG LOST",
-    headline: "4 kg Gone.\nDespite Thyroid.",
-    tags: ["Belly Fat ↓", "1 Week Results"],
-    name: "Sima P.",
-    role: "Hypothyroid Client",
-    imgSrc: "https://swapnilumbarkarfitness.in/wp-content/uploads/sima-whatsapp.jpg",
-    imgPosition: "center top",
+    id: 'namarata',
+    image: '/whatsapp-proof/Namarata R9.png',
+    result: 'TSH 7.8 → 3.1',
+    tags: ['No More Fatigue', 'Focus Restored'],
+    headline: 'Finally Not Tired All The Time.',
+    name: 'Namarata S.',
   },
-  // ← add more proofs here
-] as const;
+  {
+    id: 'sima',
+    image: '/whatsapp-proof/Sima R1.png',
+    result: '4 kg Lost',
+    tags: ['Belly Fat ↓', '1 Week Results'],
+    headline: '4 kg Gone. Despite Thyroid.',
+    name: 'Sima P.',
+  },
+  {
+    id: 'priya',
+    image: '/whatsapp-proof/Heenal R4.png',
+    result: 'Inches Lost',
+    tags: ['Clothes Fit', 'Confidence Up'],
+    headline: 'Old Clothes Fit Again.',
+    name: 'Priya K.',
+  },
+  {
+    id: 'anjali',
+    image: '/whatsapp-proof/Namarata R9.png',
+    result: '6 kg Lost',
+    tags: ['No Starvation', 'Real Food'],
+    headline: 'Lost 6 kg. Eating Real Indian Food.',
+    name: 'Anjali M.',
+  },
+]
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const CARD_W_CSS = "min(82vw, 340px)";
-const SPACER_W_CSS = `calc((100vw - ${CARD_W_CSS}) / 2)`;
+const ITEMS = [...testimonials, ...testimonials]
 
-// ─── COMPONENT ────────────────────────────────────────────────────────────────
-export default function WhatsAppProof() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  // active = 0 on both SSR and first client paint → no hydration mismatch
-  const [active, setActive] = useState(0);
+export default function WhatsappProofSection() {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const pauseRef = useRef(false)
+  const posRef = useRef(0)
+  const rafRef = useRef<number>(0)
 
-  // ── Scroll → active card tracking ─────────────────────────────────────────
   useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
+    const el = trackRef.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const update = () => {
-      const viewCenter = track.scrollLeft + track.clientWidth / 2;
-      let closest = 0;
-      let minDist = Infinity;
-      Array.from(track.children).forEach((child, i) => {
-        const el = child as HTMLElement;
-        const dist = Math.abs(el.offsetLeft + el.offsetWidth / 2 - viewCenter);
-        if (dist < minDist) {
-          minDist = dist;
-          closest = i;
+    const speed = 0.38
+
+    const tick = () => {
+      if (!pauseRef.current) {
+        posRef.current += speed
+        if (posRef.current >= el.scrollWidth / 2) {
+          posRef.current = 0
         }
-      });
-      // subtract 1 for the leading spacer div
-      setActive(Math.max(0, closest - 1));
-    };
+        el.scrollLeft = posRef.current
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
 
-    track.addEventListener("scroll", update, { passive: true });
-    return () => track.removeEventListener("scroll", update);
-  }, []);
+    rafRef.current = requestAnimationFrame(tick)
 
-  // ── Programmatic scroll ────────────────────────────────────────────────────
-  const scrollTo = (idx: number) => {
-    const track = trackRef.current;
-    if (!track) return;
-    // children[0] = spacer, children[idx+1] = card
-    const card = track.children[idx + 1] as HTMLElement | undefined;
-    if (!card) return;
-    track.scrollTo({
-      left: card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2,
-      behavior: "smooth",
-    });
-  };
+    const pause = () => { pauseRef.current = true }
+    const resume = () => { pauseRef.current = false }
+
+    el.addEventListener('pointerenter', pause)
+    el.addEventListener('pointerleave', resume)
+    el.addEventListener('touchstart', pause, { passive: true })
+    el.addEventListener('touchend', resume)
+
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      el.removeEventListener('pointerenter', pause)
+      el.removeEventListener('pointerleave', resume)
+      el.removeEventListener('touchstart', pause)
+      el.removeEventListener('touchend', resume)
+    }
+  }, [])
 
   return (
-    <section className="section-pad relative overflow-hidden bg-[var(--bg-page)] text-white">
-
-      {/* ── Atmospheric depth glows ──────────────────────────────────────────── */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-violet-600 opacity-[0.055] blur-[130px]" />
-        <div className="absolute -bottom-16 left-0 h-[380px] w-[420px] rounded-full bg-purple-950 opacity-[0.08] blur-[100px]" />
-        <div className="absolute -bottom-16 right-0 h-[380px] w-[420px] rounded-full bg-violet-950 opacity-[0.07] blur-[100px]" />
+    <section className="section-pad relative overflow-hidden bg-[var(--bg-section)] text-white">
+      {/* BACKGROUND GLOW */}
+      <div aria-hidden="true" className="section-glow">
+        <div className="glow-section" />
       </div>
 
       <div className="relative z-10">
-
-        {/* ── Section header ─────────────────────────────────────────────────── */}
-        <div className="container-default">
+        {/* HEADER */}
+        <div className="container-default mb-7 text-center">
+          <div className="badge-pill mx-auto mb-4 w-fit" role="status">
+            <span className="badge-dot shrink-0" aria-hidden="true" />
+            Real Client Conversations
+          </div>
           <SectionHeader
-            label="Real Proof"
+            className="!mb-0"
+            label="WhatsApp Proof"
             title={
               <>
-                Real Women.{" "}
-                <span className="text-gradient">Real WhatsApp.</span>
+                Real Messages.{' '}
+                <span className="text-gradient">Real Thyroid Fat Loss.</span>
               </>
             }
             lead="Indian women sharing real progress — belly fat down, energy back, clothes fitting again."
-            titleMaxCh="18ch"
+            titleMaxCh="22ch"
           />
         </div>
 
-        {/* ── SNAP CAROUSEL ──────────────────────────────────────────────────── */}
-        <div
-          ref={trackRef}
-          className="flex gap-4 overflow-x-auto pb-5 pt-1
-                     [-ms-overflow-style:none] [scrollbar-width:none]
-                     [&::-webkit-scrollbar]:hidden"
-          style={{ scrollSnapType: "x mandatory" }}
-        >
-          {/* Leading spacer → first card snaps to visual center */}
-          <div className="shrink-0" style={{ width: SPACER_W_CSS }} aria-hidden />
-
-          {PROOFS.map((p, i) => {
-            const isActive = active === i;
-            return (
+        {/* CAROUSEL */}
+        <div className="relative overflow-hidden">
+          <div
+            ref={trackRef}
+            data-carousel-track
+            className="flex gap-4 overflow-x-auto px-[clamp(1rem,4vw,2rem)] pb-2 scrollbar-hide"
+          >
+            {ITEMS.map((item, idx) => (
               <article
-                key={p.id}
-                onClick={() => scrollTo(i)}
-                className="shrink-0 cursor-pointer overflow-hidden rounded-[28px]
-                           transition-all duration-500 ease-out will-change-transform"
+                key={`${item.id}-${idx}`}
+                className="flex-shrink-0 overflow-hidden"
                 style={{
-                  width: CARD_W_CSS,
-                  scrollSnapAlign: "center",
-                  transform: isActive ? "scale(1)" : "scale(0.92)",
-                  opacity: isActive ? 1 : 0.48,
-                  // Active card: violet tint + glow; inactive: neutral glass
-                  background: isActive
-                    ? "linear-gradient(150deg, rgba(139,92,246,0.13) 0%, rgba(109,40,217,0.07) 50%, rgba(255,255,255,0.02) 100%)"
-                    : "linear-gradient(150deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.01) 100%)",
-                  boxShadow: isActive
-                    ? "0 0 0 1px rgba(139,92,246,0.3), 0 32px 80px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,255,255,0.13)"
-                    : "0 0 0 1px rgba(255,255,255,0.06), 0 8px 24px rgba(0,0,0,0.35)",
+                  width: 'min(255px, 74vw)',
+                  borderRadius: '28px',
+                  background:
+                    'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
+                  boxShadow:
+                    '0 0 0 1px rgba(255,255,255,0.07), 0 24px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.09)',
                 }}
               >
 
-                {/* ①  METRIC CHIP ─────────────────────────────────────────── */}
-                <div className="px-5 pt-5">
+                {/* ① METRIC CHIP — above image, zero overlap */}
+                <div className="px-4 pt-4">
                   <div
-                    className="inline-flex items-center gap-2 rounded-full px-3.5 py-[7px]"
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-[6px]"
                     style={{
-                      background: "rgba(139,92,246,0.14)",
-                      border: "1px solid rgba(139,92,246,0.32)",
+                      background: 'rgba(139,92,246,0.14)',
+                      border: '1px solid rgba(139,92,246,0.3)',
                     }}
                   >
-                    {/* Pulsing dot */}
                     <span
-                      className="h-[7px] w-[7px] shrink-0 rounded-full"
+                      className="h-[6px] w-[6px] shrink-0 rounded-full"
                       style={{
-                        background: "var(--p300)",
-                        boxShadow: "0 0 8px var(--p300)",
+                        background: 'var(--p300)',
+                        boxShadow: '0 0 6px var(--p300)',
                       }}
+                      aria-hidden="true"
                     />
-                    <span className="font-mono text-[11px] font-extrabold tracking-[0.15em] text-[var(--p300)]">
-                      {p.metric}
+                    <span className="font-mono text-[10.5px] font-extrabold tracking-[0.14em] text-[var(--p300)]">
+                      {item.result}
                     </span>
                   </div>
                 </div>
 
-                {/* ②  HEADLINE ────────────────────────────────────────────── */}
-                <div className="px-5 pb-4 pt-3">
-                  <h3
-                    className="whitespace-pre-line font-bold leading-[1.2] text-white"
-                    style={{ fontSize: "clamp(1.15rem, 5vw, 1.3rem)" }}
-                  >
-                    {p.headline}
-                  </h3>
+                {/* ② HEADLINE — above image, full readability */}
+                <div className="px-4 pb-3 pt-2.5">
+                  <p className="text-[14.5px] font-bold leading-[1.25] text-[var(--t1)]">
+                    {item.headline}
+                  </p>
                 </div>
 
-                {/* ③  SCREENSHOT — phone-frame treatment ──────────────────── */}
-                <div className="px-5">
+                {/* ③ SCREENSHOT — full-bleed, object-cover, zero black bars
+                    ─────────────────────────────────────────────────────────
+                    KEY FIX: `object-cover object-top` fills the frame edge-
+                    to-edge. The screenshot is the uneditable social proof —
+                    no text overlaid so the chat content is fully legible.
+                    Subtle bottom vignette only to blend into the card footer.
+                ──────────────────────────────────────────────────────────── */}
+                <div
+                  className="relative mx-3 overflow-hidden"
+                  style={{
+                    aspectRatio: '9 / 14',
+                    borderRadius: '18px',
+                    background: '#07060f',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    boxShadow:
+                      'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  {/* Screen-glass shimmer — pure CSS, no extra image */}
                   <div
-                    className="relative mx-auto w-full overflow-hidden"
-                    style={{
-                      // 9:15 ≈ slightly taller than 16:9 landscape — ideal for
-                      // portrait WhatsApp screenshots showing chat threads
-                      aspectRatio: "9 / 15",
-                      borderRadius: "18px",
-                      border: "1.5px solid rgba(255,255,255,0.1)",
-                      background: "#07060f",
-                      boxShadow:
-                        "0 12px 48px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07)",
-                    }}
-                  >
-                    {/* Screen-glass shimmer overlay — pure CSS, no images */}
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 z-10"
-                      style={{
-                        background:
-                          "linear-gradient(128deg, rgba(255,255,255,0.06) 0%, transparent 40%)",
-                      }}
-                    />
-
-                    {/* Actual WhatsApp screenshot */}
-                    <img
-                      src={p.imgSrc}
-                      alt={`WhatsApp proof: ${p.name}`}
-                      draggable={false}
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full select-none"
-                      style={{
-                        objectFit: "cover",
-                        objectPosition: p.imgPosition,
-                        display: "block",
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* ④  BENEFIT TAGS ────────────────────────────────────────── */}
-                <div className="flex flex-wrap gap-2 px-5 pt-4">
-                  {p.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full px-3 py-[5px] text-[11px] font-semibold"
-                      style={{
-                        background: "rgba(139,92,246,0.1)",
-                        border: "1px solid rgba(139,92,246,0.2)",
-                        color: "rgba(196,181,253,0.88)",
-                        letterSpacing: "0.02em",
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* ⑤  CLIENT IDENTITY ─────────────────────────────────────── */}
-                <div className="flex items-center gap-3 px-5 pb-5 pt-4">
-                  {/* Gradient avatar */}
-                  <div
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-                               text-[13px] font-bold text-white"
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 z-10"
                     style={{
                       background:
-                        "linear-gradient(135deg, var(--p300) 0%, #7c3aed 100%)",
-                      boxShadow: "0 0 0 2px rgba(139,92,246,0.22)",
+                        'linear-gradient(130deg, rgba(255,255,255,0.05) 0%, transparent 38%)',
                     }}
-                  >
-                    {p.name.charAt(0)}
-                  </div>
+                  />
 
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold leading-none text-white/85">
-                      {p.name}
-                    </p>
-                    <p className="mt-[5px] text-[10px] font-medium uppercase tracking-[0.16em] text-white/35">
-                      {p.role}
-                    </p>
-                  </div>
+                  {/* Bottom vignette only — blends into card footer */}
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16"
+                    style={{
+                      background:
+                        'linear-gradient(to top, rgba(8,6,20,0.82) 0%, transparent 100%)',
+                    }}
+                  />
+
+                  {/* Actual WhatsApp screenshot
+                      object-cover  → fills container, no black bars
+                      object-top    → anchors to top of image (key chat
+                                      messages are usually near the top)   */}
+                  <Image
+                    src={item.image}
+                    alt={`WhatsApp proof: ${item.headline}`}
+                    fill
+                    sizes="(max-width: 768px) 74vw, 255px"
+                    className="object-cover object-top"
+                    draggable={false}
+                    loading="lazy"
+                  />
                 </div>
 
+                {/* ④ TAGS + CLIENT — below image, clean reading zone */}
+                <div className="px-4 pb-4 pt-3">
+
+                  {/* Tags */}
+                  <div className="mb-3 flex flex-wrap gap-1.5">
+                    {item.tags.slice(0, 2).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full px-2.5 py-[5px] text-[10px] font-medium"
+                        style={{
+                          background: 'rgba(139,92,246,0.10)',
+                          border: '1px solid rgba(139,92,246,0.20)',
+                          color: 'rgba(196,181,253,0.85)',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Client identity */}
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                      style={{
+                        background:
+                          'linear-gradient(135deg, var(--p300), #7c3aed)',
+                        boxShadow: '0 0 0 1.5px rgba(139,92,246,0.25)',
+                      }}
+                      aria-hidden="true"
+                    >
+                      {item.name.charAt(0)}
+                    </div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--t4)]">
+                      {item.name} · Hypothyroid Client
+                    </p>
+                  </div>
+
+                </div>
               </article>
-            );
-          })}
+            ))}
+          </div>
 
-          {/* Trailing spacer */}
-          <div className="shrink-0" style={{ width: SPACER_W_CSS }} aria-hidden />
+          {/* LEFT EDGE FADE */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
+            style={{
+              background: 'linear-gradient(to right, var(--bg-section), transparent)',
+            }}
+          />
+
+          {/* RIGHT EDGE FADE */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
+            style={{
+              background: 'linear-gradient(to left, var(--bg-section), transparent)',
+            }}
+          />
         </div>
 
-        {/* ── DOT INDICATORS ─────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-center gap-[7px] mt-1">
-          {PROOFS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => scrollTo(i)}
-              aria-label={`Go to proof ${i + 1}`}
-              className="rounded-full transition-all duration-300"
-              style={{
-                height: "5px",
-                borderRadius: "9999px",
-                width: active === i ? "22px" : "5px",
-                background:
-                  active === i
-                    ? "var(--p300)"
-                    : "rgba(255,255,255,0.16)",
-              }}
-            />
-          ))}
-        </div>
-
-        <p className="mt-2.5 text-center text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-white/18">
+        {/* MOBILE HINT */}
+        <p className="mt-3 text-center text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--t5)] md:hidden">
           Swipe to see more
         </p>
 
-        {/* ── CTA ────────────────────────────────────────────────────────────── */}
+        {/* CTA */}
         <div className="container-default">
-          <div className="cta-wrap section-cta mx-auto mt-9 max-w-sm">
-            <p className="micro-trust text-center">
-              <span className="text-[var(--p300)]" aria-hidden>
-                ★★★★★
-              </span>{" "}
-              200+ women transformed across India
-            </p>
-            <CtaButton
-              variant="primary"
-              className="w-full"
-              label="Apply For Private Coaching"
-              sublabel="₹299 strategy session · Limited coaching intake"
-              ariaLabel="Apply for private thyroid coaching"
-            />
-            <p className="text-center text-[0.72rem] text-[var(--t5)]">
-              No pressure · Personalized fit review
-            </p>
-          </div>
+          <SectionCta
+            variant="ghost"
+            className="mx-auto"
+            buttonClassName="w-full"
+            style={{ maxWidth: '22rem' }}
+            label="Apply For Your ₹299 Strategy Session"
+            sublabel="See if this coaching program fits you"
+            trust="Premium thyroid coaching · Not a diet plan PDF"
+            ariaLabel="Apply for your 299 rupee strategy session"
+          />
         </div>
-
       </div>
     </section>
-  );
+  )
 }
