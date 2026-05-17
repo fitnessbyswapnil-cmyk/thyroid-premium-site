@@ -48,6 +48,13 @@ export default function SocialProof() {
       aria-label="Client testimonials"
       className="relative overflow-hidden border-b border-white/[0.04] bg-[var(--bg-section)] py-[clamp(3.5rem,9vw,5.5rem)]"
     >
+      {/* Hero → section edge blend: dissolves the hard bg cut */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-16"
+        style={{ background: "linear-gradient(to bottom, var(--bg-page), transparent)" }}
+      />
+
       {/* Ambient glow — subtler than hero, signals section shift */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-28 overflow-hidden">
         <div className="absolute left-1/2 top-[-50%] h-20 w-[46vw] max-w-[220px] -translate-x-1/2 rounded-full bg-[var(--p500)]/[0.05] blur-[64px]" />
@@ -67,7 +74,7 @@ export default function SocialProof() {
         </div>
 
         {/* Testimonial cards — vertical stack, full-width at 320px */}
-        <div className="flex flex-col gap-[14px]" role="list">
+        <div className="flex flex-col gap-[18px]" role="list">
           {TESTIMONIALS.map((t) => (
             <article
               key={t.name}
@@ -104,12 +111,12 @@ export default function SocialProof() {
               </div>
 
               {/* Quote — the emotional core */}
-              <blockquote className="mt-4 text-[15px] font-normal leading-[1.72] text-[var(--t2)]">
+              <blockquote className="mt-[18px] text-[15px] font-normal leading-[1.78] text-[var(--t2)]">
                 &ldquo;{t.quote}&rdquo;
               </blockquote>
 
               {/* Bottom: avatar + name + result chip */}
-              <div className="mt-5 flex items-center justify-between gap-3">
+              <div className="mt-[22px] flex items-center justify-between gap-3">
                 <div className="flex items-center gap-[10px]">
                   <div
                     className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-bold leading-none tracking-[0.04em] text-[var(--p300)]"
@@ -130,10 +137,10 @@ export default function SocialProof() {
                 </div>
 
                 <span
-                  className="shrink-0 rounded-full px-[10px] py-[5px] text-[10.5px] font-semibold leading-none text-[var(--p300)]"
+                  className="shrink-0 rounded-full px-[10px] py-[5px] text-[10.5px] font-semibold leading-none text-[var(--p400)]"
                   style={{
-                    background: "rgba(168,85,247,0.09)",
-                    border: "1px solid rgba(168,85,247,0.17)",
+                    background: "rgba(168,85,247,0.055)",
+                    border: "1px solid rgba(168,85,247,0.11)",
                   }}
                 >
                   {t.result}
@@ -144,7 +151,7 @@ export default function SocialProof() {
         </div>
 
         {/* Micro trust anchor — restrained, for the skeptical scanner */}
-        <p className="mt-8 text-center text-[11px] font-medium leading-[1.55] text-[var(--t5)] sm:mt-9">
+        <p className="mt-9 text-center text-[11px] font-medium leading-[1.55] text-[var(--t5)] sm:mt-10">
           <span className="mr-1 text-[var(--p500)]/60" aria-hidden="true">★★★★★</span>
           Trusted by 200+ Indian hypothyroid women &mdash; thyroid-specific coaching only
         </p>
