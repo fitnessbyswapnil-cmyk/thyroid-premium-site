@@ -3,18 +3,25 @@
 import CtaButton from "./CtaButton";
 import ScarcityBadge from "./ScarcityBadge";
 
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+// Outcome chips live ABOVE proof stats so the sequence reads:
+//   Promise (headline) → What you'll get (chips) → Proof it works (stats) → Act (CTA)
+// This prevents re-opening the "what do I get?" loop between stats and the button.
 const OUTCOMES = [
   "4–10 kg thyroid fat loss",
   "Real Indian food only",
   "Energy & hormones restored",
 ] as const;
 
-// 3 stats: each cell ~96px at 320px, star rating consistent with SocialProof
+// Proof stats unchanged — only their position in the hierarchy changes.
 const PROOF_STATS = [
   { num: "200+", label: "Women helped" },
   { num: "4.2 kg", label: "Avg. first month" },
   { num: "4.9 ★", label: "Client rating" },
 ] as const;
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function Hero() {
   return (
@@ -22,7 +29,7 @@ export default function Hero() {
       className="relative overflow-hidden bg-[var(--bg-page)] text-white"
       aria-labelledby="hero-heading"
     >
-      {/* Two-layer atmospheric glow — restrained, no competing blobs */}
+      {/* ── Atmospheric glow — two-layer, unchanged ───────────────────────── */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[min(70vw,440px)] overflow-hidden sm:h-[500px]"
@@ -33,15 +40,20 @@ export default function Hero() {
 
       <div className="container-default relative z-10 flex flex-col items-center pb-[clamp(4rem,9vw,6rem)] pt-[clamp(3rem,7vw,4.5rem)] text-center">
 
-        {/* 1 — Scarcity signal */}
-        <ScarcityBadge className="mb-6 sm:mb-7" />
-
-        {/* 2 — Category claim */}
-        <p className="section-label !mb-3 tracking-[0.065em] sm:!mb-3.5">
-          India&apos;s only thyroid fat-loss specialist
+        {/* ── 1. Category pill ─────────────────────────────────────────────────
+            Credible double-anchor: specialism + audience. Superlatives like
+            "only" are unverifiable and trigger silent rejection in educated
+            women. The · separator keeps this compact on a single line at
+            320px.                                                            */}
+        <p className="section-label !mb-4 tracking-[0.065em] sm:!mb-5">
+          Thyroid fat-loss specialist&nbsp;·&nbsp;Indian women
         </p>
 
-        {/* 3 — Headline: pain mirror + mechanism reframe */}
+        {/* ── 2. Headline ──────────────────────────────────────────────────────
+            KEPT: "Your Thyroid Weight Isn't Stubborn. It's Untreated."
+            This is the strongest element on the page — a two-beat reframe
+            that moves the locus of blame from the woman to the diagnosis.
+            Croc Brain hook: problem named → responsibility lifted.          */}
         <h1
           id="hero-heading"
           className="mx-auto max-w-[14ch] text-balance text-[length:var(--text-hero)] font-black leading-[1.04] tracking-[-0.045em] sm:max-w-[17ch] sm:leading-[1.0] sm:tracking-[-0.055em]"
@@ -51,44 +63,34 @@ export default function Hero() {
           It&apos;s Untreated.
         </h1>
 
-        {/* 4 — Subheadline: validates first, identifies audience, 22 words */}
-        <p className="mt-6 max-w-[28ch] text-pretty text-[length:var(--text-sm)] leading-[1.72] text-[var(--t2)] sm:mt-7 sm:max-w-[36ch] sm:text-[length:var(--text-base)]">
-          You&apos;ve done everything right. The problem was always the
-          plan &mdash; not you. Built for Indian women with hypothyroidism.
+        {/* ── 3. Subheadline ───────────────────────────────────────────────────
+            CHANGE 1: "Built for Indian women with hypothyroidism" removed
+            from the end — it broke the emotional sentence with a clinical
+            label. Audience signal is already in the category pill.
+
+            CHANGE 2: Sentence 2 rewritten to be more specific and
+            consequential. "The problem was always the plan" is vague.
+            "Your thyroid was never the focus of the plan" is precise —
+            it names the mechanism of failure, which is Limbic validation
+            (the woman can now explain why it failed) AND Neocortex
+            credibility (there IS a specific, addressable root cause).       */}
+        <p className="mt-5 max-w-[30ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t2)] sm:mt-6 sm:max-w-[38ch] sm:text-[length:var(--text-base)]">
+          You&apos;ve followed every diet. Taken every medication. Done
+          everything right. The weight stayed because your thyroid was never
+          actually the focus of the plan.
         </p>
 
-        {/* 5 — Proof stats: 3 items, each cell ~96px at 320px */}
-        <div
-          className="mt-7 flex w-full max-w-[min(100%,19.5rem)] overflow-hidden rounded-2xl sm:mt-8 sm:max-w-[23rem]"
-          style={{
-            background: "rgba(255,255,255,0.036)",
-            border: "1px solid rgba(255,255,255,0.075)",
-            boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 20px rgba(0,0,0,0.2)",
-          }}
-        >
-          {PROOF_STATS.map((s, i) => (
-            <div
-              key={s.label}
-              className={`flex flex-1 flex-col items-center justify-center py-3.5 sm:py-4 ${
-                i !== PROOF_STATS.length - 1
-                  ? "border-r border-white/[0.06]"
-                  : ""
-              }`}
-            >
-              <span className="font-mono text-[13.5px] font-extrabold leading-none tracking-tight text-[var(--p300)] sm:text-[15px]">
-                {s.num}
-              </span>
-              <span className="mt-[6px] text-[9px] font-semibold uppercase tracking-[0.1em] text-white/[0.32] sm:text-[9.5px]">
-                {s.label}
-              </span>
-            </div>
-          ))}
-        </div>
+        {/* ── 4. Outcome chips ─────────────────────────────────────────────────
+            CHANGE: Moved from between proof-stats and CTA to HERE — directly
+            after the subheadline. Correct psychological sequence:
+              Pain (headline) → Why it failed (subheadline) →
+              What you'll get (chips) → Proof others got it (stats) → Act (CTA)
 
-        {/* 6 — Outcome chips */}
+            Previously: chips appeared after stats, which re-opened the
+            "what am I getting?" question right before the button — a second
+            decision loop that stalled conversion intent.                     */}
         <ul
-          className="mt-6 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:mt-7 sm:max-w-none"
+          className="mt-5 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:mt-6 sm:max-w-none"
           aria-label="What you can expect"
         >
           {OUTCOMES.map((item) => (
@@ -116,41 +118,90 @@ export default function Hero() {
           ))}
         </ul>
 
-        {/* 7 — CTA block */}
-        <div className="cta-wrap relative mt-10 w-full max-w-[min(100%,21rem)] sm:mt-11 sm:max-w-sm">
+        {/* ── 5. Proof stats ───────────────────────────────────────────────────
+            KEPT: Design and data unchanged. Position change only — now sits
+            AFTER the outcome chips (validating the promise just made) rather
+            than before them. Glassmorphism container, divider borders, font
+            weights all preserved exactly.                                   */}
+        <div
+          className="mt-6 flex w-full max-w-[min(100%,19.5rem)] overflow-hidden rounded-2xl sm:mt-7 sm:max-w-[23rem]"
+          style={{
+            background: "rgba(255,255,255,0.036)",
+            border: "1px solid rgba(255,255,255,0.075)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 20px rgba(0,0,0,0.2)",
+          }}
+        >
+          {PROOF_STATS.map((s, i) => (
+            <div
+              key={s.label}
+              className={`flex flex-1 flex-col items-center justify-center py-3.5 sm:py-4 ${
+                i !== PROOF_STATS.length - 1
+                  ? "border-r border-white/[0.06]"
+                  : ""
+              }`}
+            >
+              <span className="font-mono text-[13.5px] font-extrabold leading-none tracking-tight text-[var(--p300)] sm:text-[15px]">
+                {s.num}
+              </span>
+              <span className="mt-[6px] text-[9px] font-semibold uppercase tracking-[0.1em] text-white/[0.32] sm:text-[9.5px]">
+                {s.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* ── 6. CTA block ─────────────────────────────────────────────────────
+            Five key fixes in this block:
+            1. sublabel duration corrected to match every other page reference
+            2. "Written plan included" added — pre-handles Uncertainty Objection
+               without stating it explicitly
+            3. Risk reversal now speaks to value (clarity), not price — removes
+               the double price-mention that created transaction anxiety
+            4. The duplicate social proof line below the button is removed —
+               the proof stats widget directly above already carries that claim
+            5. mt tightened (mt-10 → mt-8 mobile) to keep emotional momentum
+               from the subheadline alive through to the button                */
+        <div className="cta-wrap relative mt-8 w-full max-w-[min(100%,21rem)] sm:mt-9 sm:max-w-sm">
           <CtaButton
             variant="primary"
             className="relative z-[1]"
             label="Book My ₹299 Thyroid Strategy Session"
-            sublabel="Private · 30 min · Zero obligation"
+            sublabel="60 min · Private · Written plan included"
             ariaLabel="Book your 299 rupee thyroid strategy session"
           />
 
-          {/* Risk reversal + social proof — one cohesive unit below the button */}
-          <div className="mt-4 flex flex-col items-center gap-2">
-            <p className="text-center text-[0.68rem] font-medium leading-[1.5] text-[var(--t4)]">
-              <span className="mr-0.5 text-emerald-400/70" aria-hidden="true">
-                &#10003;
-              </span>
-              Full refund if the session isn&apos;t worth ₹299 &mdash; no questions asked
-            </p>
-            <p className="micro-trust mx-auto max-w-[32ch] text-center text-pretty leading-[1.55]">
-              <span
-                className="mr-1 tracking-widest text-[var(--p300)]"
-                aria-hidden="true"
-              >
-                &#9733;&#9733;&#9733;&#9733;&#9733;
-              </span>
-              <span className="text-[var(--t3)]">
-                Trusted by 200+ Indian hypothyroid women
-              </span>
-            </p>
-          </div>
+          {/* Risk reversal — single clean line. Speaks to outcome not price. */}
+          <p className="mt-3.5 text-center text-[0.67rem] font-medium leading-[1.5] text-[var(--t4)]">
+            <span className="mr-1 text-emerald-400/70" aria-hidden="true">
+              &#10003;
+            </span>
+            Full refund if you don&apos;t leave with clarity &mdash; no questions asked
+          </p>
         </div>
 
-        {/* 8 — Scroll cue — quieter opacity, smaller icon */}
+        {/* ── 7. Scarcity badge ────────────────────────────────────────────────
+            CHANGE: Moved from the very top of the hero (position 1) to here
+            (position 7, after the CTA).
+
+            WHY THIS MATTERS:
+            Premium brands never open with urgency. Apple, Aesop, and luxury
+            wellness brands open with identity and transformation — urgency
+            appears only after the visitor has already formed intent.
+
+            Leading with a scarcity badge signals "we're going to sell you
+            something" before the headline has had a chance to make the
+            visitor feel understood. The Croc Brain pattern-matches this as
+            pressure and activates the exit filter.
+
+            Placed here, after the CTA, it functions as a closing push for
+            the visitor who is already considering but hasn't tapped yet —
+            which is exactly the right psychological moment for urgency.    */}
+        <ScarcityBadge className="mt-5 sm:mt-6" />
+
+        {/* ── 8. Scroll cue — unchanged ────────────────────────────────────── */}
         <div
-          className="mt-12 flex flex-col items-center gap-1.5 sm:mt-14"
+          className="mt-10 flex flex-col items-center gap-1.5 sm:mt-12"
           aria-hidden="true"
         >
           <span className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-white/[0.18]">
