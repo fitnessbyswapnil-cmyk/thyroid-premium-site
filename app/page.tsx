@@ -1,11 +1,16 @@
-import LandingPage from "./components/LandingPage";
+import HeroSection from "@/app/components/HeroSection";
+import ThyroidStrategySession from "@/app/components/ThyroidStrategySession";
+import ClientStoriesSection from "@/app/components/ClientStoriesSection";
 
-export default function Page() {
-  return <LandingPage />;
+export default function Home() {
+  return (
+    <main>
+      <HeroSection />
+
+      {/* Premium consultation process */}
+      <ThyroidStrategySession />
+
+      <ClientStoriesSection />
+    </main>
+  );
 }
-import ThyroidStrategySession from "@/components/sections/ThyroidStrategySession";
-
-// Place it after your Hero section, before ClientStories:
-<HeroSection />
-<ThyroidStrategySession />
-<ClientStoriesSection />
