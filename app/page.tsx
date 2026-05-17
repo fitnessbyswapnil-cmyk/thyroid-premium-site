@@ -1,16 +1,16 @@
-import HeroSection from "@/app/components/HeroSection";
+import Hero from "@/app/components/Hero";
 import ThyroidStrategySession from "@/app/components/ThyroidStrategySession";
-import ClientStoriesSection from "@/app/components/ClientStoriesSection";
+import SocialProof from "@/app/components/SocialProof";
 
 export default function Home() {
   return (
     <main>
-      <HeroSection />
+      <Hero />
 
       {/* Premium consultation process */}
       <ThyroidStrategySession />
 
-      <ClientStoriesSection />
+      <SocialProof />
     </main>
   );
 }
