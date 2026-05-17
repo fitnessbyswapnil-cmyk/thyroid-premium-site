@@ -561,6 +561,17 @@ a {
   border-color: var(--b-mid);
 }
 
+/* Responsive photo aspect ratio: 1:1 mobile → 3:4 desktop */
+.result-photo {
+  aspect-ratio: 1 / 1;
+}
+
+@media (min-width: 640px) {
+  .result-photo {
+    aspect-ratio: 3 / 4;
+  }
+}
+
 .result-badges {
   display: flex;
   flex-wrap: wrap;
