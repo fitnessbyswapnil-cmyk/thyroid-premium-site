@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import CtaButton from "./CtaButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -9,12 +10,12 @@ interface FlowStep {
   label: string;
   micro: string;
   rgb: string;       // "R,G,B" for rgba()
-  hex: string;       // start color
+  hex: string;       // start color for icon gradient
   hexTo: string;     // end color for icon gradient
   svgPaths: string[];
 }
 
-// ─── Step Data — ultra-concise copy, no paragraphs ───────────────────────────
+// ─── Step data — ultra-concise, no paragraphs ─────────────────────────────────
 
 const STEPS: FlowStep[] = [
   {
@@ -33,7 +34,7 @@ const STEPS: FlowStep[] = [
   {
     num: "02",
     label: "Case Prepared",
-    micro: "Your history mapped before you arrive.",
+    micro: "Your history studied before we meet.",
     rgb: "167,139,250",
     hex: "#A78BFA",
     hexTo: "#7C3AED",
@@ -94,6 +95,12 @@ const OUTCOMES = [
   { text: "Real understanding", rgb: "251,191,36" },
 ];
 
+const TRUST_SIGNALS = [
+  "Full refund guarantee",
+  "Private & confidential",
+  "No sales pressure",
+] as const;
+
 // ─── useInView ────────────────────────────────────────────────────────────────
 
 function useInView(threshold = 0.12) {
@@ -119,7 +126,7 @@ function useInView(threshold = 0.12) {
   return { ref, visible };
 }
 
-// ─── StepIcon — gradient SVG ─────────────────────────────────────────────────
+// ─── StepIcon — SVG with per-step linear gradient ────────────────────────────
 
 function StepIcon({
   paths,
@@ -157,7 +164,7 @@ function StepIcon({
   );
 }
 
-// ─── FlowNode — single step in the timeline ──────────────────────────────────
+// ─── FlowNode — single step in the vertical timeline ─────────────────────────
 
 function FlowNode({ step, index }: { step: FlowStep; index: number }) {
   const { ref, visible } = useInView(0.08);
@@ -177,7 +184,7 @@ function FlowNode({ step, index }: { step: FlowStep; index: number }) {
         transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
       }}
     >
-      {/* ── Left: spine + node ───────────────────────── */}
+      {/* ── Left: spine column ─────────────────────── */}
       <div
         style={{
           display: "flex",
@@ -188,7 +195,7 @@ function FlowNode({ step, index }: { step: FlowStep; index: number }) {
           marginRight: 18,
         }}
       >
-        {/* Step number badge */}
+        {/* Step number */}
         <span
           style={{
             fontSize: 9,
@@ -220,7 +227,7 @@ function FlowNode({ step, index }: { step: FlowStep; index: number }) {
             flexShrink: 0,
             position: "relative",
             zIndex: 1,
-            transition: `border-color 0.6s ease ${delay + 150}ms, box-shadow 0.6s ease ${delay + 150}ms, background 0.6s ease ${delay + 150}ms`,
+            transition: `border-color 0.6s ease ${delay + 150}ms, box-shadow 0.6s ease ${delay + 150}ms`,
           }}
         >
           <StepIcon
@@ -231,7 +238,7 @@ function FlowNode({ step, index }: { step: FlowStep; index: number }) {
           />
         </div>
 
-        {/* Connector line */}
+        {/* Connector — fades in after the node */}
         {!isLast && (
           <div
             style={{
@@ -247,7 +254,7 @@ function FlowNode({ step, index }: { step: FlowStep; index: number }) {
         )}
       </div>
 
-      {/* ── Right: minimal text content ──────────────── */}
+      {/* ── Right: concise text ────────────────────── */}
       <div
         style={{
           flex: 1,
@@ -283,7 +290,7 @@ function FlowNode({ step, index }: { step: FlowStep; index: number }) {
   );
 }
 
-// ─── OutcomeCard ─────────────────────────────────────────────────────────────
+// ─── OutcomeCard ──────────────────────────────────────────────────────────────
 
 function OutcomeCard() {
   const { ref, visible } = useInView(0.15);
@@ -301,11 +308,12 @@ function OutcomeCard() {
         WebkitBackdropFilter: "blur(20px)",
         padding: "24px 24px 20px",
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.99)",
+        transform: visible
+          ? "translateY(0) scale(1)"
+          : "translateY(12px) scale(0.99)",
         transition: "opacity 0.6s ease, transform 0.6s ease",
       }}
     >
-      {/* Label */}
       <p
         style={{
           fontSize: 10,
@@ -319,7 +327,6 @@ function OutcomeCard() {
         You leave with
       </p>
 
-      {/* Outcome pills grid */}
       <div
         style={{
           display: "grid",
@@ -330,13 +337,8 @@ function OutcomeCard() {
         {OUTCOMES.map((o) => (
           <div
             key={o.text}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
+            style={{ display: "flex", alignItems: "center", gap: 8 }}
           >
-            {/* Dot */}
             <div
               style={{
                 width: 6,
@@ -361,7 +363,7 @@ function OutcomeCard() {
         ))}
       </div>
 
-      {/* Footer trust line */}
+      {/* Guarantee — the most conversion-relevant sentence on the page */}
       <p
         style={{
           fontSize: 11,
@@ -394,7 +396,7 @@ function SectionHeader() {
         transition: "opacity 0.65s ease, transform 0.65s ease",
       }}
     >
-      {/* Eyebrow pill */}
+      {/* Eyebrow pill — "When" invites cold traffic in vs "After" which presupposes booking */}
       <div
         style={{
           display: "inline-flex",
@@ -427,11 +429,11 @@ function SectionHeader() {
             color: "#C4B5FD",
           }}
         >
-          What Happens After You Book
+          What Happens When You Book
         </span>
       </div>
 
-      {/* Headline — two lines max */}
+      {/* Headline */}
       <h2
         id="strategy-session-heading"
         style={{
@@ -456,11 +458,11 @@ function SectionHeader() {
             WebkitTextFillColor: "transparent",
           }}
         >
-          Thyroid Session
+          Thyroid Strategy Session
         </span>
       </h2>
 
-      {/* Sub — ONE line, no paragraph */}
+      {/* One line — maximum clarity */}
       <p
         style={{
           fontSize: 14,
@@ -479,7 +481,6 @@ function SectionHeader() {
 
 function CTABlock() {
   const { ref, visible } = useInView(0.15);
-  const [hovered, setHovered] = useState(false);
 
   return (
     <div
@@ -492,62 +493,49 @@ function CTABlock() {
         transition: "opacity 0.6s ease, transform 0.6s ease",
       }}
     >
-      {/* Quote — single line, italics */}
-      <p
+      {/* Attributed testimonial card — name + city + condition = evidence not decoration */}
+      <div
         style={{
-          fontSize: 13,
-          fontStyle: "italic",
-          color: "rgba(255,255,255,0.32)",
-          marginBottom: 22,
-          lineHeight: 1.5,
+          borderRadius: 14,
+          border: "1px solid rgba(139,92,246,0.15)",
+          background: "rgba(139,92,246,0.05)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          padding: "16px 18px",
+          marginBottom: 24,
+          textAlign: "left",
         }}
       >
-        &ldquo;More clarity in 60 minutes than 3 years of trying alone.&rdquo;
-      </p>
-
-      {/* CTA button */}
-      <a
-        href="#book"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "14px 28px",
-          borderRadius: 99,
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#fff",
-          textDecoration: "none",
-          letterSpacing: "-0.01em",
-          background:
-            "linear-gradient(135deg, rgba(139,92,246,0.95) 0%, rgba(168,85,247,0.95) 60%, rgba(217,70,239,0.9) 100%)",
-          boxShadow: hovered
-            ? "0 0 48px rgba(139,92,246,0.55), 0 4px 20px rgba(0,0,0,0.3)"
-            : "0 0 28px rgba(139,92,246,0.3), 0 2px 12px rgba(0,0,0,0.2)",
-          transform: hovered ? "translateY(-2px)" : "translateY(0)",
-          transition: "box-shadow 0.3s ease, transform 0.3s ease",
-        }}
-      >
-        Reserve My ₹299 Strategy Session
-        <svg
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          width="14"
-          height="14"
+        <p
           style={{
-            transform: hovered ? "translateX(2px)" : "translateX(0)",
-            transition: "transform 0.25s ease",
+            fontSize: 13,
+            fontStyle: "italic",
+            color: "rgba(255,255,255,0.52)",
+            margin: "0 0 10px",
+            lineHeight: 1.65,
           }}
         >
-          <path d="M3 8h10M9 4l4 4-4 4" />
-        </svg>
-      </a>
+          &ldquo;More clarity in 60 minutes than 3 years of trying alone.&rdquo;
+        </p>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "rgba(139,92,246,0.75)",
+            letterSpacing: "0.03em",
+          }}
+        >
+          — Priya M., Pune&nbsp;&nbsp;·&nbsp;&nbsp;Hashimoto&apos;s
+        </span>
+      </div>
+
+      {/* Design-system CTA — consistent with Hero section CtaButton */}
+      <CtaButton
+        variant="primary"
+        label="Reserve My ₹299 Strategy Session"
+        sublabel="60 min · Private · Written plan included"
+        ariaLabel="Reserve your 299 rupee thyroid strategy session"
+      />
 
       {/* Trust trio */}
       <div
@@ -559,36 +547,35 @@ function CTABlock() {
           marginTop: 16,
         }}
       >
-        {["Full refund guarantee", "Private & confidential", "No sales pressure"].map(
-          (t) => (
-            <span
-              key={t}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                fontSize: 11,
-                color: "rgba(255,255,255,0.28)",
-              }}
+        {TRUST_SIGNALS.map((t) => (
+          <span
+            key={t}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              fontSize: 11,
+              color: "rgba(255,255,255,0.28)",
+            }}
+          >
+            <svg
+              viewBox="0 0 10 10"
+              fill="none"
+              width="10"
+              height="10"
+              aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 10 10"
-                fill="none"
-                width="10"
-                height="10"
-              >
-                <path
-                  d="M2 5l2 2 4-4"
-                  stroke="rgba(139,92,246,0.7)"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {t}
-            </span>
-          )
-        )}
+              <path
+                d="M2 5l2 2 4-4"
+                stroke="rgba(139,92,246,0.7)"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -602,7 +589,7 @@ export default function ThyroidStrategySession() {
       <style>{`
         @keyframes tss-pulse {
           0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.2); }
+          50%       { opacity: 1;   transform: scale(1.2); }
         }
       `}</style>
 
@@ -612,7 +599,7 @@ export default function ThyroidStrategySession() {
         style={{ paddingTop: 96, paddingBottom: 96 }}
         aria-labelledby="strategy-session-heading"
       >
-        {/* ── Atmospheric background ──────────────────────────── */}
+        {/* Atmospheric background — fluid min() widths prevent overflow on 390px Android */}
         <div
           aria-hidden="true"
           style={{
@@ -620,32 +607,31 @@ export default function ThyroidStrategySession() {
             inset: 0,
             zIndex: 0,
             pointerEvents: "none",
+            overflow: "hidden",
           }}
         >
-          {/* Top violet radial */}
           <div
             style={{
               position: "absolute",
               top: -80,
               left: "50%",
               transform: "translateX(-50%)",
-              width: 600,
-              height: 500,
+              width: "min(600px, 100vw)",
+              height: "min(500px, 80vw)",
               borderRadius: "50%",
               background:
                 "radial-gradient(ellipse, rgba(139,92,246,0.18) 0%, transparent 70%)",
               filter: "blur(40px)",
             }}
           />
-          {/* Bottom teal radial */}
           <div
             style={{
               position: "absolute",
               bottom: 0,
               left: "50%",
               transform: "translateX(-50%)",
-              width: 400,
-              height: 300,
+              width: "min(400px, 90vw)",
+              height: "min(300px, 60vw)",
               borderRadius: "50%",
               background:
                 "radial-gradient(ellipse, rgba(52,211,153,0.1) 0%, transparent 70%)",
@@ -654,7 +640,7 @@ export default function ThyroidStrategySession() {
           />
         </div>
 
-        {/* ── Content ─────────────────────────────────────────── */}
+        {/* Content */}
         <div
           style={{
             position: "relative",
@@ -668,7 +654,6 @@ export default function ThyroidStrategySession() {
         >
           <SectionHeader />
 
-          {/* Flow */}
           <div style={{ position: "relative" }}>
             {STEPS.map((step, i) => (
               <FlowNode key={step.num} step={step} index={i} />
@@ -678,8 +663,9 @@ export default function ThyroidStrategySession() {
           <OutcomeCard />
           <CTABlock />
 
-          {/* Section bridge */}
+          {/* Section bridge — aria-hidden: ↓ is decorative, not content */}
           <p
+            aria-hidden="true"
             style={{
               textAlign: "center",
               fontSize: 11,
