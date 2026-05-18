@@ -1,6 +1,7 @@
 import Hero from "@/app/components/Hero";
 import ThyroidStrategySession from "@/app/components/ThyroidStrategySession";
 import SocialProof from "@/app/components/SocialProof";
+import PostTestimonialCta from "@/app/components/PostTestimonialCta";
 import ResultsSection from "@/app/components/ResultsSection";
 import VideoTestimonial from "@/app/components/VideoTestimonial";
 import ProblemSection from "@/app/components/ProblemSection";
@@ -18,6 +19,7 @@ export default function Home() {
       <Hero />
       <ThyroidStrategySession />
       <SocialProof />
+      <PostTestimonialCta />
       <ResultsSection />
       <VideoTestimonial />
       <ProblemSection />

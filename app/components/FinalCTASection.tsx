@@ -7,7 +7,6 @@ import {
   COACH_IMAGE,
   COACH_NAME,
 } from "../lib/authority";
-import { useScarcity } from "../context/ScarcityProvider";
 import SectionCta from "./SectionCta";
 import ScarcityBadge from "./ScarcityBadge";
 
@@ -66,10 +65,13 @@ const certChips = CERTIFICATIONS.map((c) => c.short);
 const GUARANTEE =
   "Full refund if you don't leave with complete clarity — no questions asked.";
 
+// ─── A/B test — swap label to compare variant ─────────────────────────────────
+const PRIMARY_CTA_LABEL = "Book My ₹299 Session — I'm Ready";
+// const PRIMARY_CTA_LABEL = "Book My ₹299 Session — I Have Questions Too";
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FinalCTASection() {
-  const { spotsLeft } = useScarcity();
 
   return (
     <section
@@ -87,48 +89,30 @@ export default function FinalCTASection() {
 
       <div className="container-narrow relative z-10 text-center">
 
-        {/* ── 1. Emotional opening line ─────────────────────────────────────
-            This is the line the section was missing entirely. After a full
-            page of being understood, the visitor needs one sentence that names
-            where she is right now — and frames the booking as the natural
-            next step, not a transaction.
+        {/* ── 1. Main headline — emotional close ────────────────────────────
+            The headline is the emotional anchor for the entire section.
+            It validates the visitor's experience (alone, struggling) and
+            frames the CTA as relief, not a transaction.
 
-            "You've been doing this alone long enough." does three things:
+            Three things it does:
               a) Acknowledges the emotional state (Limbic validation)
-              b) Frames the CTA as relief, not commitment (Croc safety)
-              c) Creates contrast: alone → not alone (identity shift)
-
-            Positioned before everything else so it sets the emotional key for
-            the entire section.                                               */}
-        <p
-          className="mx-auto mb-6 max-w-[26ch] text-balance text-[length:var(--text-base)] font-medium leading-[1.7] text-[var(--t2)] sm:mb-8 sm:max-w-[32ch] sm:text-[length:var(--text-lg)]"
-          style={{ letterSpacing: "-0.01em" }}
-        >
-          You&apos;ve been doing this alone{" "}
-          <span className="text-[var(--t1)] font-semibold">
-            long enough.
-          </span>
-        </p>
-
-        {/* ── 2. Section headline ───────────────────────────────────────────
-            Kept tighter than original — the emotional line above does the
-            heavy lifting, so the headline just confirms the action.
-            "text-balance" prevents awkward line breaks on 320px.           */}
+              b) Frames booking as relief, not commitment (Croc safety)
+              c) "long enough" implies: the time to act is now             */}
         <h2
           id="final-cta-heading"
-          className="mx-auto mb-3 max-w-[18ch] text-balance text-[length:var(--text-2xl)] font-black leading-[1.05] tracking-[-0.04em] text-[var(--t1)] sm:text-[length:var(--text-3xl)]"
+          className="mx-auto mb-4 max-w-[20ch] text-balance text-[length:var(--text-2xl)] font-black leading-[1.08] tracking-[-0.04em] text-[var(--t1)] sm:mb-5 sm:text-[length:var(--text-3xl)]"
         >
-          Your Thyroid Transformation{" "}
-          <span className="text-gradient">Starts Here.</span>
+          You&apos;ve been doing this alone{" "}
+          <span className="text-gradient">long enough.</span>
         </h2>
 
-        {/* ── 3. Subline — offer clarity without feature-listing ────────────
-            One sentence. Does not repeat what's "included" — that's handled
-            by the outcome chips below. Just names the price and the intent:
-            private, no-pressure, 60 minutes.                               */}
-        <p className="mx-auto mb-10 max-w-[32ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t3)] sm:mb-12 sm:max-w-[40ch] sm:text-[length:var(--text-base)]">
-          A private ₹299 session — 60 minutes of focused clarity on your
-          thyroid, your weight, and your exact next step.
+        {/* ── 2. Supporting text — what the session actually is ─────────────
+            Names the specific mechanism: "finally explain why nothing worked."
+            This is Neocortex credibility — there IS a root cause, and this
+            session addresses it directly.                                  */}
+        <p className="mx-auto mb-10 max-w-[34ch] text-pretty text-[length:var(--text-sm)] leading-[1.8] text-[var(--t3)] sm:mb-12 sm:max-w-[42ch] sm:text-[length:var(--text-base)]">
+          A private thyroid strategy session designed to finally explain why
+          nothing has worked — and what changes next.
         </p>
 
         {/* ── 4. Outcome chips — desire-led, not feature-led ────────────────
@@ -231,58 +215,67 @@ export default function FinalCTASection() {
           </div>
         </div>
 
-        {/* ── 6. CTA block ──────────────────────────────────────────────────
-            CTA label rewritten: "Reserve Your Thyroid Consultation" (clinical,
-            third-person) → "Book My ₹299 Session — I'm Ready" (first-person,
-            decisive, emotionally committed).
+        {/* ── 6. CTA block — strongest glow on page ────────────────────────
+            First-person copy: reads as HER words, completing the decision
+            she has been building toward through the entire page.
 
-            First-person CTA copy performs consistently better in high-ticket
-            service booking because it completes the decision the visitor has
-            already been building toward — it reads as HER words, not a
-            company's command.
+            cta-glow-strong gives this CTA the highest ambient intensity —
+            psychological escalation through scroll depth.
 
-            sublabel split: price on one line, scarcity on the next via the
-            wrapper below — rather than crammed into the same micro-sentence.
-
-            The scarcity wrapper (spotsLeft) appears below the risk reversal,
-            not above the CTA — same rationale as the Hero redesign: urgency
-            after intent, never before.                                      */}
-        <div className="mx-auto mb-6 w-full max-w-[min(100%,22rem)] sm:mb-7">
+            A/B variant is set via PRIMARY_CTA_LABEL constant at the top.   */}
+        <div className="mx-auto mb-5 w-full max-w-[min(100%,22rem)] sm:mb-6">
           <SectionCta
             id="cta-final"
             variant="primary"
-            className="w-full"
+            className="w-full cta-glow-strong"
             buttonClassName="w-full"
-            label="Book My ₹299 Session — I'm Ready"
+            label={PRIMARY_CTA_LABEL}
             sublabel="60 min · Private · Written plan included"
-            ariaLabel="Book your 299 rupee thyroid strategy session"
+            ariaLabel="Book your 299 rupee private thyroid strategy session"
           />
         </div>
 
-        {/* ── 7. Guarantee — single sentence, full-width ────────────────────
-            Replaces the three-chip objections row ("₹299 consultation ·
-            Qualified intake · No obligation").
-
-            "Qualified intake" was removed: it's jargon that creates ambiguity
-            ("do I need to qualify?") at the worst possible moment — right
-            before a purchase decision.
-
-            One clean guarantee sentence does more psychological work than
-            three micro-chips:
-              - Names the risk clearly (the ₹299)
-              - Removes it unconditionally (full refund)
-              - Names the benefit specifically (complete clarity)
-              - "no questions asked" removes the secondary fear of
-                the awkward refund conversation                             */}
-        <p
-          className="mx-auto mb-6 max-w-[36ch] text-center text-[0.72rem] font-medium leading-[1.6] text-[var(--t4)] sm:mb-7"
-          style={{ letterSpacing: "0.01em" }}
+        {/* ── 7. Enhanced guarantee block ───────────────────────────────────
+            Elevated from a plain text line to a premium reassurance card.
+            Green accent only here — signals safety, not urgency.
+            Shield icon reinforces the unconditional nature of the guarantee. */}
+        <div
+          className="mx-auto mb-6 flex w-fit items-center gap-2.5 rounded-[10px] px-4 py-2.5 sm:mb-7"
+          style={{
+            background: "rgba(52,211,153,0.06)",
+            border: "1px solid rgba(52,211,153,0.14)",
+          }}
         >
-          <span className="mr-1.5 text-emerald-400/70" aria-hidden="true">
-            &#10003;
-          </span>
-          {GUARANTEE}
-        </p>
+          {/* Shield check icon */}
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            style={{ flexShrink: 0 }}
+          >
+            <path
+              d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6l-8-4z"
+              stroke="rgba(52,211,153,0.7)"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M9 12l2 2 4-4"
+              stroke="rgba(52,211,153,0.7)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <p
+            className="text-[0.71rem] font-medium leading-[1.5] text-[var(--t4)]"
+            style={{ letterSpacing: "0.01em" }}
+          >
+            {GUARANTEE}
+          </p>
+        </div>
 
         {/* ── 8. ScarcityBadge — closing push, after intent ─────────────────
             Same rationale as the Hero section redesign: premium brands never

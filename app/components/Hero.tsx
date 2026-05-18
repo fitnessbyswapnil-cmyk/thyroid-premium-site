@@ -3,25 +3,17 @@
 import CtaButton from "./CtaButton";
 import ScarcityBadge from "./ScarcityBadge";
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-
-// Outcome chips live ABOVE proof stats so the sequence reads:
-//   Promise (headline) → What you'll get (chips) → Proof it works (stats) → Act (CTA)
-// This prevents re-opening the "what do I get?" loop between stats and the button.
 const OUTCOMES = [
   "4–10 kg thyroid fat loss",
   "Real Indian food only",
   "Energy & hormones restored",
 ] as const;
 
-// Proof stats unchanged — only their position in the hierarchy changes.
 const PROOF_STATS = [
   { num: "200+", label: "Women helped" },
   { num: "4.2 kg", label: "Avg. first month" },
   { num: "4.9 ★", label: "Client rating" },
 ] as const;
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function Hero() {
   return (
@@ -29,7 +21,7 @@ export default function Hero() {
       className="relative overflow-hidden bg-[var(--bg-page)] text-white"
       aria-labelledby="hero-heading"
     >
-      {/* ── Atmospheric glow — two-layer, unchanged ───────────────────────── */}
+      {/* Atmospheric glow */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[min(70vw,440px)] overflow-hidden sm:h-[500px]"
@@ -40,20 +32,12 @@ export default function Hero() {
 
       <div className="container-default relative z-10 flex flex-col items-center pb-[clamp(4rem,9vw,6rem)] pt-[clamp(3rem,7vw,4.5rem)] text-center">
 
-        {/* ── 1. Category pill ─────────────────────────────────────────────────
-            Credible double-anchor: specialism + audience. Superlatives like
-            "only" are unverifiable and trigger silent rejection in educated
-            women. The · separator keeps this compact on a single line at
-            320px.                                                            */}
+        {/* Category pill */}
         <p className="section-label !mb-4 tracking-[0.065em] sm:!mb-5">
-          Thyroid fat-loss specialist&nbsp;·&nbsp;Indian women
+          Thyroid fat-loss specialist&nbsp;&middot;&nbsp;Indian women
         </p>
 
-        {/* ── 2. Headline ──────────────────────────────────────────────────────
-            KEPT: "Your Thyroid Weight Isn't Stubborn. It's Untreated."
-            This is the strongest element on the page — a two-beat reframe
-            that moves the locus of blame from the woman to the diagnosis.
-            Croc Brain hook: problem named → responsibility lifted.          */}
+        {/* Headline */}
         <h1
           id="hero-heading"
           className="mx-auto max-w-[14ch] text-balance text-[length:var(--text-hero)] font-black leading-[1.04] tracking-[-0.045em] sm:max-w-[17ch] sm:leading-[1.0] sm:tracking-[-0.055em]"
@@ -63,32 +47,14 @@ export default function Hero() {
           It&apos;s Untreated.
         </h1>
 
-        {/* ── 3. Subheadline ───────────────────────────────────────────────────
-            CHANGE 1: "Built for Indian women with hypothyroidism" removed
-            from the end — it broke the emotional sentence with a clinical
-            label. Audience signal is already in the category pill.
-
-            CHANGE 2: Sentence 2 rewritten to be more specific and
-            consequential. "The problem was always the plan" is vague.
-            "Your thyroid was never the focus of the plan" is precise —
-            it names the mechanism of failure, which is Limbic validation
-            (the woman can now explain why it failed) AND Neocortex
-            credibility (there IS a specific, addressable root cause).       */}
+        {/* Subheadline */}
         <p className="mt-5 max-w-[30ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t2)] sm:mt-6 sm:max-w-[38ch] sm:text-[length:var(--text-base)]">
           You&apos;ve followed every diet. Taken every medication. Done
           everything right. The weight stayed because your thyroid was never
           actually the focus of the plan.
         </p>
 
-        {/* ── 4. Outcome chips ─────────────────────────────────────────────────
-            CHANGE: Moved from between proof-stats and CTA to HERE — directly
-            after the subheadline. Correct psychological sequence:
-              Pain (headline) → Why it failed (subheadline) →
-              What you'll get (chips) → Proof others got it (stats) → Act (CTA)
-
-            Previously: chips appeared after stats, which re-opened the
-            "what am I getting?" question right before the button — a second
-            decision loop that stalled conversion intent.                     */}
+        {/* Outcome chips — pain → mechanism → what you get → proof → act */}
         <ul
           className="mt-5 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:mt-6 sm:max-w-none"
           aria-label="What you can expect"
@@ -118,11 +84,7 @@ export default function Hero() {
           ))}
         </ul>
 
-        {/* ── 5. Proof stats ───────────────────────────────────────────────────
-            KEPT: Design and data unchanged. Position change only — now sits
-            AFTER the outcome chips (validating the promise just made) rather
-            than before them. Glassmorphism container, divider borders, font
-            weights all preserved exactly.                                   */}
+        {/* Proof stats */}
         <div
           className="mt-6 flex w-full max-w-[min(100%,19.5rem)] overflow-hidden rounded-2xl sm:mt-7 sm:max-w-[23rem]"
           style={{
@@ -151,27 +113,17 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* ── 6. CTA block ─────────────────────────────────────────────────────
-            Five key fixes in this block:
-            1. sublabel duration corrected to match every other page reference
-            2. "Written plan included" added — pre-handles Uncertainty Objection
-               without stating it explicitly
-            3. Risk reversal now speaks to value (clarity), not price — removes
-               the double price-mention that created transaction anxiety
-            4. The duplicate social proof line below the button is removed —
-               the proof stats widget directly above already carries that claim
-            5. mt tightened (mt-10 → mt-8 mobile) to keep emotional momentum
-               from the subheadline alive through to the button                */
+        {/* CTA block — aspiration-led, LOW glow intensity */}
         <div className="cta-wrap relative mt-8 w-full max-w-[min(100%,21rem)] sm:mt-9 sm:max-w-sm">
           <CtaButton
             variant="primary"
             className="relative z-[1]"
-            label="Book My ₹299 Thyroid Strategy Session"
-            sublabel="60 min · Private · Written plan included"
-            ariaLabel="Book your 299 rupee thyroid strategy session"
+            label="Start Understanding My Thyroid"
+            sublabel="&#8377;299 &middot; 60-minute private session with Swapnil"
+            ariaLabel="Start understanding your thyroid — book a private 299 rupee session"
           />
 
-          {/* Risk reversal — single clean line. Speaks to outcome not price. */}
+          {/* Risk reversal */}
           <p className="mt-3.5 text-center text-[0.67rem] font-medium leading-[1.5] text-[var(--t4)]">
             <span className="mr-1 text-emerald-400/70" aria-hidden="true">
               &#10003;
@@ -180,26 +132,10 @@ export default function Hero() {
           </p>
         </div>
 
-        {/* ── 7. Scarcity badge ────────────────────────────────────────────────
-            CHANGE: Moved from the very top of the hero (position 1) to here
-            (position 7, after the CTA).
-
-            WHY THIS MATTERS:
-            Premium brands never open with urgency. Apple, Aesop, and luxury
-            wellness brands open with identity and transformation — urgency
-            appears only after the visitor has already formed intent.
-
-            Leading with a scarcity badge signals "we're going to sell you
-            something" before the headline has had a chance to make the
-            visitor feel understood. The Croc Brain pattern-matches this as
-            pressure and activates the exit filter.
-
-            Placed here, after the CTA, it functions as a closing push for
-            the visitor who is already considering but hasn't tapped yet —
-            which is exactly the right psychological moment for urgency.    */}
+        {/* Scarcity badge — placed after CTA, urgency only after intent is formed */}
         <ScarcityBadge className="mt-5 sm:mt-6" />
 
-        {/* ── 8. Scroll cue — unchanged ────────────────────────────────────── */}
+        {/* Scroll cue */}
         <div
           className="mt-10 flex flex-col items-center gap-1.5 sm:mt-12"
           aria-hidden="true"

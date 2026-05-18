@@ -68,6 +68,7 @@
   --r-full: 999px;
 
   --ease: cubic-bezier(0.16,1,0.3,1);
+  --ease-cta: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* RESET */
@@ -303,6 +304,7 @@ a {
   width: 100%;
 }
 
+/* LOW glow — hero CTA */
 .cta-wrap::before {
   content: "";
   pointer-events: none;
@@ -315,6 +317,28 @@ a {
     rgba(168, 85, 247, 0.14) 0%,
     transparent 72%
   );
+}
+
+/* MEDIUM glow — mid-page CTAs */
+.cta-wrap.cta-glow-mid::before {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(168, 85, 247, 0.24) 0%,
+    transparent 70%
+  );
+  height: 4rem;
+  inset: -0.45rem 0.5rem auto;
+}
+
+/* STRONG glow — final CTA */
+.cta-wrap.cta-glow-strong::before {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(168, 85, 247, 0.36) 0%,
+    transparent 68%
+  );
+  height: 5rem;
+  inset: -0.6rem 0.25rem auto;
 }
 
 .cta-button {
@@ -346,20 +370,27 @@ a {
     0 1px 0 rgba(255, 255, 255, 0.12) inset;
 
   transition:
-    transform 220ms var(--ease),
-    box-shadow 220ms var(--ease);
+    transform 240ms var(--ease-cta),
+    box-shadow 240ms var(--ease-cta),
+    background 240ms var(--ease-cta);
 }
 
 .cta-button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 
   box-shadow:
-    0 12px 30px rgba(168, 85, 247, 0.24),
-    0 1px 0 rgba(255, 255, 255, 0.16) inset;
+    0 16px 36px rgba(168, 85, 247, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+
+  background: linear-gradient(135deg, #b466ff 0%, #8b22e0 100%);
 }
 
 .cta-button:active {
-  transform: scale(0.99);
+  transform: translateY(0) scale(0.99);
+
+  box-shadow:
+    0 6px 18px rgba(168, 85, 247, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
 .cta-sub {
@@ -437,17 +468,22 @@ a {
   justify-content: center;
   gap: 0.1rem;
 
-  transition: all 220ms var(--ease);
+  transition:
+    background 240ms var(--ease-cta),
+    border-color 240ms var(--ease-cta),
+    transform 240ms var(--ease-cta),
+    box-shadow 240ms var(--ease-cta);
 }
 
 .btn-ghost:hover {
-  background: rgba(168, 85, 247, 0.12);
-  border-color: rgba(168, 85, 247, 0.28);
-  transform: translateY(-1px);
+  background: rgba(168, 85, 247, 0.13);
+  border-color: rgba(168, 85, 247, 0.32);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.12);
 }
 
 .btn-ghost:active {
-  transform: scale(0.99);
+  transform: translateY(0) scale(0.99);
 }
 
 .btn-ghost .cta-sub {
@@ -459,7 +495,7 @@ a {
 .btn-sticky {
   min-height: 44px;
   border-radius: 999px;
-  padding: 0.55rem 1rem;
+  padding: 0.55rem 1.1rem;
 
   background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
   color: #fff;
@@ -468,14 +504,18 @@ a {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 
   box-shadow: 0 6px 18px rgba(168, 85, 247, 0.22);
 
-  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  transition:
+    transform 200ms var(--ease-cta),
+    box-shadow 200ms var(--ease-cta);
 }
 
 .btn-sticky:hover {
-  box-shadow: 0 8px 22px rgba(168, 85, 247, 0.28);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(168, 85, 247, 0.3);
 }
 
 .btn-sticky:active {

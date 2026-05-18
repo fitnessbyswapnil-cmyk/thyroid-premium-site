@@ -96,9 +96,9 @@ const OUTCOMES = [
 ];
 
 const TRUST_SIGNALS = [
-  "Full refund guarantee",
   "Private & confidential",
   "No sales pressure",
+  "Written plan included",
 ] as const;
 
 // ─── useInView ────────────────────────────────────────────────────────────────
@@ -529,13 +529,35 @@ function CTABlock() {
         </span>
       </div>
 
-      {/* Design-system CTA — consistent with Hero section CtaButton */}
-      <CtaButton
-        variant="primary"
-        label="Reserve My ₹299 Strategy Session"
-        sublabel="60 min · Private · Written plan included"
-        ariaLabel="Reserve your 299 rupee thyroid strategy session"
-      />
+      {/* Medium-intensity glow wrapper — psychological escalation */}
+      <div className="cta-wrap cta-glow-mid" style={{ marginBottom: 0 }}>
+        <CtaButton
+          variant="primary"
+          label="Reserve My Private Thyroid Session"
+          sublabel="60 min · 1-on-1 · Written action plan included"
+          ariaLabel="Reserve your private thyroid strategy session"
+        />
+      </div>
+
+      {/* Refund guarantee — single high-trust line */}
+      <p
+        style={{
+          marginTop: 12,
+          textAlign: "center",
+          fontSize: 11,
+          fontWeight: 500,
+          color: "rgba(255,255,255,0.28)",
+          lineHeight: 1.5,
+        }}
+      >
+        <span
+          style={{ color: "rgba(52,211,153,0.65)", marginRight: 5 }}
+          aria-hidden="true"
+        >
+          ✓
+        </span>
+        Full refund if you don&apos;t leave with complete clarity
+      </p>
 
       {/* Trust trio */}
       <div
@@ -543,8 +565,8 @@ function CTABlock() {
           display: "flex",
           flexWrap: "wrap",
           justifyContent: "center",
-          gap: "8px 20px",
-          marginTop: 16,
+          gap: "6px 18px",
+          marginTop: 12,
         }}
       >
         {TRUST_SIGNALS.map((t) => (
@@ -555,7 +577,7 @@ function CTABlock() {
               alignItems: "center",
               gap: 5,
               fontSize: 11,
-              color: "rgba(255,255,255,0.28)",
+              color: "rgba(255,255,255,0.24)",
             }}
           >
             <svg
@@ -567,7 +589,7 @@ function CTABlock() {
             >
               <path
                 d="M2 5l2 2 4-4"
-                stroke="rgba(139,92,246,0.7)"
+                stroke="rgba(139,92,246,0.6)"
                 strokeWidth="1.4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
