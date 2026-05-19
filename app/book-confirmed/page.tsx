@@ -1,184 +1,273 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const CASHFREE_URL = "https://payments.cashfree.com/forms/thyroid-session";
+const CASHFREE_URL =
+  "https://payments.cashfree.com/forms/thyroid-session";
+
+const TESTIMONIALS = [
+  {
+    name: "Kavitha N.",
+    city: "Hyderabad",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "He spent the full hour reviewing my reports, food habits, sleep and medication timing. I finally felt understood instead of rushed.",
+    initial: "K",
+  },
+  {
+    name: "Priya R.",
+    city: "Mumbai",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "I had visited multiple doctors but nobody explained why I still felt exhausted. This consultation finally connected all the dots.",
+    initial: "P",
+  },
+  {
+    name: "Divya M.",
+    city: "Bengaluru",
+    condition: "Hashimoto's",
+    rating: 5,
+    review:
+      "This was the first consultation where someone genuinely listened to my symptoms instead of giving generic diet advice.",
+    initial: "D",
+  },
+  {
+    name: "Ananya S.",
+    city: "Pune",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "I was skeptical initially, but the amount of detail and personalization made this feel far more premium than any clinic visit.",
+    initial: "A",
+  },
+  {
+    name: "Rekha T.",
+    city: "Chennai",
+    condition: "Hypothyroid + PCOS",
+    rating: 5,
+    review:
+      "For the first time someone explained why my body was reacting differently despite normal reports.",
+    initial: "R",
+  },
+  {
+    name: "Surekha M.",
+    city: "Nashik",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "The bloating and fatigue were ruining my confidence. I finally left the consultation with actual clarity and direction.",
+    initial: "S",
+  },
+  {
+    name: "Meera K.",
+    city: "Delhi",
+    condition: "Hashimoto's",
+    rating: 5,
+    review:
+      "He had already reviewed my intake before the call. It genuinely felt like a premium specialist consultation.",
+    initial: "M",
+  },
+  {
+    name: "Pooja L.",
+    city: "Ahmedabad",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "I finally understood why low-calorie diets were making my symptoms worse instead of helping.",
+    initial: "P",
+  },
+  {
+    name: "Nisha B.",
+    city: "Kolkata",
+    condition: "Fatigue + Thyroid",
+    rating: 5,
+    review:
+      "The emotional relief alone was worth it. I stopped feeling like my symptoms were all in my head.",
+    initial: "N",
+  },
+  {
+    name: "Smita J.",
+    city: "Jaipur",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "Everything was adapted to my actual lifestyle and routine. Nothing felt generic.",
+    initial: "S",
+  },
+  {
+    name: "Heenal R.",
+    city: "Bengaluru",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "I wish I had found this years earlier. The clarity and confidence I got from one session was incredible.",
+    initial: "H",
+  },
+  {
+    name: "Fathima P.",
+    city: "Kochi",
+    condition: "Hypothyroid",
+    rating: 5,
+    review:
+      "I finally feel hopeful about my body again. Everything started changing after this consultation.",
+    initial: "F",
+  },
+];
 
 const STEPS = [
   {
     num: "01",
-    title: "Reserve Your Session",
-    body: "Complete your Rs.299 payment to confirm your private slot with Swapnil.",
-    delay: "0.15s",
+    title: "Secure Your Private Slot",
+    body:
+      "Complete the refundable Rs.299 booking fee within the next few minutes to lock your consultation priority.",
   },
   {
     num: "02",
     title: "WhatsApp Confirmation",
-    body: "Swapnil personally sends a confirmation within 2 hours of your payment.",
-    delay: "0.25s",
+    body:
+      "You’ll receive a personal confirmation message from Swapnil after payment.",
   },
   {
     num: "03",
     title: "Show Up Ready",
-    body: "Bring your most recent thyroid report if you have one. Everything else, Swapnil handles.",
-    delay: "0.35s",
+    body:
+      "Bring your latest thyroid reports if available. Everything else will be guided personally.",
   },
 ];
 
-const gradientText: React.CSSProperties = {
-  background: "linear-gradient(130deg, #c084fc 0%, #7c3aed 100%)",
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
-  backgroundClip: "text",
-};
-
 export default function BookConfirmedPage() {
-  const [show, setShow] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [fade, setFade] = useState(false);
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(
+    null
+  );
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(
+    null
+  );
 
   useEffect(() => {
-    const t = setTimeout(() => setShow(true), 80);
-    if (typeof window !== "undefined" && (window as any).fbq) {
-      (window as any).fbq("track", "Lead", {
-        content_name: "Thyroid Strategy Session Intake",
-        currency: "INR",
-        value: 299,
-      });
-    }
-    return () => clearTimeout(t);
+    setMounted(true);
+
+    intervalRef.current = setInterval(() => {
+      setFade(true);
+
+      timeoutRef.current = setTimeout(() => {
+        setActiveIdx(
+          (prev) =>
+            (prev + 1) % TESTIMONIALS.length
+        );
+
+        setFade(false);
+      }, 500);
+    }, 16000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
+  const active = TESTIMONIALS[activeIdx];
+
   function openPayment() {
-    window.open(CASHFREE_URL, "_blank", "noopener,noreferrer");
+    window.open(
+      CASHFREE_URL,
+      "_blank",
+      "noopener,noreferrer"
+    );
   }
 
   return (
-    <main style={{ background: "#07060f", minHeight: "100vh", position: "relative", overflow: "hidden", color: "#fff" }}>
+    <main className="relative min-h-screen overflow-hidden bg-[#07060f] text-white">
+      {/* Background glow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-[550px] w-[700px] -translate-x-1/2 rounded-full bg-purple-700/10 blur-[120px]" />
 
-      {/* Background glows */}
-      <div aria-hidden style={{ pointerEvents: "none", position: "fixed", inset: 0, zIndex: 0 }}>
-        <div style={{
-          position: "absolute",
-          left: "50%",
-          top: 0,
-          transform: "translateX(-50%)",
-          width: "min(100vw, 720px)",
-          height: "600px",
-          background: "radial-gradient(ellipse, rgba(124,58,237,0.13) 0%, transparent 72%)",
-          filter: "blur(60px)",
-        }} />
-        <div style={{
-          position: "absolute",
-          bottom: "-80px",
-          left: 0,
-          width: "380px",
-          height: "380px",
-          background: "radial-gradient(circle, rgba(109,40,217,0.09) 0%, transparent 70%)",
-          filter: "blur(90px)",
-        }} />
-        <div style={{
-          position: "absolute",
-          bottom: "-80px",
-          right: 0,
-          width: "380px",
-          height: "380px",
-          background: "radial-gradient(circle, rgba(88,28,135,0.08) 0%, transparent 70%)",
-          filter: "blur(90px)",
-        }} />
+        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full bg-violet-700/10 blur-[120px]" />
+
+        <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full bg-fuchsia-700/10 blur-[120px]" />
       </div>
 
-      {/* Content */}
-      <div style={{
-        position: "relative",
-        zIndex: 10,
-        maxWidth: "448px",
-        margin: "0 auto",
-        padding: "48px 20px 64px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        opacity: show ? 1 : 0,
-        transform: show ? "translateY(0)" : "translateY(20px)",
-        transition: "opacity 0.55s ease, transform 0.55s ease",
-      }}>
+      <div
+        className={`relative z-10 mx-auto flex max-w-[460px] flex-col px-5 pb-20 pt-14 transition-all duration-700 ${
+          mounted
+            ? "translate-y-0 opacity-100"
+            : "translate-y-5 opacity-0"
+        }`}
+      >
+        {/* Approved badge */}
+        <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-purple-500/25 bg-purple-500/10 px-4 py-2 shadow-[0_0_30px_rgba(124,58,237,0.15)]">
+          <div className="h-2 w-2 rounded-full bg-purple-300 shadow-[0_0_10px_rgba(196,181,253,0.8)]" />
 
-        {/* 1. CONFIRMATION HERO */}
-        <div style={{ marginBottom: "40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "100%" }}>
-
-          <div style={{
-            marginBottom: "20px",
-            width: "60px",
-            height: "60px",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "linear-gradient(135deg, rgba(124,58,237,0.22), rgba(109,40,217,0.12))",
-            border: "1px solid rgba(124,58,237,0.38)",
-            boxShadow: "0 0 28px rgba(124,58,237,0.22)",
-          }}>
-            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden>
-              <path d="M5.5 13L10.5 18L20.5 8" stroke="#c084fc" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-
-          <p style={{ marginBottom: "12px", fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.22em", color: "rgba(167,139,250,0.65)" }}>
-            Intake Confirmed
-          </p>
-
-          <h1 style={{ marginBottom: "16px", fontSize: "1.9rem", fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.04em", color: "#fff" }}>
-            Your Private Session{" "}
-            <span style={gradientText}>Is Reserved.</span>
-          </h1>
-
-          <p style={{ maxWidth: "32ch", fontSize: "0.88rem", lineHeight: 1.68, color: "rgba(255,255,255,0.5)" }}>
-            Swapnil will personally review your intake before you speak.
-            One final step below - it takes 30 seconds.
-          </p>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-purple-300">
+            Application Approved
+          </span>
         </div>
 
-        {/* 2. WHAT HAPPENS NEXT */}
-        <div style={{ marginBottom: "40px", width: "100%" }}>
-          <p style={{ marginBottom: "12px", textAlign: "center", fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(255,255,255,0.25)" }}>
+        {/* Hero */}
+        <div className="mb-10 text-center">
+          <h1 className="mb-5 text-[2.3rem] font-black leading-[0.95] tracking-[-0.05em] text-white">
+            Your Intake Has{" "}
+            <span className="bg-gradient-to-r from-purple-300 to-violet-500 bg-clip-text text-transparent">
+              Been Approved.
+            </span>
+          </h1>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-left backdrop-blur-xl">
+            <p className="mb-4 text-[0.92rem] leading-7 text-white/70">
+              Swapnil will personally review
+              your thyroid case before the
+              consultation.
+            </p>
+
+            <div className="mb-4 rounded-xl border border-purple-500/25 bg-purple-500/10 p-4">
+              <p className="text-[0.88rem] font-semibold text-white/90">
+                Your priority session slot is
+                not secured yet.
+              </p>
+            </div>
+
+            <p className="text-[0.84rem] leading-7 text-white/50">
+              Complete the refundable Rs.299
+              booking fee below to lock your
+              consultation priority.
+            </p>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="mb-10">
+          <p className="mb-4 text-center text-[0.62rem] font-semibold uppercase tracking-[0.28em] text-white/20">
             What happens next
           </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {STEPS.map((s) => (
-              <div key={s.num} style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "14px",
-                borderRadius: "16px",
-                padding: "16px",
-                background: "rgba(255,255,255,0.038)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.055)",
-                opacity: show ? 1 : 0,
-                transform: show ? "translateY(0)" : "translateY(12px)",
-                transition: "opacity 0.5s ease " + s.delay + ", transform 0.5s ease " + s.delay,
-              }}>
-                <div style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "0.68rem",
-                  fontWeight: 900,
-                  flexShrink: 0,
-                  background: "rgba(124,58,237,0.15)",
-                  border: "1px solid rgba(124,58,237,0.3)",
-                  color: "#c084fc",
-                }}>
-                  {s.num}
+          <div className="space-y-3">
+            {STEPS.map((step) => (
+              <div
+                key={step.num}
+                className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/10 text-[0.7rem] font-bold text-purple-300">
+                  {step.num}
                 </div>
+
                 <div>
-                  <p style={{ marginBottom: "2px", fontSize: "0.85rem", fontWeight: 700, lineHeight: 1, color: "rgba(255,255,255,0.88)" }}>
-                    {s.title}
-                  </p>
-                  <p style={{ fontSize: "0.76rem", lineHeight: 1.55, color: "rgba(255,255,255,0.42)" }}>
-                    {s.body}
+                  <h3 className="mb-1 text-[0.9rem] font-bold text-white/90">
+                    {step.title}
+                  </h3>
+
+                  <p className="text-[0.76rem] leading-6 text-white/45">
+                    {step.body}
                   </p>
                 </div>
               </div>
@@ -186,140 +275,136 @@ export default function BookConfirmedPage() {
           </div>
         </div>
 
-        {/* 3. PAYMENT CTA */}
-        <div style={{
-          marginBottom: "32px",
-          width: "100%",
-          borderRadius: "24px",
-          padding: "20px",
-          background: "linear-gradient(145deg, rgba(124,58,237,0.14), rgba(109,40,217,0.07))",
-          border: "1px solid rgba(124,58,237,0.28)",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.09)",
-        }}>
-
+        {/* Payment card */}
+        <div className="mb-10 rounded-[28px] border border-purple-500/20 bg-gradient-to-b from-purple-500/[0.10] to-purple-500/[0.03] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
           {/* Scarcity */}
-          <div style={{ marginBottom: "16px", display: "flex", justifyContent: "center" }}>
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              borderRadius: "999px",
-              padding: "6px 12px",
-              background: "rgba(124,58,237,0.15)",
-              border: "1px solid rgba(124,58,237,0.3)",
-            }}>
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#c084fc", boxShadow: "0 0 6px #c084fc", display: "inline-block" }} />
-              <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: "#c084fc" }}>
-                Only 3 Sessions Remaining This Week
+          <div className="mb-5 flex justify-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/10 px-4 py-2">
+              <span className="h-2 w-2 rounded-full bg-purple-300 shadow-[0_0_10px_rgba(196,181,253,0.8)]" />
+
+              <span className="text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-purple-200/90">
+                Only 3 Sessions Remaining
+                This Week
               </span>
             </div>
           </div>
 
-          {/* Value row */}
-          <div style={{
-            marginBottom: "20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            borderRadius: "12px",
-            padding: "10px 12px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.07)",
-          }}>
+          {/* Session row */}
+          <div className="mb-5 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
             <div>
-              <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
-                Private Thyroid Strategy Session
+              <p className="text-[0.86rem] font-semibold text-white/85">
+                Private Thyroid Strategy
+                Session
               </p>
-              <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.38)" }}>
-                60 min · 1-on-1 · With Swapnil
+
+              <p className="mt-1 text-[0.72rem] text-white/40">
+                60 min · 1-on-1 · With
+                Swapnil
               </p>
             </div>
-            <p style={{ fontSize: "1.15rem", fontWeight: 900, ...gradientText }}>
+
+            <p className="bg-gradient-to-r from-purple-300 to-violet-500 bg-clip-text text-[1.45rem] font-black text-transparent">
               Rs.299
             </p>
           </div>
 
-          {/* CTA Button — using button + onClick to avoid <a> parser issues */}
+          {/* CTA */}
           <button
             onClick={openPayment}
-            style={{
-              marginBottom: "12px",
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "16px",
-              padding: "16px",
-              background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-              boxShadow: "0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.35)",
-              border: "none",
-              cursor: "pointer",
-              color: "#fff",
-            }}
+            className="group mb-4 w-full rounded-2xl bg-gradient-to-r from-purple-500 to-violet-600 px-5 py-5 shadow-[0_10px_40px_rgba(124,58,237,0.4)] transition-all duration-300 hover:scale-[1.01]"
           >
-            <span style={{ fontSize: "1rem", fontWeight: 700, lineHeight: 1 }}>
-              Reserve My Session - Rs.299
-            </span>
-            <span style={{ marginTop: "4px", fontSize: "0.72rem", fontWeight: 500, color: "rgba(255,255,255,0.65)" }}>
-              Private · 60 min · Written plan included
-            </span>
+            <div className="text-[1.08rem] font-extrabold tracking-[-0.02em] text-white">
+              Secure My Private Slot —
+              Rs.299
+            </div>
+
+            <div className="mt-1 text-[0.73rem] text-white/65">
+              Private · 60 min · Written
+              plan included
+            </div>
           </button>
 
-          <p style={{ textAlign: "center", fontSize: "0.68rem", fontWeight: 500, lineHeight: 1.5, color: "rgba(255,255,255,0.38)" }}>
-            Full refund if you do not leave with complete clarity
+          <p className="text-center text-[0.7rem] text-white/35">
+            Full refund if you do not leave
+            with complete clarity
           </p>
         </div>
 
-        {/* 4. TESTIMONIAL */}
-        <div style={{
-          marginBottom: "32px",
-          width: "100%",
-          borderRadius: "16px",
-          padding: "16px",
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
-        }}>
-          <p style={{ marginBottom: "12px", fontSize: "0.82rem", fontWeight: 600, fontStyle: "italic", lineHeight: 1.6, color: "rgba(255,255,255,0.72)" }}>
-            &ldquo;He spent the full hour on my actual reports - my TSH
-            history, my food, my sleep. I left with three specific things
-            to try that evening. That alone was worth Rs.299.&rdquo;
+        {/* Testimonials */}
+        <div className="mb-10">
+          <p className="mb-4 text-center text-[0.62rem] font-semibold uppercase tracking-[0.28em] text-white/20">
+            Real women. Real clarity.
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{
-              width: "28px",
-              height: "28px",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "11px",
-              fontWeight: 700,
-              flexShrink: 0,
-              background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-              color: "#fff",
-            }}>
-              K
-            </div>
-            <div>
-              <p style={{ fontSize: "0.76rem", fontWeight: 600, lineHeight: 1, color: "rgba(255,255,255,0.75)" }}>Kavitha N.</p>
-              <p style={{ marginTop: "2px", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>Hypothyroid · Hyderabad</p>
-            </div>
-            <div style={{ marginLeft: "auto" }}>
-              <span style={{ fontSize: "0.65rem", letterSpacing: "0.1em", color: "rgba(167,139,250,0.6)" }}>&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-2xl">
+            <div
+              className={`transition-opacity duration-500 ${
+                fade ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {/* Stars */}
+              <div className="mb-4 flex gap-1">
+                {[...Array(active.rating)].map(
+                  (_, i) => (
+                    <span
+                      key={i}
+                      className="text-[0.82rem] text-purple-300"
+                    >
+                      ★
+                    </span>
+                  )
+                )}
+              </div>
+
+              {/* Review */}
+              <p className="mb-5 text-[0.87rem] italic leading-7 text-white/72">
+                “{active.review}”
+              </p>
+
+              {/* Footer */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-violet-700 text-sm font-bold text-white">
+                  {active.initial}
+                </div>
+
+                <div>
+                  <p className="text-[0.82rem] font-semibold text-white/85">
+                    {active.name}
+                  </p>
+
+                  <p className="text-[0.66rem] uppercase tracking-[0.12em] text-white/35">
+                    {active.condition} ·{" "}
+                    {active.city}
+                  </p>
+                </div>
+
+                <div className="ml-auto rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1">
+                  <span className="text-[0.62rem] font-semibold text-purple-200/80">
+                    {activeIdx + 1} /{" "}
+                    {TESTIMONIALS.length}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 5. TRUST ROW */}
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "16px 16px" }}>
-          {["Private and confidential", "200+ women helped", "ACE and INFS certified"].map((t) => (
-            <p key={t} style={{ fontSize: "0.62rem", fontWeight: 500, color: "rgba(255,255,255,0.22)", textAlign: "center" }}>
-              {t}
-            </p>
+        {/* Trust row */}
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {[
+            "Private & confidential",
+            "200+ women helped",
+            "ACE & INFS certified",
+            "Refund guaranteed",
+          ].map((item) => (
+            <span
+              key={item}
+              className="text-[0.62rem] text-white/20"
+            >
+              {item}
+            </span>
           ))}
         </div>
-
       </div>
     </main>
   );
