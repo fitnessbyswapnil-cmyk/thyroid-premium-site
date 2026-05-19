@@ -126,7 +126,8 @@ const STEPS = [
 ];
 
 const gText: React.CSSProperties = {
-  background: "linear-gradient(130deg, #c084fc 0%, #7c3aed 100%)",
+  background:
+    "linear-gradient(130deg, #c084fc 0%, #7c3aed 100%)",
   WebkitBackgroundClip: "text",
   WebkitTextFillColor: "transparent",
   backgroundClip: "text",
@@ -139,10 +140,19 @@ export default function BookConfirmedPage() {
   const [fading, setFading] = useState(false);
 
   const intervalRef =
-    useRef<ReturnType<typeof setInterval> | null>(null);
+    useRef<ReturnType<typeof setInterval> | null>(
+      null
+    );
+
+  const timeoutRef =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
 
   useEffect(() => {
-    const t = setTimeout(() => setShow(true), 80);
+    const t = setTimeout(() => {
+      setShow(true);
+    }, 80);
 
     if (
       typeof window !== "undefined" &&
@@ -160,10 +170,6 @@ export default function BookConfirmedPage() {
   }, []);
 
   useEffect(() => {
-    const timeoutRef = {
-      current: 0 as ReturnType<typeof setTimeout>,
-    };
-
     intervalRef.current = setInterval(() => {
       setFading(true);
 
@@ -178,11 +184,13 @@ export default function BookConfirmedPage() {
     }, 16000);
 
     return () => {
-      if (intervalRef.current)
+      if (intervalRef.current) {
         clearInterval(intervalRef.current);
+      }
 
-      if (timeoutRef.current)
+      if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
     };
   }, []);
 
@@ -208,7 +216,7 @@ export default function BookConfirmedPage() {
           "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Glows */}
+      {/* Background Glows */}
       <div
         aria-hidden
         style={{
@@ -259,7 +267,7 @@ export default function BookConfirmedPage() {
         />
       </div>
 
-      {/* Content */}
+      {/* Main Content */}
       <div
         style={{
           position: "relative",
@@ -289,7 +297,7 @@ export default function BookConfirmedPage() {
             textAlign: "center",
           }}
         >
-          {/* Approved pill */}
+          {/* Approved Badge */}
           <div
             style={{
               marginBottom: "20px",
@@ -335,7 +343,7 @@ export default function BookConfirmedPage() {
             </span>
           </div>
 
-          {/* Headline */}
+          {/* Heading */}
           <h1
             style={{
               marginBottom: "20px",
@@ -353,7 +361,7 @@ export default function BookConfirmedPage() {
             </span>
           </h1>
 
-          {/* Status box */}
+          {/* Status Card */}
           <div
             style={{
               width: "100%",
@@ -400,8 +408,8 @@ export default function BookConfirmedPage() {
                   margin: 0,
                 }}
               >
-                Your consultation slot is
-                not locked yet.
+                Your consultation slot is not
+                locked yet.
               </p>
             </div>
 
@@ -414,14 +422,14 @@ export default function BookConfirmedPage() {
                 margin: 0,
               }}
             >
-              Complete the Rs.299 booking
-              fee below to secure your
-              priority session.
+              Complete the Rs.299 booking fee
+              below to secure your priority
+              session.
             </p>
           </div>
         </div>
 
-        {/* STEPS */}
+        {/* Steps */}
         <div
           style={{
             marginBottom: "36px",
@@ -527,7 +535,7 @@ export default function BookConfirmedPage() {
           </div>
         </div>
 
-        {/* PAYMENT CTA */}
+        {/* CTA */}
         <div
           style={{
             marginBottom: "32px",
@@ -591,7 +599,7 @@ export default function BookConfirmedPage() {
             </div>
           </div>
 
-          {/* Session row */}
+          {/* Session */}
           <div
             style={{
               marginBottom: "18px",
@@ -643,7 +651,7 @@ export default function BookConfirmedPage() {
             </p>
           </div>
 
-          {/* CTA */}
+          {/* Button */}
           <button
             onClick={openPayment}
             style={{
@@ -704,7 +712,7 @@ export default function BookConfirmedPage() {
           </p>
         </div>
 
-        {/* TESTIMONIALS */}
+        {/* Testimonials */}
         <div
           style={{
             marginBottom: "32px",
@@ -737,17 +745,13 @@ export default function BookConfirmedPage() {
               boxShadow:
                 "inset 0 1px 0 rgba(255,255,255,0.045)",
               minHeight: "190px",
-              transition: "all 0.4s ease",
             }}
           >
             <div
               style={{
                 opacity: fading ? 0 : 1,
-                transform: fading
-                  ? "translateY(8px)"
-                  : "translateY(0)",
                 transition:
-                  "opacity 0.45s ease, transform 0.45s ease",
+                  "opacity 0.45s ease",
               }}
             >
               {/* Stars */}
@@ -763,13 +767,12 @@ export default function BookConfirmedPage() {
                     <span
                       key={i}
                       style={{
-                        fontSize:
-                          "0.72rem",
+                        fontSize: "0.7rem",
                         color:
                           "rgba(167,139,250,0.7)",
                       }}
                     >
-                      &#9733;
+                      ★
                     </span>
                   )
                 )}
@@ -780,32 +783,18 @@ export default function BookConfirmedPage() {
                 style={{
                   marginBottom: "14px",
                   fontSize: "0.83rem",
-                  lineHeight: 1.72,
+                  lineHeight: 1.68,
                   fontStyle: "italic",
                   color:
-                    "rgba(255,255,255,0.72)",
+                    "rgba(255,255,255,0.7)",
                 }}
               >
-                &ldquo;{active.review}
+                &ldquo;
+                {active.review}
                 &rdquo;
               </p>
 
-              {/* Verified */}
-              <p
-                style={{
-                  marginTop: "-2px",
-                  marginBottom: "16px",
-                  fontSize: "0.68rem",
-                  color:
-                    "rgba(167,139,250,0.7)",
-                  fontWeight: 500,
-                }}
-              >
-                Verified consultation
-                client
-              </p>
-
-              {/* Client row */}
+              {/* Footer */}
               <div
                 style={{
                   display: "flex",
@@ -813,11 +802,10 @@ export default function BookConfirmedPage() {
                   gap: "10px",
                 }}
               >
-                {/* Avatar */}
                 <div
                   style={{
-                    width: "32px",
-                    height: "32px",
+                    width: "30px",
+                    height: "30px",
                     borderRadius: "50%",
                     flexShrink: 0,
                     display: "flex",
@@ -828,14 +816,11 @@ export default function BookConfirmedPage() {
                     color: "#fff",
                     background:
                       "linear-gradient(135deg, #7c3aed, #6d28d9)",
-                    boxShadow:
-                      "0 0 18px rgba(124,58,237,0.25)",
                   }}
                 >
                   {active.initial}
                 </div>
 
-                {/* Name */}
                 <div>
                   <p
                     style={{
@@ -843,7 +828,7 @@ export default function BookConfirmedPage() {
                       fontWeight: 600,
                       lineHeight: 1,
                       color:
-                        "rgba(255,255,255,0.82)",
+                        "rgba(255,255,255,0.78)",
                     }}
                   >
                     {active.name}
@@ -871,13 +856,12 @@ export default function BookConfirmedPage() {
                   style={{
                     marginLeft: "auto",
                     padding: "4px 10px",
-                    borderRadius: "999px",
+                    borderRadius:
+                      "999px",
                     background:
                       "rgba(124,58,237,0.12)",
                     border:
                       "1px solid rgba(124,58,237,0.22)",
-                    boxShadow:
-                      "0 0 12px rgba(124,58,237,0.08)",
                   }}
                 >
                   <span
@@ -891,7 +875,9 @@ export default function BookConfirmedPage() {
                     }}
                   >
                     {activeIdx + 1} /{" "}
-                    {TESTIMONIALS.length}
+                    {
+                      TESTIMONIALS.length
+                    }
                   </span>
                 </div>
               </div>
@@ -899,7 +885,7 @@ export default function BookConfirmedPage() {
           </div>
         </div>
 
-        {/* TRUST ROW */}
+        {/* Trust Row */}
         <div
           style={{
             display: "flex",
