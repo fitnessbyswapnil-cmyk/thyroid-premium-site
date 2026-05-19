@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 
+// ── REPLACE WITH YOUR ACTUAL CASHFREE LINK ───────────────────────────────────
 const CASHFREE_URL = "https://payments.cashfree.com/forms/thyroid-session";
 
+// ── TESTIMONIALS ─────────────────────────────────────────────────────────────
 const TESTIMONIALS = [
   {
     name: "Kavitha N.",
@@ -16,7 +18,7 @@ const TESTIMONIALS = [
     name: "Priya R.",
     city: "Mumbai",
     condition: "Hypothyroid",
-    review: "I had been to 4 doctors in 3 years. Not one explained why I could not lose weight despite medication. In 60 minutes I finally understood what was actually happening in my body.",
+    review: "I had been to 4 doctors in 3 years. Not one explained why I could not lose weight despite medication. In 60 minutes I finally understood what was happening in my body.",
     initial: "P",
   },
   {
@@ -65,14 +67,14 @@ const TESTIMONIALS = [
     name: "Nisha B.",
     city: "Kolkata",
     condition: "Hypothyroid and Fatigue",
-    review: "The fatigue was the worst part. I thought it was laziness. After this session I understood it was my T3 conversion. We built a plan around fixing that first and the energy came back.",
+    review: "The fatigue was the worst part. I thought it was laziness. After this session I understood it was my T3 conversion. We built a plan around fixing that first and energy came back.",
     initial: "N",
   },
   {
     name: "Smita J.",
     city: "Jaipur",
     condition: "Hypothyroid",
-    review: "Every coach before gave me the same generic diet advice. Swapnil adapted everything to my thyroid condition, my food preferences, and my daily routine.",
+    review: "Every coach before gave me the same generic advice. Swapnil adapted everything to my thyroid condition, my food preferences, and my daily routine.",
     initial: "S",
   },
   {
@@ -91,27 +93,29 @@ const TESTIMONIALS = [
   },
 ];
 
+// ── STEPS ────────────────────────────────────────────────────────────────────
 const STEPS = [
   {
     num: "01",
-    title: "Secure Your Private Slot",
-    body: "Complete the Rs.299 booking fee to lock your consultation priority with Swapnil.",
+    title: "Payment Confirms Your Slot",
+    body: "The moment your Rs.299 payment is received, your private session slot is locked in Swapnil's calendar.",
     delay: "0s",
   },
   {
     num: "02",
     title: "WhatsApp Confirmation",
-    body: "You will receive a personal message from Swapnil directly after payment.",
+    body: "You will receive a personal message from Swapnil directly after payment with your session details.",
     delay: "0.1s",
   },
   {
     num: "03",
     title: "Show Up Ready",
-    body: "Bring your latest thyroid reports if available. Everything else guided personally.",
+    body: "Bring your latest thyroid reports if available. Everything else is guided personally by Swapnil.",
     delay: "0.2s",
   },
 ];
 
+// ── GRADIENT TEXT ─────────────────────────────────────────────────────────────
 const gText: React.CSSProperties = {
   background: "linear-gradient(130deg, #c084fc 0%, #7c3aed 100%)",
   WebkitBackgroundClip: "text",
@@ -120,6 +124,7 @@ const gText: React.CSSProperties = {
   display: "inline",
 };
 
+// ── COMPONENT ─────────────────────────────────────────────────────────────────
 export default function BookConfirmedPage() {
   const [show, setShow] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -127,6 +132,7 @@ export default function BookConfirmedPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Page entrance + Facebook Pixel
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
     if (typeof window !== "undefined" && (window as any).fbq) {
@@ -139,6 +145,7 @@ export default function BookConfirmedPage() {
     return () => clearTimeout(t);
   }, []);
 
+  // Rotating testimonials
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setFading(true);
@@ -159,42 +166,42 @@ export default function BookConfirmedPage() {
 
   const active = TESTIMONIALS[activeIdx];
 
-  const base: React.CSSProperties = {
-    background: "#07060f",
-    minHeight: "100vh",
-    position: "relative",
-    overflow: "hidden",
-    color: "#fff",
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-  };
-
   return (
-    <main style={base}>
+    <main
+      style={{
+        background: "#07060f",
+        minHeight: "100vh",
+        position: "relative",
+        overflow: "hidden",
+        color: "#fff",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+      }}
+    >
 
-      {/* Glows */}
+      {/* ── BACKGROUND GLOWS ─────────────────────────────────────────────── */}
       <div aria-hidden style={{ pointerEvents: "none", position: "fixed", inset: 0, zIndex: 0 }}>
         <div style={{
           position: "absolute", left: "50%", top: 0,
           transform: "translateX(-50%)",
-          width: "min(100vw, 700px)", height: "580px",
-          background: "radial-gradient(ellipse, rgba(124,58,237,0.13) 0%, transparent 70%)",
+          width: "min(100vw, 700px)", height: "600px",
+          background: "radial-gradient(ellipse, rgba(124,58,237,0.14) 0%, transparent 70%)",
           filter: "blur(70px)",
         }} />
         <div style={{
           position: "absolute", bottom: "-60px", left: 0,
-          width: "340px", height: "340px",
+          width: "360px", height: "360px",
           background: "radial-gradient(circle, rgba(109,40,217,0.09) 0%, transparent 70%)",
           filter: "blur(90px)",
         }} />
         <div style={{
           position: "absolute", bottom: "-60px", right: 0,
-          width: "340px", height: "340px",
+          width: "360px", height: "360px",
           background: "radial-gradient(circle, rgba(88,28,135,0.08) 0%, transparent 70%)",
           filter: "blur(90px)",
         }} />
       </div>
 
-      {/* Page */}
+      {/* ── PAGE CONTENT ─────────────────────────────────────────────────── */}
       <div style={{
         position: "relative", zIndex: 10,
         maxWidth: "448px", margin: "0 auto",
@@ -205,55 +212,222 @@ export default function BookConfirmedPage() {
         transition: "opacity 0.55s ease, transform 0.55s ease",
       }}>
 
-        {/* ── SECTION 1: HERO — minimal, CTA-focused ───────────────────────── */}
+        {/* ════════════════════════════════════════════════════════════════
+            SECTION 1 — PROGRESS BAR HERO
+            Three visual stages showing exactly where the user is.
+            Green = done, Bright purple = current, Muted = future.
+        ════════════════════════════════════════════════════════════════ */}
         <div style={{
           marginBottom: "32px", width: "100%",
           display: "flex", flexDirection: "column",
           alignItems: "center", textAlign: "center",
         }}>
 
-          {/* Badge */}
+          {/* ── VISUAL PROGRESS TRACKER ──────────────────────────────────── */}
           <div style={{
-            marginBottom: "18px",
-            display: "inline-flex", alignItems: "center", gap: "7px",
-            borderRadius: "999px", padding: "7px 16px",
-            background: "rgba(124,58,237,0.11)",
-            border: "1px solid rgba(124,58,237,0.28)",
-            boxShadow: "0 0 16px rgba(124,58,237,0.1)",
+            width: "100%", marginBottom: "28px",
+            padding: "18px 16px",
+            borderRadius: "20px",
+            background: "rgba(255,255,255,0.035)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
           }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-              <path d="M2 6L4.5 8.5L10 3" stroke="#c084fc" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "#c084fc" }}>
-              Application Approved
-            </span>
+
+            {/* Three steps in a row */}
+            <div style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              position: "relative",
+            }}>
+
+              {/* ── STEP 1: Intake Complete ✓ (DONE — green) ──────────────── */}
+              <div style={{
+                flex: 1, display: "flex", flexDirection: "column",
+                alignItems: "center", gap: "8px", position: "relative", zIndex: 1,
+              }}>
+                {/* Circle */}
+                <div style={{
+                  width: "42px", height: "42px", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(134,239,172,0.14)",
+                  border: "1.5px solid rgba(134,239,172,0.55)",
+                  boxShadow: "0 0 12px rgba(134,239,172,0.18)",
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                    <path
+                      d="M3 8L6.5 11.5L13 4.5"
+                      stroke="rgba(134,239,172,0.85)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                {/* Label */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                  <span style={{
+                    fontSize: "0.6rem", fontWeight: 700,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    color: "rgba(134,239,172,0.8)",
+                  }}>
+                    Intake
+                  </span>
+                  <span style={{
+                    fontSize: "0.6rem", fontWeight: 700,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    color: "rgba(134,239,172,0.8)",
+                  }}>
+                    Complete
+                  </span>
+                </div>
+              </div>
+
+              {/* ── CONNECTOR LINE 1 → 2 (done to active) ──────────────────── */}
+              <div style={{
+                flexShrink: 0, width: "28px",
+                height: "2px", marginTop: "20px",
+                background: "linear-gradient(to right, rgba(134,239,172,0.5), rgba(124,58,237,0.8))",
+                borderRadius: "2px",
+              }} />
+
+              {/* ── STEP 2: Payment Pending (ACTIVE — bright purple glow) ───── */}
+              <div style={{
+                flex: 1, display: "flex", flexDirection: "column",
+                alignItems: "center", gap: "8px", position: "relative", zIndex: 1,
+              }}>
+                {/* Outer glow ring */}
+                <div style={{
+                  width: "42px", height: "42px", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(124,58,237,0.28)",
+                  border: "2px solid #7c3aed",
+                  boxShadow: "0 0 0 4px rgba(124,58,237,0.12), 0 0 20px rgba(124,58,237,0.45)",
+                }}>
+                  {/* Pulsing inner dot */}
+                  <div style={{
+                    width: "12px", height: "12px", borderRadius: "50%",
+                    background: "#c084fc",
+                    boxShadow: "0 0 10px rgba(192,132,252,0.9)",
+                    animation: "pulse 1.8s ease-in-out infinite",
+                  }} />
+                </div>
+                {/* Label — highlighted */}
+                <div style={{
+                  display: "flex", flexDirection: "column",
+                  alignItems: "center", gap: "2px",
+                }}>
+                  <span style={{
+                    fontSize: "0.6rem", fontWeight: 800,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    color: "#c084fc",
+                  }}>
+                    Payment
+                  </span>
+                  <span style={{
+                    fontSize: "0.6rem", fontWeight: 800,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    color: "#c084fc",
+                  }}>
+                    Pending
+                  </span>
+                </div>
+                {/* YOU ARE HERE label */}
+                <div style={{
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  background: "rgba(124,58,237,0.2)",
+                  border: "1px solid rgba(124,58,237,0.4)",
+                }}>
+                  <span style={{ fontSize: "0.52rem", fontWeight: 700, color: "rgba(192,132,252,0.9)", letterSpacing: "0.06em" }}>
+                    YOU ARE HERE
+                  </span>
+                </div>
+              </div>
+
+              {/* ── CONNECTOR LINE 2 → 3 (active to future) ────────────────── */}
+              <div style={{
+                flexShrink: 0, width: "28px",
+                height: "2px", marginTop: "20px",
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: "2px",
+              }} />
+
+              {/* ── STEP 3: Session Confirmed (FUTURE — muted) ──────────────── */}
+              <div style={{
+                flex: 1, display: "flex", flexDirection: "column",
+                alignItems: "center", gap: "8px", position: "relative", zIndex: 1,
+              }}>
+                {/* Circle — muted/locked */}
+                <div style={{
+                  width: "42px", height: "42px", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1.5px solid rgba(255,255,255,0.12)",
+                }}>
+                  {/* Lock icon */}
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                    <rect x="2.5" y="6" width="9" height="7" rx="1.5" stroke="rgba(255,255,255,0.25)" strokeWidth="1.3" />
+                    <path d="M4.5 6V4.5a2.5 2.5 0 015 0V6" stroke="rgba(255,255,255,0.25)" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                </div>
+                {/* Label — muted */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                  <span style={{
+                    fontSize: "0.6rem", fontWeight: 600,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    color: "rgba(255,255,255,0.28)",
+                  }}>
+                    Session
+                  </span>
+                  <span style={{
+                    fontSize: "0.6rem", fontWeight: 600,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    color: "rgba(255,255,255,0.28)",
+                  }}>
+                    Confirmed
+                  </span>
+                </div>
+              </div>
+
+            </div>
           </div>
 
-          {/* Headline */}
+          {/* Pulse animation keyframe via style tag */}
+          <style>{`
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.25); opacity: 0.75; }
+            }
+          `}</style>
+
+          {/* ── HEADLINE ──────────────────────────────────────────────────── */}
           <h1 style={{
             marginBottom: "12px",
-            fontSize: "clamp(1.7rem, 5vw, 2rem)",
-            fontWeight: 900, lineHeight: 1.1,
+            fontSize: "clamp(1.65rem, 5vw, 1.95rem)",
+            fontWeight: 900, lineHeight: 1.12,
             letterSpacing: "-0.04em", color: "#fff",
           }}>
-            Your Intake Has{" "}
-            <span style={gText}>Been Approved.</span>
+            Your Intake Is Complete.{" "}
+            <span style={gText}>Payment Confirms Your Session.</span>
           </h1>
 
-          {/* Single line — all that is needed */}
+          {/* ── ONE-LINE SUBTEXT ──────────────────────────────────────────── */}
           <p style={{
-            margin: 0,
-            fontSize: "0.9rem", lineHeight: 1.6,
-            color: "rgba(255,255,255,0.52)",
-            maxWidth: "30ch",
+            margin: 0, maxWidth: "32ch",
+            fontSize: "0.88rem", lineHeight: 1.62,
+            color: "rgba(255,255,255,0.5)",
           }}>
-            Swapnil has your intake. Complete the booking below to lock your private slot.
+            Complete the Rs.299 payment below to lock your private slot with Swapnil.
           </p>
+
         </div>
 
-        {/* ── SECTION 2: PAYMENT CTA — right after hero, above fold ───────── */}
+        {/* ════════════════════════════════════════════════════════════════
+            SECTION 2 — PAYMENT CTA (immediately after hero)
+        ════════════════════════════════════════════════════════════════ */}
         <div style={{
-          marginBottom: "40px", width: "100%",
+          marginBottom: "36px", width: "100%",
           borderRadius: "24px", padding: "22px",
           background: "linear-gradient(150deg, rgba(124,58,237,0.13), rgba(109,40,217,0.06))",
           border: "1px solid rgba(124,58,237,0.24)",
@@ -273,13 +447,17 @@ export default function BookConfirmedPage() {
                 background: "#a78bfa", display: "inline-block",
                 boxShadow: "0 0 5px rgba(167,139,250,0.7)",
               }} />
-              <span style={{ fontSize: "0.63rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(167,139,250,0.82)" }}>
+              <span style={{
+                fontSize: "0.63rem", fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.15em",
+                color: "rgba(167,139,250,0.82)",
+              }}>
                 Only 3 sessions remaining this week
               </span>
             </div>
           </div>
 
-          {/* Session row */}
+          {/* Session info */}
           <div style={{
             marginBottom: "18px",
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -314,10 +492,10 @@ export default function BookConfirmedPage() {
             }}
           >
             <span style={{ fontSize: "1.02rem", fontWeight: 800, lineHeight: 1, letterSpacing: "-0.01em" }}>
-              Secure My Private Slot - Rs.299
+              Complete Payment - Rs.299
             </span>
             <span style={{ marginTop: "5px", fontSize: "0.72rem", fontWeight: 500, color: "rgba(255,255,255,0.58)" }}>
-              Private · 60 min · Written plan included
+              Unlocks your confirmed session slot
             </span>
           </button>
 
@@ -327,8 +505,10 @@ export default function BookConfirmedPage() {
           </p>
         </div>
 
-        {/* ── SECTION 3: ROTATING TESTIMONIALS — validation for hesitant users */}
-        <div style={{ marginBottom: "36px", width: "100%" }}>
+        {/* ════════════════════════════════════════════════════════════════
+            SECTION 3 — ROTATING TESTIMONIALS
+        ════════════════════════════════════════════════════════════════ */}
+        <div style={{ marginBottom: "32px", width: "100%" }}>
           <p style={{
             marginBottom: "12px", textAlign: "center",
             fontSize: "0.59rem", fontWeight: 700,
@@ -356,7 +536,7 @@ export default function BookConfirmedPage() {
                 ))}
               </div>
 
-              {/* Review */}
+              {/* Review text */}
               <p style={{
                 marginTop: 0, marginBottom: "16px",
                 fontSize: "0.84rem", lineHeight: 1.68,
@@ -365,7 +545,7 @@ export default function BookConfirmedPage() {
                 &ldquo;{active.review}&rdquo;
               </p>
 
-              {/* Client + counter */}
+              {/* Client identity + counter */}
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div style={{
                   width: "30px", height: "30px", borderRadius: "50%", flexShrink: 0,
@@ -383,9 +563,10 @@ export default function BookConfirmedPage() {
                     {active.condition} · {active.city}
                   </p>
                 </div>
+                {/* Counter badge */}
                 <div style={{
-                  marginLeft: "auto",
-                  padding: "4px 10px", borderRadius: "999px", flexShrink: 0,
+                  marginLeft: "auto", flexShrink: 0,
+                  padding: "4px 10px", borderRadius: "999px",
                   background: "rgba(124,58,237,0.12)",
                   border: "1px solid rgba(124,58,237,0.22)",
                 }}>
@@ -398,7 +579,9 @@ export default function BookConfirmedPage() {
           </div>
         </div>
 
-        {/* ── SECTION 4: SECOND CTA — catches those who scrolled through ───── */}
+        {/* ════════════════════════════════════════════════════════════════
+            SECTION 4 — SECOND CTA (catches those who scrolled)
+        ════════════════════════════════════════════════════════════════ */}
         <button
           onClick={openPayment}
           style={{
@@ -411,15 +594,17 @@ export default function BookConfirmedPage() {
             border: "none", cursor: "pointer", color: "#fff",
           }}
         >
-          <span style={{ fontSize: "0.95rem", fontWeight: 800, lineHeight: 1 }}>
-            Secure My Private Slot - Rs.299
+          <span style={{ fontSize: "0.96rem", fontWeight: 800, lineHeight: 1 }}>
+            Complete Payment - Rs.299
           </span>
           <span style={{ marginTop: "4px", fontSize: "0.7rem", fontWeight: 500, color: "rgba(255,255,255,0.55)" }}>
             Full refund if no clarity received
           </span>
         </button>
 
-        {/* ── SECTION 5: STEPS — for those who need more info ─────────────── */}
+        {/* ════════════════════════════════════════════════════════════════
+            SECTION 5 — STEPS (what happens after payment)
+        ════════════════════════════════════════════════════════════════ */}
         <div style={{ marginBottom: "36px", width: "100%" }}>
           <p style={{
             marginBottom: "12px", textAlign: "center",
@@ -427,7 +612,7 @@ export default function BookConfirmedPage() {
             textTransform: "uppercase", letterSpacing: "0.2em",
             color: "rgba(255,255,255,0.18)",
           }}>
-            What happens after you pay
+            What happens after payment
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {STEPS.map((s) => (
@@ -463,10 +648,20 @@ export default function BookConfirmedPage() {
           </div>
         </div>
 
-        {/* ── SECTION 6: TRUST ROW ─────────────────────────────────────────── */}
+        {/* ════════════════════════════════════════════════════════════════
+            SECTION 6 — TRUST ROW
+        ════════════════════════════════════════════════════════════════ */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px 16px" }}>
-          {["Private and confidential", "200+ women helped", "ACE and INFS certified", "Full refund guaranteed"].map((item) => (
-            <p key={item} style={{ margin: 0, fontSize: "0.6rem", fontWeight: 500, color: "rgba(255,255,255,0.17)", textAlign: "center" }}>
+          {[
+            "Private and confidential",
+            "200+ women helped",
+            "ACE and INFS certified",
+            "Full refund guaranteed",
+          ].map((item) => (
+            <p key={item} style={{
+              margin: 0, fontSize: "0.6rem", fontWeight: 500,
+              color: "rgba(255,255,255,0.17)", textAlign: "center",
+            }}>
               {item}
             </p>
           ))}
