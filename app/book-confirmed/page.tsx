@@ -2,26 +2,26 @@
 
 import { useEffect, useState } from "react";
 
-// ── REPLACE WITH YOUR ACTUAL LINKS ──────────────────────────────────────────
 const CASHFREE_URL = "https://payments.cashfree.com/forms/thyroid-session";
-const CALENDLY_URL = "https://calendly.com/swapnilumbarkar";
-// ────────────────────────────────────────────────────────────────────────────
 
 const STEPS = [
   {
     num: "01",
     title: "Reserve Your Session",
     body: "Complete your Rs.299 payment to confirm your private slot with Swapnil.",
+    delay: "0.15s",
   },
   {
     num: "02",
     title: "WhatsApp Confirmation",
     body: "Swapnil personally sends a confirmation within 2 hours of your payment.",
+    delay: "0.25s",
   },
   {
     num: "03",
     title: "Show Up Ready",
     body: "Bring your most recent thyroid report if you have one. Everything else, Swapnil handles.",
+    delay: "0.35s",
   },
 ];
 
@@ -30,8 +30,6 @@ export default function BookConfirmedPage() {
 
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
-
-    // Facebook Pixel — Lead event
     if (typeof window !== "undefined" && (window as any).fbq) {
       (window as any).fbq("track", "Lead", {
         content_name: "Thyroid Strategy Session Intake",
@@ -39,24 +37,28 @@ export default function BookConfirmedPage() {
         value: 299,
       });
     }
-
     return () => clearTimeout(t);
   }, []);
+
+  const fadeIn: React.CSSProperties = {
+    opacity: show ? 1 : 0,
+    transform: show ? "translateY(0)" : "translateY(20px)",
+    transition: "opacity 0.55s ease, transform 0.55s ease",
+  };
 
   return (
     <main
       className="relative min-h-screen overflow-hidden text-white"
       style={{ background: "#07060f" }}
     >
-      {/* ── Background glows ──────────────────────────────────────────────── */}
+      {/* Background glows */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 rounded-full"
           style={{
             width: "min(100vw, 720px)",
             height: "600px",
-            background:
-              "radial-gradient(ellipse, rgba(124,58,237,0.13) 0%, transparent 72%)",
+            background: "radial-gradient(ellipse, rgba(124,58,237,0.13) 0%, transparent 72%)",
             filter: "blur(60px)",
           }}
         />
@@ -65,8 +67,7 @@ export default function BookConfirmedPage() {
           style={{
             width: "380px",
             height: "380px",
-            background:
-              "radial-gradient(circle, rgba(109,40,217,0.09) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(109,40,217,0.09) 0%, transparent 70%)",
             filter: "blur(90px)",
           }}
         />
@@ -75,44 +76,29 @@ export default function BookConfirmedPage() {
           style={{
             width: "380px",
             height: "380px",
-            background:
-              "radial-gradient(circle, rgba(88,28,135,0.08) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(88,28,135,0.08) 0%, transparent 70%)",
             filter: "blur(90px)",
           }}
         />
       </div>
 
-      {/* ── Page content ──────────────────────────────────────────────────── */}
+      {/* Page content */}
       <div
         className="relative z-10 mx-auto flex max-w-md flex-col items-center px-5 pb-16 pt-12"
-        style={{
-          opacity: show ? 1 : 0,
-          transform: show ? "translateY(0)" : "translateY(20px)",
-          transition: "opacity 0.55s ease, transform 0.55s ease",
-        }}
+        style={fadeIn}
       >
 
-        {/* ── 1. CONFIRMATION HERO ────────────────────────────────────────── */}
+        {/* 1. CONFIRMATION HERO */}
         <div className="mb-10 flex w-full flex-col items-center text-center">
-
-          {/* Checkmark circle */}
           <div
             className="mb-5 flex h-[60px] w-[60px] items-center justify-center rounded-full"
             style={{
-              background:
-                "linear-gradient(135deg, rgba(124,58,237,0.22), rgba(109,40,217,0.12))",
+              background: "linear-gradient(135deg, rgba(124,58,237,0.22), rgba(109,40,217,0.12))",
               border: "1px solid rgba(124,58,237,0.38)",
-              boxShadow:
-                "0 0 28px rgba(124,58,237,0.22), inset 0 1px 0 rgba(255,255,255,0.09)",
+              boxShadow: "0 0 28px rgba(124,58,237,0.22), inset 0 1px 0 rgba(255,255,255,0.09)",
             }}
           >
-            <svg
-              width="26"
-              height="26"
-              viewBox="0 0 26 26"
-              fill="none"
-              aria-hidden
-            >
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden>
               <path
                 d="M5.5 13L10.5 18L20.5 8"
                 stroke="#c084fc"
@@ -123,7 +109,6 @@ export default function BookConfirmedPage() {
             </svg>
           </div>
 
-          {/* Eyebrow */}
           <p
             className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.22em]"
             style={{ color: "rgba(167,139,250,0.65)" }}
@@ -131,10 +116,7 @@ export default function BookConfirmedPage() {
             Intake Confirmed
           </p>
 
-          {/* Headline */}
-          <h1
-            className="mb-4 text-balance text-[1.9rem] font-black leading-[1.1] tracking-[-0.04em]"
-          >
+          <h1 className="mb-4 text-balance text-[1.9rem] font-black leading-[1.1] tracking-[-0.04em]">
             Your Private Session{" "}
             <span
               style={{
@@ -157,7 +139,7 @@ export default function BookConfirmedPage() {
           </p>
         </div>
 
-        {/* ── 2. WHAT HAPPENS NEXT ────────────────────────────────────────── */}
+        {/* 2. WHAT HAPPENS NEXT */}
         <div className="mb-10 w-full">
           <p
             className="mb-3 text-center text-[0.6rem] font-bold uppercase tracking-[0.2em]"
@@ -167,7 +149,7 @@ export default function BookConfirmedPage() {
           </p>
 
           <div className="flex flex-col gap-2.5">
-            {STEPS.map((s, i) => (
+            {STEPS.map((s) => (
               <div
                 key={s.num}
                 className="flex items-start gap-3.5 rounded-2xl p-4"
@@ -177,13 +159,11 @@ export default function BookConfirmedPage() {
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.055)",
                   opacity: show ? 1 : 0,
                   transform: show ? "translateY(0)" : "translateY(12px)",
-                  transition: `opacity 0.5s ease ${0.15 + i * 0.1}s,
-                               transform 0.5s ease ${0.15 + i * 0.1}s`,
+                  transition: "opacity 0.5s ease " + s.delay + ", transform 0.5s ease " + s.delay,
                 }}
               >
                 <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center
-                              rounded-xl text-[0.68rem] font-black"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[0.68rem] font-black"
                   style={{
                     background: "rgba(124,58,237,0.15)",
                     border: "1px solid rgba(124,58,237,0.3)",
@@ -211,15 +191,13 @@ export default function BookConfirmedPage() {
           </div>
         </div>
 
-        {/* ── 3. PAYMENT CTA ──────────────────────────────────────────────── */}
+        {/* 3. PAYMENT CTA */}
         <div
           className="mb-8 w-full rounded-3xl p-5"
           style={{
-            background:
-              "linear-gradient(145deg, rgba(124,58,237,0.14), rgba(109,40,217,0.07))",
+            background: "linear-gradient(145deg, rgba(124,58,237,0.14), rgba(109,40,217,0.07))",
             border: "1px solid rgba(124,58,237,0.28)",
-            boxShadow:
-              "0 0 0 1px rgba(255,255,255,0.04), 0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.09)",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.09)",
           }}
         >
           {/* Scarcity badge */}
@@ -233,10 +211,7 @@ export default function BookConfirmedPage() {
             >
               <span
                 className="h-1.5 w-1.5 rounded-full"
-                style={{
-                  background: "#c084fc",
-                  boxShadow: "0 0 6px #c084fc",
-                }}
+                style={{ background: "#c084fc", boxShadow: "0 0 6px #c084fc" }}
               />
               <span
                 className="text-[0.65rem] font-bold uppercase tracking-[0.14em]"
@@ -247,8 +222,9 @@ export default function BookConfirmedPage() {
             </div>
           </div>
 
-          {/* Value summary */}
-          <div className="mb-5 flex items-center justify-between rounded-xl px-3 py-2.5"
+          {/* Value row */}
+          <div
+            className="mb-5 flex items-center justify-between rounded-xl px-3 py-2.5"
             style={{
               background: "rgba(255,255,255,0.04)",
               border: "1px solid rgba(255,255,255,0.07)",
@@ -286,13 +262,11 @@ export default function BookConfirmedPage() {
             href={CASHFREE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mb-3 flex w-full flex-col items-center justify-center
-                       rounded-2xl py-4 text-white transition-all duration-200
-                       active:scale-[0.98]"
+            className="mb-3 flex w-full flex-col items-center justify-center rounded-2xl py-4 text-white"
             style={{
               background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-              boxShadow:
-                "0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.35)",
+              boxShadow: "0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.35)",
+              textDecoration: "none",
             }}
           >
             <span className="text-[1rem] font-bold leading-none">
@@ -311,12 +285,12 @@ export default function BookConfirmedPage() {
             className="text-center text-[0.68rem] font-medium leading-[1.5]"
             style={{ color: "rgba(255,255,255,0.38)" }}
           >
-            <span style={{ color: "rgba(134,239,172,0.75)" }}>✓</span>{" "}
+            <span style={{ color: "rgba(134,239,172,0.75)" }}>&#10003;</span>{" "}
             Full refund if you don&apos;t leave with complete clarity
           </p>
         </div>
 
-        {/* ── 4. TRUST TESTIMONIAL ────────────────────────────────────────── */}
+        {/* 4. TESTIMONIAL */}
         <div
           className="mb-8 w-full rounded-2xl p-4"
           style={{
@@ -328,18 +302,14 @@ export default function BookConfirmedPage() {
             className="mb-3 text-[0.82rem] font-semibold italic leading-[1.6]"
             style={{ color: "rgba(255,255,255,0.72)" }}
           >
-            &ldquo;I walked in expecting a sales pitch. He spent the full hour
-            on my actual reports — my TSH history, my food, my sleep. I left
-            with three specific things to try that evening. That alone was
-            worth Rs.299.&rdquo;
+            &ldquo;He spent the full hour on my actual reports — my TSH
+            history, my food, my sleep. I left with three specific things
+            to try that evening. That alone was worth Rs.299.&rdquo;
           </p>
           <div className="flex items-center gap-2.5">
             <div
-              className="flex h-7 w-7 shrink-0 items-center justify-center
-                          rounded-full text-[11px] font-bold text-white"
-              style={{
-                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-              }}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
             >
               K
             </div>
@@ -362,23 +332,19 @@ export default function BookConfirmedPage() {
                 className="text-[0.65rem] tracking-widest"
                 style={{ color: "rgba(167,139,250,0.6)" }}
               >
-                ★★★★★
+                &#9733;&#9733;&#9733;&#9733;&#9733;
               </span>
             </div>
           </div>
         </div>
 
-        {/* ── 5. BOTTOM TRUST ROW ─────────────────────────────────────────── */}
-        <div className="flex w-full items-center justify-center gap-4">
-          {[
-            "Private & confidential",
-            "200+ women helped",
-            "ACE · INFS certified",
-          ].map((t) => (
+        {/* 5. BOTTOM TRUST */}
+        <div className="flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          {["Private & confidential", "200+ women helped", "ACE · INFS certified"].map((t) => (
             <p
               key={t}
               className="text-center text-[0.62rem] font-medium"
-              style={{ color: "rgba(255,255,255,0.25)" }}
+              style={{ color: "rgba(255,255,255,0.22)" }}
             >
               {t}
             </p>
