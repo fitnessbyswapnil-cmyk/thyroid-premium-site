@@ -18,18 +18,6 @@ interface SessionOutcome {
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-//
-// Design intent: replace the SaaS-style "includes" checklist with 3 specific
-// *outcome* chips. The distinction matters psychologically:
-//
-//   Features list  →  reactivates Neocortex evaluation ("do I need all this?")
-//   Outcome chips  →  speak to Limbic desire ("that's exactly what I want")
-//
-// Each outcome is phrased as what the visitor *experiences*, not what she
-// receives. This is the difference between "Indian nutrition plan" (feature)
-// and "know exactly what to eat — without giving up your food" (desire).
-//
-// Three chips only. Brevity signals confidence.
 
 const SESSION_OUTCOMES: SessionOutcome[] = [
   {
@@ -46,39 +34,25 @@ const SESSION_OUTCOMES: SessionOutcome[] = [
   },
 ];
 
-// Short cert labels for the coach card — pulled from authority constants
 const certChips = CERTIFICATIONS.map((c) => c.short);
-
-// ─── Guarantee seal — replaces the 3-chip "objections row" ───────────────────
-//
-// "₹299 consultation · Qualified intake · No obligation" had two problems:
-//   1. "Qualified intake" is insider jargon — creates ambiguity ("do I need
-//      to qualify?") right before the purchase moment.
-//   2. Three micro-chips of equal weight compete with each other and land
-//      with less force than a single clean sentence.
-//
-// A single guarantee sentence does more psychological work: it names the risk
-// (the money), removes it (full refund), and names the benefit (clarity) — all
-// in one breath. This is the Framework's "Consequence of NOT acting" inverted
-// into a "zero-risk to try" frame.
 
 const GUARANTEE =
   "Full refund if you don't leave with complete clarity — no questions asked.";
 
-// ─── A/B test — swap label to compare variant ─────────────────────────────────
 const PRIMARY_CTA_LABEL = "Book My ₹299 Session — I'm Ready";
-// const PRIMARY_CTA_LABEL = "Book My ₹299 Session — I Have Questions Too";
+
+// ✅ TALLY LINK
+const TALLY_LINK = "https://tally.so/r/Xx8yRO";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FinalCTASection() {
-
   return (
     <section
       aria-labelledby="final-cta-heading"
       className="section-pad relative overflow-hidden bg-[var(--bg-section)] text-white"
     >
-      {/* ── Atmospheric glow — matches Hero's two-layer treatment ─────────── */}
+      {/* ── Atmospheric glow ─────────────────────────────────────────────── */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[min(70vw,440px)] overflow-hidden"
@@ -89,15 +63,7 @@ export default function FinalCTASection() {
 
       <div className="container-narrow relative z-10 text-center">
 
-        {/* ── 1. Main headline — emotional close ────────────────────────────
-            The headline is the emotional anchor for the entire section.
-            It validates the visitor's experience (alone, struggling) and
-            frames the CTA as relief, not a transaction.
-
-            Three things it does:
-              a) Acknowledges the emotional state (Limbic validation)
-              b) Frames booking as relief, not commitment (Croc safety)
-              c) "long enough" implies: the time to act is now             */}
+        {/* ── Headline ───────────────────────────────────────────────────── */}
         <h2
           id="final-cta-heading"
           className="mx-auto mb-4 max-w-[20ch] text-balance text-[length:var(--text-2xl)] font-black leading-[1.08] tracking-[-0.04em] text-[var(--t1)] sm:mb-5 sm:text-[length:var(--text-3xl)]"
@@ -106,23 +72,13 @@ export default function FinalCTASection() {
           <span className="text-gradient">long enough.</span>
         </h2>
 
-        {/* ── 2. Supporting text — what the session actually is ─────────────
-            Names the specific mechanism: "finally explain why nothing worked."
-            This is Neocortex credibility — there IS a root cause, and this
-            session addresses it directly.                                  */}
+        {/* ── Supporting Text ───────────────────────────────────────────── */}
         <p className="mx-auto mb-10 max-w-[34ch] text-pretty text-[length:var(--text-sm)] leading-[1.8] text-[var(--t3)] sm:mb-12 sm:max-w-[42ch] sm:text-[length:var(--text-base)]">
           A private thyroid strategy session designed to finally explain why
           nothing has worked — and what changes next.
         </p>
 
-        {/* ── 4. Outcome chips — desire-led, not feature-led ────────────────
-            Three outcomes, styled as directional arrows not checkmarks.
-            Arrow → implies forward motion (you're going somewhere).
-            Checkmark ✓ implies a list (you're getting something).
-
-            The psychological difference: arrow = journey, check = contract.
-            For a woman who has been stuck for years, "going somewhere"
-            is more emotionally activating than "receiving a deliverable."  */}
+        {/* ── Outcome Chips ─────────────────────────────────────────────── */}
         <ul
           className="mx-auto mb-10 flex max-w-[min(100%,26rem)] flex-col gap-3 text-left sm:mb-12"
           aria-label="What you'll get from the session"
@@ -139,6 +95,7 @@ export default function FinalCTASection() {
               >
                 {outcome.icon}
               </span>
+
               <span className="text-[length:var(--text-sm)] font-medium leading-[1.65] text-[var(--t2)]">
                 {outcome.text}
               </span>
@@ -146,20 +103,7 @@ export default function FinalCTASection() {
           ))}
         </ul>
 
-        {/* ── 5. Coach card — human, not administrative ─────────────────────
-            The original coach card was: photo + title badge + cert chips.
-            No sentence. No humanity. Just credentials.
-
-            The redesign adds a single first-person line from the coach that
-            names her audience specifically. This does two things:
-              a) Transforms the card from an "about me" block into an
-                 "I see you" moment (Limbic resonance)
-              b) The cert chips are still there for Neocortex proof, but
-                 now they're supporting a human claim, not leading alone.
-
-            "I've spent years learning why thyroid weight is different —
-            so you don't have to figure it out alone." is the pivot line:
-            it connects the coach's effort to the visitor's relief.         */}
+        {/* ── Coach Card ────────────────────────────────────────────────── */}
         <div
           className="mb-10 overflow-hidden rounded-[var(--r-xl)] sm:mb-12"
           style={{
@@ -188,22 +132,18 @@ export default function FinalCTASection() {
                 <p className="text-[length:var(--text-xs)] font-semibold uppercase tracking-wider text-[var(--p400)]">
                   Thyroid Fat-Loss Specialist
                 </p>
+
                 <p className="mt-0.5 text-[length:var(--text-base)] font-bold leading-none text-[var(--t1)]">
                   {COACH_NAME}
                 </p>
               </div>
 
-              {/*
-                The human line — this is the most important addition to the card.
-                It speaks directly to the visitor's situation and positions the
-                coach as a guide, not a service provider.
-              */}
               <p className="max-w-[34ch] text-[length:var(--text-xs)] leading-[1.7] text-[var(--t3)]">
                 I&apos;ve spent years learning why thyroid weight is different —
                 so you don&apos;t have to figure it out alone.
               </p>
 
-              {/* Cert chips — Neocortex proof, now in a supporting role */}
+              {/* Cert Chips */}
               <div className="chip-list sm:justify-start">
                 {certChips.map((c) => (
                   <span key={c} className="chip">
@@ -215,30 +155,30 @@ export default function FinalCTASection() {
           </div>
         </div>
 
-        {/* ── 6. CTA block — strongest glow on page ────────────────────────
-            First-person copy: reads as HER words, completing the decision
-            she has been building toward through the entire page.
-
-            cta-glow-strong gives this CTA the highest ambient intensity —
-            psychological escalation through scroll depth.
-
-            A/B variant is set via PRIMARY_CTA_LABEL constant at the top.   */}
+        {/* ── CTA Block ─────────────────────────────────────────────────── */}
         <div className="mx-auto mb-5 w-full max-w-[min(100%,22rem)] sm:mb-6">
-          <SectionCta
-            id="cta-final"
-            variant="primary"
-            className="w-full cta-glow-strong"
-            buttonClassName="w-full"
-            label={PRIMARY_CTA_LABEL}
-            sublabel="60 min · Private · Written plan included"
-            ariaLabel="Book your 299 rupee private thyroid strategy session"
-          />
+
+          {/* ✅ UPDATED CTA WRAPPER */}
+          <a
+            href={TALLY_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full"
+          >
+            <SectionCta
+              id="cta-final"
+              variant="primary"
+              className="w-full cta-glow-strong"
+              buttonClassName="w-full"
+              label={PRIMARY_CTA_LABEL}
+              sublabel="60 min · Private · Written plan included"
+              ariaLabel="Book your 299 rupee private thyroid strategy session"
+            />
+          </a>
+
         </div>
 
-        {/* ── 7. Enhanced guarantee block ───────────────────────────────────
-            Elevated from a plain text line to a premium reassurance card.
-            Green accent only here — signals safety, not urgency.
-            Shield icon reinforces the unconditional nature of the guarantee. */}
+        {/* ── Guarantee ─────────────────────────────────────────────────── */}
         <div
           className="mx-auto mb-6 flex w-fit items-center gap-2.5 rounded-[10px] px-4 py-2.5 sm:mb-7"
           style={{
@@ -246,7 +186,6 @@ export default function FinalCTASection() {
             border: "1px solid rgba(52,211,153,0.14)",
           }}
         >
-          {/* Shield check icon */}
           <svg
             width="15"
             height="15"
@@ -269,6 +208,7 @@ export default function FinalCTASection() {
               strokeLinejoin="round"
             />
           </svg>
+
           <p
             className="text-[0.71rem] font-medium leading-[1.5] text-[var(--t4)]"
             style={{ letterSpacing: "0.01em" }}
@@ -277,31 +217,10 @@ export default function FinalCTASection() {
           </p>
         </div>
 
-        {/* ── 8. ScarcityBadge — closing push, after intent ─────────────────
-            Same rationale as the Hero section redesign: premium brands never
-            lead with urgency. Urgency positioned here — after the visitor
-            has formed intent through the emotional opening, the outcome chips,
-            the coach humanity moment, and the CTA — functions as a closing
-            push for the visitor who is *already considering* but hasn't tapped.
-
-            This is the correct psychological moment for "2 spots left this
-            week." Earlier in the section it reads as pressure; here it reads
-            as practical information.                                        */}
+        {/* ── Scarcity ──────────────────────────────────────────────────── */}
         <ScarcityBadge className="mx-auto mb-8 w-fit sm:mb-10" />
 
-        {/* ── 9. Closing micro-trust — specific, not repeated ───────────────
-            "200+ thyroid women transformed across India" has appeared in the
-            Hero stats and the SocialProof footer. By the third occurrence,
-            it's invisible — the brain pattern-matches and skips it.
-
-            The new line is specific to the closing moment: it names the
-            *condition* (Indian thyroid women), the *struggle* (alone, without
-            a plan), and the *transformation* (now have one). This is different
-            from every other social proof line on the page because it names the
-            *process* of change, not just a number.
-
-            It also uses "finally" — a high-resonance word for this audience
-            who has been "finally" waiting for this.                         */}
+        {/* ── Closing Trust ─────────────────────────────────────────────── */}
         <p
           className="mx-auto max-w-[32ch] text-center text-[0.67rem] font-medium leading-[1.55] text-[var(--t5)]"
           style={{ letterSpacing: "0.01em" }}
