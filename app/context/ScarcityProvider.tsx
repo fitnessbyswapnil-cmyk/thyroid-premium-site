@@ -54,7 +54,7 @@ export function ScarcityProvider({ children }: { children: ReactNode }) {
 
   const goToCta = useCallback(() => {
     dropTo(3);
-    window.location.assign(CTA_URL);
+    window.open(CTA_URL, "_blank", "noopener,noreferrer");
   }, [dropTo]);
 
   const value: ScarcityContextValue = {

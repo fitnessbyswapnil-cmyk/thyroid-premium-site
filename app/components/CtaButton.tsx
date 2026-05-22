@@ -21,9 +21,6 @@ const variantClass: Record<CtaVariant, string> = {
   sticky: "btn-sticky",
 };
 
-// ✅ TALLY FORM LINK
-const TALLY_LINK = "https://tally.so/r/Xx8yRO";
-
 export default function CtaButton({
   label,
   sublabel,
@@ -36,11 +33,7 @@ export default function CtaButton({
   const { goToCta } = useScarcity();
 
   const handleClick = () => {
-    // keep existing scarcity behavior if needed
     goToCta();
-
-    // redirect to tally form
-    window.open(TALLY_LINK, "_blank", "noopener,noreferrer");
   };
 
   return (

@@ -41,9 +41,6 @@ const GUARANTEE =
 
 const PRIMARY_CTA_LABEL = "Book My ₹299 Session — I'm Ready";
 
-// ✅ TALLY LINK
-const TALLY_LINK = "https://tally.so/r/Xx8yRO";
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FinalCTASection() {
@@ -158,23 +155,15 @@ export default function FinalCTASection() {
         {/* ── CTA Block ─────────────────────────────────────────────────── */}
         <div className="mx-auto mb-5 w-full max-w-[min(100%,22rem)] sm:mb-6">
 
-          {/* ✅ UPDATED CTA WRAPPER */}
-          <a
-            href={TALLY_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full"
-          >
-            <SectionCta
-              id="cta-final"
-              variant="primary"
-              className="w-full cta-glow-strong"
-              buttonClassName="w-full"
-              label={PRIMARY_CTA_LABEL}
-              sublabel="60 min · Private · Written plan included"
-              ariaLabel="Book your 299 rupee private thyroid strategy session"
-            />
-          </a>
+          <SectionCta
+            id="cta-final"
+            variant="primary"
+            className="w-full cta-glow-strong"
+            buttonClassName="w-full"
+            label={PRIMARY_CTA_LABEL}
+            sublabel="60 min · Private · Written plan included"
+            ariaLabel="Book your 299 rupee private thyroid strategy session"
+          />
 
         </div>
 

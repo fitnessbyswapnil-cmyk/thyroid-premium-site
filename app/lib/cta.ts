@@ -1,2 +1,1 @@
-export const CTA_URL =
-  "https://swapnilumbarkarfitness.in/case-studies/#cta";
+export const CTA_URL = "https://tally.so/r/Xx8yRO";
