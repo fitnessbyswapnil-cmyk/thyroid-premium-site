@@ -111,23 +111,35 @@ export default function SessionBooked() {
     const t = setTimeout(() => setShow(true), 80);
 
     // Capture user identity from Cashfree redirect URL params
+    let userData: { email?: string; phone?: string; first_name?: string } = {};
     try {
       const p = new URLSearchParams(window.location.search);
       const email = p.get("email") || p.get("customer_email") || "";
       const phone = p.get("phone") || p.get("customer_phone") || p.get("mobile") || "";
       const first_name = p.get("name") || p.get("customer_name") || p.get("first_name") || "";
       if (email || phone || first_name) {
-        persistUserIdentity({
+        userData = {
           ...(email && { email }),
           ...(phone && { phone }),
           ...(first_name && { first_name }),
-        });
+        };
+        persistUserIdentity(userData);
       }
     } catch {
       // non-critical
     }
 
-    trackPurchase();
+    // Fall back to localStorage identity persisted earlier in the funnel (book-confirmed)
+    if (Object.keys(userData).length === 0) {
+      try {
+        const raw = localStorage.getItem("meta_user_identity");
+        if (raw) userData = JSON.parse(raw);
+      } catch {
+        // non-critical
+      }
+    }
+
+    trackPurchase(Object.keys(userData).length > 0 ? userData : undefined);
     return () => clearTimeout(t);
   }, []);
 

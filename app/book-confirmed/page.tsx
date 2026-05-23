@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
+import { trackLead, trackInitiateCheckout } from "../lib/analytics";
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const CASHFREE_URL = "https://payments.cashfree.com/forms?code=thyroid-session";
@@ -46,17 +47,27 @@ export default function BookConfirmedPage() {
     //    and pushes meta_userdata_ready to dataLayer — all handled by persistUserIdentity
     persistUserIdentity(paramsIdentity);
 
-    // 3. Countdown display (Date.now()-based to stay accurate across tab sleep)
+    // 3. Lead: Tally form was submitted — fire on this page load with any known identity
+    try {
+      const storedRaw = localStorage.getItem("meta_user_identity");
+      const storedIdentity = storedRaw ? JSON.parse(storedRaw) : undefined;
+      trackLead(storedIdentity && Object.keys(storedIdentity).length > 0 ? storedIdentity : undefined);
+    } catch {
+      trackLead();
+    }
+
+    // 4. Countdown display (Date.now()-based to stay accurate across tab sleep)
     const startTime = Date.now();
     const tick = setInterval(() => {
       const remaining = REDIRECT_DELAY_MS - (Date.now() - startTime);
       setCountdown(Math.max(0, Math.ceil(remaining / 1000)));
     }, 250);
 
-    // 4. Auto-redirect
+    // 5. Auto-redirect — fire InitiateCheckout just before Cashfree redirect begins
     const timer = setTimeout(() => {
       if (redirected.current) return;
       redirected.current = true;
+      trackInitiateCheckout();
       window.location.href = CASHFREE_URL;
     }, REDIRECT_DELAY_MS);
 
@@ -235,6 +246,7 @@ export default function BookConfirmedPage() {
         {/* Manual fallback */}
         <a
           href={CASHFREE_URL}
+          onClick={() => trackInitiateCheckout()}
           style={{
             fontSize: "0.72rem",
             color: "rgba(167,139,250,0.5)",

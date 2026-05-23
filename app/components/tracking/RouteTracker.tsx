@@ -13,7 +13,8 @@ export function RouteTracker() {
     pushDL({ event: "page_view", event_id, page_path: pathname });
 
     if (pathname === "/") {
-      trackViewContent("landing");
+      const timer = setTimeout(() => trackViewContent("landing"), 3000);
+      return () => clearTimeout(timer);
     }
   }, [pathname]);
 

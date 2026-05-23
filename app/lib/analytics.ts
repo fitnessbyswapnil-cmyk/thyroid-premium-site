@@ -13,6 +13,30 @@ export function generateEventId(eventName: string): string {
   return `${eventName}_${ts}_${rand}`;
 }
 
+const PRODUCT = {
+  content_name: "Private Thyroid Strategy Session",
+  content_category: "thyroid_coaching",
+  value: 299,
+  currency: "INR",
+} as const;
+
+export type UserData = {
+  email?: string;
+  phone?: string;
+  first_name?: string;
+};
+
+export function trackViewContent(pageType = "landing") {
+  const event_id = generateEventId("view_content");
+  pushDL({
+    event: "view_content",
+    event_id,
+    page_type: pageType,
+    content_type: "service",
+    ...PRODUCT,
+  });
+}
+
 export function trackCtaClick(location: string, buttonLabel?: string) {
   const event_id = generateEventId("cta_click");
   pushDL({
@@ -20,35 +44,48 @@ export function trackCtaClick(location: string, buttonLabel?: string) {
     event_id,
     location,
     button_label: buttonLabel ?? "",
+    page_section: location,
     page_type: "landing",
+    ...PRODUCT,
   });
 }
 
-export function trackScrollDepth(depth: number, pageType = "landing") {
-  pushDL({ event: "scroll_depth", depth, page_type: pageType });
-}
-
-export function trackViewContent(pageType = "landing", contentName = "Thyroid Strategy Session") {
-  const event_id = generateEventId("view_content");
-  pushDL({
-    event: "view_content",
+export function trackLead(userData?: UserData) {
+  const event_id = generateEventId("lead");
+  const payload: DLPayload = {
+    event: "lead",
     event_id,
-    page_type: pageType,
-    content_name: contentName,
-    content_type: "service",
-  });
+    ...PRODUCT,
+  };
+  if (userData && Object.keys(userData).length > 0) {
+    payload.user_data = { ...userData };
+  }
+  pushDL(payload);
+  return event_id;
 }
 
-export function trackPurchase() {
-  const event_id = generateEventId("purchase");
+export function trackInitiateCheckout() {
+  const event_id = generateEventId("initiate_checkout");
   pushDL({
+    event: "initiate_checkout",
+    event_id,
+    ...PRODUCT,
+  });
+  return event_id;
+}
+
+export function trackPurchase(userData?: UserData) {
+  const event_id = generateEventId("purchase");
+  const payload: DLPayload = {
     event: "purchase",
     event_id,
-    value: 299,
-    currency: "INR",
-    content_name: "Thyroid Strategy Session",
     content_type: "service",
-  });
+    ...PRODUCT,
+  };
+  if (userData && Object.keys(userData).length > 0) {
+    payload.user_data = { ...userData };
+  }
+  pushDL(payload);
   return event_id;
 }
 
@@ -57,10 +94,12 @@ export function trackSchedule(details?: { name?: string; date?: string; time?: s
   pushDL({
     event: "calendly_booked",
     event_id,
-    value: 299,
-    currency: "INR",
-    content_name: "Thyroid Strategy Session Booked",
+    ...PRODUCT,
     ...(details ?? {}),
   });
   return event_id;
+}
+
+export function trackScrollDepth(depth: number, pageType = "landing") {
+  pushDL({ event: "scroll_depth", depth, page_type: pageType });
 }
