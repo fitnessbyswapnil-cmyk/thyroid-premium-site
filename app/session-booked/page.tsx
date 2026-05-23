@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { trackPurchase, trackSchedule } from "../lib/analytics";
+import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 
 // ── CALENDLY CONFIG ────────────────────────────────────────────────────────────
 const CALENDLY_URL =
@@ -108,6 +109,24 @@ export default function SessionBooked() {
   // Entrance animation + Purchase event (payment confirmed on reaching this page)
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
+
+    // Capture user identity from Cashfree redirect URL params
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const email = p.get("email") || p.get("customer_email") || "";
+      const phone = p.get("phone") || p.get("customer_phone") || p.get("mobile") || "";
+      const first_name = p.get("name") || p.get("customer_name") || p.get("first_name") || "";
+      if (email || phone || first_name) {
+        persistUserIdentity({
+          ...(email && { email }),
+          ...(phone && { phone }),
+          ...(first_name && { first_name }),
+        });
+      }
+    } catch {
+      // non-critical
+    }
+
     trackPurchase();
     return () => clearTimeout(t);
   }, []);
