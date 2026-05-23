@@ -63,16 +63,21 @@ export default function BookConfirmedPage() {
       setCountdown(Math.max(0, Math.ceil(remaining / 1000)));
     }, 250);
 
-    // 5. Auto-redirect — fire InitiateCheckout just before Cashfree redirect begins
+    // 5. Fire InitiateCheckout 300ms before redirect so GTM has time to dispatch
+    //    the sendBeacon before the browser starts the navigation.
+    const checkoutTimer = setTimeout(() => {
+      trackInitiateCheckout();
+    }, REDIRECT_DELAY_MS - 300);
+
     const timer = setTimeout(() => {
       if (redirected.current) return;
       redirected.current = true;
-      trackInitiateCheckout();
       window.location.href = CASHFREE_URL;
     }, REDIRECT_DELAY_MS);
 
     return () => {
       clearInterval(tick);
+      clearTimeout(checkoutTimer);
       clearTimeout(timer);
     };
   }, []);
