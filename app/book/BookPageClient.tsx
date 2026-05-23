@@ -7,7 +7,7 @@ import { COACH_IMAGE, COACH_NAME } from "@/app/lib/authority";
 
 // ── DataLayer ────────────────────────────────────────────────────────────────
 
-import { pushDL, generateEventId } from "@/app/lib/analytics";
+import { pushDL, trackViewContent, trackCtaClick } from "@/app/lib/analytics";
 
 // ── EMQ capture (Meta CAPI attribution) ──────────────────────────────────────
 
@@ -259,8 +259,8 @@ export default function BookPageClient() {
 
   // Page-level tracking + scroll depth
   useEffect(() => {
-    pushDL({ event: "page_view", event_id: generateEventId("page_view"), page_type: "book" });
-    pushDL({ event: "view_content", event_id: generateEventId("view_content"), content_name: "Thyroid Strategy Session", content_type: "service" });
+    // page_view is fired by RouteTracker in layout — no duplicate here
+    trackViewContent("book");
 
     const depths = [25, 50, 75, 100];
     const fired = new Set<number>();
@@ -283,7 +283,7 @@ export default function BookPageClient() {
   }, []);
 
   function scrollToForm(location: string) {
-    pushDL({ event: "cta_click", event_id: generateEventId("cta_click"), location, page_type: "book" });
+    trackCtaClick(location);
     document
       .getElementById("book-form")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
