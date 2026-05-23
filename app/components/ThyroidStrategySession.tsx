@@ -536,6 +536,7 @@ function CTABlock() {
           label="Reserve My Private Thyroid Session"
           sublabel="60 min · 1-on-1 · Written action plan included"
           ariaLabel="Reserve your private thyroid strategy session"
+          location="strategy_session"
         />
       </div>
 

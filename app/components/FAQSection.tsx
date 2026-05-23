@@ -162,6 +162,7 @@ export default function FAQSection() {
             sublabel="See if this program fits you"
             trust="ACE · FITR · INFS Certified · 200+ Clients"
             ariaLabel="Book your 299 rupee thyroid assessment"
+            location="faq"
           />
         </div>
       </div>

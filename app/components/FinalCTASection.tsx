@@ -163,6 +163,7 @@ export default function FinalCTASection() {
             label={PRIMARY_CTA_LABEL}
             sublabel="60 min · Private · Written plan included"
             ariaLabel="Book your 299 rupee private thyroid strategy session"
+            location="final_cta"
           />
 
         </div>

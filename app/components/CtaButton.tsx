@@ -1,6 +1,7 @@
 "use client";
 
 import { useScarcity } from "../context/ScarcityProvider";
+import { trackCtaClick } from "../lib/analytics";
 
 type CtaVariant = "primary" | "secondary" | "ghost" | "sticky";
 
@@ -12,6 +13,7 @@ type CtaButtonProps = {
   id?: string;
   ariaLabel?: string;
   style?: React.CSSProperties;
+  location?: string;
 };
 
 const variantClass: Record<CtaVariant, string> = {
@@ -29,10 +31,12 @@ export default function CtaButton({
   id,
   ariaLabel,
   style,
+  location = "unknown",
 }: CtaButtonProps) {
   const { goToCta } = useScarcity();
 
   const handleClick = () => {
+    trackCtaClick(location, label);
     goToCta();
   };
 

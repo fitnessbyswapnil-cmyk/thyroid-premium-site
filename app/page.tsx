@@ -1,3 +1,4 @@
+import { ScrollDepthTracker } from "@/app/components/tracking/ScrollDepthTracker";
 import Hero from "@/app/components/Hero";
 import ThyroidStrategySession from "@/app/components/ThyroidStrategySession";
 import SocialProof from "@/app/components/SocialProof";
@@ -16,6 +17,7 @@ import StickyBookingBar from "@/app/components/StickyBookingBar";
 export default function Home() {
   return (
     <main>
+      <ScrollDepthTracker />
       <Hero />
       <ThyroidStrategySession />
       <SocialProof />

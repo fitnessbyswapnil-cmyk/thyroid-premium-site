@@ -12,6 +12,7 @@ type SectionCtaProps = {
   ariaLabel?: string;
   id?: string;
   style?: React.CSSProperties;
+  location?: string;
 };
 
 export default function SectionCta({
@@ -24,6 +25,7 @@ export default function SectionCta({
   ariaLabel,
   id,
   style,
+  location,
 }: SectionCtaProps) {
   const wrapClass =
     variant === "primary" ? "cta-wrap section-cta" : "section-cta";
@@ -38,6 +40,7 @@ export default function SectionCta({
         label={label}
         sublabel={sublabel}
         ariaLabel={ariaLabel ?? label}
+        location={location}
       />
       {trust ? <p className="micro-trust text-center text-pretty">{trust}</p> : null}
     </div>

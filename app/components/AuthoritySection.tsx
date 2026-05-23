@@ -148,6 +148,7 @@ export default function AuthoritySection() {
               sublabel="₹299 consultation · Limited weekly intake"
               trust="Applications closing soon · Select clients only"
               ariaLabel="Apply for private thyroid coaching"
+              location="authority"
             />
           </div>
         </div>

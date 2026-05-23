@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useScarcity } from "../context/ScarcityProvider";
+import { trackCtaClick } from "../lib/analytics";
 
 export default function StickyBookingBar() {
   const [visible, setVisible] = useState(false);
@@ -78,7 +79,7 @@ export default function StickyBookingBar() {
         {/* CTA button — thumb-friendly, premium */}
         <button
           type="button"
-          onClick={goToCta}
+          onClick={() => { trackCtaClick("sticky_bar"); goToCta(); }}
           aria-label="Book your 299 rupee private thyroid strategy session"
           className="btn-sticky shrink-0"
         >

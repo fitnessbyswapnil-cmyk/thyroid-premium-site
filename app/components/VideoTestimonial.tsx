@@ -258,6 +258,7 @@ export default function VideoTestimonial() {
             label="Apply For Private Coaching"
             sublabel="₹299 strategy session · Limited coaching intake"
             ariaLabel="Apply for private thyroid coaching"
+            location="video_testimonial"
           />
 
           <p className="mt-3 text-center text-[0.72rem] text-[var(--t5)]">

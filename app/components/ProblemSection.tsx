@@ -65,6 +65,7 @@ export default function ProblemSection() {
           sublabel="Private consultation · Limited weekly slots"
           trust="Qualified intake · No obligation after your session"
           ariaLabel="Book your 299 rupee thyroid assessment"
+          location="problem"
         />
       </div>
     </section>

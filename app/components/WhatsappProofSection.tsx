@@ -304,6 +304,7 @@ export default function WhatsappProofSection() {
             sublabel="See if this coaching program fits you"
             trust="Premium thyroid coaching · Not a diet plan PDF"
             ariaLabel="Apply for your 299 rupee strategy session"
+            location="whatsapp_proof"
           />
         </div>
       </div>

@@ -172,6 +172,7 @@ export default function ResultsSection() {
           buttonClassName="w-full"
           style={{ maxWidth: '22rem' }}
           ariaLabel="Start your thyroid transformation"
+          location="results"
         />
       </div>
     </section>

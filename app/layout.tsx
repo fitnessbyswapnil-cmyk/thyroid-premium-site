@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ScarcityProvider } from "./context/ScarcityProvider";
+import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
+import { RouteTracker } from "./components/tracking/RouteTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +31,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-          <ScarcityProvider>{children}</ScarcityProvider>
-        </body>
+        <GTMNoScript />
+        <RouteTracker />
+        <ScarcityProvider>{children}</ScarcityProvider>
+      </body>
+      <GTMScript />
     </html>
   );
 }

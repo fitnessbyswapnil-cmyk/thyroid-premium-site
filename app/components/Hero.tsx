@@ -121,6 +121,7 @@ export default function Hero() {
             label="Start Understanding My Thyroid"
             sublabel="&#8377;299 &middot; 60-minute private session with Swapnil"
             ariaLabel="Start understanding your thyroid — book a private 299 rupee session"
+            location="hero"
           />
 
           {/* Risk reversal */}

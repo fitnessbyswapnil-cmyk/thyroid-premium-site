@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useScarcity } from "../context/ScarcityProvider";
+import { trackCtaClick } from "../lib/analytics";
 
 function useInView(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
@@ -105,7 +106,7 @@ export default function PostTestimonialCta() {
           <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
             <button
               type="button"
-              onClick={goToCta}
+              onClick={() => { trackCtaClick("post_testimonial"); goToCta(); }}
               aria-label="Learn more about the private thyroid strategy session"
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}

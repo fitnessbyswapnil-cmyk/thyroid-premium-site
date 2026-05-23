@@ -111,6 +111,7 @@ export default function FrameworkSection() {
           sublabel="₹299 session · See how coaching fits your life"
           trust="Applications closing soon · Limited intake"
           ariaLabel="Reserve your thyroid consultation"
+          location="framework"
         />
       </div>
     </section>
