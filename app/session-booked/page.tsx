@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { trackPurchase, trackSchedule } from "../lib/analytics";
 
 // ── CALENDLY CONFIG ────────────────────────────────────────────────────────────
 const CALENDLY_URL =
@@ -93,14 +94,6 @@ const TIP_ICONS = [
   </svg>,
 ];
 
-// ── DataLayer ────────────────────────────────────────────────────────────────
-function pushDL(payload: Record<string, unknown>) {
-  if (typeof window === "undefined") return;
-  const w = window as typeof window & { dataLayer?: Record<string, unknown>[] };
-  w.dataLayer = w.dataLayer ?? [];
-  w.dataLayer.push(payload);
-}
-
 // ── PAGE COMPONENT ─────────────────────────────────────────────────────────────
 export default function SessionBooked() {
   const [show, setShow] = useState(false);
@@ -112,9 +105,10 @@ export default function SessionBooked() {
   }>({});
   const confirmRef = useRef<HTMLDivElement>(null);
 
-  // Entrance animation — Purchase fires via GTM tag on /session-booked page path
+  // Entrance animation + Purchase event (payment confirmed on reaching this page)
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
+    trackPurchase();
     return () => clearTimeout(t);
   }, []);
 
@@ -155,7 +149,7 @@ export default function SessionBooked() {
         }
         setBookingDetails({ name, date: dateStr, time: timeStr });
         setBooked(true);
-        pushDL({ event: "calendly_booked", value: 299, currency: "INR", content_name: "Thyroid Strategy Session Booked" });
+        trackSchedule({ name, date: dateStr, time: timeStr });
         setTimeout(() => {
           confirmRef.current?.scrollIntoView({
             behavior: "smooth",

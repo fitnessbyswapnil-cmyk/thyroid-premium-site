@@ -4,6 +4,7 @@ import "./globals.css";
 import { ScarcityProvider } from "./context/ScarcityProvider";
 import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
 import { RouteTracker } from "./components/tracking/RouteTracker";
+import { UserIdentityTracker } from "./components/tracking/UserIdentityTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <GTMNoScript />
         <RouteTracker />
+        <UserIdentityTracker />
         <ScarcityProvider>{children}</ScarcityProvider>
       </body>
     </html>

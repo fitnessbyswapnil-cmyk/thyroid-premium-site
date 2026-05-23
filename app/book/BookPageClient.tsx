@@ -7,14 +7,7 @@ import { COACH_IMAGE, COACH_NAME } from "@/app/lib/authority";
 
 // ── DataLayer ────────────────────────────────────────────────────────────────
 
-type DLPayload = Record<string, unknown>;
-
-function pushDL(payload: DLPayload) {
-  if (typeof window === "undefined") return;
-  const w = window as typeof window & { dataLayer?: DLPayload[] };
-  w.dataLayer = w.dataLayer ?? [];
-  w.dataLayer.push(payload);
-}
+import { pushDL, generateEventId } from "@/app/lib/analytics";
 
 // ── EMQ capture (Meta CAPI attribution) ──────────────────────────────────────
 
@@ -266,8 +259,8 @@ export default function BookPageClient() {
 
   // Page-level tracking + scroll depth
   useEffect(() => {
-    pushDL({ event: "page_view", page_type: "book" });
-    pushDL({ event: "view_content", content_name: "book_page", content_type: "funnel" });
+    pushDL({ event: "page_view", event_id: generateEventId("page_view"), page_type: "book" });
+    pushDL({ event: "view_content", event_id: generateEventId("view_content"), content_name: "Thyroid Strategy Session", content_type: "service" });
 
     const depths = [25, 50, 75, 100];
     const fired = new Set<number>();
@@ -290,7 +283,7 @@ export default function BookPageClient() {
   }, []);
 
   function scrollToForm(location: string) {
-    pushDL({ event: "cta_click", location, page_type: "book" });
+    pushDL({ event: "cta_click", event_id: generateEventId("cta_click"), location, page_type: "book" });
     document
       .getElementById("book-form")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });

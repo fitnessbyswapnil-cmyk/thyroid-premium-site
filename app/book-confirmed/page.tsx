@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { pushDL, generateEventId } from "../lib/analytics";
 
 // ── REPLACE WITH YOUR ACTUAL CASHFREE LINK ───────────────────────────────────
 const CASHFREE_URL = "https://payments.cashfree.com/forms/thyroid-session";
@@ -132,16 +133,16 @@ export default function BookConfirmedPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Page entrance + Facebook Pixel
+  // Page entrance + Lead event (intake form submitted, awaiting payment)
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
-    if (typeof window !== "undefined" && (window as any).fbq) {
-      (window as any).fbq("track", "Lead", {
-        content_name: "Thyroid Strategy Session Intake",
-        currency: "INR",
-        value: 299,
-      });
-    }
+    pushDL({
+      event: "lead",
+      event_id: generateEventId("lead"),
+      content_name: "Thyroid Strategy Session Intake",
+      currency: "INR",
+      value: 299,
+    });
     return () => clearTimeout(t);
   }, []);
 

@@ -2,15 +2,19 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { generateEventId, pushDL, trackViewContent } from "../../lib/analytics";
 
 export function RouteTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const w = window as typeof window & { dataLayer?: Record<string, unknown>[] };
-    w.dataLayer = w.dataLayer ?? [];
-    w.dataLayer.push({ event: "page_view", page_path: pathname });
+    const event_id = generateEventId("page_view");
+    pushDL({ event: "page_view", event_id, page_path: pathname });
+
+    if (pathname === "/") {
+      trackViewContent("landing");
+    }
   }, [pathname]);
 
   return null;
