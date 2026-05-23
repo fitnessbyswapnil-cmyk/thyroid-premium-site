@@ -30,12 +30,14 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <GTMScript />
+      </head>
       <body className="min-h-full flex flex-col">
         <GTMNoScript />
         <RouteTracker />
         <ScarcityProvider>{children}</ScarcityProvider>
       </body>
-      <GTMScript />
     </html>
   );
 }

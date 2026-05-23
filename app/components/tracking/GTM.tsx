@@ -1,9 +1,8 @@
 import Script from "next/script";
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-P3S5BXQB";
 
 export function GTMScript() {
-  if (!GTM_ID) return null;
   return (
     <Script
       id="gtm-script"
@@ -16,7 +15,6 @@ export function GTMScript() {
 }
 
 export function GTMNoScript() {
-  if (!GTM_ID) return null;
   return (
     <noscript
       dangerouslySetInnerHTML={{
