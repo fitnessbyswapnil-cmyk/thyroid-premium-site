@@ -1,0 +1,269 @@
+{
+  "description": "GTM Container Changes Spec — swapnilumbarkarfitness.in (GTM-P3S5BXQB)",
+  "container_id": "229322364",
+  "workspace_id": "453",
+
+  "PHASE_1_CRITICAL_FIXES": {
+    "trigger_101_fix": {
+      "name": "Block - Lead > 1 Firing",
+      "current_condition": "{{js – Session Lead Fired}} == 'false'  ← WRONG",
+      "fixed_condition": "{{js – Session Lead Fired}} == 'true'  ← Block WHEN already fired",
+      "reason": "Blocking trigger activates when condition is TRUE. Current logic blocks BEFORE first firing. Fix: block when lead HAS been fired."
+    },
+    "trigger_106_fix": {
+      "name": "Block - Lead Already Fired",
+      "current_condition": "{{js – Session Lead Fired}} == 'false'  ← WRONG",
+      "fixed_condition": "{{js – Session Lead Fired}} == 'true'",
+      "reason": "Same inversion bug as trigger 101."
+    },
+    "tag_134_fix": {
+      "name": "GA4 – Bundle Purchase",
+      "action": "Remove trigger 158 from firingTriggerId",
+      "keep": ["165"],
+      "remove": ["158"],
+      "reason": "Tag fires twice on success page: once on DOM Ready (158) and once on CE:purchase (165). Remove DOM Ready trigger."
+    },
+    "tag_131_fix": {
+      "name": "Meta Pixel – ViewContent",
+      "action": "Enable advancedMatching, add em/ph from localStorage JS variables",
+      "advancedMatching": true,
+      "advancedMatchingList": [
+        {"name": "em", "value": "{{JS - user_email}}"},
+        {"name": "ph", "value": "{{JS - user_phone}}"},
+        {"name": "external_id", "value": "{{JS - visitor_id}}"}
+      ]
+    },
+    "tag_96_fix": {
+      "name": "Meta Pixel – Lead (Browser)",
+      "action": "Enable advancedMatching",
+      "advancedMatching": true,
+      "advancedMatchingList": [
+        {"name": "em", "value": "{{JS - user_email}}"},
+        {"name": "ph", "value": "{{JS - user_phone}}"},
+        {"name": "external_id", "value": "{{JS - visitor_id}}"}
+      ]
+    },
+    "tag_153_fix": {
+      "name": "HTML – Push metaUserData from Cookie",
+      "action": "Fix cookie name mismatch",
+      "current": "getCookie('useremail'), getCookie('userphone')",
+      "fixed": "getCookie('user_email'), getCookie('user_phone')",
+      "reason": "Tag 144 saves as user_email/user_phone but tag 153 reads useremail/userphone"
+    }
+  },
+
+  "PHASE_2_NEW_VARIABLES": [
+    {
+      "name": "JS - visitor_id",
+      "type": "jsm",
+      "code": "function() { try { return document.cookie.match(/_visitor_id=([^;]+)/)?.[1] || localStorage.getItem('_visitor_id') || ''; } catch(e) { return ''; } }"
+    },
+    {
+      "name": "JS - session_id",
+      "type": "jsm",
+      "code": "function() { try { return document.cookie.match(/_session_id=([^;]+)/)?.[1] || ''; } catch(e) { return ''; } }"
+    },
+    {
+      "name": "JS - fbclid_raw",
+      "type": "jsm",
+      "code": "function() { try { return document.cookie.match(/_fbclid_raw=([^;]+)/)?.[1] || new URLSearchParams(window.location.search).get('fbclid') || ''; } catch(e) { return ''; } }"
+    },
+    {
+      "name": "JS - user_email",
+      "type": "jsm",
+      "code": "function() { try { return localStorage.getItem('user_email') || ''; } catch(e) { return ''; } }"
+    },
+    {
+      "name": "JS - user_phone",
+      "type": "jsm",
+      "code": "function() { try { return localStorage.getItem('user_phone') || ''; } catch(e) { return ''; } }"
+    },
+    {
+      "name": "DLV - event_id",
+      "type": "v",
+      "dataLayerVersion": 2,
+      "name_in_dl": "event_id"
+    },
+    {
+      "name": "DLV - wa_source",
+      "type": "v",
+      "dataLayerVersion": 2,
+      "name_in_dl": "wa_source"
+    },
+    {
+      "name": "DLV - cta_location",
+      "type": "v",
+      "dataLayerVersion": 2,
+      "name_in_dl": "cta_location"
+    },
+    {
+      "name": "DLV - scroll_depth",
+      "type": "v",
+      "dataLayerVersion": 2,
+      "name_in_dl": "depth"
+    }
+  ],
+
+  "PHASE_3_NEW_TRIGGERS": [
+    {
+      "name": "CE - view_content",
+      "type": "customEvent",
+      "customEventFilter": "view_content"
+    },
+    {
+      "name": "CE - cta_click",
+      "type": "customEvent",
+      "customEventFilter": "cta_click"
+    },
+    {
+      "name": "CE - whatsapp_click",
+      "type": "customEvent",
+      "customEventFilter": "whatsapp_click"
+    },
+    {
+      "name": "CE - start_form",
+      "type": "customEvent",
+      "customEventFilter": "start_form"
+    },
+    {
+      "name": "CE - session_qualified",
+      "type": "customEvent",
+      "customEventFilter": "session_qualified"
+    },
+    {
+      "name": "CE - calendly_booked",
+      "type": "customEvent",
+      "customEventFilter": "calendly_booked"
+    },
+    {
+      "name": "PV - session-booked page",
+      "type": "pageview",
+      "filter": "Page URL contains /session-booked"
+    }
+  ],
+
+  "PHASE_4_NEW_TAGS": [
+    {
+      "name": "Meta Pixel – ViewContent (Landing)",
+      "type": "cvt_5RM3Q",
+      "eventName": "ViewContent",
+      "pixelId": "{{Meta Ads Pixel ID}}",
+      "eventId": "{{DLV - event_id}}",
+      "advancedMatching": true,
+      "advancedMatchingList": [
+        {"name": "em", "value": "{{JS - user_email}}"},
+        {"name": "external_id", "value": "{{JS - visitor_id}}"}
+      ],
+      "objectPropertyList": [
+        {"name": "content_name", "value": "thyroid_landing"},
+        {"name": "session_id", "value": "{{JS - session_id}}"}
+      ],
+      "firingTriggers": ["CE - view_content"],
+      "tagFiringOption": "oncePerEvent"
+    },
+    {
+      "name": "GA4 – ViewContent",
+      "type": "gaawe",
+      "eventName": "view_content",
+      "measurementId": "{{ga4 measurement id}}",
+      "parameters": [
+        {"key": "content_name", "value": "thyroid_landing"},
+        {"key": "event_id", "value": "{{DLV - event_id}}"},
+        {"key": "session_id", "value": "{{JS - session_id}}"}
+      ],
+      "firingTriggers": ["CE - view_content"],
+      "tagFiringOption": "oncePerEvent"
+    },
+    {
+      "name": "Meta Pixel – CTAClick",
+      "type": "cvt_5RM3Q",
+      "eventName": "custom",
+      "customEventName": "CTAClick",
+      "pixelId": "{{Meta Ads Pixel ID}}",
+      "eventId": "{{DLV - event_id}}",
+      "objectPropertyList": [
+        {"name": "cta_location", "value": "{{DLV - cta_location}}"},
+        {"name": "content_name", "value": "thyroid_consultation"}
+      ],
+      "firingTriggers": ["CE - cta_click"],
+      "tagFiringOption": "oncePerEvent"
+    },
+    {
+      "name": "Meta Pixel – StartForm",
+      "type": "cvt_5RM3Q",
+      "eventName": "custom",
+      "customEventName": "StartForm",
+      "pixelId": "{{Meta Ads Pixel ID}}",
+      "eventId": "{{DLV - event_id}}",
+      "firingTriggers": ["CE - start_form"],
+      "tagFiringOption": "oncePerEvent"
+    },
+    {
+      "name": "Meta Pixel – WhatsAppClick",
+      "type": "cvt_5RM3Q",
+      "eventName": "custom",
+      "customEventName": "WhatsAppClick",
+      "pixelId": "{{Meta Ads Pixel ID}}",
+      "eventId": "{{DLV - event_id}}",
+      "objectPropertyList": [
+        {"name": "wa_source", "value": "{{DLV - wa_source}}"}
+      ],
+      "firingTriggers": ["CE - whatsapp_click"],
+      "tagFiringOption": "oncePerEvent"
+    },
+    {
+      "name": "Meta Pixel – SessionQualified",
+      "type": "cvt_5RM3Q",
+      "eventName": "custom",
+      "customEventName": "SessionQualified",
+      "pixelId": "{{Meta Ads Pixel ID}}",
+      "eventId": "{{DLV - event_id}}",
+      "advancedMatching": true,
+      "advancedMatchingList": [
+        {"name": "em", "value": "{{JS - user_email}}"},
+        {"name": "external_id", "value": "{{JS - visitor_id}}"}
+      ],
+      "firingTriggers": ["CE - session_qualified"],
+      "tagFiringOption": "oncePerEvent",
+      "note": "Used to build high-intent lookalike audience. Users who scroll 75%+ AND spent 45s+"
+    },
+    {
+      "name": "Meta Pixel – Schedule (Calendly)",
+      "type": "cvt_5RM3Q",
+      "eventName": "Schedule",
+      "pixelId": "{{Meta Ads Pixel ID}}",
+      "eventId": "{{DLV - event_id}}",
+      "advancedMatching": true,
+      "advancedMatchingList": [
+        {"name": "em", "value": "{{DLV - metaUserData.em}}"},
+        {"name": "external_id", "value": "{{JS - visitor_id}}"}
+      ],
+      "objectPropertyList": [
+        {"name": "content_name", "value": "thyroid_strategy_call"}
+      ],
+      "firingTriggers": ["CE - calendly_booked"],
+      "tagFiringOption": "oncePerEvent"
+    },
+    {
+      "name": "GA4 – Schedule (Calendly)",
+      "type": "gaawe",
+      "eventName": "schedule",
+      "measurementId": "{{ga4 measurement id}}",
+      "parameters": [
+        {"key": "event_id", "value": "{{DLV - event_id}}"},
+        {"key": "content_name", "value": "thyroid_strategy_call"}
+      ],
+      "firingTriggers": ["CE - calendly_booked"],
+      "tagFiringOption": "oncePerEvent"
+    }
+  ],
+
+  "PHASE_5_DELETE_TAGS": [
+    {"tagId": "83", "name": "GA4 Event - CalcomView", "reason": "Cal.com not in funnel"},
+    {"tagId": "84", "name": "Meta Pixel - CalcomView", "reason": "Cal.com not in funnel"},
+    {"tagId": "136", "name": "Capture Lead Data → Send to Meta", "reason": "Paused, replaced by Tally webhook"},
+    {"tagId": "168", "name": "Meta – User Data Capture (Pre-Bundle)", "reason": "Paused, legacy"},
+    {"tagId": "139", "name": "JS – Capture User Data (Checkout CTA)", "reason": "Paused, legacy"},
+    {"tagId": "90", "name": "home-only page_view", "reason": "Paused, redundant with Google Tag"}
+  ]
+}
