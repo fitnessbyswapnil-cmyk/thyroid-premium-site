@@ -16,6 +16,11 @@
    - Identical when the same logical event fires browser + server
    - Stable (not regenerated on re-render)
 ================================================================ */
+declare global {
+  interface Window {
+    dataLayer: any[]
+  }
+}
 
 export function getEventId(eventName: string): string {
   if (typeof window === 'undefined') return ''
