@@ -1,81 +1,167 @@
-'use client'
-import CTAButton from './CTAButton'
+"use client";
+
+import CtaButton from "./CtaButton";
+import ScarcityBadge from "./ScarcityBadge";
+
+const OUTCOMES = [
+  "4–10 kg thyroid fat loss",
+  "Real Indian food only",
+  "Energy & hormones restored",
+] as const;
+
+const PROOF_STATS = [
+  { num: "200+", label: "Women helped" },
+  { num: "4.2 kg", label: "Avg. first month" },
+  { num: "4.9 ★", label: "Client rating" },
+] as const;
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-black text-white">
+    <section
+      className="relative overflow-hidden bg-[var(--bg-page)] text-white"
+      aria-labelledby="hero-heading"
+    >
+      {/* Atmospheric glow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[60vh] overflow-hidden"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[min(70vw,440px)] overflow-hidden sm:h-[500px]"
       >
-        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.14] blur-[100px] md:h-[650px] md:w-[650px] md:blur-[140px]" />
+        <div className="absolute left-1/2 top-[-20%] h-[min(78vw,300px)] w-[min(78vw,300px)] -translate-x-1/2 rounded-full bg-[var(--p500)]/[0.10] blur-[110px]" />
+        <div className="absolute left-1/2 top-[12%] h-[90px] w-[min(88vw,400px)] -translate-x-1/2 rounded-full bg-[#c026d3]/[0.045] blur-[72px]" />
       </div>
 
-      <div className="hero-container relative z-10 mx-auto flex max-w-5xl flex-col items-center text-center">
-        <div className="badge-pill" role="status" aria-live="polite">
-          <span className="badge-dot" aria-hidden="true" />
-          <span>Only 5 Spots Left This Month</span>
-        </div>
+      <div className="container-default relative z-10 flex flex-col items-center pb-[clamp(4rem,9vw,6rem)] pt-[clamp(3rem,7vw,4.5rem)] text-center">
 
-        <p className="eyebrow">For Indian women with hypothyroidism</p>
-
-        <h1 className="headline">
-          Lose the
-          <span className="headline-accent">Belly Fat.</span>
-          <span className="headline-white">In 90 Days.</span>
-        </h1>
-
-        <p className="subheadline">
-          India&apos;s #1 thyroid fat-loss coaching.{' '}
-          <strong className="subheadline-strong">
-            10–15 kg lost. Clothes fitting. Energy back.
-          </strong>
+        {/* Category pill */}
+        <p className="section-label !mb-4 tracking-[0.065em] sm:!mb-5">
+          Thyroid fat-loss specialist&nbsp;&middot;&nbsp;Indian women
         </p>
 
-        <div className="stat-row" aria-label="Program statistics">
-          <div className="stat-chip">
-            <span className="stat-num">200+</span>
-            <span className="stat-label">Women Transformed</span>
-          </div>
-          <div className="stat-divider" aria-hidden="true" />
-          <div className="stat-chip">
-            <span className="stat-num">90</span>
-            <span className="stat-label">Day Program</span>
-          </div>
-          <div className="stat-divider" aria-hidden="true" />
-          <div className="stat-chip">
-            <span className="stat-num">10–15</span>
-            <span className="stat-label">Kg Fat Loss</span>
-          </div>
-        </div>
+        {/* Headline */}
+        <h1
+          id="hero-heading"
+          className="mx-auto max-w-[14ch] text-balance text-[length:var(--text-hero)] font-black leading-[1.04] tracking-[-0.045em] sm:max-w-[17ch] sm:leading-[1.0] sm:tracking-[-0.055em]"
+        >
+          Your Thyroid Weight{" "}
+          <span className="text-gradient">Isn&apos;t Stubborn.</span>{" "}
+          It&apos;s Untreated.
+        </h1>
 
-        <ul className="outcome-list" aria-label="What you will achieve">
-          {[
-            'Stubborn belly fat visibly reduced',
-            'Clothes fitting better within weeks',
-            'No starvation — real food protocol',
-            'Energy & confidence fully restored',
-          ].map((item) => (
-            <li key={item} className="outcome-item">
-              <span className="outcome-check" aria-hidden="true">✓</span>
-              <span>{item}</span>
+        {/* Subheadline */}
+        <p className="mt-5 max-w-[30ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t2)] sm:mt-6 sm:max-w-[38ch] sm:text-[length:var(--text-base)]">
+          You&apos;ve followed every diet. Taken every medication. Done
+          everything right. The weight stayed because your thyroid was never
+          actually the focus of the plan.
+        </p>
+
+        {/* Outcome chips — pain → mechanism → what you get → proof → act */}
+        <ul
+          className="mt-5 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:mt-6 sm:max-w-none"
+          aria-label="What you can expect"
+        >
+          {OUTCOMES.map((item) => (
+            <li key={item}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--p-border)] bg-[var(--p-subtle)] px-3 py-[7px] text-[0.71rem] font-semibold leading-none text-[var(--p300)] backdrop-blur-sm sm:text-[0.74rem]">
+                <svg
+                  width="9"
+                  height="9"
+                  viewBox="0 0 9 9"
+                  fill="none"
+                  aria-hidden="true"
+                  className="shrink-0 opacity-75"
+                >
+                  <path
+                    d="M1.5 4.5L3.5 6.5L7.5 2.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {item}
+              </span>
             </li>
           ))}
         </ul>
 
-        <div className="cta-wrap">
-          {/* Using CTAButton fires: CTA_Click + StartForm to dataLayer + CAPI,
-              then redirects to Tally with full attribution params */}
-          <CTAButton
+        {/* Proof stats */}
+        <div
+          className="mt-6 flex w-full max-w-[min(100%,19.5rem)] overflow-hidden rounded-2xl sm:mt-7 sm:max-w-[23rem]"
+          style={{
+            background: "rgba(255,255,255,0.036)",
+            border: "1px solid rgba(255,255,255,0.075)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 20px rgba(0,0,0,0.2)",
+          }}
+        >
+          {PROOF_STATS.map((s, i) => (
+            <div
+              key={s.label}
+              className={`flex flex-1 flex-col items-center justify-center py-3.5 sm:py-4 ${
+                i !== PROOF_STATS.length - 1
+                  ? "border-r border-white/[0.06]"
+                  : ""
+              }`}
+            >
+              <span className="font-mono text-[13.5px] font-extrabold leading-none tracking-tight text-[var(--p300)] sm:text-[15px]">
+                {s.num}
+              </span>
+              <span className="mt-[6px] text-[9px] font-semibold uppercase tracking-[0.1em] text-white/[0.32] sm:text-[9.5px]">
+                {s.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA block — aspiration-led, LOW glow intensity */}
+        <div className="cta-wrap relative mt-8 w-full max-w-[min(100%,21rem)] sm:mt-9 sm:max-w-sm">
+          <CtaButton
+            variant="primary"
+            className="relative z-[1]"
+            label="Start Understanding My Thyroid"
+            sublabel="&#8377;299 &middot; 60-minute private session with Swapnil"
+            ariaLabel="Start understanding your thyroid — book a private 299 rupee session"
             location="hero"
-            label="🔥 Book FREE Consultation Call"
-            className="cta-button"
           />
-          <p className="micro-trust">
-            ★★★★★ Trusted by 200+ hypothyroid women across India
+
+          {/* Risk reversal */}
+          <p className="mt-3.5 text-center text-[0.67rem] font-medium leading-[1.5] text-[var(--t4)]">
+            <span className="mr-1 text-emerald-400/70" aria-hidden="true">
+              &#10003;
+            </span>
+            Full refund if you don&apos;t leave with clarity &mdash; no questions asked
           </p>
         </div>
+
+        {/* Scarcity badge — placed after CTA, urgency only after intent is formed */}
+        <ScarcityBadge className="mt-5 sm:mt-6" />
+
+        {/* Scroll cue */}
+        <div
+          className="mt-10 flex flex-col items-center gap-1.5 sm:mt-12"
+          aria-hidden="true"
+        >
+          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-white/[0.18]">
+            See real results
+          </span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 15 15"
+            fill="none"
+            className="animate-bounce text-white/[0.16]"
+          >
+            <path
+              d="M2.5 5.5L7.5 10.5L12.5 5.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+
       </div>
     </section>
-  )
+  );
 }

@@ -1,264 +1,119 @@
-"use client";
+'use client'
+
+import SectionCta from './SectionCta'
+import SectionHeader from './SectionHeader'
+
+const steps = [
+  { letter: 'L', label: 'Listen & Assess', desc: 'Understand what has been blocking your fat loss.' },
+  { letter: 'E', label: 'Energy First', desc: 'Restore daily energy before pushing fat loss.' },
+  { letter: 'A', label: 'Adaptive Nutrition', desc: 'Real Indian meals. No starvation.' },
+  { letter: 'N', label: 'Navigate & Track', desc: 'Weekly coaching tweaks based on your progress.' },
+]
+
+const timeline = [
+  { weeks: 'Weeks 1–3', result: 'Energy up. Bloating down. Cravings stabilize.' },
+  { weeks: 'Weeks 4–8', result: 'Visible inch loss. Fat loss accelerates.' },
+  { weeks: 'Weeks 9–12', result: 'Confident body. Sustainable habits locked in.' },
+]
 
 export default function FrameworkSection() {
   return (
-    <section className="relative bg-black text-white py-28 px-5 overflow-hidden">
-
-      {/* Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-purple-700/10 blur-[180px] rounded-full"></div>
-
-      <div className="relative max-w-7xl mx-auto">
-
-        {/* HEADER */}
-        <div className="text-center max-w-4xl mx-auto mb-24">
-
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 text-purple-300 text-sm tracking-wide mb-6">
-            ⚡ THE THYROID L.E.A.N. METHOD™
-          </div>
-
-          <h2 className="text-4xl md:text-7xl font-bold leading-tight mb-8">
-
-            A Smarter Way To Fix <br />
-
-            <span className="bg-gradient-to-r from-purple-400 to-violet-300 bg-clip-text text-transparent">
-              Thyroid Fat Loss
-            </span>
-
-          </h2>
-
-          <p className="text-gray-400 text-lg md:text-2xl leading-relaxed">
-            A science-backed thyroid transformation framework designed
-            specifically for hypothyroidism, Hashimoto’s, hormonal resistance,
-            fatigue, inflammation, and sustainable long-term fat loss.
-          </p>
-
-        </div>
-
-        {/* FRAMEWORK FLOW */}
-        <div className="relative mb-28">
-
-          {/* Connection Line */}
-          <div className="hidden lg:block absolute top-1/2 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500/10 via-purple-400/40 to-purple-500/10"></div>
-
-          <div className="grid lg:grid-cols-4 gap-8 relative z-10">
-
-            {/* L */}
-            <div className="group relative rounded-[32px] border border-purple-500/20 bg-gradient-to-b from-purple-900/20 to-black backdrop-blur-xl p-8 hover:scale-[1.02] transition-all duration-300 shadow-[0_0_60px_rgba(168,85,247,0.08)]">
-
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-400 flex items-center justify-center text-3xl font-bold mb-8 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
-                L
-              </div>
-
-              <h3 className="text-2xl font-bold mb-4">
-                Lab & Lifestyle Analysis
-              </h3>
-
-              <p className="text-purple-300 mb-6 leading-relaxed">
-                Understand what’s ACTUALLY blocking your fat loss.
-              </p>
-
-              <ul className="space-y-3 text-gray-400 leading-relaxed">
-                <li>✓ TSH, T3, T4 & thyroid markers</li>
-                <li>✓ Deficiencies & inflammation</li>
-                <li>✓ Digestion, bloating & cravings</li>
-                <li>✓ Sleep, stress & recovery analysis</li>
-              </ul>
-
-            </div>
-
-            {/* E */}
-            <div className="group relative rounded-[32px] border border-purple-500/20 bg-gradient-to-b from-purple-900/20 to-black backdrop-blur-xl p-8 hover:scale-[1.02] transition-all duration-300 shadow-[0_0_60px_rgba(168,85,247,0.08)]">
-
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-400 flex items-center justify-center text-3xl font-bold mb-8 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
-                E
-              </div>
-
-              <h3 className="text-2xl font-bold mb-4">
-                Energy & Metabolism Restoration
-              </h3>
-
-              <p className="text-purple-300 mb-6 leading-relaxed">
-                Restore energy before aggressive fat loss.
-              </p>
-
-              <ul className="space-y-3 text-gray-400 leading-relaxed">
-                <li>✓ Fatigue & brain fog recovery</li>
-                <li>✓ Cortisol & stress optimization</li>
-                <li>✓ Better sleep & recovery</li>
-                <li>✓ Sustainable metabolic support</li>
-              </ul>
-
-            </div>
-
-            {/* A */}
-            <div className="group relative rounded-[32px] border border-purple-500/20 bg-gradient-to-b from-purple-900/20 to-black backdrop-blur-xl p-8 hover:scale-[1.02] transition-all duration-300 shadow-[0_0_60px_rgba(168,85,247,0.08)]">
-
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-400 flex items-center justify-center text-3xl font-bold mb-8 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
-                A
-              </div>
-
-              <h3 className="text-2xl font-bold mb-4">
-                Anti-Inflammatory Indian Nutrition
-              </h3>
-
-              <p className="text-purple-300 mb-6 leading-relaxed">
-                Real Indian meals. No starvation diets.
-              </p>
-
-              <ul className="space-y-3 text-gray-400 leading-relaxed">
-                <li>✓ Thyroid-friendly Indian meals</li>
-                <li>✓ Sustainable home food approach</li>
-                <li>✓ Gut-friendly meal structure</li>
-                <li>✓ No extreme restriction or fasting</li>
-              </ul>
-
-            </div>
-
-            {/* N */}
-            <div className="group relative rounded-[32px] border border-purple-500/20 bg-gradient-to-b from-purple-900/20 to-black backdrop-blur-xl p-8 hover:scale-[1.02] transition-all duration-300 shadow-[0_0_60px_rgba(168,85,247,0.08)]">
-
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-400 flex items-center justify-center text-3xl font-bold mb-8 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
-                N
-              </div>
-
-              <h3 className="text-2xl font-bold mb-4">
-                Nutrition-Guided Activity & Accountability
-              </h3>
-
-              <p className="text-purple-300 mb-6 leading-relaxed">
-                Structured coaching with ongoing optimization.
-              </p>
-
-              <ul className="space-y-3 text-gray-400 leading-relaxed">
-                <li>✓ Walking, strength & recovery balance</li>
-                <li>✓ Weekly check-ins & optimization</li>
-                <li>✓ WhatsApp accountability support</li>
-                <li>✓ Progress tracking & adjustments</li>
-              </ul>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* TIMELINE */}
-        <div className="rounded-[40px] border border-purple-500/20 bg-gradient-to-b from-purple-900/20 to-black p-10 md:p-16 mb-24 shadow-[0_0_80px_rgba(168,85,247,0.12)]">
-
-          <div className="text-center mb-14">
-
-            <p className="text-purple-300 uppercase tracking-[0.3em] text-sm mb-4">
-              TRANSFORMATION TIMELINE
-            </p>
-
-            <h3 className="text-3xl md:text-5xl font-bold">
-              What Clients Typically Experience
-            </h3>
-
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
-
-              <div className="text-purple-400 text-sm tracking-wide mb-4">
-                WEEK 1–2
-              </div>
-
-              <h4 className="text-2xl font-bold mb-4">
-                Recovery Begins
-              </h4>
-
-              <p className="text-gray-400 leading-relaxed">
-                Better energy, reduced bloating, improved digestion,
-                stabilized cravings, and more mental clarity.
-              </p>
-
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
-
-              <div className="text-purple-400 text-sm tracking-wide mb-4">
-                WEEK 3–6
-              </div>
-
-              <h4 className="text-2xl font-bold mb-4">
-                Visible Transformation
-              </h4>
-
-              <p className="text-gray-400 leading-relaxed">
-                Inch loss becomes visible, energy improves further,
-                inflammation reduces, and fat loss accelerates.
-              </p>
-
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
-
-              <div className="text-purple-400 text-sm tracking-wide mb-4">
-                WEEK 7–12
-              </div>
-
-              <h4 className="text-2xl font-bold mb-4">
-                Sustainable Results
-              </h4>
-
-              <p className="text-gray-400 leading-relaxed">
-                Long-term thyroid-supportive habits, improved confidence,
-                better metabolism, and sustainable fat loss outcomes.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* WHY THIS WORKS */}
-        <div className="text-center max-w-5xl mx-auto mb-20">
-
-          <h3 className="text-3xl md:text-5xl font-bold mb-8 leading-tight">
-
-            Why The L.E.A.N. Method™ <br />
-
-            <span className="text-purple-400">
-              Works Better
-            </span>
-
-          </h3>
-
-          <p className="text-gray-300 text-lg md:text-2xl leading-relaxed">
-
-            Most coaches focus only on calories and workouts.
-            The Thyroid L.E.A.N. Method™ focuses on hormones,
-            inflammation, metabolism, recovery, digestion,
-            stress, and sustainability together.
-
-          </p>
-
-        </div>
-
-        {/* CTA */}
-        <div className="text-center">
-
-          <button
-            onClick={() =>
-              window.location.href =
-                "https://swapnilumbarkarfitness.in/case-studies/#cta"
-            }
-            className="bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-500 hover:to-violet-400 text-white text-xl font-semibold px-10 py-6 rounded-2xl shadow-[0_0_40px_rgba(168,85,247,0.45)] transition-all duration-300 hover:scale-[1.02]"
-          >
-            🔥 Book My Free Thyroid Strategy Call
-          </button>
-
-          <p className="text-gray-500 mt-5">
-            Limited personalized coaching spots available this month.
-          </p>
-
-        </div>
-
+    <section className="section-pad relative bg-[var(--bg-section)] text-white">
+      <div aria-hidden="true" className="section-glow">
+        <div className="glow-section" />
       </div>
 
+      <div className="container-default relative z-10">
+        <SectionHeader
+          label="The Method"
+          title={
+            <>
+              The Thyroid <span className="text-gradient">L.E.A.N. Method</span>
+            </>
+          }
+          lead="Built for hypothyroid women who need structure, accountability, and real Indian food — not another crash diet."
+          titleMaxCh="24ch"
+        />
+
+        <div
+          className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3"
+        >
+          {steps.map((s) => (
+            <article
+              key={s.letter}
+              className="glass-card-sm text-center"
+              style={{ padding: 'clamp(0.85rem, 3vw, 1.15rem)' }}
+            >
+              <div
+                className="mx-auto mb-2.5 flex items-center justify-center rounded-full font-black"
+                style={{
+                  width: 'clamp(2.125rem, 5vw, 2.5rem)',
+                  height: 'clamp(2.125rem, 5vw, 2.5rem)',
+                  fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                  background: 'var(--p-tint)',
+                  color: 'var(--p400)',
+                  border: '1px solid var(--p-border)',
+                }}
+              >
+                {s.letter}
+              </div>
+              <p
+                className="mb-1 font-semibold leading-snug"
+                style={{ fontSize: 'var(--text-xs)', color: 'var(--t1)' }}
+              >
+                {s.label}
+              </p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', lineHeight: 1.55 }}>
+                {s.desc}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-[var(--r-xl)] border border-[var(--b-soft)] bg-[var(--s1)]">
+          <div className="flex flex-col sm:flex-row">
+            {timeline.map((t, i) => (
+              <div
+                key={t.weeks}
+                className="flex-1 border-[var(--b-soft)] sm:border-b-0 sm:border-r last:sm:border-r-0"
+                style={{
+                  padding: 'clamp(0.85rem, 3vw, 1.1rem) clamp(0.9rem, 3.5vw, 1.2rem)',
+                  borderBottom:
+                    i < timeline.length - 1 ? '1px solid var(--b-soft)' : undefined,
+                }}
+              >
+                <div className="mb-1.5 flex items-center gap-2">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                    style={{
+                      background: 'var(--p-tint)',
+                      color: 'var(--p400)',
+                      border: '1px solid var(--p-border)',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--p400)]">
+                    {t.weeks}
+                  </p>
+                </div>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t2)', lineHeight: 1.6 }}>
+                  {t.result}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <SectionCta
+          style={{ maxWidth: 320 }}
+          label="Reserve Your Thyroid Consultation"
+          sublabel="₹299 session · See how coaching fits your life"
+          trust="Applications closing soon · Limited intake"
+          ariaLabel="Reserve your thyroid consultation"
+          location="framework"
+        />
+      </div>
     </section>
-  );
+  )
 }

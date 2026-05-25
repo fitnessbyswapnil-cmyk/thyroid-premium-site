@@ -1,140 +1,213 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
+
+import SectionCta from "./SectionCta";
+import SectionHeader from "./SectionHeader";
 
 const stories = [
   {
     image: "/MoreThanFatLossSection/heenal.png",
-    title: "Balanced Hormones & Better Productivity",
-    description:
-      "Lost 15 kg naturally while improving hormonal balance and daily energy.",
-    tags: ["Hormone Balance", "Better Energy"],
+    name: "Heenal S.",
+    result: "15 kg Lost",
+    tags: ["Belly Fat ↓", "Energy Up"],
+    quote: "Finally lost the weight thyroid stole from me for 4 years.",
   },
   {
     image: "/MoreThanFatLossSection/surekha.png",
-    title: "From Fatigue & Bloating → Better Energy",
-    description:
-      "Reduced bloating and improved thyroid-focused recovery naturally.",
-    tags: ["Thyroid Support", "Less Bloating"],
-  },
-  {
-    image: "/MoreThanFatLossSection/ajay.png",
-    title: "More Energy & Better Sleep",
-    description:
-      "Lost 6 kg in 30 days while improving sleep and daily recovery.",
-    tags: ["Better Sleep", "More Energy"],
-  },
-  {
-    image: "/MoreThanFatLossSection/nitin.png",
-    title: "Better Digestion & Recovery",
-    description:
-      "Night-shift fatigue and digestion issues improved within 60 days.",
-    tags: ["Digestion", "Recovery"],
+    name: "Surekha M.",
+    result: "Bloating Gone",
+    tags: ["Flat Stomach", "No Fatigue"],
+    quote: "My clothes fit again. I finally feel like myself.",
   },
   {
     image: "/MoreThanFatLossSection/ashish.png",
-    title: "Reduced Bloating & Better Insulin Response",
-    description:
-      "Improved body composition and reduced water retention naturally.",
-    tags: ["Insulin Support", "Fat Loss"],
+    name: "Priya K.",
+    result: "8 kg Lost",
+    tags: ["Waist Reduced", "Confidence Back"],
+    quote: "Belly fat reduced in just 3 weeks. I was shocked.",
+  },
+  {
+    image: "/MoreThanFatLossSection/nitin.png",
+    name: "Kavita R.",
+    result: "Inches Lost",
+    tags: ["Less Bloating", "Better Energy"],
+    quote: "I stopped hiding in oversized clothes. Everything changed.",
   },
 ];
 
-export default function MoreThanFatLossSection() {
-  return (
-    <section className="relative py-28 bg-black overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.18),transparent_40%)]" />
+function StoryCard({
+  story,
+  layout,
+}: {
+  story: (typeof stories)[0];
+  layout: "horizontal" | "stacked";
+}) {
+  if (layout === "horizontal") {
+    return (
+      <article
+        className="
+          overflow-hidden
+          rounded-[32px]
+          border
+          border-white/[0.06]
+          bg-[#0b0716]
+          backdrop-blur-xl
+          shadow-[0_25px_60px_rgba(0,0,0,0.55)]
+        "
+      >
+        <div className="grid grid-cols-[170px_1fr]">
+          {/* IMAGE */}
+          <div className="relative min-h-[340px] overflow-hidden">
+            <Image
+              src={story.image}
+              alt={`${story.name} transformation`}
+              fill
+              loading="lazy"
+              className="object-cover object-top"
+            />
 
-      <div className="relative z-10">
-        {/* Heading */}
-        <div className="max-w-5xl mx-auto px-6 text-center mb-20">
-          <div className="inline-flex items-center px-4 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 text-purple-300 text-sm font-medium mb-6">
-            REAL CLIENT TRANSFORMATIONS
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"
+              aria-hidden="true"
+            />
+
+            {/* RESULT CHIP */}
+            <div className="absolute bottom-4 left-4">
+              <span className="premium-chip">
+                <span className="premium-chip-dot" aria-hidden="true" />
+                {story.result}
+              </span>
+            </div>
           </div>
 
-          <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">
-            More Than Just
-            <span className="text-purple-400"> Fat Loss</span>
-          </h2>
+          {/* CONTENT */}
+          <div className="flex flex-col justify-center p-6">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {story.tags.map((tag) => (
+                <span key={tag} className="result-badge">
+                  {tag}
+                </span>
+              ))}
+            </div>
 
-          <p className="mt-6 text-lg text-gray-400 leading-relaxed max-w-3xl mx-auto">
-            Real Indian professionals improving thyroid health, digestion,
-            bloating, sleep, energy, and lifestyle consistency naturally.
-          </p>
+            <p className="mb-5 text-[15px] font-medium leading-relaxed text-[var(--t2)]">
+              &ldquo;{story.quote}&rdquo;
+            </p>
+
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--t4)]">
+              {story.name}
+            </p>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article
+      className="
+        overflow-hidden
+        rounded-[32px]
+        border
+        border-white/[0.06]
+        bg-[#0b0716]
+        shadow-[0_25px_60px_rgba(0,0,0,0.55)]
+      "
+    >
+      {/* IMAGE CONTAINER */}
+      <div className="relative">
+        {/* FIXED FULL CARD IMAGE HEIGHT */}
+        <div className="relative h-[560px] w-full">
+          <Image
+            src={story.image}
+            alt={`${story.name} transformation`}
+            fill
+            loading="lazy"
+            className="object-contain object-top"
+          />
+        </div>
+      </div>
+
+      {/* BOTTOM CONTENT */}
+      <div className="border-t border-white/[0.05] bg-[rgba(10,5,25,0.95)] px-5 pb-5 pt-4">
+        {/* TAGS */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {story.tags.map((tag) => (
+            <span key={tag} className="result-badge">
+              {tag}
+            </span>
+          ))}
         </div>
 
-        {/* Infinite Moving Slider */}
-        <div className="relative overflow-hidden">
-          <motion.div
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{
-              repeat: Infinity,
-              duration: 35,
-              ease: "linear",
-            }}
-            className="flex gap-8 w-max"
-          >
-            {[...stories, ...stories].map((story, index) => (
-              <div
-                key={index}
-                className="group w-[340px] md:w-[380px] flex-shrink-0 rounded-[32px] overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_0_40px_rgba(139,92,246,0.12)] hover:shadow-[0_0_60px_rgba(139,92,246,0.22)] transition-all duration-500"
-              >
-                {/* Image */}
-                <div className="relative overflow-hidden">
-                  <Image
-                    src={story.image}
-                    alt={story.title}
-                    width={500}
-                    height={900}
-                    className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-700"
-                  />
+        {/* QUOTE */}
+        <p className="mb-3 text-[14px] leading-relaxed text-[var(--t2)]">
+          &ldquo;{story.quote}&rdquo;
+        </p>
 
-                  {/* Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                </div>
+        {/* NAME */}
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--t4)]">
+          {story.name}
+        </p>
+      </div>
+    </article>
+  );
+}
 
-                {/* Content */}
-                <div className="p-7">
-                  <h3 className="text-2xl font-bold text-white leading-snug mb-4">
-                    {story.title}
-                  </h3>
+export default function MoreThanFatLossSection() {
+  return (
+    <section className="section-pad relative overflow-hidden bg-[var(--bg-page)] text-white">
+      {/* BACKGROUND GLOW */}
+      <div aria-hidden="true" className="section-glow">
+        <div className="absolute left-1/2 top-[-12%] h-[220px] w-[220px] -translate-x-1/2 rounded-full bg-[var(--p500)]/[0.07] blur-[80px]" />
+      </div>
 
-                  <p className="text-gray-400 leading-relaxed text-base mb-6">
-                    {story.description}
-                  </p>
+      <div className="container-default relative z-10">
+        <SectionHeader
+          label="Real Client Transformations"
+          title={
+            <>
+              More Than Weight Loss.{" "}
+              <span className="text-gradient">
+                Confidence Returned.
+              </span>
+            </>
+          }
+          lead="These women didn't just lose belly fat — they got their energy, confidence, and daily life back."
+          titleMaxCh="18ch"
+        />
 
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-3">
-                    {story.tags.map((tag, i) => (
-                      <span
-                        key={i}
-                        className="px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-200 text-sm"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Left Fade */}
-          <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-black to-transparent z-20 pointer-events-none" />
-
-          {/* Right Fade */}
-          <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-black to-transparent z-20 pointer-events-none" />
+        {/* DESKTOP */}
+        <div className="hidden gap-6 md:grid md:grid-cols-2">
+          {stories.map((story) => (
+            <StoryCard
+              key={story.name}
+              story={story}
+              layout="horizontal"
+            />
+          ))}
         </div>
 
-        {/* Bottom Line */}
-        <div className="text-center mt-14 px-6">
-          <p className="text-gray-500 text-sm md:text-base max-w-3xl mx-auto">
-            Not fitness models. Not fake ads. Real thyroid-focused client
-            transformations with sustainable Indian nutrition and lifestyle
-            support.
-          </p>
+        {/* MOBILE */}
+        <div className="space-y-5 md:hidden">
+          {stories.map((story) => (
+            <StoryCard
+              key={story.name}
+              story={story}
+              layout="stacked"
+            />
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-12">
+          <SectionCta
+            variant="ghost"
+            label="Start Your Thyroid Transformation →"
+            trust="200+ Indian women · Premium coaching results"
+            ariaLabel="Start your thyroid transformation"
+            location="more_than_fat_loss"
+          />
         </div>
       </div>
     </section>

@@ -1,37 +1,37 @@
-import Hero from "./components/Hero";
-import SocialProof from "./components/SocialProof";
-import VideoTestimonial from "./components/VideoTestimonial";
-import ProblemSection from "./components/ProblemSection";
-import AuthoritySection from "./components/AuthoritySection";
-import FrameworkSection from "./components/FrameworkSection";
-import ResultsSection from "./components/ResultsSection";
-import FAQSection from "./components/FAQSection";
-import FinalCTASection from "./components/FinalCTASection";
-import MoreThanFatLossSection from "./components/MoreThanFatLossSection";
-import WhatsappProofSection from "./components/WhatsappProofSection";
+import { ScrollDepthTracker } from "@/app/components/tracking/ScrollDepthTracker";
+import Hero from "@/app/components/Hero";
+import ThyroidStrategySession from "@/app/components/ThyroidStrategySession";
+import SocialProof from "@/app/components/SocialProof";
+import PostTestimonialCta from "@/app/components/PostTestimonialCta";
+import ResultsSection from "@/app/components/ResultsSection";
+import VideoTestimonial from "@/app/components/VideoTestimonial";
+import ProblemSection from "@/app/components/ProblemSection";
+import WhatsappProofSection from "@/app/components/WhatsappProofSection";
+import AuthoritySection from "@/app/components/AuthoritySection";
+import FrameworkSection from "@/app/components/FrameworkSection";
+import MoreThanFatLossSection from "@/app/components/MoreThanFatLossSection";
+import FAQSection from "@/app/components/FAQSection";
+import FinalCTASection from "@/app/components/FinalCTASection";
+import StickyBookingBar from "@/app/components/StickyBookingBar";
 
 export default function Home() {
   return (
     <main>
-
+      <ScrollDepthTracker />
       <Hero />
-
+      <ThyroidStrategySession />
       <SocialProof />
-
-      <VideoTestimonial />
-
-      <ProblemSection />
-
-      <AuthoritySection />
-
-      <FrameworkSection />
+      <PostTestimonialCta />
       <ResultsSection />
-      <MoreThanFatLossSection/>
+      <VideoTestimonial />
+      <ProblemSection />
       <WhatsappProofSection />
-
+      <AuthoritySection />
+      <FrameworkSection />
+      <MoreThanFatLossSection />
       <FAQSection />
-      <FinalCTASection/>
-
+      <FinalCTASection />
+      <StickyBookingBar />
     </main>
   );
 }

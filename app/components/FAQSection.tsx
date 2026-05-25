@@ -1,151 +1,171 @@
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from 'react'
+
+import SectionCta from './SectionCta'
+import SectionHeader from './SectionHeader'
 
 const faqs = [
   {
-    question: "Will this work if I already failed multiple diets?",
-    answer:
-      "Yes. Most thyroid clients fail because they follow generic fat loss advice that ignores hormones, inflammation, stress, recovery, digestion, and thyroid metabolism. The T.H.Y.R.O.I.D. Lean Method is designed specifically for hypothyroid and Hashimoto’s clients.",
+    q: "I'm already on thyroid medication. Can I still join?",
+    a: 'Yes. Coaching works alongside your medication — we focus on nutrition, lifestyle, and sustainable fat loss, not replacing your doctor.',
   },
   {
-    question: "Can I still eat Indian food during coaching?",
-    answer:
-      "Absolutely. This system is built around sustainable Indian meals and real family lifestyle routines. No extreme restriction, starvation dieting, or unrealistic meal plans.",
+    q: 'What happens in the ₹299 strategy session?',
+    a: 'We review your thyroid history, struggles, and goals — then explore whether premium coaching is the right fit. No pressure, no hard sell.',
   },
   {
-    question: "Do I need gym or intense workouts?",
-    answer:
-      "No. Your movement strategy is customized according to your recovery, energy, thyroid condition, stress levels, and current lifestyle. Many clients start with walking, recovery-focused movement, and low-stress strength training.",
+    q: 'How fast will I see results?',
+    a: 'Most clients notice energy and bloating improvements in Weeks 1–2. Visible fat and inch loss often begins around Weeks 3–4.',
   },
   {
-    question: "Is this suitable for Hashimoto’s and hypothyroidism?",
-    answer:
-      "Yes. The coaching is specifically designed for thyroid-related fat loss resistance, metabolism slowdown, fatigue, bloating, hormonal imbalance, and recovery optimization.",
+    q: "Is this suitable for Hashimoto's?",
+    a: "Absolutely. The system supports both hypothyroidism and Hashimoto's — with practical, anti-inflammatory Indian nutrition.",
   },
   {
-    question: "Is the coaching personalized to my reports and symptoms?",
-    answer:
-      "Yes. Every client receives a customized strategy based on thyroid labs, symptoms, recovery capacity, lifestyle, food preferences, digestion, cravings, sleep quality, and progress tracking data.",
+    q: 'Will I have to follow a strict diet?',
+    a: 'No starvation. Real Indian meals at home — adapted to your culture, schedule, and thyroid needs.',
   },
-  {
-    question: "Do you work with both women and men?",
-    answer:
-      "Yes. While many thyroid clients are women, we also work with men struggling with thyroid fat gain, fatigue, low metabolism, poor recovery, and hormonal health issues.",
-  },
-  {
-    question: "How quickly can I expect results?",
-    answer:
-      "Most clients begin noticing improvements in energy, bloating, recovery, sleep quality, and body measurements within the first few weeks when they follow the system consistently.",
-  },
-  {
-    question: "What support do I receive during coaching?",
-    answer:
-      "Clients receive personalized nutrition guidance, progress tracking, weekly reviews, accountability support, strategy adjustments, and direct communication support throughout the coaching journey.",
-  },
-];
+]
 
-export default function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+function AccordionItem({
+  faq,
+  index,
+  isOpen,
+  onToggle,
+}: {
+  faq: { q: string; a: string }
+  index: number
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const panelId = `faq-panel-${index}`
+  const btnId = `faq-btn-${index}`
+
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el) return
+    if (isOpen) {
+      el.style.height = '0px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 260ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = el.scrollHeight + 'px'
+        el.addEventListener(
+          'transitionend',
+          () => {
+            el.style.height = 'auto'
+            el.style.overflow = 'visible'
+          },
+          { once: true }
+        )
+      })
+    } else {
+      el.style.height = el.scrollHeight + 'px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 220ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = '0px'
+      })
+    }
+  }, [isOpen])
 
   return (
-    <section className="relative overflow-hidden bg-black py-28 px-6">
-      {/* Background Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.14),transparent_65%)]" />
+    <div
+      className="border-b border-[var(--b-soft)] last:border-b-0"
+      style={{
+        background: isOpen ? 'rgba(168,85,247,0.04)' : 'transparent',
+        transition: 'background 200ms ease',
+      }}
+    >
+      <button
+        id={btnId}
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className="flex w-full min-h-[56px] items-center justify-between gap-4 px-4 text-left sm:px-5"
+        style={{
+          fontSize: 'var(--text-sm)',
+          fontWeight: 600,
+          color: isOpen ? 'var(--t1)' : 'var(--t2)',
+          background: 'none',
+        }}
+      >
+        <span className="text-pretty pr-2">{faq.q}</span>
+        <span
+          aria-hidden="true"
+          className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border"
+          style={{
+            background: isOpen ? 'var(--p-tint)' : 'var(--s1)',
+            borderColor: isOpen ? 'var(--p-border)' : 'var(--b-soft)',
+            color: isOpen ? 'var(--p400)' : 'var(--t3)',
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 240ms var(--ease), background 180ms ease, border-color 180ms ease',
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M2 4l4 4 4-4" />
+          </svg>
+        </span>
+      </button>
 
-      <div className="relative z-10 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center rounded-full border border-purple-500/20 bg-purple-500/10 px-5 py-2 text-sm text-purple-200 mb-6">
-            FREQUENTLY ASKED QUESTIONS
-          </div>
-
-          <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
-            Everything You Need To Know
-            <span className="block bg-gradient-to-r from-purple-400 to-violet-300 bg-clip-text text-transparent">
-              Before Joining
-            </span>
-          </h2>
-
-          <p className="text-gray-400 text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
-            Most thyroid clients have already tried multiple diets, workouts,
-            medications, and inconsistent plans before joining. Here are the
-            most common questions we receive before starting coaching.
-          </p>
-        </div>
-
-        {/* FAQ Cards */}
-        <div className="space-y-5">
-          {faqs.map((faq, index) => {
-            const isOpen = openIndex === index;
-
-            return (
-              <div
-                key={index}
-                className="overflow-hidden rounded-[28px] border border-purple-500/10 bg-gradient-to-b from-[#12071f] to-black transition-all duration-300"
-              >
-                <button
-                  onClick={() =>
-                    setOpenIndex(isOpen ? null : index)
-                  }
-                  className="flex w-full items-center justify-between px-8 py-7 text-left"
-                >
-                  <span className="text-lg md:text-xl font-semibold text-white pr-6">
-                    {faq.question}
-                  </span>
-
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/10 text-purple-300 text-2xl">
-                    {isOpen ? "−" : "+"}
-                  </div>
-                </button>
-
-                <div
-                  className={`grid transition-all duration-500 ease-in-out ${
-                    isOpen
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0"
-                  }`}
-                >
-                  <div className="overflow-hidden">
-                    <div className="px-8 pb-8 text-gray-400 leading-relaxed text-base md:text-lg">
-                      {faq.answer}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom Trust Strip */}
-        <div className="mt-20 rounded-[32px] border border-purple-500/20 bg-gradient-to-b from-[#13071f] to-black p-10 text-center shadow-[0_0_60px_rgba(168,85,247,0.12)]">
-          <h3 className="text-3xl md:text-4xl font-bold text-white mb-5">
-            Still Unsure If This Is Right For You?
-          </h3>
-
-          <p className="text-gray-400 text-lg leading-relaxed max-w-2xl mx-auto mb-8">
-            Book a free thyroid strategy consultation and we’ll analyze your
-            current struggles, metabolism challenges, symptoms, and goals to
-            see whether this coaching is the right fit for you.
-          </p>
-
-          <button
-            onClick={() =>
-              window.open(
-                "https://wa.me/91XXXXXXXXXX",
-                "_blank"
-              )
-            }
-            className="rounded-2xl bg-gradient-to-r from-purple-600 to-violet-500 px-10 py-5 text-lg font-bold text-white shadow-[0_0_40px_rgba(168,85,247,0.4)] transition-all duration-300 hover:scale-105"
-          >
-            🔥 Book Free Strategy Call
-          </button>
-
-          <p className="mt-5 text-sm text-gray-500">
-            ACE • FITR • INFS Certified • 200+ Thyroid Clients Helped
+      <div ref={bodyRef} id={panelId} role="region" aria-labelledby={btnId} style={{ height: 0, overflow: 'hidden' }}>
+        <div className="px-4 pb-4 sm:px-5">
+          <p className="max-w-[52ch] text-pretty text-[length:var(--text-sm)] leading-[1.65] text-[var(--t3)]">
+            {faq.a}
           </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+export default function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null)
+
+  return (
+    <section className="section-pad relative bg-[var(--bg-page)] text-white">
+      <div className="container-narrow relative z-10">
+        <SectionHeader
+          label="FAQs"
+          title="Common Questions"
+          lead="Everything you want to know before applying for your private ₹299 session."
+          titleMaxCh="20ch"
+        />
+
+        <div className="glass-card-sm overflow-hidden rounded-[var(--r-xl)] border border-[var(--b-soft)]">
+          {faqs.map((faq, i) => (
+            <AccordionItem
+              key={faq.q}
+              faq={faq}
+              index={i}
+              isOpen={open === i}
+              onToggle={() => setOpen(open === i ? null : i)}
+            />
+          ))}
+        </div>
+
+        <div className="mt-5 rounded-[var(--r-xl)] border border-[var(--p-border)] bg-[var(--p-subtle)] p-[clamp(1.25rem,4vw,1.75rem)] text-center">
+          <p className="mb-1 text-[length:var(--text-base)] font-semibold text-[var(--t1)]">
+            Still have questions?
+          </p>
+          <p className="mb-5 text-[length:var(--text-xs)] text-[var(--t4)]">
+            Get clarity on your thyroid fat-loss path in a private ₹299 session.
+          </p>
+          <SectionCta
+            className="!mt-0"
+            buttonClassName="mx-auto w-full"
+            style={{ maxWidth: 280 }}
+            label="Book Your ₹299 Thyroid Assessment"
+            sublabel="See if this program fits you"
+            trust="ACE · FITR · INFS Certified · 200+ Clients"
+            ariaLabel="Book your 299 rupee thyroid assessment"
+            location="faq"
+          />
+        </div>
+      </div>
     </section>
-  );
+  )
 }

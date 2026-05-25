@@ -1,0 +1,2233 @@
+\n\n===== app/components/Hero.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+export default function Hero() {
+  return (
+    <section className="relative overflow-hidden bg-black text-white">
+
+      {/* ── Background Glow — fixed height prevents clipping on short viewports ── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] overflow-hidden"
+      >
+        <div className="absolute left-1/2 top-[-8%] h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-purple-600/[0.14] blur-[100px] md:h-[650px] md:w-[650px] md:blur-[140px]" />
+      </div>
+
+      {/* ── Content — uses container-default for consistency with all other sections ── */}
+      <div className="hero-container relative z-10 mx-auto flex max-w-[960px] flex-col items-center text-center">
+
+        {/* ── 1. Urgency Badge ── */}
+        <div className="badge-pill" role="status" aria-live="polite">
+          <span className="badge-dot" aria-hidden="true" />
+          <span>Only 5 Spots Left This Month</span>
+        </div>
+
+        {/* ── 2. Eyebrow ── */}
+        <p className="eyebrow">For Indian women with hypothyroidism</p>
+
+        {/* ── 3. Main Headline ── */}
+        <h1 className="headline">
+          Lose the
+          <span className="headline-accent">Belly Fat.</span>
+          <span className="headline-white">In 90 Days.</span>
+        </h1>
+
+        {/* ── 4. Subheadline ── */}
+        <p className="subheadline">
+          India&apos;s #1 thyroid fat-loss coaching.{" "}
+          <strong className="subheadline-strong">
+            10–15 kg lost. Clothes fitting. Energy back.
+          </strong>
+        </p>
+
+        {/* ── 5. Stat Row ── */}
+        <div className="stat-row" aria-label="Program statistics">
+          <div className="stat-chip">
+            <span className="stat-num">200+</span>
+            <span className="stat-label">Women Transformed</span>
+          </div>
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">90</span>
+            <span className="stat-label">Day Program</span>
+          </div>
+          <div className="stat-divider" aria-hidden="true" />
+          <div className="stat-chip">
+            <span className="stat-num">10–15</span>
+            <span className="stat-label">Kg Fat Loss</span>
+          </div>
+        </div>
+
+        {/* ── 6. Outcome List ── */}
+        <ul className="outcome-list" aria-label="What you will achieve">
+          {[
+            "Stubborn belly fat visibly reduced",
+            "Clothes fitting better within weeks",
+            "No starvation — real Indian food",
+            "Energy & confidence fully restored",
+          ].map((item) => (
+            <li key={item} className="outcome-item">
+              <span className="outcome-check" aria-hidden="true">✓</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* ── 7. CTA Block ── */}
+        <div className="cta-wrap">
+          <button
+            id="cta-hero"
+            type="button"
+            aria-label="Book your free 60-minute thyroid fat-loss consultation call"
+            className="cta-button"
+            onClick={() => window.location.assign(CTA_URL)}
+          >
+            🔥 Book FREE Consultation Call
+            <span className="cta-sub">60 Min · Free · Limited Spots</span>
+          </button>
+          <p className="micro-trust">
+            ★★★★★ Trusted by 200+ hypothyroid women across India
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/VideoTestimonial.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const testimonials = [
+  {
+    // Scorecard stats — shown as 3 compact metrics above the quote
+    stats: [
+      { num: "4.2 kg", label: "Lost" },
+      { num: "3 Wks", label: "Timeline" },
+      { num: "Energy", label: "Restored" },
+    ],
+    quote: "In 3 weeks I saw what 3 years couldn't give me.",
+    name: "Rashmi D.",
+    role: "Hypothyroid Client",
+    videoUrl:
+      "https://swapnilumbarkarfitness.in/wp-content/uploads/2025/08/%F0%9F%8E%A5-Rashmis-3-Week-Thyroid-Fat-Loss-Transformation.mp4",
+  },
+  {
+    stats: [
+      { num: "3.8 kg", label: "Lost" },
+      { num: "2 Inch", label: "Waist ↓" },
+      { num: "Bloat", label: "Gone" },
+    ],
+    quote: "For the first time in years, I feel confident in my body.",
+    name: "Fathima P.",
+    role: "Thyroid Fat Loss Client",
+    videoUrl:
+      "https://swapnilumbarkarfitness.in/wp-content/uploads/2026/05/%F0%9F%8C%B8-Fathimas-2-Week-Thyroid-Fat-Loss-Update.mp4",
+  },
+];
+
+export default function VideoTestimonial() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* ── Atmospheric depth — consistent with Hero and ProblemSection ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-72 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-56 w-80 -translate-x-1/2 rounded-full bg-purple-600/[0.05] blur-[90px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* ── Section Header ── */}
+        <div className="mb-5 text-center md:mb-7">
+          <p className="section-label">Client Stories</p>
+          <h2 className="section-title mx-auto max-w-[28ch]">
+            They Were Stuck.{" "}
+            <span className="text-gradient">Then This Happened.</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-[32ch] text-[length:var(--text-xs)] text-gray-500">
+            Real Indian women. Real hypothyroid transformations. No filters.
+          </p>
+        </div>
+
+        {/* ── Video Cards ── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {testimonials.map((t) => (
+            <div key={t.name} className="glass-card overflow-hidden">
+
+              {/* 1. Scorecard — stat-row style, mirrors Hero numerics */}
+              <div className="flex overflow-hidden border-b border-white/[0.06] bg-white/[0.015]">
+                {t.stats.map((s, i) => (
+                  <div
+                    key={s.label}
+                    className={`flex flex-1 flex-col items-center justify-center py-2.5 ${
+                      i < t.stats.length - 1 ? "border-r border-white/[0.06]" : ""
+                    }`}
+                  >
+                    <span className="text-[length:var(--text-sm)] font-extrabold leading-tight text-purple-400">
+                      {s.num}
+                    </span>
+                    <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-600">
+                      {s.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 2. Quote — ABOVE video to prime emotional frame */}
+              <div className="px-4 pt-3.5 pb-2.5">
+                <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-white">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <p className="mt-1 text-[length:var(--text-xs)] text-gray-500">
+                  — {t.name}, {t.role}
+                </p>
+              </div>
+
+              {/* 3. Video — 4:3 mobile, 16:9 desktop. Rounded-lg sits inside rounded-2xl card */}
+              <div className="mx-3 mb-3 overflow-hidden rounded-lg bg-white/[0.03] aspect-[4/3] md:aspect-video">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover"
+                  aria-label={`Transformation video: ${t.name}`}
+                >
+                  <source src={t.videoUrl} type="video/mp4" />
+                  Your browser does not support video playback.
+                </video>
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+        {/* ── Urgency Strip + CTA ── */}
+        <div className="mt-5 flex flex-col items-center gap-3 md:mt-6">
+          <p className="text-[length:var(--text-xs)] text-gray-500 text-center">
+            ★★★★★ Real results · 200+ women transformed · No filters
+          </p>
+          <button
+            type="button"
+            aria-label="Book your free thyroid fat-loss strategy call"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="cta-button w-full max-w-sm"
+          >
+            🔥 Start Your Transformation
+            <span className="cta-sub">Free 60-Min Call · Limited Spots This Month</span>
+          </button>
+          <p className="text-[length:var(--text-xs)] text-gray-600">
+            No commitment · No upsells · Just clarity
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/SocialProof.tsx =====\n
+"use client";
+
+const items = [
+  { value: "200+",  label: "Women Transformed" },
+  { value: "4.9★",  label: "Average Rating" },
+  { value: "90",    label: "Day Program" },
+  { value: "ACE",   label: "Certified Coach" },
+  { value: "INFS",  label: "Nutrition Certified" },
+];
+
+export default function SocialProof() {
+  return (
+    <section
+      aria-label="Trust indicators"
+      className="relative border-y border-white/[0.06] bg-white/[0.015] py-3 md:py-4"
+    >
+      {/* Horizontal scroll on very small screens; flex-wrap on wider */}
+      <div className="container-default">
+        <div className="scrollbar-hide flex items-center justify-between gap-0 overflow-x-auto">
+          {items.map((item, i) => (
+            <div
+              key={item.label}
+              className={`flex shrink-0 flex-col items-center px-3 md:px-5 ${
+                i < items.length - 1
+                  ? "border-r border-white/[0.07]"
+                  : ""
+              }`}
+            >
+              <span className="text-[length:var(--text-sm)] font-extrabold leading-tight text-purple-400 md:text-[length:var(--text-base)]">
+                {item.value}
+              </span>
+              <span className="mt-0.5 whitespace-nowrap text-[10px] font-medium uppercase tracking-widest text-gray-600 md:text-[11px]">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}\n\n===== app/components/StickyBookingBar.tsx =====\n
+"use client";
+
+import { useEffect, useState } from "react";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+export default function StickyBookingBar() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 420);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="sticky-cta-bar"
+      role="complementary"
+      aria-label="Book a free consultation"
+    >
+      <div className="flex flex-col leading-tight">
+        <span className="font-bold text-white" style={{ fontSize: "var(--text-sm)" }}>
+          🔥 Only 5 Spots Left
+        </span>
+        <span className="text-gray-500" style={{ fontSize: "var(--text-xs)" }}>
+          Free 60-min strategy call
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => window.location.assign(CTA_URL)}
+        aria-label="Book your free thyroid fat-loss strategy call"
+        className="ml-auto shrink-0 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 px-4 py-2.5 font-bold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+        style={{ fontSize: "var(--text-sm)", minHeight: "44px" }}
+      >
+        Book Free Call →
+      </button>
+    </div>
+  );
+}\n\n===== app/components/ProblemSection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const problems = [
+  {
+    icon: "⚡",
+    title: "Generic Diets Keep Failing",
+    body: "Advice built for healthy hormones won't move thyroid fat.",
+  },
+  {
+    icon: "🔥",
+    title: "Cutting Calories Backfires",
+    body: "Less food slows thyroid output — fat loss stalls further.",
+  },
+  {
+    icon: "😓",
+    title: "Energy Disappears First",
+    body: "No energy means no consistency. It's not your willpower.",
+  },
+  {
+    icon: "🎯",
+    title: "No One Fixed the Root",
+    body: "Doctors adjusted meds. Trainers blamed effort. Nothing changed.",
+  },
+];
+
+export default function ProblemSection() {
+  return (
+    <section className="section-pad bg-black text-white">
+
+      {/* Subtle atmospheric glow */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-64 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-48 w-72 -translate-x-1/2 rounded-full bg-purple-600/[0.06] blur-[80px]" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* Header */}
+        <div className="mb-5 text-center md:mb-7">
+          <p className="section-label">Why You&apos;re Stuck</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            The Real Reason{" "}
+            <span className="text-gradient">Thyroid Fat Won&apos;t Move</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-[30ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            You did everything right. The problem was never you.
+          </p>
+        </div>
+
+        {/* 2×2 grid */}
+        <div className="grid grid-cols-2 gap-2.5 md:gap-3.5">
+          {problems.map((p) => (
+            <div key={p.title} className="glass-card-sm flex flex-col gap-2 p-3.5 md:p-5">
+              <span className="text-base leading-none md:text-lg" role="img" aria-hidden="true">
+                {p.icon}
+              </span>
+              <p className="text-[length:var(--text-sm)] font-semibold leading-snug text-white">
+                {p.title}
+              </p>
+              <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-500">
+                {p.body}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Validation strip */}
+        <div className="mt-4 flex items-center justify-center gap-2 md:mt-5">
+          <div className="h-px flex-1 bg-white/[0.06]" />
+          <p className="shrink-0 px-3 text-center text-[length:var(--text-xs)] text-gray-600">
+            Thyroid fat loss requires a{" "}
+            <span className="font-semibold text-gray-400">different system entirely</span>
+          </p>
+          <div className="h-px flex-1 bg-white/[0.06]" />
+        </div>
+
+        {/* CTA — btn-primary (not cta-button) to preserve hierarchy */}
+        <div className="mt-5 text-center md:mt-6">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary w-full max-w-sm"
+            aria-label="Book your free thyroid fat-loss strategy call"
+          >
+            🔥 Start Losing the Belly Fat
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Free 60-min call · No commitment · No upsells
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/FAQSection.tsx =====\n
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
+
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+
+const faqs = [
+  {
+    q: 'I\'m already on thyroid medication. Can I still join?',
+    a: 'Yes. This program works alongside your medication. We focus on nutrition, lifestyle, and fat loss — not replacing your doctor.',
+  },
+  {
+    q: 'What happens on the free strategy call?',
+    a: 'We analyse your current struggles, thyroid history, and goals — then show you exactly how the system works for you. No pressure, no sales pitch.',
+  },
+  {
+    q: 'How fast will I see results?',
+    a: 'Most clients notice energy and bloating improvements in Week 1–2. Visible fat and inch loss typically starts Week 3–4.',
+  },
+  {
+    q: 'Is this suitable for Hashimoto\'s?',
+    a: 'Absolutely. The system is designed for both hypothyroidism and Hashimoto\'s — with anti-inflammatory nutrition built in.',
+  },
+  {
+    q: 'Will I have to follow a strict diet?',
+    a: 'No starvation. Real Indian meals. We adapt your existing food culture — no foreign foods, no extreme calorie cutting.',
+  },
+]
+
+function AccordionItem({
+  faq, index, isOpen, onToggle,
+}: {
+  faq: { q: string; a: string }
+  index: number
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const panelId = `faq-panel-${index}`
+  const btnId   = `faq-btn-${index}`
+
+  /* Smooth height animation — 0 → scrollHeight (260ms open, 220ms close) */
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el) return
+    if (isOpen) {
+      el.style.height = '0px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 260ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = el.scrollHeight + 'px'
+        el.addEventListener('transitionend', () => {
+          el.style.height = 'auto'
+          el.style.overflow = 'visible'
+        }, { once: true })
+      })
+    } else {
+      el.style.height = el.scrollHeight + 'px'
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 220ms cubic-bezier(0.16,1,0.3,1)'
+        el.style.height = '0px'
+      })
+    }
+  }, [isOpen])
+
+  return (
+    <div
+      style={{
+        borderBottom: '1px solid var(--b-soft)',
+        background: isOpen ? 'rgba(255,255,255,0.018)' : 'transparent',
+        transition: 'background 200ms ease',
+      }}
+    >
+      <button
+        id={btnId}
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 text-left"
+        style={{
+          minHeight: 56,          /* ≥44px touch target guaranteed */
+          padding: '0 1.25rem',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 600,
+          color: isOpen ? 'var(--t1)' : 'var(--t2)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'color 180ms ease',
+        }}
+      >
+        <span>{faq.q}</span>
+        {/* Chevron pill — flips 180° on open */}
+        <span
+          aria-hidden="true"
+          className="flex-shrink-0 flex items-center justify-center rounded-full"
+          style={{
+            width: 26, height: 26,
+            background: isOpen ? 'var(--p-tint)' : 'var(--s2)',
+            border: `1px solid ${isOpen ? 'var(--p-border)' : 'var(--b-soft)'}`,
+            transition: 'transform 240ms cubic-bezier(0.16,1,0.3,1), background 180ms ease, border-color 180ms ease',
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            color: isOpen ? 'var(--p400)' : 'var(--t3)',
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M2 4l4 4 4-4" />
+          </svg>
+        </span>
+      </button>
+
+      {/* Animated answer panel */}
+      <div ref={bodyRef} id={panelId} role="region" aria-labelledby={btnId} style={{ height: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '0 1.25rem 1rem' }}>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--t3)', lineHeight: 1.65, maxWidth: '52ch' }}>
+            {faq.a}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null)
+
+  return (
+    <section className="section-pad">
+      <div className="container-narrow">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">FAQs</p>
+          <h2 className="section-title mx-auto" style={{ maxWidth: '20ch' }}>
+            Common Questions
+          </h2>
+        </div>
+
+        {/* Accordion */}
+        <div style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-soft)', overflow: 'hidden' }}>
+          {faqs.map((faq, i) => (
+            <AccordionItem
+              key={i}
+              faq={faq}
+              index={i}
+              isOpen={open === i}
+              onToggle={() => setOpen(open === i ? null : i)}
+            />
+          ))}
+        </div>
+
+        {/* Bottom CTA card */}
+        <div
+          className="mt-5 text-center"
+          style={{
+            borderRadius: 'var(--r-xl)',
+            border: '1px solid var(--p-border)',
+            background: 'var(--p-subtle)',
+            padding: 'clamp(1.25rem, 4vw, 1.75rem)',
+          }}
+        >
+          <p className="mb-1 font-semibold" style={{ fontSize: 'var(--text-base)', color: 'var(--t1)' }}>
+            Still have questions?
+          </p>
+          <p className="mb-5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)' }}>
+            I'll answer everything on a free 60-minute call.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            style={{ maxWidth: 280 }}
+            aria-label="Book a free thyroid fat-loss strategy call"
+          >
+            Book a Free Strategy Call
+          </button>
+          <p className="mt-3 micro-trust">ACE · FITR · INFS Certified · 200+ Clients</p>
+        </div>
+
+      </div>
+    </section>
+  )
+}\n\n===== app/components/FinalCTASection.tsx =====\n
+'use client'
+
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+
+const includes = [
+  'Personalized thyroid fat-loss protocol',
+  'Indian nutrition plan for your metabolism',
+  'Weekly tracking — weight, inches & energy',
+  'Direct WhatsApp accountability support',
+  'Symptom & confidence recovery roadmap',
+]
+
+const certs = ['ACE Certified', 'FITR Certified', 'INFS Certified']
+
+const objections = ['No credit card', 'Completely free', 'No commitment']
+
+export default function FinalCTASection() {
+  return (
+    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
+      {/* Strongest glow — conversion climax signal */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 360 }}>
+        <div className="glow-hero" />
+      </div>
+
+      <div className="container-narrow relative z-10 text-center">
+
+        {/* 1. Urgency badge */}
+        <div className="badge-pill mx-auto mb-5 w-fit" role="status" aria-live="polite">
+          <span className="badge-dot" aria-hidden="true" />
+          Only 5 Spots Left This Month
+        </div>
+
+        {/* 2. Headline — max-w 18ch prevents mid-word wraps on 360px */}
+        <p className="section-label mb-2">Start Today</p>
+        <h2 className="section-title mx-auto mb-3" style={{ maxWidth: '18ch' }}>
+          Your Thyroid Transformation{' '}
+          <span className="text-gradient">Starts Here.</span>
+        </h2>
+        <p className="mx-auto mb-6" style={{ fontSize: 'var(--text-sm)', color: 'var(--t3)', maxWidth: '32ch', lineHeight: 1.6 }}>
+          Book a free 60-min strategy call.{' '}
+          <strong style={{ color: 'var(--t2)', fontWeight: 600 }}>
+            No pressure. No upsells. Just clarity.
+          </strong>
+        </p>
+
+        {/* 3. Coach authority card */}
+        <div className="glass-card mb-5 overflow-hidden text-left" style={{ padding: 'clamp(1rem, 4vw, 1.25rem)' }}>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
+            {/* Avatar — clamp prevents it consuming vertical space on mobile */}
+            <div
+              className="relative flex-shrink-0 overflow-hidden rounded-full"
+              style={{
+                width:  'clamp(3rem, 8vw, 3.5rem)',
+                height: 'clamp(3rem, 8vw, 3.5rem)',
+                border: '2px solid rgba(168,85,247,0.35)',
+                background: 'linear-gradient(135deg, rgba(168,85,247,0.25), rgba(147,51,234,0.15))',
+              }}
+            >
+              {/* Replace with <Image src="/coach.jpg" fill className="object-cover" alt="Swapnil Umbarkar" /> */}
+              <div
+                className="flex h-full w-full items-center justify-center font-black"
+                style={{ fontSize: 'var(--text-base)', color: 'var(--p300)' }}
+              >
+                SU
+              </div>
+            </div>
+            <div>
+              <p className="font-semibold uppercase tracking-wider" style={{ fontSize: 'var(--text-xs)', color: 'var(--p400)', marginBottom: 2 }}>
+                India's Leading Thyroid Fat-Loss Coach
+              </p>
+              <p className="font-bold" style={{ fontSize: 'var(--text-base)', color: 'var(--t1)', marginBottom: '0.5rem' }}>
+                Swapnil Umbarkar
+              </p>
+              <div className="chip-list sm:justify-start">
+                {certs.map((c) => <span key={c} className="chip">{c}</span>)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. What's included */}
+        <div
+          className="mb-5 text-left"
+          style={{
+            borderRadius: 'var(--r-xl)',
+            border: '1px solid var(--p-border)',
+            background: 'var(--p-subtle)',
+            padding: 'clamp(0.875rem, 4vw, 1.125rem)',
+          }}
+        >
+          <p className="mb-3 font-semibold uppercase tracking-wider" style={{ fontSize: 'var(--text-xs)', color: 'var(--p400)' }}>
+            Your Free Call Includes
+          </p>
+          <ul className="space-y-2">
+            {includes.map((item) => (
+              <li key={item} className="flex items-center gap-2.5">
+                <span className="shrink-0 font-bold leading-none" style={{ color: 'var(--p500)', fontSize: 'var(--text-sm)' }}>✓</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--t2)', lineHeight: 1.5 }}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* 5. Primary CTA */}
+        <div className="cta-wrap mx-auto mb-5">
+          <button
+            id="cta-final"
+            type="button"
+            aria-label="Book your free thyroid fat-loss strategy call"
+            className="cta-button"
+            onClick={() => window.location.assign(CTA_URL)}
+          >
+            Book FREE Strategy Call
+            <span className="cta-sub">60 Min Free · Limited Spots This Month</span>
+          </button>
+        </div>
+
+        {/* 6. Objection handler */}
+        <div className="flex items-center justify-center gap-2.5 mb-5 flex-wrap">
+          {objections.map((obj, i) => (
+            <span key={obj} className="flex items-center gap-1.5">
+              {i > 0 && <span className="h-3 w-px" style={{ background: 'var(--b-soft)' }} aria-hidden="true" />}
+              <span
+                style={{
+                  fontSize: 'clamp(9px, 1.8vw, 10px)',
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: 'var(--t4)',
+                }}
+              >
+                {obj}
+              </span>
+            </span>
+          ))}
+        </div>
+
+        {/* 7. Micro-trust */}
+        <p className="micro-trust">200 thyroid women transformed across India</p>
+
+      </div>
+    </section>
+  )
+}\n\n===== app/components/MoreThanFatLossSection.tsx =====\n
+"use client";
+
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+const stories = [
+  {
+    image: "/MoreThanFatLossSection/heenal.png",
+    name: "Heenal S.",
+    result: "15 kg Lost",
+    tags: ["Belly Fat ↓", "Hormones Stable", "Energy Up"],
+    quote: "Finally lost the weight thyroid stole from me for 4 years.",
+  },
+  {
+    image: "/MoreThanFatLossSection/surekha.png",
+    name: "Surekha M.",
+    result: "Bloating Gone",
+    tags: ["Flat Stomach", "Thyroid Fat Lost", "No Fatigue"],
+    quote: "My clothes fit again. I feel like myself.",
+  },
+  {
+    image: "/MoreThanFatLossSection/ashish.png",
+    name: "Priya K.",
+    result: "8 kg Lost",
+    tags: ["Waist Reduced", "Fat Loss", "Confident"],
+    quote: "Belly fat reduced in just 3 weeks. I'm shocked.",
+  },
+  {
+    image: "/MoreThanFatLossSection/nitin.png",
+    name: "Kavita R.",
+    result: "Inches Lost",
+    tags: ["Less Bloating", "Better Energy", "Clothes Fit"],
+    quote: "I stopped hiding in baggy clothes. 60 days changed everything.",
+  },
+  {
+    image: "/MoreThanFatLossSection/heenal.png",
+    name: "Anjali T.",
+    result: "6 kg Lost",
+    tags: ["Flat Belly", "No Starvation", "Thyroid Fat ↓"],
+    quote: "Real food. Real results. No gym needed.",
+  },
+];
+
+export default function MoreThanFatLossSection() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <section className="section-pad bg-black overflow-hidden">
+
+      {/* ── Atmospheric glow — consistent with page depth hierarchy ── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[400px] overflow-hidden">
+        <div className="absolute left-1/2 top-[-10%] h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-purple-600/[0.07] blur-[100px] md:h-[580px] md:w-[580px] md:blur-[130px]" />
+      </div>
+
+      <div className="relative z-10">
+
+        {/* ── Section header — fat-loss first ── */}
+        <div className="container-default mb-8 text-center">
+          <p className="section-label">Real Client Transformations</p>
+
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Real Women.{" "}
+            <span className="text-gradient">Real Fat Loss.</span>
+          </h2>
+
+          <p className="mx-auto max-w-[36ch] text-[length:var(--text-sm)] text-gray-400 leading-relaxed">
+            Indian women with hypothyroidism — losing belly fat, fitting old clothes,
+            and feeling confident again.
+          </p>
+        </div>
+
+        {/* ── Horizontal drag slider ── */}
+        <div className="relative overflow-hidden">
+          <motion.div
+            drag={shouldReduceMotion ? false : "x"}
+            dragConstraints={{ right: 0, left: -(stories.length * 300) }}
+            animate={shouldReduceMotion ? {} : { x: ["0%", "-50%"] }}
+            transition={
+              shouldReduceMotion
+                ? {}
+                : { repeat: Infinity, duration: 32, ease: "linear" }
+            }
+            className="flex gap-4 w-max px-4 cursor-grab active:cursor-grabbing"
+            style={{ willChange: "transform" }}
+          >
+            {[...stories, ...stories].map((story, index) => (
+              <div
+                key={index}
+                className="glass-card w-[260px] sm:w-[300px] flex-shrink-0 overflow-hidden"
+              >
+                {/* ── Image ── */}
+                <div className="relative overflow-hidden rounded-t-[calc(1.25rem-1px)]">
+                  <Image
+                    src={story.image}
+                    alt={`${story.name} thyroid fat loss transformation`}
+                    width={300}
+                    height={380}
+                    loading="lazy"
+                    className="w-full object-cover"
+                    style={{ aspectRatio: "4/5" }}
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+
+                  {/* ── Result badge overlaid on image ── */}
+                  <div className="absolute bottom-3 left-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-black/70 px-3 py-1 backdrop-blur-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-400" aria-hidden="true" />
+                      <span className="text-[length:var(--text-xs)] font-bold text-purple-300">
+                        {story.result}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── Card body — compact ── */}
+                <div className="p-4">
+                  {/* Tags */}
+                  <div className="mb-2.5 flex flex-wrap gap-1.5">
+                    {story.tags.map((tag) => (
+                      <span key={tag} className="result-badge">{tag}</span>
+                    ))}
+                  </div>
+
+                  {/* Quote */}
+                  <p className="mb-1 text-[length:var(--text-xs)] italic leading-snug text-gray-300">
+                    &ldquo;{story.quote}&rdquo;
+                  </p>
+
+                  {/* Name */}
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">
+                    — {story.name}, Hypothyroid Client
+                  </p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* ── Edge fades — narrowed to 64px for maximum content visibility ── */}
+          <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-20" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-20" />
+        </div>
+
+        {/* ── Swipe hint — visible on mobile only ── */}
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-gray-600 md:hidden">
+          ← swipe to see more →
+        </p>
+
+        {/* ── Mid-funnel CTA — captures early-committed visitors ── */}
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-ghost"
+            aria-label="Book a free thyroid fat-loss consultation call"
+          >
+            Start Your Transformation →
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            200+ Indian women transformed · Completely free call
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/components/WhatsappProofSection.tsx =====\n
+'use client'
+
+import Image from 'next/image'
+import { useRef, useEffect } from 'react'
+
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+
+const testimonials = [
+  {
+    image: '/whatsapp-proof/Heenal R4.png',
+    result: 'TSH 6.2 → 2.9',
+    tags: ['Thyroid Improved', 'Energy Up'],
+    headline: 'TSH Dropped. Energy Came Back.',
+    name: 'Heenal R.',
+  },
+  {
+    image: '/whatsapp-proof/Namarata R9.png',
+    result: 'TSH 7.8 → 3.1',
+    tags: ['No More Fatigue', 'Focus Restored'],
+    headline: 'Finally Not Tired All The Time.',
+    name: 'Namarata S.',
+  },
+  {
+    image: '/whatsapp-proof/Sima R1.png',
+    result: '4 kg Lost',
+    tags: ['Belly Fat ↓', '1 Week Results'],
+    headline: '4 kg Gone. Despite Thyroid.',
+    name: 'Sima P.',
+  },
+  {
+    image: '/whatsapp-proof/Heenal R4.png',
+    result: 'Inches Lost',
+    tags: ['Clothes Fit', 'Confidence Up'],
+    headline: 'Old Clothes Fit Again.',
+    name: 'Priya K.',
+  },
+  {
+    image: '/whatsapp-proof/Namarata R9.png',
+    result: '6 kg Lost',
+    tags: ['No Starvation', 'Real Food'],
+    headline: 'Lost 6 kg. Eating Real Indian Food.',
+    name: 'Anjali M.',
+  },
+]
+
+const ITEMS = [...testimonials, ...testimonials]
+
+export default function WhatsappProofSection() {
+  const trackRef  = useRef<HTMLDivElement>(null)
+  const pauseRef  = useRef(false)
+  const posRef    = useRef(0)
+  const rafRef    = useRef<number>(0)
+
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const speed = 0.42
+
+    const tick = () => {
+      if (!pauseRef.current && el) {
+        posRef.current += speed
+        if (posRef.current >= el.scrollWidth / 2) posRef.current = 0
+        el.scrollLeft = posRef.current
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+
+    const pause  = () => { pauseRef.current = true }
+    const resume = () => { pauseRef.current = false }
+
+    el.addEventListener('pointerenter', pause)
+    el.addEventListener('pointerleave', resume)
+    el.addEventListener('touchstart',   pause,  { passive: true })
+    el.addEventListener('touchend',     resume, { passive: true })
+
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      el.removeEventListener('pointerenter', pause)
+      el.removeEventListener('pointerleave', resume)
+      el.removeEventListener('touchstart',   pause)
+      el.removeEventListener('touchend',     resume)
+    }
+  }, [])
+
+  return (
+    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 220 }}>
+        <div className="glow-section" />
+      </div>
+
+      <div className="relative z-10">
+
+        {/* Header */}
+        <div className="container-default mb-7 text-center">
+          <div className="badge-pill mx-auto mb-3 w-fit" role="status">
+            <span className="badge-dot" aria-hidden="true" />
+            Real Client Conversations
+          </div>
+          <p className="section-label">WhatsApp Proof</p>
+          <h2 className="section-title mx-auto" style={{ maxWidth: '22ch' }}>
+            Real Messages. <span className="text-gradient">Real Thyroid Fat Loss.</span>
+          </h2>
+          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch', lineHeight: 1.6 }}>
+            Indian women sharing real progress — belly fat gone, energy back, clothes fitting again.
+          </p>
+        </div>
+
+        {/* Slider */}
+        <div className="relative overflow-hidden">
+          <div
+            ref={trackRef}
+            data-carousel-track
+            className="flex gap-3"
+            style={{
+              overflowX: 'scroll',
+              scrollBehavior: 'auto',
+              paddingInline: '1.25rem',
+              cursor: 'grab',
+            }}
+          >
+            {ITEMS.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex-shrink-0 glass-card overflow-hidden"
+                style={{ width: 'min(240px, 70vw)', borderRadius: 'var(--r-xl)' }}
+              >
+                {/* Screenshot — 9:13 ratio shows full WhatsApp message content */}
+                <div
+                  className="relative overflow-hidden"
+                  style={{
+                    aspectRatio: '9/13',
+                    borderRadius: 'calc(var(--r-xl) - 1px) calc(var(--r-xl) - 1px) 0 0',
+                    background: 'var(--s2)',
+                  }}
+                >
+                  <Image
+                    src={item.image}
+                    alt={`WhatsApp message — ${item.headline}`}
+                    fill
+                    sizes="min(240px, 70vw)"
+                    className="object-cover object-top"
+                    loading="lazy"
+                  />
+                  <div
+                    className="absolute inset-0"
+                    aria-hidden="true"
+                    style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.75) 0%, transparent 45%)' }}
+                  />
+                  {/* Result chip — inside image, compact */}
+                  <div className="absolute bottom-2.5 left-2.5">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full backdrop-blur-sm"
+                      style={{
+                        border: '1px solid var(--p-border)',
+                        background: 'rgba(13,13,15,0.72)',
+                        padding: '0.14rem 0.5rem',
+                      }}
+                    >
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--p400)' }} aria-hidden="true" />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--p300)', lineHeight: 1.5 }}>
+                        {item.result}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card body */}
+                <div style={{ padding: '0.75rem 0.875rem 0.875rem' }}>
+                  {/* Max 2 tags — was 3, caused wrapping in narrow cards */}
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {item.tags.slice(0, 2).map((tag) => (
+                      <span key={tag} className="result-badge">{tag}</span>
+                    ))}
+                  </div>
+                  <p className="mb-1 font-bold leading-snug" style={{ fontSize: 'var(--text-sm)', color: 'var(--t1)' }}>
+                    {item.headline}
+                  </p>
+                  <p style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--t4)' }}>
+                    {item.name} · Hypothyroid Client
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Edge fades — clamp so 360px sees more content */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 h-full z-20"
+            style={{ width: 'clamp(2.5rem, 5vw, 5rem)', background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 h-full z-20"
+            style={{ width: 'clamp(2.5rem, 5vw, 5rem)', background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
+          />
+        </div>
+
+        {/* Swipe hint */}
+        <p className="mt-3 text-center md:hidden" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'var(--t5)' }}>
+          swipe to see more
+        </p>
+
+        {/* CTA */}
+        <div className="container-default mt-8 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-ghost w-full"
+            style={{ maxWidth: '22rem' }}
+            aria-label="Book a free thyroid fat-loss consultation call"
+          >
+            Book Your Free Call
+          </button>
+          <p className="micro-trust">See how this system can work for your thyroid</p>
+        </div>
+
+      </div>
+    </section>
+  )
+}\n\n===== app/components/FrameworkSection.tsx =====\n
+'use client'
+
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+
+const steps = [
+  { letter: 'L', label: 'Lab Analysis',      desc: 'Find what\'s actually blocking your fat loss.' },
+  { letter: 'E', label: 'Energy First',       desc: 'Restore energy before fat loss begins.' },
+  { letter: 'A', label: 'Adaptive Nutrition', desc: 'Real Indian meals. No starvation.' },
+  { letter: 'N', label: 'Navigate & Track',   desc: 'Weekly tweaks based on your real data.' },
+]
+
+const timeline = [
+  { weeks: 'Weeks 1–3',  result: 'Energy up. Bloating down. Cravings stabilize.' },
+  { weeks: 'Weeks 4–8',  result: 'Visible inch loss. Fat loss accelerates.' },
+  { weeks: 'Weeks 9–12', result: 'Confident body. Sustainable habits locked in.' },
+]
+
+export default function FrameworkSection() {
+  return (
+    <section className="section-pad">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 220 }}>
+        <div className="glow-section" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">The Method</p>
+          <h2 className="section-title mx-auto" style={{ maxWidth: '24ch' }}>
+            The Thyroid <span className="text-gradient">L.E.A.N. Method</span>
+          </h2>
+          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch', lineHeight: 1.6 }}>
+            Built specifically for hypothyroid women.{' '}
+            <span style={{ color: 'var(--t3)', fontWeight: 500 }}>
+              The exact 4-step system that works when everything else has failed.
+            </span>
+          </p>
+        </div>
+
+        {/* L.E.A.N. Cards — 2-col mobile, 4-col desktop */}
+        <div
+          className="grid grid-cols-2 md:grid-cols-4"
+          style={{ gap: 'clamp(0.5rem, 2vw, 1rem)' }}
+        >
+          {steps.map((s) => (
+            <div
+              key={s.letter}
+              className="glass-card-sm text-center"
+              style={{ padding: 'clamp(0.75rem, 3vw, 1.25rem)' }}
+            >
+              {/* Letter badge — clamp so it never dominates on mobile */}
+              <div
+                className="mx-auto mb-2.5 flex items-center justify-center rounded-full font-black"
+                style={{
+                  width:    'clamp(2.125rem, 5vw, 2.5rem)',
+                  height:   'clamp(2.125rem, 5vw, 2.5rem)',
+                  fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+                  background: 'var(--p-tint)',
+                  color: 'var(--p400)',
+                  border: '1px solid var(--p-border)',
+                }}
+              >
+                {s.letter}
+              </div>
+              <p className="mb-1 font-semibold leading-snug" style={{ fontSize: 'var(--text-xs)', color: 'var(--t1)' }}>
+                {s.label}
+              </p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', lineHeight: 1.55 }}>
+                {s.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Timeline — vertical on mobile (fixes cramped text wrapping), horizontal sm+ */}
+        <div
+          className="mt-4 overflow-hidden"
+          style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-soft)' }}
+        >
+          <div className="flex flex-col sm:flex-row">
+            {timeline.map((t, i) => (
+              <div
+                key={t.weeks}
+                className="flex-1"
+                style={{
+                  padding: 'clamp(0.75rem, 3vw, 1.125rem) clamp(0.875rem, 3.5vw, 1.25rem)',
+                  borderBottom: i < timeline.length - 1 ? '1px solid var(--b-soft)' : 'none',
+                  borderRight: undefined,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span
+                    className="flex items-center justify-center rounded-full font-bold flex-shrink-0"
+                    style={{
+                      width: 20, height: 20, fontSize: 10,
+                      background: 'var(--p-tint)',
+                      color: 'var(--p400)',
+                      border: '1px solid var(--p-border)',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <p
+                    className="font-semibold uppercase tracking-widest"
+                    style={{ fontSize: 10, color: 'var(--p500)', letterSpacing: '0.10em' }}
+                  >
+                    {t.weeks}
+                  </p>
+                </div>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--t2)', lineHeight: 1.6 }}>
+                  {t.result}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA — capped at 320px, not full-width stretch */}
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            style={{ maxWidth: 320 }}
+            aria-label="Book your free thyroid fat-loss strategy call"
+          >
+            Book Free Call — See It Work For You
+          </button>
+          <p className="micro-trust">Free call · No commitment</p>
+        </div>
+
+      </div>
+    </section>
+  )
+}\n\n===== app/components/ResultsSection.tsx =====\n
+'use client'
+
+import Image from 'next/image'
+import { useRef, useState, useEffect } from 'react'
+
+const CTA_URL = 'https://swapnilumbarkarfitness.in/case-studies/cta'
+
+const results = [
+  {
+    name: 'Vaidehi S., 34',
+    badges: ['4.8 kg Lost', '2″ Waist ↓', 'Energy Restored'],
+    quote: 'Lost more in 6 weeks than in 2 years of trying alone.',
+    img: '/transformations/Vaidehi 1.png',
+  },
+  {
+    name: 'Surekha P., 41',
+    badges: ['3.5 kg Lost', 'Belly Fat ↓', 'Confidence Back'],
+    quote: 'Finally a plan built for thyroid — not just calories.',
+    img: '/transformations/Surekha 3.png',
+  },
+  {
+    name: 'Nehamia R., 38',
+    badges: ['5.2 kg Lost', '3″ Loss', 'Brain Fog Gone'],
+    quote: 'My doctor noticed the difference before I even told her.',
+    img: '/transformations/Nehamia 6.png',
+  },
+  {
+    name: 'Anjali M., 36',
+    badges: ['4.1 kg Lost', 'Bloating Gone', 'Cravings Reduced'],
+    quote: 'No starvation. Real food. Real results.',
+    img: '/transformations/Nehamia 6.png',
+  },
+]
+
+export default function ResultsSection() {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const handler = () => {
+      const cardW = el.scrollWidth / results.length
+      setActiveIdx(Math.round(el.scrollLeft / cardW))
+    }
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => el.removeEventListener('scroll', handler)
+  }, [])
+
+  const scrollTo = (i: number) => {
+    const el = trackRef.current
+    if (!el) return
+    const cardW = el.scrollWidth / results.length
+    el.scrollTo({ left: cardW * i, behavior: 'smooth' })
+    setActiveIdx(i)
+  }
+
+  return (
+    <section className="section-pad" style={{ background: 'var(--bg-section)' }}>
+      {/* Subtle glow */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: 240 }}>
+        <div className="glow-section" />
+      </div>
+
+      <div className="container-default relative z-10">
+
+        {/* Header */}
+        <div className="mb-7 text-center">
+          <p className="section-label">Real Transformations</p>
+          <h2 className="section-title mx-auto" style={{ maxWidth: '22ch' }}>
+            <span className="text-gradient">Visible Fat Loss.</span> Real Women.
+          </h2>
+          <p className="mx-auto mt-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', maxWidth: '36ch' }}>
+            Not models. Not filters. Real hypothyroid women from India.
+          </p>
+        </div>
+
+        {/* MOBILE: native snap-scroll carousel */}
+        <div className="md:hidden relative">
+          <div
+            ref={trackRef}
+            data-carousel-track
+            className="flex gap-3 overflow-x-scroll pb-1"
+            style={{
+              scrollSnapType: 'x mandatory',
+              overscrollBehaviorX: 'contain',
+              WebkitOverflowScrolling: 'touch',
+              paddingInline: 'clamp(1rem, 4vw, 1.5rem)',
+            }}
+          >
+            {results.map((r) => (
+              <div
+                key={r.name}
+                className="flex-shrink-0"
+                style={{ scrollSnapAlign: 'start', width: '82vw', maxWidth: 280 }}
+              >
+                <MobileCard r={r} />
+              </div>
+            ))}
+          </div>
+
+          {/* Dot indicators */}
+          <div className="dot-track mt-4">
+            {results.map((_, i) => (
+              <button
+                key={i}
+                aria-label={`Go to card ${i + 1}`}
+                onClick={() => scrollTo(i)}
+                className="dot"
+                style={{ width: activeIdx === i ? 20 : 8 }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* DESKTOP: 4-col grid */}
+        <div className="hidden md:grid md:grid-cols-4 gap-4">
+          {results.map((r) => <DesktopCard key={r.name} r={r} />)}
+        </div>
+        {/* TABLET: 2-col grid */}
+        <div className="hidden sm:grid sm:grid-cols-2 gap-3 md:hidden">
+          {results.map((r) => <DesktopCard key={r.name} r={r} />)}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary w-full"
+            style={{ maxWidth: '22rem' }}
+            aria-label="Book a free thyroid fat-loss strategy call"
+          >
+            Start Your Transformation
+          </button>
+          <p className="micro-trust">Free strategy call · No obligation</p>
+        </div>
+
+      </div>
+    </section>
+  )
+}
+
+function MobileCard({ r }: { r: (typeof results)[0] }) {
+  return (
+    <div className="result-card" style={{ borderRadius: 'var(--r-xl)' }}>
+      {/* 4:5 ratio — shows face, not zoomed crop */}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5', background: 'var(--s2)' }}>
+        <Image
+          src={r.img}
+          alt={`${r.name} thyroid fat loss transformation`}
+          fill sizes="82vw"
+          className="object-cover object-top"
+          loading="lazy"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.82) 0%, rgba(13,13,15,0.12) 50%, transparent 100%)' }}
+          aria-hidden="true"
+        />
+        {/* Badges inside image — no external stack fighting */}
+        <div className="absolute bottom-2.5 left-2.5 right-2.5">
+          <div className="flex flex-wrap gap-1">
+            {r.badges.slice(0, 2).map((b) => (
+              <span
+                key={b}
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  background: 'rgba(13,13,15,0.75)',
+                  border: '1px solid var(--p-border)',
+                  borderRadius: 'var(--r-full)',
+                  padding: '0.16rem 0.5rem',
+                  color: 'var(--p400)',
+                  fontWeight: 600,
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                {b}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quote + name */}
+      <div className="px-3 pt-3 pb-2.5">
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--t1)', lineHeight: 1.45 }}>
+          &ldquo;{r.quote}&rdquo;
+        </p>
+        <p className="mt-1.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', fontWeight: 500 }}>
+          {r.name}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function DesktopCard({ r }: { r: (typeof results)[0] }) {
+  return (
+    <div className="result-card">
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/5', background: 'var(--s2)' }}>
+        <Image
+          src={r.img}
+          alt={`${r.name} thyroid fat loss transformation`}
+          fill sizes="(max-width:640px) 50vw, 25vw"
+          className="object-cover object-top"
+          loading="lazy"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to top, rgba(13,13,15,0.78) 0%, transparent 55%)' }}
+          aria-hidden="true"
+        />
+      </div>
+      <div className="px-3 pt-3 pb-1.5">
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--t1)', lineHeight: 1.5 }}>
+          &ldquo;{r.quote}&rdquo;
+        </p>
+        <p className="mt-1.5" style={{ fontSize: 'var(--text-xs)', color: 'var(--t4)', fontWeight: 500 }}>
+          {r.name}
+        </p>
+      </div>
+      <div className="result-badges">
+        {r.badges.slice(0, 3).map((b) => (
+          <span key={b} className="result-badge">{b}</span>
+        ))}
+      </div>
+    </div>
+  )
+}\n\n===== app/components/ConsultationSection.tsx =====\n
+\n\n===== app/components/AuthoritySection.tsx =====\n
+"use client";
+
+const CTA_URL = "https://swapnilumbarkarfitness.in/case-studies/#cta";
+
+// 3-stat row (removes overflow at any viewport)
+const stats = [
+  { num: "200+",   label: "Thyroid Clients" },
+  { num: "10–15kg", label: "Avg Fat Loss" },
+  { num: "93%",    label: "Better Energy" },
+];
+
+const pillars = [
+  { icon: "🧬", title: "Lab-Guided Protocol",  desc: "Personalized to your biomarkers. Not generic advice." },
+  { icon: "🍱", title: "Indian Nutrition",      desc: "Real dals, rotis, sabzi — adapted for thyroid fat loss." },
+  { icon: "📊", title: "Weekly Tracking",       desc: "Weight, inches, energy — adjusted every single week." },
+  { icon: "💬", title: "WhatsApp Support",      desc: "Direct access. Real answers. Not a chatbot." },
+];
+
+export default function AuthoritySection() {
+  return (
+    <section className="section-pad bg-black text-white">
+      <div className="container-default">
+
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <p className="section-label">Why This Works</p>
+          <h2 className="section-title mx-auto max-w-[22ch]">
+            Not a Diet Plan.{" "}
+            <span className="text-gradient">A Complete System.</span>
+          </h2>
+        </div>
+
+        {/* Stat row — Hero pattern, 3 stats, no overflow */}
+        <div className="stat-row mx-auto mb-6">
+          {stats.map((s, i) => (
+            <>
+              <div key={s.label} className="stat-chip">
+                <span className="stat-num">{s.num}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+              {i < stats.length - 1 && (
+                <div key={`div-${i}`} className="stat-divider" aria-hidden="true" />
+              )}
+            </>
+          ))}
+        </div>
+
+        {/* Pillar cards — 2×2 */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {pillars.map((p) => (
+            <div key={p.title} className="glass-card-sm flex gap-3 p-4">
+              <span className="mt-0.5 shrink-0 text-lg leading-none" role="img" aria-hidden="true">
+                {p.icon}
+              </span>
+              <div>
+                <p className="mb-1 text-[length:var(--text-sm)] font-semibold text-white">
+                  {p.title}
+                </p>
+                <p className="text-[length:var(--text-xs)] leading-relaxed text-gray-400">
+                  {p.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA — scarcity below button, not above */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => window.location.assign(CTA_URL)}
+            className="btn-primary"
+            aria-label="Claim your free thyroid fat-loss consultation spot"
+          >
+            🔥 Claim Your Spot
+          </button>
+          <p className="mt-2 text-[length:var(--text-xs)] text-gray-600">
+            Limited coaching spots available this month
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}\n\n===== app/layout.tsx =====\n
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+\n\n===== app/page.tsx =====\n
+import Hero from "./components/Hero";
+import SocialProof from "./components/SocialProof";
+import ResultsSection from "./components/ResultsSection";
+import VideoTestimonial from "./components/VideoTestimonial";
+import ProblemSection from "./components/ProblemSection";
+import FrameworkSection from "./components/FrameworkSection";
+import MoreThanFatLossSection from "./components/MoreThanFatLossSection";
+import WhatsappProofSection from "./components/WhatsappProofSection";
+import AuthoritySection from "./components/AuthoritySection";
+import FAQSection from "./components/FAQSection";
+import FinalCTASection from "./components/FinalCTASection";
+import StickyBookingBar from "./components/StickyBookingBar";
+
+export default function Page() {
+  return (
+    <>
+      <Hero />
+      <SocialProof />
+      <ResultsSection />
+      <VideoTestimonial />
+      <ProblemSection />
+      <FrameworkSection />
+      <MoreThanFatLossSection />
+      <WhatsappProofSection />
+      <AuthoritySection />
+      <FAQSection />
+      <FinalCTASection />
+      <StickyBookingBar />
+    </>
+  );
+}\n\n===== app/globals.css =====\n
+/* ═══════════════════════════════════════════════════════════════════════
+   globals.css — Premium Thyroid Fat-Loss Coaching
+   50 / 30 / 20 COLOR ARCHITECTURE + TYPOGRAPHY SYSTEM
+   Stack: Next.js 15 · Tailwind CSS v4 · Vercel
+
+   50% — DOMINANT  : #0d0d0f charcoal backgrounds (NOT pure black)
+   30% — SECONDARY : rgba glass surfaces, text hierarchy, borders
+   20% — ACCENT    : purple #a855f7 — CTAs, badges, highlights ONLY
+
+   WCAG AA:
+   --t1 #e8e8ec on #0d0d0f = 11.2:1 ✓
+   --t3 #8a8b96 on #0d0d0f =  4.6:1 ✓
+   --p400 #c084fc on #0d0d0f = 8.6:1 ✓
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #0d0d0f;
+  --color-foreground: #e8e8ec;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── Design Tokens ─────────────────────────────────────────────────── */
+:root {
+  /* Fluid type scale */
+  --text-xs:   clamp(0.75rem,  0.70rem + 0.25vw, 0.8125rem);
+  --text-sm:   clamp(0.8125rem,0.78rem  + 0.30vw, 0.9375rem);
+  --text-base: clamp(0.9375rem,0.90rem  + 0.20vw, 1.0625rem);
+  --text-lg:   clamp(1.0625rem,0.95rem  + 0.60vw, 1.375rem);
+  --text-xl:   clamp(1.375rem, 1.00rem  + 1.50vw, 2rem);
+  --text-hero: clamp(2.375rem, 1.50rem  + 3.80vw, 4.25rem);
+
+  /* Spacing — 4px base */
+  --space-1:  0.25rem;  --space-2:  0.5rem;
+  --space-3:  0.75rem;  --space-4:  1rem;
+  --space-5:  1.25rem;  --space-6:  1.5rem;
+  --space-8:  2rem;     --space-10: 2.5rem;
+  --space-12: 3rem;     --space-16: 4rem;
+  --space-20: 5rem;     --space-24: 6rem;
+
+  /* ── 50% DOMINANT: backgrounds — rich charcoal, not pure #000 ── */
+  --bg-page:    #0d0d0f;
+  --bg-section: #111113;
+  --bg-offset:  #151518;
+
+  /* ── 30% SECONDARY: glass surfaces + text hierarchy ── */
+  --s1: rgba(255,255,255,0.032);
+  --s2: rgba(255,255,255,0.048);
+  --s3: rgba(255,255,255,0.064);
+  --b-soft: rgba(255,255,255,0.072);
+  --b-mid:  rgba(255,255,255,0.10);
+  --b-hard: rgba(255,255,255,0.16);
+
+  /* Text — 3 levels, no pure white */
+  --t1: #e8e8ec;   /* primary  — 11.2:1 ✓ */
+  --t2: #b8b9c4;   /* secondary —  6.4:1 ✓ */
+  --t3: #8a8b96;   /* muted    —  4.6:1 ✓ */
+  --t4: #5e5f6a;   /* faint    —  3.1:1 — large text only */
+  --t5: #42434d;   /* ultra-faint — decorative */
+
+  /* ── 20% ACCENT: purple — CTAs, badges, highlights ONLY ── */
+  --p300: #d8b4fe;
+  --p400: #c084fc;
+  --p500: #a855f7;
+  --p600: #9333ea;
+  --p700: #7e22ce;
+
+  --p-subtle:        rgba(168,85,247,0.06);
+  --p-tint:          rgba(168,85,247,0.10);
+  --p-border:        rgba(168,85,247,0.18);
+  --p-border-strong: rgba(168,85,247,0.30);
+  --p-glow:          rgba(168,85,247,0.28);
+  --p-glow-hover:    rgba(168,85,247,0.45);
+
+  /* Radius */
+  --r-sm: 0.375rem; --r-md: 0.5rem;
+  --r-lg: 0.75rem;  --r-xl: 1rem;
+  --r-2xl: 1.25rem; --r-full: 9999px;
+
+  /* Easing */
+  --ease: cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ── Base Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  scroll-padding-top: var(--space-16);
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  background: var(--bg-page);
+  color: var(--t1);
+  font-family: var(--font-sans), Arial, sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img, video { display: block; max-width: 100%; height: auto; }
+section { position: relative; width: 100%; }
+h1,h2,h3,h4,h5,h6 { text-wrap: balance; line-height: 1.1; }
+p, li, figcaption { text-wrap: pretty; }
+
+button, a { -webkit-tap-highlight-color: transparent; cursor: pointer; }
+button {
+  border: none; background: none; font: inherit; color: inherit;
+  transition: transform 180ms var(--ease), opacity 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+button:active { transform: scale(0.97); opacity: 0.92; }
+a { color: inherit; text-decoration: none; transition: opacity 180ms var(--ease); }
+
+:focus-visible {
+  outline: 2px solid var(--p500);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+::selection { background: rgba(168,85,247,0.25); color: #fff; }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Layout Containers ──────────────────────────────────────────── */
+.container-default {
+  max-width: 960px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+}
+.container-narrow {
+  max-width: 640px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 1.75rem);
+}
+.container-mobile {
+  width: 100%;
+  padding-inline: clamp(0.875rem, 4vw, 1.5rem);
+}
+
+/* ── Section Padding — alternating backgrounds create section depth ── */
+.section-pad {
+  padding-block: clamp(2.5rem, 5.5vw, 5rem);
+  background: var(--bg-page);
+}
+.section-pad-alt {
+  padding-block: clamp(2.5rem, 5.5vw, 5rem);
+  background: var(--bg-section);
+}
+.section-pad-sm {
+  padding-block: clamp(1.5rem, 3.5vw, 3rem);
+  background: var(--bg-page);
+}
+
+/* ── Typography System ──────────────────────────────────────────── */
+.section-label {
+  display: inline-block;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--p400);
+  margin-bottom: 0.5rem;
+}
+.section-title {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--t1);
+  margin-bottom: 0.75rem;
+}
+.section-body {
+  font-size: var(--text-sm);
+  color: var(--t3);
+  line-height: 1.65;
+  max-width: 38ch;
+}
+.text-gradient {
+  background: linear-gradient(135deg, var(--p400) 0%, var(--p300) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Card System — 30% secondary ───────────────────────────────── */
+.glass-card {
+  background: var(--s1);
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-2xl);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.glass-card-sm {
+  background: var(--s1);
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-xl);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.purple-card {
+  background: var(--p-subtle);
+  border: 1px solid var(--p-border);
+  border-radius: var(--r-2xl);
+}
+.result-card {
+  background: var(--s1);
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 200ms var(--ease);
+}
+.result-card:hover { border-color: var(--b-mid); }
+.result-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.625rem 0.75rem 0.5rem;
+}
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  border-radius: var(--r-full);
+  padding: 0.18rem 0.55rem;
+  font-size: var(--text-xs);
+  color: var(--p400);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Button System — 20% accent ─────────────────────────────────── */
+.cta-button {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-height: 60px;
+  padding: 1rem 1.75rem;
+  border-radius: 28px;
+  background: linear-gradient(135deg, var(--p500) 0%, var(--p700) 100%);
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(168,85,247,0.35);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.40), 0 0 24px var(--p-glow);
+  cursor: pointer;
+  transition: box-shadow 200ms var(--ease), transform 100ms var(--ease);
+  margin: 0 auto;
+  text-align: center;
+}
+.cta-button:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.50), 0 0 40px var(--p-glow-hover);
+  transform: translateY(-1px);
+}
+.cta-button:active { transform: scale(0.97); }
+
+.cta-sub {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: rgba(255,255,255,0.62);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cta-wrap {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  margin: 0 auto;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  padding: 0.875rem 1.75rem;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--p500) 0%, var(--p600) 100%);
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(168,85,247,0.30);
+  box-shadow: 0 0 20px var(--p-glow);
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-primary:hover {
+  transform: translateY(-1px) scale(1.015);
+  box-shadow: 0 0 36px var(--p-glow-hover);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--p-border);
+  background: transparent;
+  color: var(--p400);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: border-color 180ms var(--ease), background 180ms var(--ease);
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  border-color: var(--p-border-strong);
+  background: var(--p-subtle);
+}
+
+.micro-trust {
+  font-size: var(--text-xs);
+  color: var(--t4);
+  text-align: center;
+  line-height: 1.45;
+}
+
+/* ── Badge + Chip ───────────────────────────────────────────────── */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.875rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--p-border);
+  background: var(--p-tint);
+  color: var(--p300);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--p400);
+  box-shadow: 0 0 5px rgba(168,85,247,0.6);
+  flex-shrink: 0;
+  animation: badge-pulse 2.2s ease-in-out infinite;
+}
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(0.80); }
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: var(--r-full);
+  border: 1px solid var(--b-mid);
+  background: var(--s2);
+  font-size: var(--text-xs);
+  color: var(--t2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+/* ── Hero Tokens ────────────────────────────────────────────────── */
+.hero-container {
+  padding: 3.75rem 1rem 2.5rem;
+}
+@media (min-width: 640px)  { .hero-container { padding: 5rem 1.5rem 3rem; } }
+@media (min-width: 1024px) { .hero-container { padding: 6.5rem 2rem 4.5rem; } }
+
+.eyebrow {
+  font-size: var(--text-xs);
+  color: var(--t3);
+  letter-spacing: 0.025em;
+  margin-bottom: 0.75rem;
+}
+.headline {
+  font-size: var(--text-hero);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.06em;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.headline-accent {
+  background: linear-gradient(135deg, var(--p400) 0%, var(--p500) 60%, var(--p600) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+}
+.headline-white  { color: var(--t1); display: block; }
+.subheadline {
+  font-size: var(--text-base);
+  color: var(--t3);
+  max-width: 34ch;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+@media (min-width: 640px) { .subheadline { font-size: var(--text-lg); max-width: 42ch; } }
+.subheadline-strong { color: var(--t1); font-weight: 600; }
+
+/* ── Stat Row ───────────────────────────────────────────────────── */
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  border: 1px solid var(--b-soft);
+  border-radius: var(--r-xl);
+  background: var(--s1);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.stat-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0.375rem;
+  gap: 0.1rem;
+}
+.stat-num {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--p400);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.stat-label {
+  font-size: var(--text-xs);
+  color: var(--t4);
+  line-height: 1.25;
+  text-align: center;
+}
+.stat-divider {
+  width: 1px;
+  height: 2.5rem;
+  background: var(--b-soft);
+  flex-shrink: 0;
+}
+
+/* ── Outcome List ───────────────────────────────────────────────── */
+.outcome-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 1.75rem;
+  text-align: left;
+}
+.outcome-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: var(--text-sm);
+  color: var(--t2);
+  line-height: 1.5;
+}
+.outcome-check { color: var(--p500); font-weight: 700; line-height: 1.5; flex-shrink: 0; }
+
+/* ── Sticky CTA Bar ─────────────────────────────────────────────── */
+.sticky-cta-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 40;
+  padding: 0.75rem 1rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  background: rgba(13,13,15,0.94);
+  border-top: 1px solid var(--b-soft);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: none;
+}
+@media (max-width: 768px) {
+  .sticky-cta-bar { display: flex; align-items: center; gap: 0.75rem; }
+  body { padding-bottom: 80px; }
+}
+
+/* ── Atmospheric Glows — reduced from original ──────────────────── */
+.glow-hero {
+  position: absolute;
+  top: -8%; left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(168,85,247,0.10);
+  filter: blur(90px);
+  width: 320px; height: 320px;
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .glow-hero { width: 560px; height: 560px; filter: blur(120px); background: rgba(168,85,247,0.12); }
+}
+.glow-section {
+  position: absolute;
+  top: -10%; left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(168,85,247,0.06);
+  filter: blur(80px);
+  width: 260px; height: 260px;
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .glow-section { width: 440px; height: 440px; filter: blur(110px); }
+}
+
+/* ── Mobile overrides — 360–390px ───────────────────────────────── */
+@media (max-width: 640px) {
+  h1 { letter-spacing: -0.04em; }
+  .cta-button { font-size: var(--text-sm); padding: 0.875rem 1.25rem; min-height: 56px; }
+  .section-pad, .section-pad-alt { padding-block: clamp(2rem, 5vw, 2.75rem); }
+  .stat-num { font-size: var(--text-lg); }
+  .section-title { font-size: var(--text-lg); letter-spacing: -0.02em; }
+}
+
+/* ── Carousel tracks ────────────────────────────────────────────── */
+[data-carousel-track] {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[data-carousel-track]::-webkit-scrollbar { display: none; }
+
+.dot-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.dot {
+  height: 5px;
+  border-radius: var(--r-full);
+  background: rgba(255,255,255,0.12);
+  transition: width 280ms var(--ease), background 280ms var(--ease);
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.dot.active { background: var(--p400); }
