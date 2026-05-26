@@ -111,7 +111,7 @@ export default function BookingFlow() {
     }
     trackInitiateCheckout();
     pushDL({ event: "native_payment_initiated", step: 2 });
-    window.location.href = "https://payments.cashfree.com/forms/thyroid-session";
+    window.location.href = "https://payments.cashfree.com/forms?code=thyroid_consultation_booking";
   }, [step1Data]);
 
   const activeStep = stage === "qualification" ? 1 : 2;

@@ -5,7 +5,7 @@ import { persistUserIdentity } from "../components/tracking/UserIdentityTracker"
 import { trackLead, trackInitiateCheckout } from "../lib/analytics";
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const CASHFREE_URL = "https://payments.cashfree.com/forms?code=thyroid-session";
+const CASHFREE_URL = "https://payments.cashfree.com/forms?code=thyroid_consultation_booking";
 const REDIRECT_DELAY_MS = 2000;
 
 // ── IDENTITY RESOLUTION ───────────────────────────────────────────────────────
