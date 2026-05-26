@@ -1,6 +1,6 @@
 "use client";
 
-import CtaButton from "./CTAButton";
+import CtaButton from "./CtaButton";
 
 type SectionCtaProps = {
   label: string;
