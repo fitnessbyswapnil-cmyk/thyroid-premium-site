@@ -8,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { CTA_URL } from "../lib/cta";
 
 export type SpotsCount = 7 | 5 | 3;
 
@@ -54,7 +53,7 @@ export function ScarcityProvider({ children }: { children: ReactNode }) {
 
   const goToCta = useCallback(() => {
     dropTo(3);
-    window.open(CTA_URL, "_blank", "noopener,noreferrer");
+    window.location.href = "/book";
   }, [dropTo]);
 
   const value: ScarcityContextValue = {
