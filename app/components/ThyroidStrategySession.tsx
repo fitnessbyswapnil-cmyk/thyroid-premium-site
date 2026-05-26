@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import CtaButton from "./CtaButton";
+import CtaButton from "./CTAButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

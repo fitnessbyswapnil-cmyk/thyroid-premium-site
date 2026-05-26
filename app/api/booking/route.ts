@@ -1,0 +1,134 @@
+/**
+ * /api/booking
+ *
+ * Receives the unified booking payload after Calendly confirmation and
+ * writes one row to Google Sheets.
+ *
+ * ENV VARS REQUIRED:
+ *   GOOGLE_SERVICE_ACCOUNT_EMAIL   – service account client_email
+ *   GOOGLE_PRIVATE_KEY             – service account private_key (with \n escaped)
+ *   GOOGLE_SHEETS_ID               – the spreadsheet ID from the URL
+ *
+ * SHEET SETUP:
+ *   Row 1 headers (exact order):
+ *   Timestamp | Name | Phone | Age | Thyroid Condition | Weight Struggles |
+ *   Energy Level | Biggest Frustration | Main Goal |
+ *   Thyroid Duration | On Medication | Frustrations | Energy Low |
+ *   Tried Before | Transformation Goal | Food Relationship | Session Goal |
+ *   Booking Date | Booking Time | Booking Status | Submitted At
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { google } from "googleapis";
+
+const SHEET_NAME = "Bookings"; // tab name inside the spreadsheet
+
+type Step1Data = {
+  name?: string;
+  phone?: string;
+  age?: string;
+  thyroidCondition?: string;
+  weightStruggles?: string | string[];
+  energyLevel?: string;
+  biggestFrustration?: string;
+  mainGoal?: string;
+};
+
+type Step2_5Data = {
+  thyroidDuration?: string;
+  onMedication?: string;
+  frustrations?: string;
+  energyLow?: string;
+  triedBefore?: string | string[];
+  transformationGoal?: string;
+  foodRelationship?: string;
+  sessionGoal?: string;
+};
+
+type Step3Data = {
+  bookingDate?: string;
+  bookingTime?: string;
+  bookingStatus?: string;
+};
+
+type BookingPayload = {
+  step1?: Step1Data;
+  step2_5?: Step2_5Data;
+  step3?: Step3Data;
+  submittedAt?: string;
+};
+
+function arr(v: string | string[] | undefined): string {
+  if (!v) return "";
+  return Array.isArray(v) ? v.join(", ") : v;
+}
+
+function str(v: string | undefined): string {
+  return v?.trim() || "";
+}
+
+async function appendToSheet(payload: BookingPayload) {
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const sheetId = process.env.GOOGLE_SHEETS_ID;
+
+  if (!email || !key || !sheetId) {
+    console.warn("[booking] Google Sheets env vars missing — skipping sheet write");
+    return;
+  }
+
+  const auth = new google.auth.JWT({
+    email,
+    key,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const { step1 = {}, step2_5 = {}, step3 = {} } = payload;
+
+  const row = [
+    new Date().toISOString(),          // Timestamp
+    str(step1.name),                   // Name
+    str(step1.phone),                  // Phone
+    str(step1.age),                    // Age
+    str(step1.thyroidCondition),       // Thyroid Condition
+    arr(step1.weightStruggles),        // Weight Struggles
+    str(step1.energyLevel),            // Energy Level
+    str(step1.biggestFrustration),     // Biggest Frustration
+    str(step1.mainGoal),               // Main Goal
+    str(step2_5.thyroidDuration),      // Thyroid Duration
+    str(step2_5.onMedication),         // On Medication
+    str(step2_5.frustrations),         // Frustrations
+    str(step2_5.energyLow),            // Energy Low
+    arr(step2_5.triedBefore),          // Tried Before
+    str(step2_5.transformationGoal),   // Transformation Goal
+    str(step2_5.foodRelationship),     // Food Relationship
+    str(step2_5.sessionGoal),          // Session Goal
+    str(step3.bookingDate),            // Booking Date
+    str(step3.bookingTime),            // Booking Time
+    str(step3.bookingStatus),          // Booking Status
+    str(payload.submittedAt),          // Submitted At
+  ];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: `${SHEET_NAME}!A1`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [row] },
+  });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const payload = (await req.json()) as BookingPayload;
+
+    await appendToSheet(payload);
+
+    console.log("[booking] Row appended for:", payload.step1?.name || "unknown");
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[booking]", err);
+    return NextResponse.json({ error: "Failed to save booking" }, { status: 500 });
+  }
+}

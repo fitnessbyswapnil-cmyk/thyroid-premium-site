@@ -1,6 +1,6 @@
 "use client";
 
-import CtaButton from "./CtaButton";
+import CtaButton from "./CTAButton";
 import SectionHeader from "./SectionHeader";
 
 const testimonials = [

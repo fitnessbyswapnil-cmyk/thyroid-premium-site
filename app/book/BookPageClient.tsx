@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { COACH_IMAGE, COACH_NAME } from "@/app/lib/authority";
@@ -8,6 +8,7 @@ import { COACH_IMAGE, COACH_NAME } from "@/app/lib/authority";
 // ── DataLayer ────────────────────────────────────────────────────────────────
 
 import { pushDL, trackViewContent, trackCtaClick } from "@/app/lib/analytics";
+import BookingFlow from "./components/BookingFlow";
 
 // ── EMQ capture (Meta CAPI attribution) ──────────────────────────────────────
 
@@ -67,9 +68,6 @@ const stagger = {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const TALLY_FORM_ID =
-  process.env.NEXT_PUBLIC_TALLY_FORM_ID ?? "PLACEHOLDER";
-
 const REASSURANCE = [
   {
     icon: "🌿",
@@ -112,145 +110,6 @@ const COACH_POINTS = [
   "Weekly 1-on-1 accountability — not a group chat",
   "4.9 ★ average rating across 200+ clients",
 ];
-
-// ── Tally embed ───────────────────────────────────────────────────────────────
-
-function TallyEmbed({ formId }: { formId: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [shouldLoad, setShouldLoad] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [iframeSrc, setIframeSrc] = useState("");
-
-  // Lazy-load: start loading 300px before viewport
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldLoad(true);
-          obs.disconnect();
-        }
-      },
-      { rootMargin: "300px" }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  // Build src with UTM / fbclid attribution continuity
-  useEffect(() => {
-    if (!shouldLoad) return;
-    const params = new URLSearchParams({
-      alignLeft: "1",
-      hideTitle: "1",
-      transparentBackground: "1",
-    });
-    try {
-      const url = new URL(window.location.href);
-      for (const k of [
-        "utm_source",
-        "utm_medium",
-        "utm_campaign",
-        "utm_content",
-        "fbclid",
-        "gclid",
-      ]) {
-        const v = url.searchParams.get(k);
-        if (v) params.set(k, v);
-      }
-    } catch {
-      // non-critical
-    }
-    setIframeSrc(`https://tally.so/embed/${formId}?${params.toString()}`);
-    pushDL({ event: "tally_in_view", form_id: formId });
-  }, [shouldLoad, formId]);
-
-  // Listen for Tally postMessage events
-  useEffect(() => {
-    function handler(e: MessageEvent) {
-      try {
-        const data: unknown =
-          typeof e.data === "string" ? JSON.parse(e.data) : e.data;
-        if (
-          data &&
-          typeof data === "object" &&
-          "type" in data
-        ) {
-          const t = (data as { type: string }).type;
-          if (t === "tally-form-submitted") {
-            pushDL({ event: "tally_form_submitted", form_id: formId });
-          }
-          if (t === "tally-form-started") {
-            pushDL({ event: "form_start", form_id: formId });
-          }
-        }
-      } catch {
-        // non-critical
-      }
-    }
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, [formId]);
-
-  return (
-    <div ref={containerRef} className="relative w-full" style={{ minHeight: 680 }}>
-      {/* Skeleton shown while loading */}
-      {!loaded && (
-        <div
-          className="absolute inset-0 rounded-[var(--r-xl)] overflow-hidden"
-          style={{
-            background: "var(--s1)",
-            border: "1px solid var(--b-soft)",
-          }}
-          aria-hidden="true"
-        >
-          {shouldLoad ? (
-            <div className="flex h-full items-center justify-center gap-2.5">
-              {[0, 140, 280].map((delay) => (
-                <span
-                  key={delay}
-                  className="h-2 w-2 animate-bounce rounded-full bg-[var(--p500)]"
-                  style={{ animationDelay: `${delay}ms` }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-              <p className="section-label">Your Application</p>
-              <p
-                className="text-[length:var(--text-sm)]"
-                style={{ color: "var(--t4)" }}
-              >
-                Form loading shortly…
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Iframe — opacity transition prevents CLS flash */}
-      {iframeSrc && (
-        <iframe
-          src={iframeSrc}
-          width="100%"
-          height="680"
-          style={{
-            border: "none",
-            display: "block",
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 500ms ease",
-          }}
-          title="Book your thyroid strategy session"
-          onLoad={() => {
-            setLoaded(true);
-            pushDL({ event: "tally_loaded", form_id: formId });
-          }}
-        />
-      )}
-    </div>
-  );
-}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -652,20 +511,27 @@ export default function BookPageClient() {
         </div>
       </section>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ TALLY FORM ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━ NATIVE BOOKING FLOW ━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section
         id="book-form"
         className="section-pad relative"
         style={{ background: "var(--bg-page)" }}
         aria-labelledby="form-heading"
       >
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-purple-700/[0.06] blur-[140px]" />
+        </div>
+
         <div className="container-narrow relative z-10">
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
             variants={stagger}
-            className="text-center"
+            className="mb-10 text-center"
           >
             <motion.p variants={fadeUp} className="section-label">
               Your Application
@@ -684,8 +550,8 @@ export default function BookPageClient() {
               className="section-lead mx-auto mt-3"
               style={{ maxWidth: "40ch" }}
             >
-              8 short questions. Under 4 minutes. Your answers let Swapnil
-              prepare a session that&apos;s entirely about your situation.
+              8 questions. Under 4 minutes. Your answers help Swapnil prepare
+              a session that&apos;s entirely about your specific situation.
             </motion.p>
           </motion.div>
 
@@ -694,9 +560,8 @@ export default function BookPageClient() {
             whileInView="visible"
             viewport={{ once: true, margin: "-40px" }}
             variants={fadeUp}
-            className="mt-8"
           >
-            <TallyEmbed formId={TALLY_FORM_ID} />
+            <BookingFlow />
           </motion.div>
         </div>
       </section>
