@@ -4,13 +4,15 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
-import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
+import { pushDL, trackLead, trackInitiateCheckout, generateEventId } from "@/app/lib/analytics";
+import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type Step1Data = {
   name: string;
   phone: string;
+  email: string;
   age: string;
   thyroidCondition: string;
   weightStruggles: string[];
@@ -20,6 +22,14 @@ export type Step1Data = {
 };
 
 export const NATIVE_BOOKING_KEY = "thyroid_native_booking";
+
+function readAttribution() {
+  if (typeof window === "undefined") return {};
+  const utms = getUtmParams();
+  const fbclid = getFbclid();
+  const visitor_id = getVisitorId();
+  return { ...utms, ...(fbclid && { fbclid }), ...(visitor_id && { visitor_id }) };
+}
 
 // ── ProgressStepper ───────────────────────────────────────────────────────────
 
@@ -89,11 +99,43 @@ type FlowStage = "qualification" | "payment";
 export default function BookingFlow() {
   const [stage, setStage] = useState<FlowStage>("qualification");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
+  const [leadId, setLeadId] = useState<string | null>(null);
 
   const handleQualificationComplete = useCallback((data: Step1Data) => {
+    const newLeadId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    setLeadId(newLeadId);
     setStep1Data(data);
-    trackLead({ first_name: data.name, phone: data.phone });
+
+    // Browser Pixel Lead — capture returned event_id for server dedup
+    const leadEventId = trackLead({ first_name: data.name.split(" ")[0], phone: data.phone });
     pushDL({ event: "native_form_completed", step: 1 });
+
+    const attribution = readAttribution();
+
+    // Server-side CAPI Lead (deduplicates with browser Pixel via same event_id)
+    fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_name: "Lead",
+        event_id: leadEventId,
+        source_url: "https://www.swapnilumbarkarfitness.in/book",
+        user_data: {
+          first_name: data.name.split(" ")[0],
+          phone: data.phone,
+          ...(data.email && { email: data.email }),
+          ...(attribution.visitor_id && { external_id: attribution.visitor_id }),
+        },
+      }),
+    }).catch(() => {});
+
+    // Write initial lead row to Sheets immediately (pre-payment)
+    fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId: newLeadId, step1: data, attribution }),
+    }).catch(() => {});
+
     setStage("payment");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -103,6 +145,8 @@ export default function BookingFlow() {
     const payload = {
       step1: step1Data,
       startedAt: new Date().toISOString(),
+      leadId: leadId ?? undefined,
+      attribution: readAttribution(),
     };
     try {
       localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify(payload));
@@ -112,7 +156,7 @@ export default function BookingFlow() {
     trackInitiateCheckout();
     pushDL({ event: "native_payment_initiated", step: 2 });
     window.location.href = "https://payments.cashfree.com/forms?code=thyroid_consultation_booking";
-  }, [step1Data]);
+  }, [step1Data, leadId]);
 
   const activeStep = stage === "qualification" ? 1 : 2;
 

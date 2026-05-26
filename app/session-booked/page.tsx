@@ -692,7 +692,12 @@ export default function SessionBooked() {
     try {
       setSubmitting(true);
       const storedRaw = localStorage.getItem(NATIVE_BOOKING_KEY);
-      const stored = storedRaw ? JSON.parse(storedRaw) as { step1: Step1Data } : null;
+      const stored = storedRaw ? JSON.parse(storedRaw) as {
+        step1: Step1Data;
+        startedAt?: string;
+        leadId?: string;
+        attribution?: Record<string, string>;
+      } : null;
 
       await fetch("/api/booking", {
         method: "POST",
@@ -701,6 +706,8 @@ export default function SessionBooked() {
           step1: stored?.step1 || step1Data,
           step2_5: intakeData,
           step3: { bookingDate: date, bookingTime: time, bookingStatus: "booked" },
+          leadId: stored?.leadId,
+          attribution: stored?.attribution,
           submittedAt: new Date().toISOString(),
         }),
       });

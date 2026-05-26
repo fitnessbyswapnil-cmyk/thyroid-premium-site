@@ -118,39 +118,6 @@ export function persistUserData(data: {
 }
 
 /* ================================================================
-   TALLY FORM URL BUILDER
-   Appends all tracking params so Tally can capture them as
-   hidden fields and include them in webhook payload.
-================================================================ */
-
-const TALLY_BASE_URL = 'https://tally.so/r/Xx8yRO'
-
-export function buildTallyUrl(): string {
-  const params = new URLSearchParams()
-
-  const fbclid = getFbclid()
-  const fbp   = getFbp()
-  const fbc   = getFbc()
-  const sessionId = getSessionId()
-  const visitorId = getVisitorId()
-  const leadEventId = getEventId('Lead')
-
-  if (fbclid)    params.set('fbclid', fbclid)
-  if (fbp)       params.set('fbp', fbp)
-  if (fbc)       params.set('fbc', fbc)
-  if (sessionId) params.set('session_id', sessionId)
-  if (visitorId) params.set('visitor_id', visitorId)
-  if (leadEventId) params.set('event_id', leadEventId)
-
-  // Append UTMs
-  const utms = getUtmParams()
-  Object.entries(utms).forEach(([k, v]) => params.set(k, v))
-
-  const qs = params.toString()
-  return qs ? `${TALLY_BASE_URL}?${qs}` : TALLY_BASE_URL
-}
-
-/* ================================================================
    CASHFREE SESSION URL BUILDER
    Used if you create Cashfree sessions server-side and need to
    embed return URL tracking.

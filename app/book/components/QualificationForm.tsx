@@ -7,11 +7,11 @@ import type { Step1Data } from "./BookingFlow";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type QuestionId =
-  | "name" | "phone" | "age" | "thyroidCondition"
+  | "name" | "phone" | "email" | "age" | "thyroidCondition"
   | "weightStruggles" | "energyLevel" | "biggestFrustration" | "mainGoal";
 
 const QUESTION_ORDER: QuestionId[] = [
-  "name", "phone", "age", "thyroidCondition",
+  "name", "phone", "email", "age", "thyroidCondition",
   "weightStruggles", "energyLevel", "biggestFrustration", "mainGoal",
 ];
 
@@ -187,6 +187,29 @@ function PhoneQuestion({
           style={{ WebkitTapHighlightColor: "transparent" }}
         />
       </div>
+    </QuestionShell>
+  );
+}
+
+function EmailQuestion({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <QuestionShell
+      label="Your email address"
+      hint="We'll send your session confirmation and Zoom link here."
+    >
+      <TextInput
+        value={value}
+        onChange={onChange}
+        placeholder="you@example.com"
+        type="email"
+        autoComplete="email"
+      />
     </QuestionShell>
   );
 }
@@ -401,6 +424,7 @@ export function QualificationForm({
   const [data, setData] = useState<Step1Data>({
     name: "",
     phone: "",
+    email: "",
     age: "",
     thyroidCondition: "",
     weightStruggles: [],
@@ -420,6 +444,10 @@ export function QualificationForm({
   const isCurrentValid = useCallback((): boolean => {
     const val = getCurrentValue();
     if (currentQuestion === "weightStruggles") return (val as string[]).length > 0;
+    if (currentQuestion === "email") {
+      const v = (val as string).trim();
+      return v.includes("@") && v.includes(".");
+    }
     return typeof val === "string" && val.trim().length > 0;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, currentQuestion]);
@@ -483,6 +511,9 @@ export function QualificationForm({
             )}
             {currentQuestion === "phone" && (
               <PhoneQuestion value={data.phone} onChange={(v) => update("phone", v)} />
+            )}
+            {currentQuestion === "email" && (
+              <EmailQuestion value={data.email} onChange={(v) => update("email", v)} />
             )}
             {currentQuestion === "age" && (
               <AgeQuestion value={data.age} onChange={(v) => update("age", v)} />

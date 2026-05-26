@@ -9,13 +9,13 @@
  *   GOOGLE_PRIVATE_KEY             – service account private_key (with \n escaped)
  *   GOOGLE_SHEETS_ID               – the spreadsheet ID from the URL
  *
- * SHEET SETUP:
- *   Row 1 headers (exact order):
- *   Timestamp | Name | Phone | Age | Thyroid Condition | Weight Struggles |
+ * SHEET SETUP — "Bookings" tab, row 1 headers (exact order):
+ *   Timestamp | Name | Phone | Email | Age | Thyroid Condition | Weight Struggles |
  *   Energy Level | Biggest Frustration | Main Goal |
  *   Thyroid Duration | On Medication | Frustrations | Energy Low |
  *   Tried Before | Transformation Goal | Food Relationship | Session Goal |
- *   Booking Date | Booking Time | Booking Status | Submitted At
+ *   Booking Date | Booking Time | Booking Status | Submitted At |
+ *   Lead ID | UTM Source | UTM Campaign | FBclid | Visitor ID
  */
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
@@ -25,6 +25,7 @@ const SHEET_NAME = "Bookings"; // tab name inside the spreadsheet
 type Step1Data = {
   name?: string;
   phone?: string;
+  email?: string;
   age?: string;
   thyroidCondition?: string;
   weightStruggles?: string | string[];
@@ -55,6 +56,15 @@ type BookingPayload = {
   step2_5?: Step2_5Data;
   step3?: Step3Data;
   submittedAt?: string;
+  leadId?: string;
+  attribution?: {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    fbclid?: string;
+    visitor_id?: string;
+    [key: string]: string | undefined;
+  };
 };
 
 function arr(v: string | string[] | undefined): string {
@@ -84,30 +94,36 @@ async function appendToSheet(payload: BookingPayload) {
 
   const sheets = google.sheets({ version: "v4", auth });
 
-  const { step1 = {}, step2_5 = {}, step3 = {} } = payload;
+  const { step1 = {}, step2_5 = {}, step3 = {}, attribution = {} } = payload;
 
   const row = [
-    new Date().toISOString(),          // Timestamp
-    str(step1.name),                   // Name
-    str(step1.phone),                  // Phone
-    str(step1.age),                    // Age
-    str(step1.thyroidCondition),       // Thyroid Condition
-    arr(step1.weightStruggles),        // Weight Struggles
-    str(step1.energyLevel),            // Energy Level
-    str(step1.biggestFrustration),     // Biggest Frustration
-    str(step1.mainGoal),               // Main Goal
-    str(step2_5.thyroidDuration),      // Thyroid Duration
-    str(step2_5.onMedication),         // On Medication
-    str(step2_5.frustrations),         // Frustrations
-    str(step2_5.energyLow),            // Energy Low
-    arr(step2_5.triedBefore),          // Tried Before
-    str(step2_5.transformationGoal),   // Transformation Goal
-    str(step2_5.foodRelationship),     // Food Relationship
-    str(step2_5.sessionGoal),          // Session Goal
-    str(step3.bookingDate),            // Booking Date
-    str(step3.bookingTime),            // Booking Time
-    str(step3.bookingStatus),          // Booking Status
-    str(payload.submittedAt),          // Submitted At
+    new Date().toISOString(),              // Timestamp
+    str(step1.name),                       // Name
+    str(step1.phone),                      // Phone
+    str(step1.email),                      // Email
+    str(step1.age),                        // Age
+    str(step1.thyroidCondition),           // Thyroid Condition
+    arr(step1.weightStruggles),            // Weight Struggles
+    str(step1.energyLevel),               // Energy Level
+    str(step1.biggestFrustration),         // Biggest Frustration
+    str(step1.mainGoal),                   // Main Goal
+    str(step2_5.thyroidDuration),          // Thyroid Duration
+    str(step2_5.onMedication),             // On Medication
+    str(step2_5.frustrations),             // Frustrations
+    str(step2_5.energyLow),               // Energy Low
+    arr(step2_5.triedBefore),              // Tried Before
+    str(step2_5.transformationGoal),       // Transformation Goal
+    str(step2_5.foodRelationship),         // Food Relationship
+    str(step2_5.sessionGoal),              // Session Goal
+    str(step3.bookingDate),                // Booking Date
+    str(step3.bookingTime),               // Booking Time
+    str(step3.bookingStatus),              // Booking Status
+    str(payload.submittedAt),              // Submitted At
+    str(payload.leadId),                   // Lead ID
+    str(attribution.utm_source),           // UTM Source
+    str(attribution.utm_campaign),         // UTM Campaign
+    str(attribution.fbclid),               // FBclid
+    str(attribution.visitor_id),           // Visitor ID
   ];
 
   await sheets.spreadsheets.values.append({
