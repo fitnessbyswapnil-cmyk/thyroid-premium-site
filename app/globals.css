@@ -902,14 +902,14 @@ a {
 .authority-layout {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 2.75rem;
 }
 
 @media (min-width: 1024px) {
   .authority-layout {
     flex-direction: row;
     align-items: flex-start;
-    gap: 3.5rem;
+    gap: 4.5rem;
   }
 }
 
@@ -917,20 +917,20 @@ a {
 
 .authority-portrait-col {
   position: relative;
-  width: min(72vw, 220px);
+  width: min(84vw, 290px);
   margin-inline: auto;
   flex-shrink: 0;
 }
 
 @media (min-width: 640px) {
   .authority-portrait-col {
-    width: 250px;
+    width: 310px;
   }
 }
 
 @media (min-width: 1024px) {
   .authority-portrait-col {
-    width: 300px;
+    width: 370px;
     margin-inline: 0;
     position: sticky;
     top: 5.5rem;
@@ -941,40 +941,42 @@ a {
 .authority-portrait-halo {
   pointer-events: none;
   position: absolute;
-  inset: -2rem;
+  inset: -3.5rem;
   border-radius: 50%;
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgba(168, 85, 247, 0.22) 0%,
-    rgba(168, 85, 247, 0.06) 45%,
-    transparent 72%
+    rgba(168, 85, 247, 0.3) 0%,
+    rgba(168, 85, 247, 0.12) 40%,
+    rgba(168, 85, 247, 0.03) 65%,
+    transparent 78%
   );
   z-index: 0;
-  filter: blur(8px);
+  filter: blur(14px);
 }
 
-/* Gradient-border outer frame — 1.5 px "border" via background + padding trick */
+/* Gradient-border outer frame — 2px "border" via background + padding trick */
 .authority-portrait-frame {
   position: relative;
   z-index: 1;
-  border-radius: 1.5rem;
-  padding: 1.5px;
+  border-radius: 1.85rem;
+  padding: 2px;
   background: linear-gradient(
-    150deg,
-    rgba(168, 85, 247, 0.55) 0%,
-    rgba(168, 85, 247, 0.08) 40%,
-    rgba(255, 255, 255, 0.05) 70%,
-    rgba(168, 85, 247, 0.2) 100%
+    145deg,
+    rgba(192, 110, 255, 0.72) 0%,
+    rgba(168, 85, 247, 0.28) 30%,
+    rgba(255, 255, 255, 0.06) 58%,
+    rgba(168, 85, 247, 0.45) 100%
   );
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.5),
-    0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(0, 0, 0, 0.6) inset;
+    0 40px 100px rgba(0, 0, 0, 0.7),
+    0 20px 48px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 80px rgba(168, 85, 247, 0.14);
 }
 
 /* Inner card — dark bg + overflow clip for rounded image */
 .authority-portrait-inner {
-  border-radius: calc(1.5rem - 1.5px);
+  border-radius: calc(1.85rem - 2px);
   overflow: hidden;
   background: var(--bg-elevated);
   display: flex;
@@ -985,15 +987,16 @@ a {
 .authority-name-badge {
   background: linear-gradient(
     180deg,
-    rgba(18, 19, 22, 0.97) 0%,
-    rgba(14, 15, 17, 0.99) 100%
+    rgba(14, 15, 18, 0.96) 0%,
+    rgba(10, 11, 14, 0.99) 100%
   );
-  border-top: 1px solid rgba(168, 85, 247, 0.14);
-  padding: 0.9rem 1rem 1rem;
+  border-top: 1px solid rgba(168, 85, 247, 0.2);
+  padding: 1rem 1.1rem 1.15rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  backdrop-filter: blur(4px);
 }
 
 /* Verified checkmark pill inside badge */
@@ -1048,37 +1051,38 @@ a {
 
 /* Coach name — large, impactful */
 .authority-coach-name {
-  font-size: clamp(1.85rem, 4.5vw, 2.6rem);
+  font-size: clamp(2rem, 4.8vw, 2.85rem);
   font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.08;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
   color: var(--t1);
-  margin: 0 0 0.45rem;
+  margin: 0 0 0.55rem;
 }
 
 /* Authority subtitle in accent */
 .authority-coach-title {
-  font-size: clamp(0.72rem, 1.4vw, 0.82rem);
+  font-size: clamp(0.7rem, 1.35vw, 0.8rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--p400);
-  margin: 0 0 1.4rem;
-  line-height: 1.4;
+  margin: 0 0 1.6rem;
+  line-height: 1.5;
+  opacity: 0.92;
 }
 
 /* Bio paragraph */
 .authority-bio {
   font-size: var(--text-sm);
-  line-height: 1.78;
+  line-height: 1.82;
   color: var(--t2);
-  max-width: 50ch;
-  margin: 0 auto 1.5rem;
+  max-width: 52ch;
+  margin: 0 auto 1.65rem;
 }
 
 @media (min-width: 1024px) {
   .authority-bio {
-    margin: 0 0 1.5rem;
+    margin: 0 0 1.65rem;
   }
 }
 
@@ -1087,10 +1091,10 @@ a {
   list-style: none;
   padding: 0;
   margin: 0 auto;
-  max-width: 44ch;
+  max-width: 46ch;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.8rem;
   text-align: left;
 }
 
@@ -1103,20 +1107,21 @@ a {
 .authority-trust-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.65rem;
+  gap: 0.7rem;
   font-size: var(--text-sm);
   color: var(--t2);
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 .authority-trust-dot {
   display: block;
-  width: 0.32rem;
-  height: 0.32rem;
+  width: 0.35rem;
+  height: 0.35rem;
   border-radius: 50%;
   background: var(--p400);
   flex-shrink: 0;
-  margin-top: 0.48rem;
+  margin-top: 0.5rem;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.55);
 }
 
 /* ── Certification grid ───────────────────────────────────── */

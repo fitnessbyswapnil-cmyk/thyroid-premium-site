@@ -47,13 +47,13 @@ export default function AuthoritySection() {
               <div className="authority-portrait-inner">
 
                 {/* photo */}
-                <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                <div className="relative w-full overflow-hidden" style={{ aspectRatio: '1/1' }}>
                   <Image
                     src={COACH_IMAGE}
                     alt={`${COACH_NAME}, ACE & INFS Certified Thyroid Fat-Loss Specialist`}
                     fill
-                    sizes="(max-width: 640px) 72vw, (max-width: 1024px) 50vw, 300px"
-                    className="object-cover object-top"
+                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 50vw, 360px"
+                    className="object-cover object-center"
                     priority
                   />
                   {/* bottom scrim — subtle depth under the name badge */}
