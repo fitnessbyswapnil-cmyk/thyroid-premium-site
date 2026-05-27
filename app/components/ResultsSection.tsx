@@ -12,8 +12,7 @@ const results = [
     name: 'Vaidehi S.',
     age: 34,
     headline: 'Lost 4.8 kg in 6 Weeks',
-    quote:
-      "Lost more in 6 weeks than in two years of trying alone. It wasn't my discipline — it was my untreated thyroid holding me back.",
+    quote: "My thyroid was the missing piece all along.",
     method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Vaidehi 1.png',
   },
@@ -22,8 +21,7 @@ const results = [
     name: 'Surekha P.',
     age: 41,
     headline: 'Lost 3.5 kg in 8 Weeks',
-    quote:
-      "Finally a plan built for hypothyroid — not just calories. I'd been eating clean for a year and still gaining. Now I finally understand my body.",
+    quote: "I stopped blaming my willpower.",
     method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Surekha 3.png',
   },
@@ -32,8 +30,7 @@ const results = [
     name: 'Nehamia R.',
     age: 38,
     headline: 'Lost 5.2 kg in 10 Weeks',
-    quote:
-      "My doctor noticed the difference before I even told her. She asked what I changed — I said: everything about how I treat my thyroid.",
+    quote: "I finally felt in control again.",
     method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Rozal 2.png',
   },
@@ -42,8 +39,7 @@ const results = [
     name: 'Anjali M.',
     age: 36,
     headline: 'Lost 4.1 kg in 9 Weeks',
-    quote:
-      "No starvation. Real Indian food — dal, rotis, rice. I couldn't believe the scale moved while I was eating everything I love.",
+    quote: "No starvation. Real food. Real results.",
     method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Heenal 7.png',
   },
@@ -187,14 +183,14 @@ function ResultCard({
       {/* ── Image ── */}
       <div
         className="result-photo relative w-full flex-shrink-0"
-        style={{ background: 'var(--s2)' }}
+        style={{ background: '#0b0c0e' }}
       >
         <Image
           src={r.img}
           alt={`${r.name} thyroid transformation`}
           fill
           sizes={sizes}
-          className="object-cover object-top"
+          className="object-contain"
           loading="lazy"
         />
 
@@ -222,23 +218,23 @@ function ResultCard({
       </div>
 
       {/* ── Card body ── */}
-      <div className="flex flex-col flex-1 px-4 pt-[14px] pb-4">
+      <div className="flex flex-col flex-1 px-4 pt-4 pb-5">
         {/* Name + age */}
-        <p className="text-[13px] font-semibold leading-none text-[var(--t1)] mb-[6px]">
-          {r.name}, {r.age}
+        <p className="text-[12px] font-semibold tracking-wide leading-none text-[var(--t3)] uppercase mb-2">
+          {r.name} &middot; {r.age}
         </p>
 
-        {/* Result headline */}
-        <p className="result-headline mb-[10px]">{r.headline}</p>
+        {/* Result headline — the hero stat */}
+        <p className="result-headline mb-3">{r.headline}</p>
 
-        {/* Quote — grows to equalise card heights */}
-        <blockquote className="flex-1 text-[12.5px] leading-[1.74] text-[var(--t3)]">
+        {/* Short emotional quote */}
+        <blockquote className="flex-1 text-[13px] leading-[1.6] italic text-[var(--t2)]">
           &ldquo;{r.quote}&rdquo;
         </blockquote>
 
         {/* Method line — always at card bottom */}
         <p
-          className="mt-[14px] text-[9.5px] font-bold tracking-[0.1em] uppercase"
+          className="mt-4 text-[9px] font-bold tracking-[0.12em] uppercase"
           style={{ color: 'var(--p400)' }}
         >
           via {r.method}
