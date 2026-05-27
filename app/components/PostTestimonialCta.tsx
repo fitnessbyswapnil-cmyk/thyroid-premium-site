@@ -1,31 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useScarcity } from "../context/ScarcityProvider";
 import { trackCtaClick } from "../lib/analytics";
-
-function useInView(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-
-  return { ref, visible };
-}
+import { useInView } from "../lib/useInView";
 
 export default function PostTestimonialCta() {
   const { ref, visible } = useInView(0.12);

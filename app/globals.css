@@ -1305,6 +1305,38 @@ a {
   border-radius: var(--r-sm);
 }
 
+/* TSS — Thyroid Strategy Session component */
+
+@keyframes tss-ring {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%       { opacity: 0.75; transform: scale(1.1); }
+}
+
+@keyframes tss-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.28); }
+}
+
+.tss-ring {
+  animation: tss-ring 3.2s ease-in-out infinite;
+}
+
+.tss-pulse {
+  animation: tss-pulse 2.2s ease-in-out infinite;
+}
+
+.tss-card {
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.tss-card:hover {
+  border-color: rgba(var(--card-rgb), 0.38);
+  box-shadow:
+    0 0 56px rgba(var(--card-rgb), 0.11),
+    0 24px 80px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 /* REDUCED MOTION */
 
 @media (prefers-reduced-motion: reduce) {
