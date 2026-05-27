@@ -588,28 +588,90 @@ a {
 }
 
 .result-card {
-  background: var(--s1);
-  border: 1px solid var(--b-soft);
-  border-radius: var(--r-xl);
-  overflow: visible;
+  background: linear-gradient(
+    160deg,
+    rgba(255,255,255,0.042) 0%,
+    rgba(255,255,255,0.018) 60%,
+    rgba(168,85,247,0.012) 100%
+  );
+  border: 1px solid rgba(255,255,255,0.068);
+  border-radius: var(--r-2xl);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color 200ms var(--ease);
+  height: 100%;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.032) inset,
+    0 8px 28px rgba(0,0,0,0.24);
+  transition:
+    border-color 260ms var(--ease),
+    transform 260ms var(--ease),
+    box-shadow 260ms var(--ease);
 }
 
 .result-card:hover {
-  border-color: var(--b-mid);
+  border-color: rgba(168,85,247,0.24);
+  transform: translateY(-5px) scale(1.006);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.048) inset,
+    0 28px 60px rgba(0,0,0,0.38),
+    0 0 0 1px rgba(168,85,247,0.12);
 }
 
-/* Responsive photo aspect ratio: 1:1 mobile → 3:4 desktop */
+/* Portrait aspect ratio — consistent across all breakpoints */
 .result-photo {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 3 / 4;
 }
 
-@media (min-width: 640px) {
-  .result-photo {
-    aspect-ratio: 3 / 4;
-  }
+/* Before / After overlay badges */
+.result-before-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.52rem;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.52);
+  border: 1px solid rgba(255,255,255,0.13);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.58);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.result-after-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.2rem 0.52rem;
+  border-radius: 999px;
+  background: rgba(168,85,247,0.28);
+  border: 1px solid rgba(168,85,247,0.48);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--p300);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.result-after-dot {
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: var(--p400);
+  flex-shrink: 0;
+}
+
+/* Result headline inside card */
+.result-headline {
+  font-size: clamp(0.88rem, 1.8vw, 0.96rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--t1);
 }
 
 .result-badges {

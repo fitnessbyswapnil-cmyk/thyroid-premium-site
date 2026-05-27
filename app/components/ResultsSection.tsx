@@ -11,44 +11,40 @@ const results = [
     id: 'vaidehi',
     name: 'Vaidehi S.',
     age: 34,
-    location: 'Mumbai',
-    result: '−4.8 kg · 6 weeks',
-    struggleTag: '2 yrs, no progress',
+    headline: 'Lost 4.8 kg in 6 Weeks',
     quote:
-      "Lost more in 6 weeks than in two years of trying alone. For the first time I understood what was actually stopping me — it wasn't my discipline. This happened using My THYROID L.E.A.N. Method.",
+      "Lost more in 6 weeks than in two years of trying alone. It wasn't my discipline — it was my untreated thyroid holding me back.",
+    method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Vaidehi 1.png',
   },
   {
     id: 'surekha',
     name: 'Surekha P.',
     age: 41,
-    location: 'Pune',
-    result: '−3.5 kg · 8 weeks',
-    struggleTag: 'TSH "normal" for years',
+    headline: 'Lost 3.5 kg in 8 Weeks',
     quote:
-      "Finally a plan built for hypothyroid — not just calories. I'd been eating clean for a year and still gaining weight. Now I understand my body, thanks to My THYROID L.E.A.N. Method.",
+      "Finally a plan built for hypothyroid — not just calories. I'd been eating clean for a year and still gaining. Now I finally understand my body.",
+    method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Surekha 3.png',
   },
   {
     id: 'nehamia',
     name: 'Nehamia R.',
     age: 38,
-    location: 'Bengaluru',
-    result: '−5.2 kg · 10 weeks',
-    struggleTag: "Doctor said 'you're fine'",
+    headline: 'Lost 5.2 kg in 10 Weeks',
     quote:
-      "My doctor noticed the difference before I even told her. She asked what I changed — I told her: everything about how I treat my thyroid, using My THYROID L.E.A.N. Method.",
+      "My doctor noticed the difference before I even told her. She asked what I changed — I said: everything about how I treat my thyroid.",
+    method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Rozal 2.png',
   },
   {
     id: 'anjali',
     name: 'Anjali M.',
     age: 36,
-    location: 'Delhi',
-    result: '−4.1 kg · 9 weeks',
-    struggleTag: 'Scared to eat carbs',
+    headline: 'Lost 4.1 kg in 9 Weeks',
     quote:
-      "No starvation. Real Indian food — dal, rotis, rice. I couldn't believe the scale moved while I was eating everything I love. All of this through My THYROID L.E.A.N. Method.",
+      "No starvation. Real Indian food — dal, rotis, rice. I couldn't believe the scale moved while I was eating everything I love.",
+    method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Heenal 7.png',
   },
 ] as const
@@ -78,7 +74,7 @@ export default function ResultsSection() {
 
   return (
     <section className="section-pad relative bg-[var(--bg-section)] text-white">
-      {/* Edge blend from SocialProof */}
+      {/* Edge blend from previous section */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-16"
@@ -102,26 +98,26 @@ export default function ResultsSection() {
           titleMaxCh="24ch"
         />
 
-        {/* Mobile: horizontal carousel — hidden at sm+ */}
+        {/* ── Mobile: horizontal snap carousel (< 640 px) ───────── */}
         <div className="relative sm:hidden">
           <div
             ref={trackRef}
             data-carousel-track
-            className="flex gap-3 overflow-x-auto pb-1 -mx-[clamp(1rem,4vw,2rem)] px-[clamp(1rem,4vw,2rem)]"
+            className="flex gap-4 overflow-x-auto pb-2 -mx-[clamp(1rem,4vw,2rem)] px-[clamp(1rem,4vw,2rem)]"
             style={{ scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain' }}
           >
             {results.map((r) => (
               <div
                 key={r.id}
                 className="flex-shrink-0"
-                style={{ scrollSnapAlign: 'start', width: 'min(80vw, 296px)' }}
+                style={{ scrollSnapAlign: 'start', width: 'min(82vw, 300px)' }}
               >
-                <ResultCard r={r} sizes="80vw" />
+                <ResultCard r={r} sizes="82vw" />
               </div>
             ))}
           </div>
 
-          <div className="dot-track mt-4">
+          <div className="dot-track mt-5">
             {results.map((r, i) => (
               <button
                 key={r.id}
@@ -136,17 +132,17 @@ export default function ResultsSection() {
           </div>
         </div>
 
-        {/* Tablet: 2-column grid */}
-        <div className="hidden sm:grid sm:grid-cols-2 gap-4 md:hidden">
+        {/* ── Tablet: 2-column grid (640 px – 1023 px) ──────────── */}
+        <div className="hidden sm:grid sm:grid-cols-2 lg:hidden gap-5">
           {results.map((r) => (
-            <ResultCard key={r.id} r={r} sizes="50vw" />
+            <ResultCard key={r.id} r={r} sizes="(max-width:1023px) 50vw, 25vw" />
           ))}
         </div>
 
-        {/* Desktop: 2×2 grid */}
-        <div className="hidden md:grid md:grid-cols-2 gap-5">
+        {/* ── Desktop: 4-column grid (1024 px +) ───────────────── */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-5">
           {results.map((r) => (
-            <ResultCard key={r.id} r={r} sizes="50vw" />
+            <ResultCard key={r.id} r={r} sizes="25vw" />
           ))}
         </div>
 
@@ -187,33 +183,10 @@ function ResultCard({
   sizes: string
 }) {
   return (
-    <article className="result-card h-full">
-      {/* Identity strip — above photo so you meet the person before the result */}
-      <div className="px-4 pt-[15px] pb-[13px] flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[13px] font-semibold leading-none text-[var(--t1)]">
-            {r.name}, {r.age}
-          </p>
-          <p className="mt-[5px] text-[10.5px] text-[var(--t4)]">
-            {r.location} · Hypothyroid
-          </p>
-        </div>
-        {/* Struggle tag — the "that was me" hook */}
-        <span
-          className="shrink-0 mt-px rounded-full text-[9px] font-semibold tracking-[0.05em] uppercase leading-none text-[var(--t4)]"
-          style={{
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.052)',
-            padding: '4px 8px',
-          }}
-        >
-          {r.struggleTag}
-        </span>
-      </div>
-
-      {/* Photo — 1:1 on mobile for readable card heights, 3:4 on desktop */}
+    <article className="result-card">
+      {/* ── Image ── */}
       <div
-        className="relative w-full overflow-hidden result-photo"
+        className="result-photo relative w-full flex-shrink-0"
         style={{ background: 'var(--s2)' }}
       >
         <Image
@@ -224,23 +197,51 @@ function ResultCard({
           className="object-cover object-top"
           loading="lazy"
         />
+
+        {/* Bottom scrim so badges and name are always readable */}
         <div
           aria-hidden="true"
-          className="absolute inset-0"
+          className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(to top, rgba(15,16,18,0.55) 0%, rgba(15,16,18,0.06) 42%, transparent 100%)',
+              'linear-gradient(to top, rgba(14,15,18,0.72) 0%, rgba(14,15,18,0.12) 38%, transparent 62%)',
           }}
         />
+
+        {/* Before / After badges — bottom corners */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none"
+        >
+          <span className="result-before-badge">Before</span>
+          <span className="result-after-badge">
+            <span className="result-after-dot" />
+            After
+          </span>
+        </div>
       </div>
 
-      {/* Card body: quote then result — emotional truth before the number */}
-      <div className="flex flex-1 flex-col min-h-0 px-4 pt-[14px] pb-4 gap-[10px]">
-        <blockquote className="text-[14px] font-normal leading-[1.72] text-[var(--t2)]">
+      {/* ── Card body ── */}
+      <div className="flex flex-col flex-1 px-4 pt-[14px] pb-4">
+        {/* Name + age */}
+        <p className="text-[13px] font-semibold leading-none text-[var(--t1)] mb-[6px]">
+          {r.name}, {r.age}
+        </p>
+
+        {/* Result headline */}
+        <p className="result-headline mb-[10px]">{r.headline}</p>
+
+        {/* Quote — grows to equalise card heights */}
+        <blockquote className="flex-1 text-[12.5px] leading-[1.74] text-[var(--t3)]">
           &ldquo;{r.quote}&rdquo;
         </blockquote>
-        <p className="text-[10.5px] tracking-[0.01em] text-[var(--t4)]">
-          {r.result}
+
+        {/* Method line — always at card bottom */}
+        <p
+          className="mt-[14px] text-[9.5px] font-bold tracking-[0.1em] uppercase"
+          style={{ color: 'var(--p400)' }}
+        >
+          via {r.method}
         </p>
       </div>
     </article>
