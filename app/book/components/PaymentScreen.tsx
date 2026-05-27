@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 
 const TRUST_ITEMS = [
@@ -31,17 +30,14 @@ const WHAT_NEXT = [
 export function PaymentScreen({
   name,
   onPay,
+  loading = false,
+  error = "",
 }: {
   name: string;
   onPay: () => void;
+  loading?: boolean;
+  error?: string;
 }) {
-  const [loading, setLoading] = useState(false);
-
-  function handlePay() {
-    setLoading(true);
-    onPay();
-  }
-
   const firstName = name.split(" ")[0] || name;
 
   return (
@@ -156,18 +152,24 @@ export function PaymentScreen({
         {/* CTA */}
         <button
           type="button"
-          onClick={handlePay}
+          onClick={onPay}
           disabled={loading}
           className="group mb-4 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-purple-500 to-violet-600 px-5 py-5 shadow-[0_10px_40px_rgba(124,58,237,0.4)] transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_14px_50px_rgba(124,58,237,0.5)] active:scale-[0.99] disabled:opacity-70"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
           <div className="text-[1.05rem] font-extrabold tracking-[-0.02em] text-white">
-            {loading ? "Taking you to payment…" : "Secure My Private Slot — ₹299"}
+            {loading ? "Opening payment…" : "Secure My Private Slot — ₹299"}
           </div>
           <div className="mt-1 text-[0.72rem] text-white/65">
-            Private · 60 min · Written action plan included
+            {loading ? "Please wait…" : "Private · 60 min · Written action plan included"}
           </div>
         </button>
+
+        {error && (
+          <p className="mb-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-[0.78rem] text-red-300/90">
+            {error}
+          </p>
+        )}
 
         <p className="text-center text-[0.68rem] text-white/30">
           Full refund if you do not leave with complete clarity

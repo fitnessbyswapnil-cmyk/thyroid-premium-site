@@ -33,6 +33,11 @@ import { google } from 'googleapis'
 const CASHFREE_SECRET = process.env.CASHFREE_WEBHOOK_SECRET || ''
 const LEADS_SHEET_NAME = 'Leads'
 
+// Best-effort in-memory idempotency guard — prevents double-processing within
+// the same serverless instance. Does not survive cold starts; the payment_status
+// check below is the durable guard for cross-instance duplicates.
+const processedOrders = new Set<string>()
+
 async function appendPaymentToSheet(data: {
   orderId: string
   name: string
@@ -103,11 +108,13 @@ async function appendPaymentToSheet(data: {
   console.log('[cashfree-webhook] Sheets append status:', response.status, response.data?.updates)
 }
 
-function verifyCashfreeSignature(rawBody: string, signature: string): boolean {
+// Cashfree signature: HMAC-SHA256(timestamp + rawBody), base64-encoded.
+// timestamp = x-webhook-timestamp header value.
+function verifyCashfreeSignature(rawBody: string, timestamp: string, signature: string): boolean {
   if (!CASHFREE_SECRET) return true
   const computed = crypto
     .createHmac('sha256', CASHFREE_SECRET)
-    .update(rawBody)
+    .update(timestamp + rawBody)
     .digest('base64')
   return computed === signature
 }
@@ -140,8 +147,10 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text()
     const signature = req.headers.get('x-webhook-signature') || ''
+    const timestamp = req.headers.get('x-webhook-timestamp') || ''
 
-    if (!verifyCashfreeSignature(rawBody, signature)) {
+    if (!verifyCashfreeSignature(rawBody, timestamp, signature)) {
+      console.error('[cashfree-webhook] Invalid signature — possible spoofing attempt')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
@@ -154,6 +163,13 @@ export async function POST(req: NextRequest) {
     const customer = body.data.customer_details
     const order    = body.data.order
     const payment  = body.data.payment
+
+    // Idempotency check — return 200 so Cashfree stops retrying
+    if (processedOrders.has(order.order_id)) {
+      console.log(`[cashfree-webhook] Duplicate order ${order.order_id} — skipping`)
+      return NextResponse.json({ ok: true, duplicate: true })
+    }
+    processedOrders.add(order.order_id)
 
     // Extract attribution from order_tags (set when creating Cashfree session)
     const tags = order.order_tags || {}

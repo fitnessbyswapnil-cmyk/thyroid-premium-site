@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     console.log("[leads] Received payload for:", payload.step1?.name || "unknown", "leadId:", payload.leadId);
     await appendLeadToSheet(payload);
     console.log("[leads] Row appended successfully for:", payload.step1?.name || "unknown", "id:", payload.leadId);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, leadId: payload.leadId ?? "" });
   } catch (err) {
     console.error("[leads] FAILED:", err instanceof Error ? err.message : String(err));
     console.error("[leads] Full error:", err);

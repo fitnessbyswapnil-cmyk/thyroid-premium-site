@@ -24,11 +24,11 @@ const CALENDLY_URL = [
 type Step2_5Data = {
   thyroidDuration: string;
   onMedication: string;
-  frustrations: string;
+  specialistHistory: string;
   energyLow: string;
   triedBefore: string[];
   transformationGoal: string;
-  foodRelationship: string;
+  eatingApproach: string;
   sessionGoal: string;
 };
 
@@ -189,15 +189,14 @@ const INTAKE_QUESTIONS = [
     ],
   },
   {
-    id: "frustrations" as const,
-    label: "What frustrates you most about your thyroid journey so far?",
-    hint: "Be completely honest — this directly shapes how Swapnil approaches your session.",
+    id: "specialistHistory" as const,
+    label: "Have you worked with a thyroid nutrition specialist before?",
     type: "card" as const,
     options: [
-      { label: "Reports say I'm fine, but I feel terrible every day", emoji: "💔" },
-      { label: "I've tried everything and nothing has worked", emoji: "😤" },
-      { label: "Fatigue and weight gain have stolen my confidence", emoji: "😞" },
-      { label: "No doctor has ever explained my thyroid to me properly", emoji: "🙁" },
+      { label: "Yes — and I saw results", emoji: "✅" },
+      { label: "Yes — but it didn't help much", emoji: "😕" },
+      { label: "No — this is my first time", emoji: "🌱" },
+      { label: "Only doctors, no nutrition specialist", emoji: "🩺" },
     ],
   },
   {
@@ -232,14 +231,15 @@ const INTAKE_QUESTIONS = [
     ],
   },
   {
-    id: "foodRelationship" as const,
-    label: "How would you honestly describe your current relationship with food?",
+    id: "eatingApproach" as const,
+    label: "How do you currently eat?",
     type: "card" as const,
     options: [
-      { label: "I eat very little but still gain weight", emoji: "😰" },
-      { label: "I keep falling back to comfort food when exhausted", emoji: "😔" },
-      { label: "I'm disciplined but see zero results", emoji: "😤" },
-      { label: "I've completely given up trying", emoji: "🏳️" },
+      { label: "I eat fairly healthy but weight won't move", emoji: "🥗" },
+      { label: "I restrict eating but still gain weight", emoji: "😰" },
+      { label: "I eat normally but feel guilty about certain foods", emoji: "😔" },
+      { label: "I've tried so many diets I don't know what's right anymore", emoji: "😤" },
+      { label: "I enjoy eating and refuse to starve myself", emoji: "🙌" },
     ],
   },
   {
@@ -261,11 +261,11 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
   const [data, setData] = useState<Step2_5Data>({
     thyroidDuration: "",
     onMedication: "",
-    frustrations: "",
+    specialistHistory: "",
     energyLow: "",
     triedBefore: [],
     transformationGoal: "",
-    foodRelationship: "",
+    eatingApproach: "",
     sessionGoal: "",
   });
 
@@ -643,11 +643,15 @@ export default function SessionBooked() {
   const [submitting, setSubmitting] = useState(false);
   const submittedRef = useRef(false);
 
-  // Entrance animation + detect native flow + fire Purchase event
+  // Entrance animation + detect native flow
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
 
-    // Check if this is a native flow return
+    const p = new URLSearchParams(window.location.search);
+    const urlLeadId = p.get("leadId") || "";
+
+    // Primary: localStorage has the full step1 payload
+    let foundInStorage = false;
     try {
       const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
       if (raw) {
@@ -655,23 +659,47 @@ export default function SessionBooked() {
         if (stored.step1) {
           setStep1Data(stored.step1);
           setIsNativeFlow(true);
+          foundInStorage = true;
           persistUserIdentity({ first_name: stored.step1.name, phone: stored.step1.phone });
         }
       }
-    } catch {
-      // non-critical
+    } catch { /* non-critical */ }
+
+    // Fallback: localStorage empty but leadId is in URL (different browser/device).
+    // Fetch the name/phone from the API so the greeting still works.
+    if (!foundInStorage && urlLeadId) {
+      setIsNativeFlow(true); // show native UI immediately while we fetch
+      fetch(`/api/leads/${encodeURIComponent(urlLeadId)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { name?: string; phone?: string; email?: string } | null) => {
+          if (data?.name) {
+            setStep1Data({
+              name: data.name,
+              phone: data.phone ?? "",
+              email: data.email ?? "",
+              thyroidCondition: "",
+              weightStruggles: [],
+              energyLevel: "",
+              biggestFrustration: "",
+              mainGoal: "",
+            });
+            persistUserIdentity({
+              first_name: data.name.split(" ")[0],
+              ...(data.phone && { phone: data.phone }),
+            });
+          }
+        })
+        .catch(() => { /* non-critical */ });
     }
 
-    // Capture identity from URL params (Cashfree redirect)
+    // Capture any identity params passed in the URL
     try {
-      const p = new URLSearchParams(window.location.search);
       const email = p.get("email") || p.get("customer_email") || "";
       const phone = p.get("phone") || p.get("customer_phone") || p.get("mobile") || "";
       const first_name = p.get("name") || p.get("customer_name") || p.get("first_name") || "";
       if (email || phone || first_name) persistUserIdentity({ ...(email && { email }), ...(phone && { phone }), ...(first_name && { first_name }) });
     } catch { /* non-critical */ }
 
-    trackPurchase();
     return () => clearTimeout(t);
   }, []);
 
@@ -689,6 +717,32 @@ export default function SessionBooked() {
 
     if (submittedRef.current) return;
     submittedRef.current = true;
+
+    // Fire Purchase pixel only now — after Calendly slot is confirmed.
+    // trackPurchase() returns the event_id it pushed to GTM — reuse it for the
+    // CAPI call so Meta can deduplicate browser pixel vs. server event correctly.
+    const lead = step1Data;
+    const purchaseEventId = trackPurchase(
+      lead ? { first_name: lead.name.split(" ")[0], phone: lead.phone, ...(lead.email && { email: lead.email }) } : undefined
+    );
+
+    // Server-side CAPI Purchase — runs in parallel, non-blocking
+    fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_name: "Purchase",
+        event_id: purchaseEventId,
+        source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
+        value: 299,
+        currency: "INR",
+        user_data: {
+          ...(lead?.phone && { phone: lead.phone }),
+          ...(lead?.email && { email: lead.email }),
+          ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
+        },
+      }),
+    }).catch(() => {});
 
     // Submit unified payload
     try {
