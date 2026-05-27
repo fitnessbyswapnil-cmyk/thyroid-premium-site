@@ -33,7 +33,8 @@ const testimonials = [
   },
   {
     id: 'priya',
-    image: '/whatsapp-proof/Heenal R4.png',
+    // TODO: Replace with Priya K.'s own WhatsApp screenshot — upload to /public/whatsapp-proof/Priya K R.png
+    image: '/whatsapp-proof/Nahamia R5.png',
     result: 'Inches Lost',
     tags: ['Clothes Fit', 'Confidence Up'],
     headline: 'Old Clothes Fit Again.',
@@ -41,7 +42,8 @@ const testimonials = [
   },
   {
     id: 'anjali',
-    image: '/whatsapp-proof/Namarata R9.png',
+    // TODO: Replace with Anjali M.'s own WhatsApp screenshot — upload to /public/whatsapp-proof/Anjali M R.png
+    image: '/whatsapp-proof/Rozal R2.png',
     result: '6 kg Lost',
     tags: ['No Starvation', 'Real Food'],
     headline: 'Lost 6 kg. Eating Real Indian Food.',

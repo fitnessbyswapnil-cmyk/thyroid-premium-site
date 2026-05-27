@@ -9,13 +9,15 @@ import type { Step1Data } from "../book/components/BookingFlow";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const CALENDLY_URL =
-  "https://calendly.com/fitnessbyswapnil/60min" +
-  "?hide_gdpr_banner=1" +
-  "&background_color=0d0b1a" +
-  "&text_color=e2e0f0" +
-  "&primary_color=7c3aed" +
-  "&layout=month_view";
+const CALENDLY_URL = [
+  "https://calendly.com/fitnessbyswapnil/60min",
+  "?hide_event_type_details=1",
+  "&hide_gdpr_banner=1",
+  "&hide_landing_page_details=1",
+  "&primary_color=3B5A33",
+  "&text_color=171310",
+  "&background_color=F7F4EF",
+].join("");
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

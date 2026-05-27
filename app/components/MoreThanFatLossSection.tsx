@@ -21,14 +21,16 @@ const stories = [
     quote: "My clothes fit again. I finally feel like myself.",
   },
   {
-    image: "/MoreThanFatLossSection/ashish.png",
+    // TODO: Replace with correct Priya K. image — upload to /public/MoreThanFatLossSection/priya.png
+    image: "/MoreThanFatLossSection/surekha.png",
     name: "Priya K.",
     result: "8 kg Lost",
     tags: ["Waist Reduced", "Confidence Back"],
     quote: "Belly fat reduced in just 3 weeks. I was shocked.",
   },
   {
-    image: "/MoreThanFatLossSection/nitin.png",
+    // TODO: Replace with correct Kavita R. image — upload to /public/MoreThanFatLossSection/kavita.png
+    image: "/MoreThanFatLossSection/heenal.png",
     name: "Kavita R.",
     result: "Inches Lost",
     tags: ["Less Bloating", "Better Energy"],

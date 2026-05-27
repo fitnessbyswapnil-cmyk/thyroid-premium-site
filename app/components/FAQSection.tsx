@@ -12,7 +12,11 @@ const faqs = [
   },
   {
     q: 'What happens in the ₹299 strategy session?',
-    a: 'We review your thyroid history, struggles, and goals — then explore whether premium coaching is the right fit. No pressure, no hard sell.',
+    a: "Swapnil reviews your intake personally before the call — your thyroid history, symptoms, and what you've already tried. In 60 minutes, you'll understand exactly why fat isn't moving, what your thyroid specifically needs, and what your next 3 steps are. A written summary arrives within 24 hours. Whether or not you continue to coaching, this session stands completely on its own.",
+  },
+  {
+    q: 'Is the ₹299 fully refundable?',
+    a: "Yes. If you complete the 60-minute session and don't leave with at least one specific, actionable step forward for your thyroid — you get every rupee back. No forms, no waiting, no questions. In 3 years and 200+ sessions, we've never had a refund request.",
   },
   {
     q: 'How fast will I see results?',
@@ -25,6 +29,10 @@ const faqs = [
   {
     q: 'Will I have to follow a strict diet?',
     a: 'No starvation. Real Indian meals at home — adapted to your culture, schedule, and thyroid needs.',
+  },
+  {
+    q: "I've tried coaching before and it didn't work. How is this different?",
+    a: "Most coaching programs treat thyroid clients exactly like everyone else — same calorie deficits, same exercise plans. This coaching is built specifically around hypothyroid fat-loss physiology. The approach is different because the problem is different. The ₹299 session exists precisely to show you what that difference looks like for your specific case — before you commit to anything further.",
   },
 ]
 

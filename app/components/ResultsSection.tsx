@@ -38,7 +38,7 @@ const results = [
     struggleTag: "Doctor said 'you're fine'",
     quote:
       "My doctor noticed the difference before I even told her. She asked what I changed — I told her: everything about how I treat my thyroid.",
-    img: '/transformations/Nehamia 6.png',
+    img: '/transformations/Surekha 3.png',
   },
   {
     id: 'anjali',
@@ -49,6 +49,7 @@ const results = [
     struggleTag: 'Scared to eat carbs',
     quote:
       "No starvation. Real Indian food — dal, rotis, rice. I couldn't believe the scale moved while I was eating everything I love.",
+    // TODO: Replace with Anjali M.'s own image — upload to /public/transformations/Anjali M.png
     img: '/transformations/Heenal 7.png',
   },
 ] as const

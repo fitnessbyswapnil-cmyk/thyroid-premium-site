@@ -1,13 +1,14 @@
 import { ScrollDepthTracker } from "@/app/components/tracking/ScrollDepthTracker";
 import Hero from "@/app/components/Hero";
+import AuthoritySection from "@/app/components/AuthoritySection";
 import ThyroidStrategySession from "@/app/components/ThyroidStrategySession";
 import SocialProof from "@/app/components/SocialProof";
 import PostTestimonialCta from "@/app/components/PostTestimonialCta";
+import WhoIsThisForSection from "@/app/components/WhoIsThisForSection";
 import ResultsSection from "@/app/components/ResultsSection";
 import VideoTestimonial from "@/app/components/VideoTestimonial";
 import ProblemSection from "@/app/components/ProblemSection";
 import WhatsappProofSection from "@/app/components/WhatsappProofSection";
-import AuthoritySection from "@/app/components/AuthoritySection";
 import FrameworkSection from "@/app/components/FrameworkSection";
 import MoreThanFatLossSection from "@/app/components/MoreThanFatLossSection";
 import FAQSection from "@/app/components/FAQSection";
@@ -19,14 +20,15 @@ export default function Home() {
     <main>
       <ScrollDepthTracker />
       <Hero />
+      <AuthoritySection />
       <ThyroidStrategySession />
       <SocialProof />
       <PostTestimonialCta />
+      <WhoIsThisForSection />
       <ResultsSection />
       <VideoTestimonial />
       <ProblemSection />
       <WhatsappProofSection />
-      <AuthoritySection />
       <FrameworkSection />
       <MoreThanFatLossSection />
       <FAQSection />
