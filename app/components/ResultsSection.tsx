@@ -15,7 +15,7 @@ const results = [
     result: '−4.8 kg · 6 weeks',
     struggleTag: '2 yrs, no progress',
     quote:
-      "Lost more in 6 weeks than in two years of trying alone. For the first time I understood what was actually stopping me — it wasn't my discipline.",
+      "Lost more in 6 weeks than in two years of trying alone. For the first time I understood what was actually stopping me — it wasn't my discipline. This happened using My THYROID L.E.A.N. Method.",
     img: '/transformations/Vaidehi 1.png',
   },
   {
@@ -26,7 +26,7 @@ const results = [
     result: '−3.5 kg · 8 weeks',
     struggleTag: 'TSH "normal" for years',
     quote:
-      "Finally a plan built for hypothyroid — not just calories. I'd been eating clean for a year and still gaining weight. Now I understand my body.",
+      "Finally a plan built for hypothyroid — not just calories. I'd been eating clean for a year and still gaining weight. Now I understand my body, thanks to My THYROID L.E.A.N. Method.",
     img: '/transformations/Surekha 3.png',
   },
   {
@@ -37,8 +37,8 @@ const results = [
     result: '−5.2 kg · 10 weeks',
     struggleTag: "Doctor said 'you're fine'",
     quote:
-      "My doctor noticed the difference before I even told her. She asked what I changed — I told her: everything about how I treat my thyroid.",
-    img: '/transformations/Surekha 3.png',
+      "My doctor noticed the difference before I even told her. She asked what I changed — I told her: everything about how I treat my thyroid, using My THYROID L.E.A.N. Method.",
+    img: '/transformations/Rozal 2.png',
   },
   {
     id: 'anjali',
@@ -48,8 +48,7 @@ const results = [
     result: '−4.1 kg · 9 weeks',
     struggleTag: 'Scared to eat carbs',
     quote:
-      "No starvation. Real Indian food — dal, rotis, rice. I couldn't believe the scale moved while I was eating everything I love.",
-    // TODO: Replace with Anjali M.'s own image — upload to /public/transformations/Anjali M.png
+      "No starvation. Real Indian food — dal, rotis, rice. I couldn't believe the scale moved while I was eating everything I love. All of this through My THYROID L.E.A.N. Method.",
     img: '/transformations/Heenal 7.png',
   },
 ] as const
@@ -236,7 +235,7 @@ function ResultCard({
       </div>
 
       {/* Card body: quote then result — emotional truth before the number */}
-      <div className="flex flex-1 flex-col px-4 pt-[14px] pb-4 gap-[10px]">
+      <div className="flex flex-1 flex-col min-h-0 px-4 pt-[14px] pb-4 gap-[10px]">
         <blockquote className="text-[14px] font-normal leading-[1.72] text-[var(--t2)]">
           &ldquo;{r.quote}&rdquo;
         </blockquote>

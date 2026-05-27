@@ -591,7 +591,7 @@ a {
   background: var(--s1);
   border: 1px solid var(--b-soft);
   border-radius: var(--r-xl);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   transition: border-color 200ms var(--ease);
@@ -830,6 +830,338 @@ a {
   line-height: 1.35;
   color: var(--t3);
   text-align: center;
+}
+
+/* ============================================================
+   AUTHORITY SECTION — PREMIUM REDESIGN
+   ============================================================ */
+
+/* Two-column layout */
+.authority-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .authority-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 3.5rem;
+  }
+}
+
+/* ── Portrait column ──────────────────────────────────────── */
+
+.authority-portrait-col {
+  position: relative;
+  width: min(72vw, 220px);
+  margin-inline: auto;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .authority-portrait-col {
+    width: 250px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .authority-portrait-col {
+    width: 300px;
+    margin-inline: 0;
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+
+/* Purple ambient halo behind the portrait */
+.authority-portrait-halo {
+  pointer-events: none;
+  position: absolute;
+  inset: -2rem;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(168, 85, 247, 0.22) 0%,
+    rgba(168, 85, 247, 0.06) 45%,
+    transparent 72%
+  );
+  z-index: 0;
+  filter: blur(8px);
+}
+
+/* Gradient-border outer frame — 1.5 px "border" via background + padding trick */
+.authority-portrait-frame {
+  position: relative;
+  z-index: 1;
+  border-radius: 1.5rem;
+  padding: 1.5px;
+  background: linear-gradient(
+    150deg,
+    rgba(168, 85, 247, 0.55) 0%,
+    rgba(168, 85, 247, 0.08) 40%,
+    rgba(255, 255, 255, 0.05) 70%,
+    rgba(168, 85, 247, 0.2) 100%
+  );
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 0, 0, 0.6) inset;
+}
+
+/* Inner card — dark bg + overflow clip for rounded image */
+.authority-portrait-inner {
+  border-radius: calc(1.5rem - 1.5px);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Name badge at portrait bottom */
+.authority-name-badge {
+  background: linear-gradient(
+    180deg,
+    rgba(18, 19, 22, 0.97) 0%,
+    rgba(14, 15, 17, 0.99) 100%
+  );
+  border-top: 1px solid rgba(168, 85, 247, 0.14);
+  padding: 0.9rem 1rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Verified checkmark pill inside badge */
+.authority-verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: rgba(168, 85, 247, 0.09);
+  font-size: 0.59rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--p400);
+}
+
+/* Credential badge pills */
+.authority-cred-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  background: rgba(168, 85, 247, 0.06);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--p300);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── Content column ───────────────────────────────────────── */
+
+.authority-content-col {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .authority-content-col {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* Coach name — large, impactful */
+.authority-coach-name {
+  font-size: clamp(1.85rem, 4.5vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  color: var(--t1);
+  margin: 0 0 0.45rem;
+}
+
+/* Authority subtitle in accent */
+.authority-coach-title {
+  font-size: clamp(0.72rem, 1.4vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--p400);
+  margin: 0 0 1.4rem;
+  line-height: 1.4;
+}
+
+/* Bio paragraph */
+.authority-bio {
+  font-size: var(--text-sm);
+  line-height: 1.78;
+  color: var(--t2);
+  max-width: 50ch;
+  margin: 0 auto 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .authority-bio {
+    margin: 0 0 1.5rem;
+  }
+}
+
+/* Trust bullet list */
+.authority-trust-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 44ch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  text-align: left;
+}
+
+@media (min-width: 1024px) {
+  .authority-trust-list {
+    margin: 0;
+  }
+}
+
+.authority-trust-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: var(--text-sm);
+  color: var(--t2);
+  line-height: 1.6;
+}
+
+.authority-trust-dot {
+  display: block;
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+  background: var(--p400);
+  flex-shrink: 0;
+  margin-top: 0.48rem;
+}
+
+/* ── Certification grid ───────────────────────────────────── */
+
+.authority-cert-section {
+  margin-top: 3.5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--b-soft);
+}
+
+/* Centred header row with side lines */
+.authority-cert-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1.75rem;
+}
+
+.authority-cert-header-line {
+  flex: 1;
+  max-width: 5rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--b-soft));
+}
+
+.authority-cert-header-line:last-child {
+  background: linear-gradient(to left, transparent, var(--b-soft));
+}
+
+/* 2-col mobile → 4-col at 640 px+ */
+.authority-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .authority-cert-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Individual cert card */
+.authority-cert-card {
+  margin: 0;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--b-soft);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.045) 0%,
+    rgba(255, 255, 255, 0.018) 100%
+  );
+  overflow: hidden;
+  transition:
+    border-color 240ms var(--ease),
+    transform 240ms var(--ease),
+    box-shadow 240ms var(--ease);
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+}
+
+.authority-cert-card:hover {
+  border-color: var(--p-border);
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(168, 85, 247, 0.1);
+}
+
+/* Image container — 4:3 ratio */
+.authority-cert-img-wrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid var(--b-soft);
+  overflow: hidden;
+}
+
+/* Subtle purple tint that appears on hover */
+.authority-cert-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(168, 85, 247, 0);
+  transition: background 240ms var(--ease);
+  pointer-events: none;
+}
+
+.authority-cert-card:hover .authority-cert-img-overlay {
+  background: rgba(168, 85, 247, 0.04);
+}
+
+/* Cert card label */
+.authority-cert-label {
+  padding: 0.7rem 0.8rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--t2);
+  text-align: center;
+  letter-spacing: 0.02em;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* CHIPS */
