@@ -28,8 +28,80 @@ import {
   getUserAgent,
 } from '@/lib/server-tracking'
 import crypto from 'crypto'
+import { google } from 'googleapis'
 
 const CASHFREE_SECRET = process.env.CASHFREE_WEBHOOK_SECRET || ''
+const LEADS_SHEET_NAME = 'Leads'
+
+async function appendPaymentToSheet(data: {
+  orderId: string
+  name: string
+  phone: string
+  email: string
+  amount: number
+  currency: string
+  tags: Record<string, string>
+}) {
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
+  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  const sheetId = process.env.GOOGLE_SHEETS_ID
+
+  console.log('[cashfree-webhook] Sheets env check:', {
+    hasEmail: !!email,
+    hasKey: !!key,
+    keyLength: key?.length ?? 0,
+    keyValid: key?.startsWith('-----BEGIN') ?? false,
+    hasSheetId: !!sheetId,
+  })
+
+  if (!email || !key || !sheetId) {
+    console.error('[cashfree-webhook] Missing Google Sheets env vars — cannot write row')
+    return
+  }
+
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: email,
+      private_key: key,
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  })
+
+  const sheets = google.sheets({ version: 'v4', auth })
+
+  // Row matches "Leads" tab column order:
+  // Timestamp | Lead ID | Name | Phone | Email | Age | Thyroid Condition |
+  // Weight Struggles | Energy Level | Biggest Frustration | Main Goal |
+  // UTM Source | UTM Medium | UTM Campaign | FBclid | Visitor ID | Status
+  const row = [
+    new Date().toISOString(),       // Timestamp
+    data.orderId,                   // Lead ID (order_id as proxy)
+    data.name,                      // Name
+    data.phone,                     // Phone
+    data.email,                     // Email
+    '',                             // Age
+    '',                             // Thyroid Condition
+    '',                             // Weight Struggles
+    '',                             // Energy Level
+    '',                             // Biggest Frustration
+    '',                             // Main Goal
+    data.tags['utm_source'] || '',  // UTM Source
+    data.tags['utm_medium'] || '',  // UTM Medium
+    data.tags['utm_campaign'] || '',// UTM Campaign
+    data.tags['fbc'] || '',         // FBclid
+    data.tags['visitor_id'] || '',  // Visitor ID
+    `payment_received|${data.amount}${data.currency}`, // Status
+  ]
+
+  const response = await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: `${LEADS_SHEET_NAME}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [row] },
+  })
+
+  console.log('[cashfree-webhook] Sheets append status:', response.status, response.data?.updates)
+}
 
 function verifyCashfreeSignature(rawBody: string, signature: string): boolean {
   if (!CASHFREE_SECRET) return true
@@ -125,6 +197,23 @@ export async function POST(req: NextRequest) {
     })
 
     console.log('[cashfree-webhook] Purchase CAPI result:', result)
+
+    // Write to Google Sheets — server-to-server, most reliable path
+    try {
+      await appendPaymentToSheet({
+        orderId: order.order_id,
+        name: customer.customer_name,
+        phone: customer.customer_phone,
+        email: customer.customer_email,
+        amount: payment.payment_amount,
+        currency: order.order_currency || 'INR',
+        tags,
+      })
+      console.log('[cashfree-webhook] Sheets row written for order:', order.order_id)
+    } catch (sheetsErr) {
+      // Log but don't fail the webhook response — Cashfree must get 200
+      console.error('[cashfree-webhook] Sheets write failed:', sheetsErr instanceof Error ? sheetsErr.message : String(sheetsErr))
+    }
 
     return NextResponse.json({ received: true, capi: result })
   } catch (err) {

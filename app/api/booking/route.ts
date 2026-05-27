@@ -20,7 +20,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 
-const SHEET_NAME = "Bookings"; // tab name inside the spreadsheet
+const SHEET_NAME = "Leads"; // must match the exact tab name in your spreadsheet
 
 type Step1Data = {
   name?: string;
@@ -78,17 +78,29 @@ function str(v: string | undefined): string {
 
 async function appendToSheet(payload: BookingPayload) {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const rawKey = process.env.GOOGLE_PRIVATE_KEY;
+  const key = rawKey?.replace(/\\n/g, "\n");
   const sheetId = process.env.GOOGLE_SHEETS_ID;
 
+  console.log("[booking] env check:", {
+    hasEmail: !!email,
+    hasKey: !!key,
+    keyLength: key?.length ?? 0,
+    keyValid: key?.startsWith("-----BEGIN") ?? false,
+    hasSheetId: !!sheetId,
+    sheetName: SHEET_NAME,
+  });
+
   if (!email || !key || !sheetId) {
-    console.warn("[booking] Google Sheets env vars missing — skipping sheet write");
-    return;
+    console.error("[booking] Missing Google Sheets env vars — aborting sheet write");
+    throw new Error("Missing Google Sheets env vars");
   }
 
-  const auth = new google.auth.JWT({
-    email,
-    key,
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: email,
+      private_key: key,
+    },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
@@ -126,25 +138,32 @@ async function appendToSheet(payload: BookingPayload) {
     str(attribution.visitor_id),           // Visitor ID
   ];
 
-  await sheets.spreadsheets.values.append({
+  console.log("[booking] Appending row to sheet, range:", `${SHEET_NAME}!A1`);
+
+  const response = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
     range: `${SHEET_NAME}!A1`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [row] },
   });
+
+  console.log("[booking] Append response status:", response.status, response.data?.updates);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const payload = (await req.json()) as BookingPayload;
 
+    console.log("[booking] Received payload for:", payload.step1?.name || "unknown", "leadId:", payload.leadId);
+
     await appendToSheet(payload);
 
-    console.log("[booking] Row appended for:", payload.step1?.name || "unknown");
+    console.log("[booking] Row appended successfully for:", payload.step1?.name || "unknown");
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[booking]", err);
+    console.error("[booking] FAILED:", err instanceof Error ? err.message : String(err));
+    console.error("[booking] Full error:", err);
     return NextResponse.json({ error: "Failed to save booking" }, { status: 500 });
   }
 }

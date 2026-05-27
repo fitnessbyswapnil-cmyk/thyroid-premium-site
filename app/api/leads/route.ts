@@ -49,17 +49,29 @@ function str(v: string | undefined): string {
 
 async function appendLeadToSheet(payload: LeadPayload) {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const rawKey = process.env.GOOGLE_PRIVATE_KEY;
+  const key = rawKey?.replace(/\\n/g, "\n");
   const sheetId = process.env.GOOGLE_SHEETS_ID;
 
+  console.log("[leads] env check:", {
+    hasEmail: !!email,
+    hasKey: !!key,
+    keyLength: key?.length ?? 0,
+    keyValid: key?.startsWith("-----BEGIN") ?? false,
+    hasSheetId: !!sheetId,
+    sheetName: SHEET_NAME,
+  });
+
   if (!email || !key || !sheetId) {
-    console.warn("[leads] Google Sheets env vars missing — skipping sheet write");
-    return;
+    console.error("[leads] Missing Google Sheets env vars — aborting sheet write");
+    throw new Error("Missing Google Sheets env vars");
   }
 
-  const auth = new google.auth.JWT({
-    email,
-    key,
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: email,
+      private_key: key,
+    },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
@@ -87,22 +99,28 @@ async function appendLeadToSheet(payload: LeadPayload) {
     "lead_captured",                         // Status
   ];
 
-  await sheets.spreadsheets.values.append({
+  console.log("[leads] Appending row to sheet, range:", `${SHEET_NAME}!A1`);
+
+  const response = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
     range: `${SHEET_NAME}!A1`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [row] },
   });
+
+  console.log("[leads] Append response status:", response.status, response.data?.updates);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const payload = (await req.json()) as LeadPayload;
+    console.log("[leads] Received payload for:", payload.step1?.name || "unknown", "leadId:", payload.leadId);
     await appendLeadToSheet(payload);
-    console.log("[leads] Row appended for:", payload.step1?.name || "unknown", "id:", payload.leadId);
+    console.log("[leads] Row appended successfully for:", payload.step1?.name || "unknown", "id:", payload.leadId);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[leads]", err);
+    console.error("[leads] FAILED:", err instanceof Error ? err.message : String(err));
+    console.error("[leads] Full error:", err);
     return NextResponse.json({ error: "Failed to save lead" }, { status: 500 });
   }
 }
