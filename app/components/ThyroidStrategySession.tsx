@@ -3,314 +3,416 @@
 import { useEffect, useRef, useState } from "react";
 import CtaButton from "./CtaButton";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface FlowStep {
-  num: string;
-  label: string;
-  micro: string;
-  rgb: string;       // "R,G,B" for rgba()
-  hex: string;       // start color for icon gradient
-  hexTo: string;     // end color for icon gradient
-  svgPaths: string[];
-}
-
-// ─── Step data — ultra-concise, no paragraphs ─────────────────────────────────
-
-const STEPS: FlowStep[] = [
-  {
-    num: "01",
-    label: "Your Private Intake",
-    micro: "Reviewed personally — before we speak.",
-    rgb: "139,92,246",
-    hex: "#8B5CF6",
-    hexTo: "#6D28D9",
-    svgPaths: [
-      "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2",
-      "M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
-      "M9 12l2 2 4-4",
-    ],
-  },
-  {
-    num: "02",
-    label: "Case Prepared",
-    micro: "Your history studied before we meet.",
-    rgb: "167,139,250",
-    hex: "#A78BFA",
-    hexTo: "#7C3AED",
-    svgPaths: [
-      "M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z",
-    ],
-  },
-  {
-    num: "03",
-    label: "Deep Listening",
-    micro: "No scripts. No clock watching.",
-    rgb: "232,121,249",
-    hex: "#E879F9",
-    hexTo: "#A855F7",
-    svgPaths: [
-      "M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155",
-    ],
-  },
-  {
-    num: "04",
-    label: "Thyroid Blockers Named",
-    micro: "The real reason fat isn't moving.",
-    rgb: "251,113,133",
-    hex: "#FB7185",
-    hexTo: "#E11D48",
-    svgPaths: [
-      "M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18",
-    ],
-  },
-  {
-    num: "05",
-    label: "Your Action Strategy",
-    micro: "Three steps. Specific to you. Yours now.",
-    rgb: "251,191,36",
-    hex: "#FBBF24",
-    hexTo: "#D97706",
-    svgPaths: [
-      "M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z",
-    ],
-  },
-  {
-    num: "06",
-    label: "Written Summary Sent",
-    micro: "In your inbox within 24 hours.",
-    rgb: "52,211,153",
-    hex: "#34D399",
-    hexTo: "#059669",
-    svgPaths: [
-      "M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75",
-    ],
-  },
-];
-
-const OUTCOMES = [
-  { text: "Thyroid clarity", rgb: "139,92,246" },
-  { text: "Personalized actions", rgb: "232,121,249" },
-  { text: "Written strategy", rgb: "52,211,153" },
-  { text: "Real understanding", rgb: "251,191,36" },
-];
-
-const TRUST_SIGNALS = [
-  "Private & confidential",
-  "No sales pressure",
-  "Written plan included",
-] as const;
-
-// ─── useInView ────────────────────────────────────────────────────────────────
-
-function useInView(threshold = 0.12) {
+function useInView(threshold = 0.1) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
       { threshold }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [threshold]);
-
   return { ref, visible };
 }
 
-// ─── StepIcon — SVG with per-step linear gradient ────────────────────────────
-
-function StepIcon({
-  paths,
-  hex,
-  hexTo,
-  gradId,
-}: {
-  paths: string[];
+interface CP {
+  id: string;
+  eyebrow: string;
+  title: string;
+  body: string;
+  rgb: string;
   hex: string;
   hexTo: string;
-  gradId: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={`url(#${gradId})`}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      width="18"
-      height="18"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={hex} />
-          <stop offset="100%" stopColor={hexTo} />
-        </linearGradient>
-      </defs>
-      {paths.map((d, i) => (
-        <path key={i} d={d} />
-      ))}
-    </svg>
-  );
+  paths: string[];
+  tag?: string;
 }
 
-// ─── FlowNode — single step in the vertical timeline ─────────────────────────
+const CHECKPOINTS: CP[] = [
+  {
+    id: "01",
+    eyebrow: "Before We Even Speak",
+    title: "Your Thyroid Story, Finally Decoded",
+    body: "Your full intake is studied before we meet. No repeating yourself. No starting from zero. We already know your pattern.",
+    rgb: "168,85,247",
+    hex: "#a855f7",
+    hexTo: "#7c3aed",
+    paths: ["M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"],
+  },
+  {
+    id: "02",
+    eyebrow: "Root Cause Analysis",
+    title: "Hidden Fat-Loss Blockers Identified",
+    body: "The real reason your weight won't budge — even when you eat clean, exercise, and try everything the internet suggests.",
+    rgb: "232,121,249",
+    hex: "#e879f9",
+    hexTo: "#a855f7",
+    paths: ["M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"],
+    tag: "Most women discover this for the first time here",
+  },
+  {
+    id: "03",
+    eyebrow: "Lab Pattern Review",
+    title: '"Your Labs Are Normal" — Decoded For Real',
+    body: "TSH, T3, T4, and ferritin patterns reviewed against your actual symptoms. Not just ticked against lab reference ranges.",
+    rgb: "251,113,133",
+    hex: "#fb7185",
+    hexTo: "#e11d48",
+    paths: [
+      "M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5",
+    ],
+  },
+  {
+    id: "04",
+    eyebrow: "Metabolism & Hormones",
+    title: "Exactly Where Your Energy Is Leaking",
+    body: "Food timing, cortisol spikes, sleep disruptions, and hormone cycles — mapped to your specific fatigue, bloat, and brain fog.",
+    rgb: "251,191,36",
+    hex: "#fbbf24",
+    hexTo: "#d97706",
+    paths: ["M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"],
+  },
+  {
+    id: "05",
+    eyebrow: "Your Personalized Plan",
+    title: "A Thyroid Recovery Blueprint, Built For You",
+    body: "A clear, actionable 30-day direction built entirely around your body, your labs, your lifestyle. Not a template. Not generic.",
+    rgb: "52,211,153",
+    hex: "#34d399",
+    hexTo: "#059669",
+    paths: ["M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c-.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z"],
+  },
+  {
+    id: "06",
+    eyebrow: "Yours Forever",
+    title: "Written Clarity — In Your Inbox Within 24 Hours",
+    body: "Every insight, every next step — documented and sent to you in writing. So you never have to rely on memory alone.",
+    rgb: "96,165,250",
+    hex: "#60a5fa",
+    hexTo: "#3b82f6",
+    paths: ["M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"],
+  },
+];
 
-function FlowNode({ step, index }: { step: FlowStep; index: number }) {
-  const { ref, visible } = useInView(0.08);
-  const isLast = index === STEPS.length - 1;
-  const delay = index * 90;
-  const gradId = `tss-g-${step.num}`;
+const OUTCOMES = [
+  { text: "Why your fat loss is blocked", rgb: "168,85,247" },
+  { text: "Your labs decoded in plain language", rgb: "232,121,249" },
+  { text: "Thyroid-specific food direction", rgb: "251,113,133" },
+  { text: "30-day next steps — in writing", rgb: "52,211,153" },
+];
+
+const TRUST = [
+  "Private & confidential",
+  "Built for hypothyroid women",
+  "No crash diet advice",
+  "Personalized to your symptoms",
+];
+
+const SPINE_GRADIENT =
+  "linear-gradient(to bottom, rgba(168,85,247,0.38) 0%, rgba(232,121,249,0.28) 20%, rgba(251,113,133,0.22) 40%, rgba(251,191,36,0.24) 60%, rgba(52,211,153,0.3) 80%, rgba(96,165,250,0.22) 100%)";
+
+// ─── CheckpointCard ────────────────────────────────────────────────────────────
+
+function CheckpointCard({ cp, delay }: { cp: CP; delay: number }) {
+  const { ref, visible } = useInView(0.07);
+  const gradId = `tss-g-${cp.id}`;
 
   return (
     <div
       ref={ref}
       style={{
-        display: "flex",
-        alignItems: "flex-start",
-        position: "relative",
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(16px)",
-        transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
+        transform: visible ? "translateY(0)" : "translateY(20px)",
+        transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms`,
+        borderRadius: 20,
+        border: `1px solid rgba(${cp.rgb},0.2)`,
+        background: `linear-gradient(140deg, rgba(${cp.rgb},0.1) 0%, rgba(8,6,18,0.9) 60%)`,
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        padding: "20px 22px",
+        position: "relative" as const,
+        overflow: "hidden",
+        boxShadow: `0 0 48px rgba(${cp.rgb},0.06), inset 0 1px 0 rgba(255,255,255,0.04)`,
       }}
     >
-      {/* ── Left: spine column ─────────────────────── */}
+      {/* Ambient glow top-right */}
       <div
+        aria-hidden
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          flexShrink: 0,
-          width: 44,
-          marginRight: 18,
+          position: "absolute",
+          top: -28,
+          right: -28,
+          width: 130,
+          height: 130,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, rgba(${cp.rgb},0.18) 0%, transparent 70%)`,
+          filter: "blur(20px)",
+          pointerEvents: "none",
         }}
-      >
-        {/* Step number */}
-        <span
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            color: `rgba(${step.rgb},0.7)`,
-            marginBottom: 4,
-            lineHeight: 1,
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {step.num}
-        </span>
+      />
 
-        {/* Icon node */}
+      {/* Icon + meta row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 13 }}>
         <div
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            border: `1px solid rgba(${step.rgb},${visible ? 0.35 : 0.1})`,
-            background: `radial-gradient(circle at 40% 40%, rgba(${step.rgb},0.14), rgba(${step.rgb},0.04))`,
-            boxShadow: visible
-              ? `0 0 18px rgba(${step.rgb},0.22), 0 0 0 5px rgba(${step.rgb},0.05)`
-              : "none",
+            width: 38,
+            height: 38,
+            borderRadius: 11,
+            border: `1px solid rgba(${cp.rgb},0.32)`,
+            background: `radial-gradient(circle at 35% 35%, rgba(${cp.rgb},0.22) 0%, rgba(${cp.rgb},0.06) 100%)`,
+            boxShadow: `0 0 18px rgba(${cp.rgb},0.28)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            position: "relative",
-            zIndex: 1,
-            transition: `border-color 0.6s ease ${delay + 150}ms, box-shadow 0.6s ease ${delay + 150}ms`,
+            position: "relative" as const,
           }}
         >
-          <StepIcon
-            paths={step.svgPaths}
-            hex={step.hex}
-            hexTo={step.hexTo}
-            gradId={gradId}
-          />
-        </div>
-
-        {/* Connector — fades in after the node */}
-        {!isLast && (
           <div
             style={{
-              width: 1,
-              flex: 1,
-              minHeight: 48,
-              marginTop: 4,
-              background: `linear-gradient(to bottom, rgba(${step.rgb},0.35), rgba(${STEPS[index + 1].rgb},0.15))`,
-              opacity: visible ? 1 : 0,
-              transition: `opacity 0.7s ease ${delay + 350}ms`,
+              position: "absolute",
+              inset: 0,
+              borderRadius: 11,
+              border: `1px solid rgba(${cp.rgb},0.55)`,
+              animation: "tss-ring 3.2s ease-in-out infinite",
             }}
           />
-        )}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={`url(#${gradId})`}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            width="17"
+            height="17"
+            aria-hidden
+          >
+            <defs>
+              <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={cp.hex} />
+                <stop offset="100%" stopColor={cp.hexTo} />
+              </linearGradient>
+            </defs>
+            {cp.paths.map((d, i) => <path key={i} d={d} />)}
+          </svg>
+        </div>
+
+        <div>
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase" as const,
+              color: `rgba(${cp.rgb},0.75)`,
+              display: "block",
+              lineHeight: 1.4,
+            }}
+          >
+            {cp.eyebrow}
+          </span>
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              color: "rgba(255,255,255,0.2)",
+              textTransform: "uppercase" as const,
+            }}
+          >
+            Step {cp.id}
+          </span>
+        </div>
       </div>
 
-      {/* ── Right: concise text ────────────────────── */}
-      <div
+      <h3
         style={{
-          flex: 1,
-          paddingTop: 14,
-          paddingBottom: isLast ? 0 : 44,
+          fontSize: "clamp(14.5px, 2.4vw, 16px)",
+          fontWeight: 700,
+          lineHeight: 1.28,
+          letterSpacing: "-0.018em",
+          color: "rgba(255,255,255,0.95)",
+          margin: "0 0 8px",
         }}
       >
-        <h3
+        {cp.title}
+      </h3>
+
+      <p style={{ fontSize: 12.5, lineHeight: 1.68, color: "rgba(255,255,255,0.4)", margin: 0 }}>
+        {cp.body}
+      </p>
+
+      {cp.tag && (
+        <div
           style={{
-            fontSize: 15,
-            fontWeight: 500,
-            color: "rgba(255,255,255,0.90)",
-            margin: "0 0 5px",
-            lineHeight: 1.3,
-            letterSpacing: "-0.01em",
+            marginTop: 11,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            padding: "3px 9px",
+            borderRadius: 99,
+            border: `1px solid rgba(${cp.rgb},0.22)`,
+            background: `rgba(${cp.rgb},0.07)`,
           }}
         >
-          {step.label}
-        </h3>
-        <p
+          <div style={{ width: 4, height: 4, borderRadius: "50%", background: `rgba(${cp.rgb},0.85)`, flexShrink: 0 }} />
+          <span style={{ fontSize: 9.5, fontWeight: 500, color: `rgba(${cp.rgb},0.72)`, letterSpacing: "0.02em" }}>
+            {cp.tag}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SpineDot (desktop center node) ───────────────────────────────────────────
+
+function SpineDot({ cp }: { cp: CP }) {
+  const { ref, visible } = useInView(0.07);
+  return (
+    <div ref={ref} style={{ display: "flex", justifyContent: "center" }}>
+      <div
+        style={{
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${cp.hex} 0%, ${cp.hexTo} 100%)`,
+          boxShadow: visible
+            ? `0 0 0 5px rgba(${cp.rgb},0.14), 0 0 24px rgba(${cp.rgb},0.6), 0 0 48px rgba(${cp.rgb},0.2)`
+            : "none",
+          transition: "box-shadow 0.7s ease 200ms",
+          flexShrink: 0,
+        }}
+      />
+    </div>
+  );
+}
+
+// ─── Journey Section ───────────────────────────────────────────────────────────
+
+function JourneySection() {
+  return (
+    <div style={{ position: "relative" }}>
+      {/* ── Mobile layout ───────────────────────────────────── */}
+      <div className="md:hidden" style={{ position: "relative" }}>
+        <div
+          aria-hidden
           style={{
-            fontSize: 12,
-            color: "rgba(255,255,255,0.38)",
-            margin: 0,
-            lineHeight: 1.55,
-            letterSpacing: "0.005em",
+            position: "absolute",
+            left: 14,
+            top: 10,
+            bottom: 10,
+            width: 1,
+            background: SPINE_GRADIENT,
           }}
-        >
-          {step.micro}
-        </p>
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {CHECKPOINTS.map((cp, i) => (
+            <div key={cp.id} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+              {/* Spine dot */}
+              <div style={{ flexShrink: 0, width: 28, paddingTop: 22, display: "flex", justifyContent: "center" }}>
+                <div
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: `radial-gradient(circle, ${cp.hex} 0%, ${cp.hexTo} 100%)`,
+                    boxShadow: `0 0 12px rgba(${cp.rgb},0.55), 0 0 0 3px rgba(${cp.rgb},0.13)`,
+                    position: "relative" as const,
+                    zIndex: 1,
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <CheckpointCard cp={cp} delay={i * 80} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Desktop zig-zag layout ──────────────────────────── */}
+      <div className="hidden md:block" style={{ position: "relative" }}>
+        {/* Central spine */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 14,
+            bottom: 14,
+            width: 1,
+            transform: "translateX(-50%)",
+            background: SPINE_GRADIENT,
+            zIndex: 0,
+          }}
+        />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {CHECKPOINTS.map((cp, i) => {
+            const isRight = i % 2 !== 0;
+            return (
+              <div
+                key={cp.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  position: "relative" as const,
+                  zIndex: 1,
+                }}
+              >
+                {/* Left slot */}
+                <div style={{ flex: 1, paddingRight: 28, display: "flex", justifyContent: "flex-end" }}>
+                  {!isRight && (
+                    <div style={{ width: "100%" }}>
+                      <CheckpointCard cp={cp} delay={i * 100} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Center dot */}
+                <div style={{ width: 44, flexShrink: 0 }}>
+                  <SpineDot cp={cp} />
+                </div>
+
+                {/* Right slot */}
+                <div style={{ flex: 1, paddingLeft: 28 }}>
+                  {isRight && (
+                    <div style={{ width: "100%" }}>
+                      <CheckpointCard cp={cp} delay={i * 100} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── OutcomeCard ──────────────────────────────────────────────────────────────
+// ─── OutcomesStrip ─────────────────────────────────────────────────────────────
 
-function OutcomeCard() {
+function OutcomesStrip() {
   const { ref, visible } = useInView(0.15);
-
   return (
     <div
       ref={ref}
       style={{
-        marginTop: 48,
+        marginTop: 44,
         borderRadius: 20,
-        border: "1px solid rgba(139,92,246,0.2)",
-        background:
-          "linear-gradient(135deg, rgba(139,92,246,0.07) 0%, rgba(109,40,217,0.04) 50%, rgba(52,211,153,0.05) 100%)",
+        border: "1px solid rgba(139,92,246,0.18)",
+        background: "linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(8,6,18,0.85) 100%)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        padding: "24px 24px 20px",
+        padding: "22px 24px",
         opacity: visible ? 1 : 0,
-        transform: visible
-          ? "translateY(0) scale(1)"
-          : "translateY(12px) scale(0.99)",
+        transform: visible ? "translateY(0)" : "translateY(14px)",
         transition: "opacity 0.6s ease, transform 0.6s ease",
       }}
     >
@@ -318,170 +420,53 @@ function OutcomeCard() {
         style={{
           fontSize: 10,
           fontWeight: 700,
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: "rgba(255,255,255,0.3)",
-          margin: "0 0 14px",
+          letterSpacing: "0.2em",
+          textTransform: "uppercase" as const,
+          color: "rgba(255,255,255,0.28)",
+          margin: "0 0 16px",
         }}
       >
-        You leave with
+        You walk away with
       </p>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "8px 12px",
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px" }}>
         {OUTCOMES.map((o) => (
-          <div
-            key={o.text}
-            style={{ display: "flex", alignItems: "center", gap: 8 }}
-          >
+          <div key={o.text} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div
               style={{
                 width: 6,
                 height: 6,
                 borderRadius: "50%",
                 background: `rgba(${o.rgb},0.9)`,
-                boxShadow: `0 0 8px rgba(${o.rgb},0.5)`,
+                boxShadow: `0 0 8px rgba(${o.rgb},0.55)`,
                 flexShrink: 0,
               }}
             />
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 400,
-                color: "rgba(255,255,255,0.72)",
-                lineHeight: 1.3,
-              }}
-            >
+            <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.35 }}>
               {o.text}
             </span>
           </div>
         ))}
       </div>
-
-      {/* Guarantee — the most conversion-relevant sentence on the page */}
       <p
         style={{
           fontSize: 11,
-          color: "rgba(255,255,255,0.22)",
-          margin: "16px 0 0",
+          color: "rgba(255,255,255,0.2)",
+          margin: "14px 0 0",
           paddingTop: 14,
           borderTop: "1px solid rgba(255,255,255,0.05)",
-          lineHeight: 1.5,
+          lineHeight: 1.55,
         }}
       >
-        Regardless of whether you continue to coaching — this is yours.
+        Regardless of whether you continue to coaching — every insight from this session is yours to keep.
       </p>
     </div>
   );
 }
 
-// ─── SectionHeader ────────────────────────────────────────────────────────────
-
-function SectionHeader() {
-  const { ref, visible } = useInView(0.2);
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        textAlign: "center",
-        marginBottom: 56,
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(16px)",
-        transition: "opacity 0.65s ease, transform 0.65s ease",
-      }}
-    >
-      {/* Eyebrow pill — "When" invites cold traffic in vs "After" which presupposes booking */}
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "5px 14px",
-          borderRadius: 99,
-          border: "1px solid rgba(139,92,246,0.28)",
-          background: "rgba(139,92,246,0.08)",
-          marginBottom: 18,
-        }}
-      >
-        <span
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            background: "#A78BFA",
-            animation: "tss-pulse 2s ease-in-out infinite",
-            display: "block",
-            flexShrink: 0,
-          }}
-        />
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color: "#C4B5FD",
-          }}
-        >
-          What Happens When You Book
-        </span>
-      </div>
-
-      {/* Headline */}
-      <h2
-        id="strategy-session-heading"
-        style={{
-          fontSize: "clamp(26px, 5vw, 40px)",
-          fontWeight: 600,
-          lineHeight: 1.2,
-          letterSpacing: "-0.025em",
-          color: "#fff",
-          margin: "0 0 12px",
-          maxWidth: 480,
-          marginLeft: "auto",
-          marginRight: "auto",
-        }}
-      >
-        Your 60-Minute{" "}
-        <span
-          style={{
-            backgroundImage:
-              "linear-gradient(135deg, #C084FC 0%, #8B5CF6 50%, #34D399 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Thyroid Strategy Session
-        </span>
-      </h2>
-
-      {/* One line — maximum clarity */}
-      <p
-        style={{
-          fontSize: 14,
-          color: "rgba(255,255,255,0.42)",
-          margin: 0,
-          letterSpacing: "0.005em",
-        }}
-      >
-        Not a sales call. A structured diagnostic experience.
-      </p>
-    </div>
-  );
-}
-
-// ─── CTABlock ─────────────────────────────────────────────────────────────────
+// ─── CTABlock ──────────────────────────────────────────────────────────────────
 
 function CTABlock() {
   const { ref, visible } = useInView(0.15);
-
   return (
     <div
       ref={ref}
@@ -489,112 +474,82 @@ function CTABlock() {
         marginTop: 48,
         textAlign: "center",
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(12px)",
+        transform: visible ? "translateY(0)" : "translateY(14px)",
         transition: "opacity 0.6s ease, transform 0.6s ease",
       }}
     >
-      {/* Attributed testimonial card — name + city + condition = evidence not decoration */}
+      {/* Testimonial card */}
       <div
         style={{
-          borderRadius: 14,
+          borderRadius: 16,
           border: "1px solid rgba(139,92,246,0.15)",
           background: "rgba(139,92,246,0.05)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          padding: "16px 18px",
-          marginBottom: 24,
+          padding: "18px 20px",
+          marginBottom: 28,
           textAlign: "left",
         }}
       >
+        <div style={{ display: "flex", gap: 3, marginBottom: 10 }}>
+          {[0,1,2,3,4].map((i) => (
+            <svg key={i} viewBox="0 0 12 12" fill="#a855f7" width="11" height="11" aria-hidden>
+              <path d="M6 1l1.27 2.572L10 4.07l-2 1.947.472 2.752L6 7.5 3.528 8.769 4 6.017 2 4.07l2.73-.498z" />
+            </svg>
+          ))}
+        </div>
         <p
           style={{
             fontSize: 13,
             fontStyle: "italic",
-            color: "rgba(255,255,255,0.52)",
+            color: "rgba(255,255,255,0.55)",
             margin: "0 0 10px",
             lineHeight: 1.65,
           }}
         >
-          &ldquo;More clarity in 60 minutes than 3 years of trying alone.&rdquo;
+          &ldquo;More clarity about my thyroid in 60 minutes than 3 years of trying to figure it out alone. I finally understand why nothing was working.&rdquo;
         </p>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: "rgba(139,92,246,0.75)",
-            letterSpacing: "0.03em",
-          }}
-        >
+        <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(139,92,246,0.75)", letterSpacing: "0.03em" }}>
           — Priya M., Pune&nbsp;&nbsp;·&nbsp;&nbsp;Hashimoto&apos;s
         </span>
       </div>
 
-      {/* Medium-intensity glow wrapper — psychological escalation */}
-      <div className="cta-wrap cta-glow-mid" style={{ marginBottom: 0 }}>
+      <div className="cta-wrap cta-glow-mid">
         <CtaButton
           variant="primary"
-          label="Reserve My Private Thyroid Session"
-          sublabel="60 min · 1-on-1 · Written action plan included"
-          ariaLabel="Reserve your private thyroid strategy session"
+          label="Reserve My Private Thyroid Clarity Session"
+          sublabel="60 min · 1-on-1 with Swapnil · Written plan included"
+          ariaLabel="Reserve your private thyroid clarity session"
           location="strategy_session"
         />
       </div>
 
-      {/* Refund guarantee — single high-trust line */}
       <p
         style={{
-          marginTop: 12,
-          textAlign: "center",
+          marginTop: 14,
           fontSize: 11,
           fontWeight: 500,
           color: "rgba(255,255,255,0.28)",
           lineHeight: 1.5,
         }}
       >
-        <span
-          style={{ color: "rgba(52,211,153,0.65)", marginRight: 5 }}
-          aria-hidden="true"
-        >
-          ✓
-        </span>
-        Full refund if you don&apos;t leave with complete clarity
+        <span style={{ color: "rgba(52,211,153,0.65)", marginRight: 5 }} aria-hidden>✓</span>
+        Full refund if you don&apos;t leave with complete clarity — no questions asked
       </p>
 
-      {/* Trust trio */}
       <div
         style={{
           display: "flex",
           flexWrap: "wrap",
           justifyContent: "center",
-          gap: "6px 18px",
-          marginTop: 12,
+          gap: "6px 16px",
+          marginTop: 14,
         }}
       >
-        {TRUST_SIGNALS.map((t) => (
-          <span
-            key={t}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              fontSize: 11,
-              color: "rgba(255,255,255,0.24)",
-            }}
-          >
-            <svg
-              viewBox="0 0 10 10"
-              fill="none"
-              width="10"
-              height="10"
-              aria-hidden="true"
-            >
-              <path
-                d="M2 5l2 2 4-4"
-                stroke="rgba(139,92,246,0.6)"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+        {TRUST.map((t) => (
+          <span key={t} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "rgba(255,255,255,0.24)" }}>
+            <svg viewBox="0 0 10 10" fill="none" width="10" height="10" aria-hidden>
+              <path d="M2 5l2 2 4-4" stroke="rgba(139,92,246,0.6)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {t}
           </span>
@@ -604,15 +559,21 @@ function CTABlock() {
   );
 }
 
-// ─── Main Export ──────────────────────────────────────────────────────────────
+// ─── Main Export ───────────────────────────────────────────────────────────────
 
 export default function ThyroidStrategySession() {
+  const { ref: headerRef, visible: headerVisible } = useInView(0.18);
+
   return (
     <>
       <style>{`
+        @keyframes tss-ring {
+          0%, 100% { opacity: 0.35; transform: scale(1); }
+          50%       { opacity: 0.75; transform: scale(1.1); }
+        }
         @keyframes tss-pulse {
           0%, 100% { opacity: 0.5; transform: scale(1); }
-          50%       { opacity: 1;   transform: scale(1.2); }
+          50%       { opacity: 1;   transform: scale(1.28); }
         }
       `}</style>
 
@@ -620,44 +581,44 @@ export default function ThyroidStrategySession() {
         id="strategy-session"
         className="relative w-full overflow-hidden"
         style={{ paddingTop: 96, paddingBottom: 96 }}
-        aria-labelledby="strategy-session-heading"
+        aria-labelledby="tss-heading"
       >
-        {/* Atmospheric background — fluid min() widths prevent overflow on 390px Android */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: "none",
-            overflow: "hidden",
-          }}
-        >
+        {/* Atmospheric background */}
+        <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
           <div
             style={{
               position: "absolute",
-              top: -80,
+              top: -100,
               left: "50%",
               transform: "translateX(-50%)",
-              width: "min(600px, 100vw)",
-              height: "min(500px, 80vw)",
+              width: "min(720px,100vw)",
+              height: "min(520px,80vw)",
               borderRadius: "50%",
-              background:
-                "radial-gradient(ellipse, rgba(139,92,246,0.18) 0%, transparent 70%)",
-              filter: "blur(40px)",
+              background: "radial-gradient(ellipse, rgba(139,92,246,0.16) 0%, transparent 70%)",
+              filter: "blur(55px)",
             }}
           />
           <div
             style={{
               position: "absolute",
               bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "min(400px, 90vw)",
-              height: "min(300px, 60vw)",
+              right: "-5%",
+              width: "min(420px,70vw)",
+              height: "min(320px,55vw)",
               borderRadius: "50%",
-              background:
-                "radial-gradient(ellipse, rgba(52,211,153,0.1) 0%, transparent 70%)",
+              background: "radial-gradient(ellipse, rgba(52,211,153,0.09) 0%, transparent 70%)",
+              filter: "blur(60px)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "40%",
+              left: "-5%",
+              width: "min(300px,50vw)",
+              height: "min(300px,50vw)",
+              borderRadius: "50%",
+              background: "radial-gradient(ellipse, rgba(232,121,249,0.06) 0%, transparent 70%)",
               filter: "blur(50px)",
             }}
           />
@@ -668,34 +629,121 @@ export default function ThyroidStrategySession() {
           style={{
             position: "relative",
             zIndex: 1,
-            maxWidth: 480,
+            maxWidth: 880,
             marginLeft: "auto",
             marginRight: "auto",
             paddingLeft: 20,
             paddingRight: 20,
           }}
         >
-          <SectionHeader />
+          {/* Header */}
+          <div
+            ref={headerRef}
+            style={{
+              textAlign: "center",
+              marginBottom: 60,
+              opacity: headerVisible ? 1 : 0,
+              transform: headerVisible ? "translateY(0)" : "translateY(20px)",
+              transition: "opacity 0.65s ease, transform 0.65s ease",
+            }}
+          >
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "5px 14px",
+                borderRadius: 99,
+                border: "1px solid rgba(139,92,246,0.28)",
+                background: "rgba(139,92,246,0.08)",
+                marginBottom: 20,
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#a855f7",
+                  animation: "tss-pulse 2.2s ease-in-out infinite",
+                  display: "block",
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase" as const,
+                  color: "#c4b5fd",
+                }}
+              >
+                What Happens Inside Your Session
+              </span>
+            </div>
 
-          <div style={{ position: "relative" }}>
-            {STEPS.map((step, i) => (
-              <FlowNode key={step.num} step={step} index={i} />
-            ))}
+            <h2
+              id="tss-heading"
+              style={{
+                fontSize: "clamp(26px, 5vw, 42px)",
+                fontWeight: 700,
+                lineHeight: 1.17,
+                letterSpacing: "-0.028em",
+                color: "#fff",
+                margin: "0 auto 16px",
+                maxWidth: 540,
+              }}
+            >
+              Finally, a session that{" "}
+              <span
+                style={{
+                  backgroundImage: "linear-gradient(135deg, #C084FC 0%, #8B5CF6 45%, #34D399 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                actually understands you.
+              </span>
+            </h2>
+
+            <p
+              style={{
+                fontSize: 14,
+                color: "rgba(255,255,255,0.4)",
+                margin: "0 auto",
+                maxWidth: 400,
+                lineHeight: 1.65,
+              }}
+            >
+              Not a sales call. Not generic advice. A structured diagnostic experience — built specifically for women with thyroid struggles.
+            </p>
           </div>
 
-          <OutcomeCard />
-          <CTABlock />
+          {/* Zig-zag journey */}
+          <JourneySection />
 
-          {/* Section bridge — aria-hidden: ↓ is decorative, not content */}
+          {/* Outcomes strip — narrower container */}
+          <div style={{ maxWidth: 560, marginLeft: "auto", marginRight: "auto" }}>
+            <OutcomesStrip />
+          </div>
+
+          {/* CTA — narrowest container */}
+          <div style={{ maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+            <CTABlock />
+          </div>
+
+          {/* Section bridge */}
           <p
-            aria-hidden="true"
+            aria-hidden
             style={{
               textAlign: "center",
               fontSize: 11,
               color: "rgba(255,255,255,0.18)",
               letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              marginTop: 48,
+              textTransform: "uppercase" as const,
+              marginTop: 52,
             }}
           >
             ↓&nbsp;&nbsp;See what women say after their session
