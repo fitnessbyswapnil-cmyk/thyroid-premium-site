@@ -12,18 +12,18 @@ const TRUST_ITEMS = [
 const WHAT_NEXT = [
   {
     num: "01",
-    title: "Pay the ₹299 booking fee",
-    body: "Secures your priority slot. Fully refundable if you don't leave with clarity.",
+    title: "Pay the ₹299 session fee",
+    body: "Secures your private slot. Fully refundable if you don't leave with complete clarity.",
   },
   {
     num: "02",
-    title: "Answer 6 deep intake questions",
-    body: "Helps Swapnil study your case before you even speak. No wasted time.",
+    title: "Complete your thyroid assessment",
+    body: "A short personalised intake — your symptoms, history, and frustrations. Swapnil studies this before you speak.",
   },
   {
     num: "03",
     title: "Pick your session time",
-    body: "Choose from available private slots. Zoom link sent instantly.",
+    body: "Choose any available private slot. Zoom link sent instantly to WhatsApp.",
   },
 ];
 
@@ -73,17 +73,17 @@ export function PaymentScreen({
 
         <div className="mb-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.07] p-3.5">
           <p className="text-[0.83rem] font-semibold text-amber-200/85">
-            Your slot is not secured yet.
+            One step to secure your slot.
           </p>
           <p className="mt-1 text-[0.75rem] text-amber-200/50">
-            Complete the ₹299 booking fee to lock your priority consultation.
+            Your ₹299 fee lets Swapnil personally prepare for your specific case — so every minute of your session is focused entirely on you.
           </p>
         </div>
 
         <p className="text-[0.8rem] leading-relaxed text-white/45">
-          Swapnil personally reviews every intake before speaking with you.
-          Nothing is wasted — every minute of your 60-minute session is
-          focused entirely on your thyroid case.
+          After payment, you&apos;ll complete a short personalised assessment.
+          Swapnil studies your answers before you speak — nothing is wasted,
+          no time spent on basics.
         </p>
       </motion.div>
 

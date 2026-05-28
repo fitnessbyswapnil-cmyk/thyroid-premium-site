@@ -23,6 +23,7 @@ type LeadPayload = {
     email?: string;
     age?: string;
     thyroidCondition?: string;
+    thyroidDuration?: string;
     weightStruggles?: string | string[];
     energyLevel?: string;
     biggestFrustration?: string;
@@ -97,6 +98,7 @@ async function appendLeadToSheet(payload: LeadPayload) {
     str(attribution.fbclid),                 // FBclid
     str(attribution.visitor_id),             // Visitor ID
     "lead_captured",                         // Status
+    str(step1.thyroidDuration),              // Thyroid Duration (new column)
   ];
 
   console.log("[leads] Appending row to sheet, range:", `${SHEET_NAME}!A1`);

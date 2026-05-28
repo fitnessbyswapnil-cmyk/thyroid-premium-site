@@ -1,18 +1,15 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Step1Data } from "./BookingFlow";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type QuestionId =
-  | "name" | "phone" | "email" | "thyroidCondition"
-  | "weightStruggles" | "energyLevel" | "biggestFrustration" | "mainGoal";
+type QuestionId = "name" | "phone" | "thyroidCondition" | "thyroidDuration" | "mainGoal";
 
 const QUESTION_ORDER: QuestionId[] = [
-  "name", "phone", "email", "thyroidCondition",
-  "weightStruggles", "energyLevel", "biggestFrustration", "mainGoal",
+  "name", "phone", "thyroidCondition", "thyroidDuration", "mainGoal",
 ];
 
 // ── Motion variants ───────────────────────────────────────────────────────────
@@ -55,6 +52,7 @@ function QuestionShell({
           {hint}
         </p>
       )}
+      {!hint && <div className="mb-4" />}
       {children}
     </div>
   );
@@ -91,13 +89,11 @@ function SelectCard({
   emoji,
   selected,
   onToggle,
-  multi = false,
 }: {
   label: string;
   emoji?: string;
   selected: boolean;
   onToggle: () => void;
-  multi?: boolean;
 }) {
   return (
     <button
@@ -126,13 +122,8 @@ function SelectCard({
               : "border-white/15"
           }`}
         >
-          {selected && !multi && (
+          {selected && (
             <div className="h-2 w-2 rounded-full bg-purple-300" />
-          )}
-          {selected && multi && (
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2 5l2 2 4-4" stroke="#c084fc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
           )}
         </div>
       </div>
@@ -171,7 +162,7 @@ function PhoneQuestion({
   return (
     <QuestionShell
       label="Your WhatsApp number"
-      hint="Swapnil will send your confirmation here."
+      hint="Swapnil will send your session confirmation here."
     >
       <div className="relative">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[0.95rem] text-white/35 select-none">
@@ -186,66 +177,6 @@ function PhoneQuestion({
           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-4 pl-14 pr-5 text-[0.95rem] text-white placeholder-white/25 outline-none transition-all duration-200 focus:border-purple-500/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(168,85,247,0.15)]"
           style={{ WebkitTapHighlightColor: "transparent" }}
         />
-      </div>
-    </QuestionShell>
-  );
-}
-
-function EmailQuestion({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <QuestionShell
-      label="Your email address"
-      hint="Optional — for written plan delivery after your session."
-    >
-      <TextInput
-        value={value}
-        onChange={onChange}
-        placeholder="your@email.com (optional)"
-        type="email"
-        autoComplete="email"
-      />
-    </QuestionShell>
-  );
-}
-
-function AgeQuestion({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const ranges = [
-    { label: "Under 25", val: "<25" },
-    { label: "25–34", val: "25-34" },
-    { label: "35–44", val: "35-44" },
-    { label: "45–54", val: "45-54" },
-    { label: "55+", val: "55+" },
-  ];
-  return (
-    <QuestionShell label="How old are you?" hint="Thyroid needs change at different life stages.">
-      <div className="flex flex-wrap gap-2.5">
-        {ranges.map((r) => (
-          <button
-            key={r.val}
-            type="button"
-            onClick={() => onChange(r.val)}
-            className={`rounded-full border px-5 py-2.5 text-[0.85rem] font-semibold transition-all duration-200 active:scale-[0.96] ${
-              value === r.val
-                ? "border-purple-400/60 bg-purple-500/20 text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.2)]"
-                : "border-white/10 bg-white/[0.04] text-white/55 hover:border-white/20"
-            }`}
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            {r.label}
-          </button>
-        ))}
       </div>
     </QuestionShell>
   );
@@ -282,100 +213,39 @@ function ThyroidConditionQuestion({
   );
 }
 
-function WeightStrugglesQuestion({
+function ThyroidDurationQuestion({
   value,
   onChange,
 }: {
-  value: string[];
-  onChange: (v: string[]) => void;
+  value: string;
+  onChange: (v: string) => void;
 }) {
   const options = [
-    { label: "Can't lose weight despite trying hard", emoji: "😔" },
-    { label: "Weight comes back as soon as I stop", emoji: "🔄" },
-    { label: "Bloated and heavy all the time", emoji: "😮‍💨" },
-    { label: "Never had a thyroid-specific plan before", emoji: "📋" },
-    { label: "Don't know where to even begin", emoji: "🧩" },
+    { label: "Less than 1 year", val: "Less than 1 year" },
+    { label: "1–3 years", val: "1–3 years" },
+    { label: "3–5 years", val: "3–5 years" },
+    { label: "More than 5 years", val: "More than 5 years" },
   ];
-  const toggle = (label: string) => {
-    onChange(
-      value.includes(label) ? value.filter((v) => v !== label) : [...value, label]
-    );
-  };
   return (
     <QuestionShell
-      label="Which of these feel like you?"
-      hint="Select all that apply. There are no wrong answers."
+      label="How long have you been dealing with this?"
+      hint="Thyroid issues affect your body differently over time."
     >
-      <div className="space-y-2.5">
-        {options.map((o) => (
-          <SelectCard
-            key={o.label}
-            label={o.label}
-            emoji={o.emoji}
-            selected={value.includes(o.label)}
-            onToggle={() => toggle(o.label)}
-            multi
-          />
-        ))}
-      </div>
-    </QuestionShell>
-  );
-}
-
-function EnergyLevelQuestion({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const options = [
-    { label: "Exhausted from the moment I wake up", emoji: "😴" },
-    { label: "Functional but always fighting fatigue", emoji: "😞" },
-    { label: "Energy crashes in the afternoon", emoji: "📉" },
-    { label: "Some days okay, most days not", emoji: "🌤️" },
-  ];
-  return (
-    <QuestionShell label="How would you describe your energy levels?">
-      <div className="space-y-2.5">
-        {options.map((o) => (
-          <SelectCard
-            key={o.label}
-            label={o.label}
-            emoji={o.emoji}
-            selected={value === o.label}
-            onToggle={() => onChange(o.label)}
-          />
-        ))}
-      </div>
-    </QuestionShell>
-  );
-}
-
-function FrustrationQuestion({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const options = [
-    { label: "Doctors say my reports are normal but I feel terrible", emoji: "💔" },
-    { label: "I've tried everything — nothing actually works", emoji: "😤" },
-    { label: "Fatigue and weight gain are ruining my confidence", emoji: "😞" },
-    { label: "I feel like nobody truly understands what I'm going through", emoji: "🙁" },
-  ];
-  return (
-    <QuestionShell label="What frustrates you most right now?" hint="Be honest — this helps Swapnil prepare for your session.">
-      <div className="space-y-2.5">
-        {options.map((o) => (
-          <SelectCard
-            key={o.label}
-            label={o.label}
-            emoji={o.emoji}
-            selected={value === o.label}
-            onToggle={() => onChange(o.label)}
-          />
+      <div className="flex flex-wrap gap-2.5">
+        {options.map((r) => (
+          <button
+            key={r.val}
+            type="button"
+            onClick={() => onChange(r.val)}
+            className={`rounded-full border px-5 py-2.5 text-[0.85rem] font-semibold transition-all duration-200 active:scale-[0.96] ${
+              value === r.val
+                ? "border-purple-400/60 bg-purple-500/20 text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.2)]"
+                : "border-white/10 bg-white/[0.04] text-white/55 hover:border-white/20"
+            }`}
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            {r.label}
+          </button>
         ))}
       </div>
     </QuestionShell>
@@ -424,11 +294,8 @@ export function QualificationForm({
   const [data, setData] = useState<Step1Data>({
     name: "",
     phone: "",
-    email: "",
     thyroidCondition: "",
-    weightStruggles: [],
-    energyLevel: "",
-    biggestFrustration: "",
+    thyroidDuration: "",
     mainGoal: "",
   });
 
@@ -436,14 +303,12 @@ export function QualificationForm({
   const progress = ((qIndex + 1) / QUESTION_ORDER.length) * 100;
 
   const getCurrentValue = () => {
-    const d = data as Record<string, string | string[]>;
+    const d = data as Record<string, string>;
     return d[currentQuestion];
   };
 
   const isCurrentValid = useCallback((): boolean => {
     const val = getCurrentValue();
-    if (currentQuestion === "weightStruggles") return (val as string[]).length > 0;
-    if (currentQuestion === "email") return true; // optional field
     return typeof val === "string" && val.trim().length > 0;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, currentQuestion]);
@@ -464,15 +329,15 @@ export function QualificationForm({
     setQIndex((i) => i - 1);
   };
 
-  const update = (field: QuestionId, val: string | string[]) => {
+  const update = (field: QuestionId, val: string) => {
     setData((prev) => ({ ...prev, [field]: val }));
   };
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const isLast = qIndex === QUESTION_ORDER.length - 1;
 
   return (
     <div className="rounded-[28px] border border-white/8 bg-white/[0.025] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:p-8">
-      {/* Question counter + progress */}
+      {/* Progress */}
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/25">
@@ -492,7 +357,7 @@ export function QualificationForm({
       </div>
 
       {/* Question content */}
-      <div className="min-h-[280px]" ref={(el) => { inputRef.current = el?.querySelector("input") ?? null; }}>
+      <div className="min-h-[260px]">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentQuestion}
@@ -508,31 +373,16 @@ export function QualificationForm({
             {currentQuestion === "phone" && (
               <PhoneQuestion value={data.phone} onChange={(v) => update("phone", v)} />
             )}
-            {currentQuestion === "email" && (
-              <EmailQuestion value={data.email} onChange={(v) => update("email", v)} />
-            )}
             {currentQuestion === "thyroidCondition" && (
               <ThyroidConditionQuestion
                 value={data.thyroidCondition}
                 onChange={(v) => update("thyroidCondition", v)}
               />
             )}
-            {currentQuestion === "weightStruggles" && (
-              <WeightStrugglesQuestion
-                value={data.weightStruggles}
-                onChange={(v) => update("weightStruggles", v)}
-              />
-            )}
-            {currentQuestion === "energyLevel" && (
-              <EnergyLevelQuestion
-                value={data.energyLevel}
-                onChange={(v) => update("energyLevel", v)}
-              />
-            )}
-            {currentQuestion === "biggestFrustration" && (
-              <FrustrationQuestion
-                value={data.biggestFrustration}
-                onChange={(v) => update("biggestFrustration", v)}
+            {currentQuestion === "thyroidDuration" && (
+              <ThyroidDurationQuestion
+                value={data.thyroidDuration}
+                onChange={(v) => update("thyroidDuration", v)}
               />
             )}
             {currentQuestion === "mainGoal" && (
@@ -545,8 +395,15 @@ export function QualificationForm({
         </AnimatePresence>
       </div>
 
+      {/* Auto-advance hint for card questions */}
+      {(currentQuestion === "thyroidCondition" || currentQuestion === "mainGoal") && isCurrentValid() && (
+        <p className="mb-3 text-center text-[0.65rem] text-purple-400/50">
+          Tap Continue to proceed
+        </p>
+      )}
+
       {/* Navigation */}
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-4 flex items-center gap-3">
         {qIndex > 0 && (
           <button
             type="button"
@@ -571,8 +428,8 @@ export function QualificationForm({
           }`}
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
-          {qIndex === QUESTION_ORDER.length - 1 ? "Complete My Application →" : "Continue"}
-          {isCurrentValid() && (
+          {isLast ? "Reserve My Spot →" : "Continue"}
+          {isCurrentValid() && !isLast && (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 4l4 4-4 4" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

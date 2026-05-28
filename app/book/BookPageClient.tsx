@@ -89,18 +89,18 @@ const REASSURANCE = [
 const STEPS = [
   {
     num: "01",
-    title: "Fill your thyroid profile",
-    body: "8 short questions about your symptoms, history, and goals. Under 4 minutes.",
+    title: "Quick 4-question profile",
+    body: "Your name, WhatsApp, thyroid condition, and your #1 goal. Under 2 minutes.",
   },
   {
     num: "02",
-    title: "Swapnil prepares your session",
-    body: "Your answers are reviewed before the call. No time wasted on basics — we start with insight.",
+    title: "Secure your private slot",
+    body: "₹299 reserves your session. Then complete a short personalised assessment Swapnil studies before you meet.",
   },
   {
     num: "03",
     title: "Your private 60-minute strategy session",
-    body: "A focused call. No generic advice. You leave with clarity and a personal action plan.",
+    body: "A focused call built entirely around your thyroid case. You leave with a clear, personal action plan.",
   },
 ];
 
@@ -186,36 +186,57 @@ export default function BookPageClient() {
             <motion.h1
               id="book-hero-heading"
               variants={fadeUp}
-              className="mx-auto max-w-[17ch] text-balance text-[length:var(--text-hero)] font-black leading-[1.04] tracking-[-0.045em]"
+              className="mx-auto max-w-[18ch] text-balance text-[length:var(--text-hero)] font-black leading-[1.04] tracking-[-0.045em]"
             >
-              You&apos;ve already{" "}
-              <span className="text-gradient">done the hardest part.</span>
+              Let&apos;s understand what your{" "}
+              <span className="text-gradient">thyroid actually needs.</span>
             </motion.h1>
 
             {/* Subheadline */}
             <motion.p
               variants={fadeUp}
-              className="mx-auto mt-5 max-w-[38ch] text-pretty text-[length:var(--text-base)] leading-[1.8] text-[var(--t2)] sm:mt-6"
+              className="mx-auto mt-5 max-w-[40ch] text-pretty text-[length:var(--text-base)] leading-[1.8] text-[var(--t2)] sm:mt-6"
             >
-              You decided to stop guessing and start understanding. Complete the
-              short form below — and in 60 minutes, you&apos;ll know exactly
-              what your thyroid needs to start moving.
+              Answer 4 quick questions to reserve your private thyroid strategy
+              session. Simple, guided, and built entirely around you.
             </motion.p>
+
+            {/* Visual mini-flow */}
+            <motion.div
+              variants={fadeUp}
+              className="mt-7 flex flex-wrap items-center justify-center gap-2 text-[0.72rem] text-[var(--t4)]"
+            >
+              {[
+                "Quick Qualification",
+                "Secure Your Spot",
+                "Personalised Assessment",
+                "Private Consultation",
+              ].map((step, i, arr) => (
+                <span key={step} className="flex items-center gap-2">
+                  <span className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1">
+                    {step}
+                  </span>
+                  {i < arr.length - 1 && (
+                    <span className="text-white/20">→</span>
+                  )}
+                </span>
+              ))}
+            </motion.div>
 
             {/* CTA */}
             <motion.div
               variants={fadeUp}
-              className="cta-wrap mt-8 max-w-[min(100%,20rem)] sm:mt-9"
+              className="cta-wrap mt-8 max-w-[min(100%,22rem)] sm:mt-9"
             >
               <button
                 type="button"
                 onClick={() => scrollToForm("hero")}
                 className="cta-button relative z-[1]"
-                aria-label="Scroll to application form"
+                aria-label="Scroll to thyroid assessment form"
               >
-                <span className="cta-label">Complete My Application</span>
+                <span className="cta-label">Begin My Thyroid Assessment</span>
                 <span className="cta-sub">
-                  Takes under 4 minutes · ₹299 session
+                  4 questions · Under 2 minutes · ₹299 session
                 </span>
               </button>
             </motion.div>
@@ -390,8 +411,8 @@ export default function BookPageClient() {
               onClick={() => scrollToForm("process")}
               className="cta-button relative z-[1]"
             >
-              <span className="cta-label">Begin My Application</span>
-              <span className="cta-sub">₹299 · 60 minutes · Limited spots</span>
+              <span className="cta-label">Reserve My Strategy Session</span>
+              <span className="cta-sub">₹299 · 60 minutes · Limited slots</span>
             </button>
           </motion.div>
         </div>
@@ -534,7 +555,7 @@ export default function BookPageClient() {
             className="mb-10 text-center"
           >
             <motion.p variants={fadeUp} className="section-label">
-              Your Application
+              Step 1 of 4
             </motion.p>
             <motion.h2
               id="form-heading"
@@ -542,16 +563,16 @@ export default function BookPageClient() {
               className="section-title mx-auto"
               style={{ maxWidth: "26ch" }}
             >
-              Tell us about your thyroid.{" "}
-              <span className="text-gradient">We&apos;ll do the rest.</span>
+              4 quick questions.{" "}
+              <span className="text-gradient">Then reserve your spot.</span>
             </motion.h2>
             <motion.p
               variants={fadeUp}
               className="section-lead mx-auto mt-3"
-              style={{ maxWidth: "40ch" }}
+              style={{ maxWidth: "42ch" }}
             >
-              8 questions. Under 4 minutes. Your answers help Swapnil prepare
-              a session that&apos;s entirely about your specific situation.
+              Under 2 minutes. This helps Swapnil understand your thyroid
+              situation so your 60-minute session is prepared entirely for you.
             </motion.p>
           </motion.div>
 
@@ -631,7 +652,7 @@ export default function BookPageClient() {
                 onClick={() => scrollToForm("guarantee")}
                 className="cta-button relative z-[1]"
               >
-                <span className="cta-label">Complete My Application</span>
+                <span className="cta-label">Begin My Thyroid Assessment</span>
                 <span className="cta-sub">
                   ₹299 · Fully refundable if not satisfied
                 </span>

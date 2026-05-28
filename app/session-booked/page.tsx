@@ -22,14 +22,15 @@ const CALENDLY_URL = [
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Step2_5Data = {
-  thyroidDuration: string;
+  weightStruggles: string[];
+  biggestFrustration: string;
+  energyLevel: string;
   onMedication: string;
   specialistHistory: string;
   energyLow: string;
   triedBefore: string[];
   transformationGoal: string;
   eatingApproach: string;
-  sessionGoal: string;
 };
 
 type FlowStage = "intake" | "calendly" | "confirmation";
@@ -172,10 +173,40 @@ function PillSelect({ options, value, onChange }: { options: string[]; value: st
 
 const INTAKE_QUESTIONS = [
   {
-    id: "thyroidDuration" as const,
-    label: "How long have you been dealing with thyroid issues?",
-    type: "pill" as const,
-    options: ["Less than 1 year", "1–3 years", "3–5 years", "More than 5 years"],
+    id: "weightStruggles" as const,
+    label: "Which of these weight struggles feel familiar?",
+    hint: "Select all that apply. There are no wrong answers.",
+    type: "multi" as const,
+    options: [
+      { label: "Can't lose weight despite trying hard", emoji: "😔" },
+      { label: "Weight comes back as soon as I stop", emoji: "🔄" },
+      { label: "Bloated and heavy all the time", emoji: "😮‍💨" },
+      { label: "Never had a thyroid-specific plan before", emoji: "📋" },
+      { label: "Don't know where to even begin", emoji: "🧩" },
+    ],
+  },
+  {
+    id: "biggestFrustration" as const,
+    label: "What frustrates you most right now?",
+    hint: "Be honest — this helps Swapnil prepare for your session.",
+    type: "card" as const,
+    options: [
+      { label: "Doctors say my reports are normal but I feel terrible", emoji: "💔" },
+      { label: "I've tried everything — nothing actually works", emoji: "😤" },
+      { label: "Fatigue and weight gain are ruining my confidence", emoji: "😞" },
+      { label: "I feel like nobody truly understands what I'm going through", emoji: "🙁" },
+    ],
+  },
+  {
+    id: "energyLevel" as const,
+    label: "How would you describe your energy levels?",
+    type: "card" as const,
+    options: [
+      { label: "Exhausted from the moment I wake up", emoji: "😴" },
+      { label: "Functional but always fighting fatigue", emoji: "😞" },
+      { label: "Energy crashes in the afternoon", emoji: "📉" },
+      { label: "Some days okay, most days not", emoji: "🌤️" },
+    ],
   },
   {
     id: "onMedication" as const,
@@ -232,7 +263,7 @@ const INTAKE_QUESTIONS = [
   },
   {
     id: "eatingApproach" as const,
-    label: "How do you currently eat?",
+    label: "How do you currently approach eating?",
     type: "card" as const,
     options: [
       { label: "I eat fairly healthy but weight won't move", emoji: "🥗" },
@@ -242,31 +273,21 @@ const INTAKE_QUESTIONS = [
       { label: "I enjoy eating and refuse to starve myself", emoji: "🙌" },
     ],
   },
-  {
-    id: "sessionGoal" as const,
-    label: "What matters most to you from this session with Swapnil?",
-    type: "card" as const,
-    options: [
-      { label: "Understanding exactly why I'm not losing weight", emoji: "🧠" },
-      { label: "A real, personalised plan I can actually follow", emoji: "📋" },
-      { label: "To finally feel heard and understood by an expert", emoji: "💙" },
-      { label: "All of the above — I want everything", emoji: "🙏" },
-    ],
-  },
 ];
 
 function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => void }) {
   const [qIndex, setQIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [data, setData] = useState<Step2_5Data>({
-    thyroidDuration: "",
+    weightStruggles: [],
+    biggestFrustration: "",
+    energyLevel: "",
     onMedication: "",
     specialistHistory: "",
     energyLow: "",
     triedBefore: [],
     transformationGoal: "",
     eatingApproach: "",
-    sessionGoal: "",
   });
 
   const q = INTAKE_QUESTIONS[qIndex];
@@ -287,9 +308,9 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
     setData((prev) => ({ ...prev, [field]: val }));
   };
 
-  const toggleMulti = (label: string) => {
-    const current = data.triedBefore;
-    update("triedBefore", current.includes(label) ? current.filter((v) => v !== label) : [...current, label]);
+  const toggleMulti = (field: "weightStruggles" | "triedBefore", label: string) => {
+    const current = data[field];
+    update(field, current.includes(label) ? current.filter((v) => v !== label) : [...current, label]);
   };
 
   const handleNext = () => {
@@ -313,10 +334,10 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
       {/* Header */}
       <div className="mb-2 flex items-center gap-2">
         <div className="flex h-6 w-6 items-center justify-center rounded-full border border-purple-500/30 bg-purple-500/15 text-[0.55rem] font-bold text-purple-300">
-          2.5
+          3
         </div>
         <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-purple-400/70">
-          Deep Intake
+          Thyroid Assessment
         </p>
       </div>
 
@@ -374,7 +395,7 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
                     }
                     onToggle={() => {
                       if (q.type === "multi") {
-                        toggleMulti(opt.label);
+                        toggleMulti(q.id as "weightStruggles" | "triedBefore", opt.label);
                       } else {
                         update(q.id, opt.label);
                       }
@@ -671,16 +692,13 @@ export default function SessionBooked() {
       setIsNativeFlow(true); // show native UI immediately while we fetch
       fetch(`/api/leads/${encodeURIComponent(urlLeadId)}`)
         .then((r) => (r.ok ? r.json() : null))
-        .then((data: { name?: string; phone?: string; email?: string } | null) => {
+        .then((data: { name?: string; phone?: string } | null) => {
           if (data?.name) {
             setStep1Data({
               name: data.name,
               phone: data.phone ?? "",
-              email: data.email ?? "",
               thyroidCondition: "",
-              weightStruggles: [],
-              energyLevel: "",
-              biggestFrustration: "",
+              thyroidDuration: "",
               mainGoal: "",
             });
             persistUserIdentity({
@@ -723,7 +741,7 @@ export default function SessionBooked() {
     // CAPI call so Meta can deduplicate browser pixel vs. server event correctly.
     const lead = step1Data;
     const purchaseEventId = trackPurchase(
-      lead ? { first_name: lead.name.split(" ")[0], phone: lead.phone, ...(lead.email && { email: lead.email }) } : undefined
+      lead ? { first_name: lead.name.split(" ")[0], phone: lead.phone } : undefined
     );
 
     // Server-side CAPI Purchase — runs in parallel, non-blocking
@@ -738,7 +756,6 @@ export default function SessionBooked() {
         currency: "INR",
         user_data: {
           ...(lead?.phone && { phone: lead.phone }),
-          ...(lead?.email && { email: lead.email }),
           ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
         },
       }),
@@ -832,10 +849,10 @@ export default function SessionBooked() {
                   </div>
                   <div>
                     <p className="text-[0.84rem] font-semibold text-white/90">
-                      Payment confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}. Welcome back.
+                      Your spot is secured{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}. Welcome.
                     </p>
                     <p className="text-[0.72rem] text-white/40">
-                      8 quick questions · Then choose your session time
+                      Personalised thyroid assessment · Then pick your time
                     </p>
                   </div>
                 </div>

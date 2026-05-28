@@ -28,6 +28,7 @@ type Step1Data = {
   email?: string;
   age?: string;
   thyroidCondition?: string;
+  thyroidDuration?: string;
   weightStruggles?: string | string[];
   energyLevel?: string;
   biggestFrustration?: string;
@@ -35,12 +36,17 @@ type Step1Data = {
 };
 
 type Step2_5Data = {
+  weightStruggles?: string | string[];
+  biggestFrustration?: string;
+  energyLevel?: string;
   thyroidDuration?: string;
   onMedication?: string;
+  specialistHistory?: string;
   frustrations?: string;
   energyLow?: string;
   triedBefore?: string | string[];
   transformationGoal?: string;
+  eatingApproach?: string;
   foodRelationship?: string;
   sessionGoal?: string;
 };
@@ -109,33 +115,33 @@ async function appendToSheet(payload: BookingPayload) {
   const { step1 = {}, step2_5 = {}, step3 = {}, attribution = {} } = payload;
 
   const row = [
-    new Date().toISOString(),              // Timestamp
-    str(step1.name),                       // Name
-    str(step1.phone),                      // Phone
-    str(step1.email),                      // Email
-    str(step1.age),                        // Age
-    str(step1.thyroidCondition),           // Thyroid Condition
-    arr(step1.weightStruggles),            // Weight Struggles
-    str(step1.energyLevel),               // Energy Level
-    str(step1.biggestFrustration),         // Biggest Frustration
-    str(step1.mainGoal),                   // Main Goal
-    str(step2_5.thyroidDuration),          // Thyroid Duration
-    str(step2_5.onMedication),             // On Medication
-    str(step2_5.frustrations),             // Frustrations
-    str(step2_5.energyLow),               // Energy Low
-    arr(step2_5.triedBefore),              // Tried Before
-    str(step2_5.transformationGoal),       // Transformation Goal
-    str(step2_5.foodRelationship),         // Food Relationship
-    str(step2_5.sessionGoal),              // Session Goal
-    str(step3.bookingDate),                // Booking Date
-    str(step3.bookingTime),               // Booking Time
-    str(step3.bookingStatus),              // Booking Status
-    str(payload.submittedAt),              // Submitted At
-    str(payload.leadId),                   // Lead ID
-    str(attribution.utm_source),           // UTM Source
-    str(attribution.utm_campaign),         // UTM Campaign
-    str(attribution.fbclid),               // FBclid
-    str(attribution.visitor_id),           // Visitor ID
+    new Date().toISOString(),                                                     // Timestamp
+    str(step1.name),                                                              // Name
+    str(step1.phone),                                                             // Phone
+    str(step1.email),                                                             // Email
+    str(step1.age),                                                               // Age
+    str(step1.thyroidCondition),                                                  // Thyroid Condition
+    arr(step2_5.weightStruggles || step1.weightStruggles),                       // Weight Struggles
+    str(step2_5.energyLevel || step1.energyLevel),                               // Energy Level
+    str(step2_5.biggestFrustration || step1.biggestFrustration || step2_5.frustrations), // Biggest Frustration
+    str(step1.mainGoal),                                                          // Main Goal
+    str(step1.thyroidDuration || step2_5.thyroidDuration),                       // Thyroid Duration
+    str(step2_5.onMedication),                                                    // On Medication
+    str(step2_5.specialistHistory),                                               // Specialist History
+    str(step2_5.energyLow),                                                       // Energy Low
+    arr(step2_5.triedBefore),                                                     // Tried Before
+    str(step2_5.transformationGoal),                                              // Transformation Goal
+    str(step2_5.eatingApproach || step2_5.foodRelationship),                     // Food Relationship
+    str(step2_5.sessionGoal),                                                     // Session Goal
+    str(step3.bookingDate),                                                       // Booking Date
+    str(step3.bookingTime),                                                       // Booking Time
+    str(step3.bookingStatus),                                                     // Booking Status
+    str(payload.submittedAt),                                                     // Submitted At
+    str(payload.leadId),                                                          // Lead ID
+    str(attribution.utm_source),                                                  // UTM Source
+    str(attribution.utm_campaign),                                                // UTM Campaign
+    str(attribution.fbclid),                                                      // FBclid
+    str(attribution.visitor_id),                                                  // Visitor ID
   ];
 
   console.log("[booking] Appending row to sheet, range:", `${SHEET_NAME}!A1`);

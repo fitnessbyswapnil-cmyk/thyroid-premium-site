@@ -12,11 +12,8 @@ import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
 export type Step1Data = {
   name: string;
   phone: string;
-  email: string;
   thyroidCondition: string;
-  weightStruggles: string[];
-  energyLevel: string;
-  biggestFrustration: string;
+  thyroidDuration: string;
   mainGoal: string;
 };
 
@@ -124,7 +121,6 @@ export default function BookingFlow() {
         user_data: {
           first_name: data.name.split(" ")[0],
           phone: data.phone,
-          ...(data.email && { email: data.email }),
           ...(attribution.visitor_id && { external_id: attribution.visitor_id }),
         },
       }),
@@ -173,7 +169,6 @@ export default function BookingFlow() {
           leadId,
           customerPhone: step1Data.phone,
           customerName: step1Data.name,
-          ...(step1Data.email && { customerEmail: step1Data.email }),
         }),
       });
 
