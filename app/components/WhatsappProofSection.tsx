@@ -16,13 +16,14 @@ type ProofCard = {
 
 // ── Card data ─────────────────────────────────────────────────────────────────
 // Image → identity mapping verified against filenames per brief.
-// Every image appears EXACTLY ONCE. No duplicates.
+// Every image appears EXACTLY ONCE across ALL_CARDS. No duplicates.
 //
-// ROW 1 (cards 1-8)  → marquee moves LEFT
-// ROW 2 (cards 9-15) → marquee moves RIGHT
+// ROW 1 (c1–c8)  → marquee moves LEFT  (desktop)
+// ROW 2 (c9–c15) → marquee moves RIGHT (desktop)
+// MOBILE         → single snap-scroll, all 15 cards
 
 const ALL_CARDS: ProofCard[] = [
-  // ── 1 — Heenal (JPEG screenshot) ──────────────────────────────────────────
+  // ── 1 — Heenal · JPEG screenshot ──────────────────────────────────────────
   {
     id: 'c1',
     image: '/whatsapp-proof/4DEA6E92-C155-449F-98FD-56C56FB41C95_1_105_c.jpeg',
@@ -30,7 +31,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'TSH finally improving.',
     client: 'HEENAL · HYPOTHYROID CLIENT',
   },
-  // ── 2 — Sima (JPEG screenshot) ────────────────────────────────────────────
+  // ── 2 — Sima · JPEG screenshot ────────────────────────────────────────────
   {
     id: 'c2',
     image: '/whatsapp-proof/30C8CA81-A315-44E7-BC48-6AAE0856ED9F_1_105_c.jpeg',
@@ -38,7 +39,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Weight finally started moving.',
     client: 'SIMA · THYROID CLIENT',
   },
-  // ── 3 — Guitar (JPEG screenshot) ──────────────────────────────────────────
+  // ── 3 — Guitar · JPEG screenshot ──────────────────────────────────────────
   {
     id: 'c3',
     image: '/whatsapp-proof/A810BC40-CBA2-4438-8FE5-AF8287A0F9A8_1_105_c.jpeg',
@@ -46,7 +47,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Body fat finally came down.',
     client: 'GUITAR · FAT LOSS CLIENT',
   },
-  // ── 4 — Namrata (JPEG screenshot) ─────────────────────────────────────────
+  // ── 4 — Namrata · JPEG screenshot ─────────────────────────────────────────
   {
     id: 'c4',
     image: '/whatsapp-proof/992C9693-B6B8-4D3F-809C-E2410E949841_1_105_c.jpeg',
@@ -54,15 +55,15 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Finally not tired all day.',
     client: 'NAMRATA · HYPOTHYROID CLIENT',
   },
-  // ── 5 — Nahamia (JPEG screenshot) ─────────────────────────────────────────
+  // ── 5 — Nahamia · JPEG screenshot ─────────────────────────────────────────
   {
     id: 'c5',
     image: '/whatsapp-proof/BC4900F6-3176-4580-A158-780B4CCD162F_1_105_c.jpeg',
-    tags: ['Confidence Back', 'Clothes Fitting'],
+    tags: ['Confidence Back', 'Clothes Fitting Again'],
     headline: 'Clothes fitting again.',
     client: 'NAHAMIA · THYROID CLIENT',
   },
-  // ── 6 — Guitar R8 (PNG proof) ─────────────────────────────────────────────
+  // ── 6 — Guitar R8 · PNG proof ─────────────────────────────────────────────
   {
     id: 'c6',
     image: '/whatsapp-proof/Guitar R8.png',
@@ -70,7 +71,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Feeling like myself again.',
     client: 'GUITAR · FAT LOSS CLIENT',
   },
-  // ── 7 — Rozal R2 ──────────────────────────────────────────────────────────
+  // ── 7 — Rozal R2 · PNG proof ──────────────────────────────────────────────
   {
     id: 'c7',
     image: '/whatsapp-proof/Rozal R2.png',
@@ -78,7 +79,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'My thyroid finally responded.',
     client: 'ROZAL · HYPOTHYROID CLIENT',
   },
-  // ── 8 — Sima R1 (PNG proof) ───────────────────────────────────────────────
+  // ── 8 — Sima R1 · PNG proof ───────────────────────────────────────────────
   {
     id: 'c8',
     image: '/whatsapp-proof/Sima R1.png',
@@ -86,7 +87,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Weight started moving. Finally.',
     client: 'SIMA · THYROID CLIENT',
   },
-  // ── 9 — Rakesh R3 ─────────────────────────────────────────────────────────
+  // ── 9 — Rakesh R3 · PNG proof ─────────────────────────────────────────────
   {
     id: 'c9',
     image: '/whatsapp-proof/Rakesh R3.png',
@@ -94,7 +95,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Old clothes fitting again.',
     client: 'RAKESH · FAT LOSS CLIENT',
   },
-  // ── 10 — Jay R6 ───────────────────────────────────────────────────────────
+  // ── 10 — Jay R6 · PNG proof ───────────────────────────────────────────────
   {
     id: 'c10',
     image: '/whatsapp-proof/Jay R6.png',
@@ -102,7 +103,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Energy came back naturally.',
     client: 'JAY · THYROID CLIENT',
   },
-  // ── 11 — Nitin R10 ────────────────────────────────────────────────────────
+  // ── 11 — Nitin R10 · PNG proof ────────────────────────────────────────────
   {
     id: 'c11',
     image: '/whatsapp-proof/Nitin R10.png',
@@ -110,7 +111,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Focus and clarity returned.',
     client: 'NITIN · FAT LOSS CLIENT',
   },
-  // ── 12 — Heenal R4 (PNG proof) ────────────────────────────────────────────
+  // ── 12 — Heenal R4 · PNG proof ────────────────────────────────────────────
   {
     id: 'c12',
     image: '/whatsapp-proof/Heenal R4.png',
@@ -118,7 +119,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'TSH dropped. Energy came back.',
     client: 'HEENAL · HYPOTHYROID CLIENT',
   },
-  // ── 13 — Nahamia R5 (PNG proof) ───────────────────────────────────────────
+  // ── 13 — Nahamia R5 · PNG proof ───────────────────────────────────────────
   {
     id: 'c13',
     image: '/whatsapp-proof/Nahamia R5.png',
@@ -126,7 +127,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Bloating reduced significantly.',
     client: 'NAHAMIA · THYROID CLIENT',
   },
-  // ── 14 — Namarata R9 (PNG proof) ──────────────────────────────────────────
+  // ── 14 — Namarata R9 · PNG proof ──────────────────────────────────────────
   {
     id: 'c14',
     image: '/whatsapp-proof/Namarata R9.png',
@@ -134,7 +135,7 @@ const ALL_CARDS: ProofCard[] = [
     headline: 'Finally not tired all day.',
     client: 'NAMRATA · HYPOTHYROID CLIENT',
   },
-  // ── 15 — Nishant R7 ───────────────────────────────────────────────────────
+  // ── 15 — Nishant R7 · PNG proof ───────────────────────────────────────────
   {
     id: 'c15',
     image: '/whatsapp-proof/Nishant R7.png',
@@ -144,145 +145,150 @@ const ALL_CARDS: ProofCard[] = [
   },
 ]
 
-const ROW1 = ALL_CARDS.slice(0, 8)  // marquee left  (75 s)
-const ROW2 = ALL_CARDS.slice(8)     // marquee right (70 s)
+// ROW 1 = first 8 cards  → marquee moves left  (90 s)
+// ROW 2 = last  7 cards  → marquee moves right (85 s)
+const ROW1 = ALL_CARDS.slice(0, 8)
+const ROW2 = ALL_CARDS.slice(8)
 
 // ── Animation variants ────────────────────────────────────────────────────────
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 24 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
   },
 }
 
 const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
+  visible: { transition: { staggerChildren: 0.12 } },
 }
 
 // ── ProofCard ─────────────────────────────────────────────────────────────────
 
-function ProofCard({ card, wide = false }: { card: ProofCard; wide?: boolean }) {
+function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boolean }) {
   const initial = card.client.charAt(0)
 
   return (
     <article
-      className="group flex flex-col overflow-hidden"
+      className="group flex flex-col overflow-hidden proof-card"
       style={{
-        width: wide ? 'clamp(280px, 90vw, 380px)' : '340px',
+        width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
         flexShrink: 0,
         borderRadius: '28px',
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1px solid rgba(139,92,246,0.15)',
         background:
-          'linear-gradient(155deg, rgba(139,92,246,0.09) 0%, rgba(10,8,22,0.97) 100%)',
+          'linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(8,6,20,0.98) 50%, rgba(109,40,217,0.06) 100%)',
         boxShadow:
-          '0 0 0 1px rgba(255,255,255,0.055), 0 40px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)',
-        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          '0 0 0 1px rgba(255,255,255,0.06), 0 2px 4px rgba(139,92,246,0.08), 0 20px 60px rgba(0,0,0,0.75), 0 60px 120px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
+        transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
-      onMouseEnter={(e) =>
-        ((e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)')
-      }
-      onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLElement).style.transform = 'translateY(0)')
-      }
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement
+        el.style.transform = 'translateY(-8px) scale(1.012)'
+        el.style.boxShadow =
+          '0 0 0 1px rgba(139,92,246,0.28), 0 2px 4px rgba(139,92,246,0.15), 0 24px 70px rgba(0,0,0,0.8), 0 60px 140px rgba(0,0,0,0.55), 0 0 60px rgba(139,92,246,0.12), inset 0 1px 0 rgba(255,255,255,0.1)'
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement
+        el.style.transform = 'translateY(0) scale(1)'
+        el.style.boxShadow =
+          '0 0 0 1px rgba(255,255,255,0.06), 0 2px 4px rgba(139,92,246,0.08), 0 20px 60px rgba(0,0,0,0.75), 0 60px 120px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)'
+      }}
     >
-      {/* ── Tags ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2 px-5 pt-5">
-        {card.tags.map((tag) => (
-          <div
-            key={tag}
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px]"
-            style={{
-              background: 'rgba(139,92,246,0.13)',
-              border: '1px solid rgba(139,92,246,0.3)',
-            }}
-          >
-            <span
-              className="h-[5px] w-[5px] shrink-0 rounded-full"
+      {/* ── Header: Tags + Headline ─────────────────────────────────────────── */}
+      <div className="px-5 pt-5 pb-4">
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {card.tags.map((tag) => (
+            <div
+              key={tag}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px]"
               style={{
-                background: '#c084fc',
-                boxShadow: '0 0 7px rgba(192,132,252,0.9)',
+                background: 'rgba(139,92,246,0.14)',
+                border: '1px solid rgba(139,92,246,0.32)',
               }}
-              aria-hidden="true"
-            />
-            <span
-              className="text-[0.6rem] font-extrabold uppercase tracking-[0.16em]"
-              style={{ color: '#c084fc' }}
             >
-              {tag}
-            </span>
-          </div>
-        ))}
-      </div>
+              <span
+                className="h-[5px] w-[5px] shrink-0 rounded-full"
+                style={{
+                  background: '#c084fc',
+                  boxShadow: '0 0 8px rgba(192,132,252,1)',
+                }}
+                aria-hidden="true"
+              />
+              <span
+                className="text-[0.6rem] font-extrabold uppercase tracking-[0.18em]"
+                style={{ color: '#d8b4fe' }}
+              >
+                {tag}
+              </span>
+            </div>
+          ))}
+        </div>
 
-      {/* ── Headline ───────────────────────────────────────────────────────── */}
-      <div className="px-5 pb-4 pt-3">
+        {/* Headline */}
         <p
-          className="text-[0.92rem] font-bold leading-[1.28] tracking-[-0.01em]"
-          style={{ color: 'rgba(255,255,255,0.92)' }}
+          className="text-[0.95rem] font-bold leading-[1.3] tracking-[-0.015em]"
+          style={{ color: 'rgba(255,255,255,0.93)' }}
         >
           {card.headline}
         </p>
       </div>
 
-      {/* ── Screenshot — object-contain preserves full image, no cropping ── */}
+      {/* ── Screenshot — full-width, no side margins for maximum readability ── */}
       <div
-        className="relative mx-4 overflow-hidden"
+        className="relative overflow-hidden mx-3"
         style={{
-          aspectRatio: '9 / 14',
+          aspectRatio: '9 / 15',
           borderRadius: '18px',
-          background: '#06050d',
-          border: '1px solid rgba(255,255,255,0.07)',
+          background: '#05040f',
+          border: '1px solid rgba(139,92,246,0.12)',
           boxShadow:
-            'inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 40px rgba(0,0,0,0.6)',
+            'inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.5)',
         }}
       >
+        {/* Subtle top glow inside image frame */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0"
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8"
           style={{
             background:
-              'radial-gradient(ellipse at 50% 20%, rgba(139,92,246,0.1) 0%, transparent 60%)',
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{
-            background:
-              'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 40%)',
+              'linear-gradient(to bottom, rgba(139,92,246,0.06) 0%, transparent 100%)',
           }}
         />
         <Image
           src={card.image}
           alt={`WhatsApp screenshot — ${card.headline} (${card.client})`}
           fill
-          sizes="(max-width: 767px) 90vw, 340px"
-          className="object-contain"
+          sizes="(max-width: 767px) 90vw, 350px"
+          className="object-contain z-0"
           draggable={false}
           loading="lazy"
         />
       </div>
 
-      {/* ── Trust footer ───────────────────────────────────────────────────── */}
-      <div className="px-5 pb-5 pt-4">
-        <div className="flex items-center gap-2.5">
+      {/* ── Trust footer ────────────────────────────────────────────────────── */}
+      <div className="px-5 py-4 mt-auto">
+        <div
+          className="flex items-center gap-2.5 pt-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}
+        >
           <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.58rem] font-black text-white"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black text-white"
             style={{
-              background: 'linear-gradient(135deg, #a855f7, #6d28d9)',
-              boxShadow: '0 0 0 1.5px rgba(139,92,246,0.35)',
+              background: 'linear-gradient(135deg, #a855f7 0%, #6d28d9 100%)',
+              boxShadow: '0 0 0 2px rgba(139,92,246,0.25), 0 2px 8px rgba(109,40,217,0.4)',
             }}
             aria-hidden="true"
           >
             {initial}
           </div>
           <p
-            className="text-[0.6rem] font-semibold uppercase tracking-[0.14em]"
-            style={{ color: 'rgba(255,255,255,0.3)' }}
+            className="text-[0.59rem] font-semibold uppercase tracking-[0.15em]"
+            style={{ color: 'rgba(255,255,255,0.28)' }}
           >
             {card.client}
           </p>
@@ -295,6 +301,7 @@ function ProofCard({ card, wide = false }: { card: ProofCard; wide?: boolean }) 
 // ── Section ───────────────────────────────────────────────────────────────────
 
 export default function WhatsappProofSection() {
+  // Double each row array for seamless infinite marquee loop (CSS translateX -50%)
   const row1Doubled = [...ROW1, ...ROW1]
   const row2Doubled = [...ROW2, ...ROW2]
 
@@ -303,36 +310,36 @@ export default function WhatsappProofSection() {
       className="section-pad relative overflow-hidden"
       style={{ background: 'var(--bg-section)' }}
     >
-      {/* ── Ambient background glows ─────────────────────────────────────── */}
+      {/* ── Ambient background glows ──────────────────────────────────────── */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="absolute left-1/2 top-[-8%] h-[min(65vw,360px)] w-[min(65vw,360px)] -translate-x-1/2 rounded-full"
+          className="absolute left-1/2 top-[-6%] h-[min(70vw,420px)] w-[min(70vw,420px)] -translate-x-1/2 rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(139,92,246,0.11) 0%, transparent 70%)',
-            filter: 'blur(90px)',
+            background: 'radial-gradient(circle, rgba(139,92,246,0.13) 0%, transparent 70%)',
+            filter: 'blur(100px)',
           }}
         />
         <div
-          className="absolute left-[12%] top-[35%] h-[220px] w-[220px] rounded-full"
+          className="absolute left-[8%] top-[30%] h-[260px] w-[260px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(109,40,217,0.07) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(109,40,217,0.08) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        <div
+          className="absolute right-[6%] bottom-[14%] h-[240px] w-[240px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(168,85,247,0.07) 0%, transparent 70%)',
             filter: 'blur(70px)',
-          }}
-        />
-        <div
-          className="absolute right-[8%] bottom-[18%] h-[200px] w-[200px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)',
-            filter: 'blur(60px)',
           }}
         />
       </div>
 
       <div className="relative z-10">
 
-        {/* ── Section header ─────────────────────────────────────────────── */}
+        {/* ── Section header ──────────────────────────────────────────────── */}
         <motion.div
-          className="container-default mb-10 text-center"
+          className="container-default mb-12 text-center"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
@@ -343,14 +350,14 @@ export default function WhatsappProofSection() {
               className="inline-flex items-center gap-2.5 rounded-full px-4 py-2"
               style={{
                 background: 'rgba(139,92,246,0.1)',
-                border: '1px solid rgba(139,92,246,0.22)',
+                border: '1px solid rgba(139,92,246,0.24)',
               }}
             >
               <span
                 className="h-1.5 w-1.5 animate-pulse rounded-full"
                 style={{
                   background: '#c084fc',
-                  boxShadow: '0 0 8px rgba(192,132,252,0.9)',
+                  boxShadow: '0 0 10px rgba(192,132,252,1)',
                 }}
                 aria-hidden="true"
               />
@@ -382,48 +389,53 @@ export default function WhatsappProofSection() {
           </motion.p>
         </motion.div>
 
-        {/* ── MOBILE: wide snap-scroll row ──────────────────────────────── */}
+        {/* ── MOBILE: wide snap-scroll (single row, all 15 cards) ─────────── */}
+        {/* Only visible below md breakpoint                                   */}
         <div className="block md:hidden">
           <div className="relative overflow-hidden">
+            {/* Edge fade — left */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 z-20 h-full w-10"
+              className="pointer-events-none absolute left-0 top-0 z-20 h-full w-12"
               style={{ background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
             />
+            {/* Edge fade — right */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute right-0 top-0 z-20 h-full w-10"
+              className="pointer-events-none absolute right-0 top-0 z-20 h-full w-12"
               style={{ background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
             />
             <div
               className="flex snap-x snap-mandatory gap-4 overflow-x-auto scrollbar-hide"
-              style={{ padding: '4px 1rem 14px' }}
+              style={{ padding: '6px 1.25rem 18px' }}
             >
               {ALL_CARDS.map((card) => (
                 <div key={card.id} className="snap-center flex-shrink-0">
-                  <ProofCard card={card} wide />
+                  <ProofCard card={card} isMobile />
                 </div>
               ))}
             </div>
           </div>
           <p
-            className="mt-3 text-center text-[0.6rem] font-semibold uppercase tracking-[0.16em]"
+            className="mt-3 text-center text-[0.59rem] font-semibold uppercase tracking-[0.18em]"
             style={{ color: 'rgba(255,255,255,0.18)' }}
           >
             Swipe to see more ›
           </p>
         </div>
 
-        {/* ── DESKTOP: 2 cinematic marquee rows only ────────────────────── */}
-        {/* Row 1 → scrolls left  (75 s)                                    */}
-        {/* Row 2 → scrolls right (70 s)                                    */}
+        {/* ── DESKTOP: exactly 2 cinematic marquee rows ───────────────────── */}
+        {/* Row 1 → moves left  (90 s)                                        */}
+        {/* Row 2 → moves right (85 s)                                        */}
+        {/* Only visible at md breakpoint and above                            */}
         <div className="relative hidden md:block">
 
+          {/* Edge fades */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute left-0 top-0 z-20 h-full"
             style={{
-              width: 'clamp(2.5rem, 6vw, 6rem)',
+              width: 'clamp(3rem, 7vw, 7rem)',
               background: 'linear-gradient(to right, var(--bg-section) 0%, transparent 100%)',
             }}
           />
@@ -431,16 +443,16 @@ export default function WhatsappProofSection() {
             aria-hidden="true"
             className="pointer-events-none absolute right-0 top-0 z-20 h-full"
             style={{
-              width: 'clamp(2.5rem, 6vw, 6rem)',
+              width: 'clamp(3rem, 7vw, 7rem)',
               background: 'linear-gradient(to left, var(--bg-section) 0%, transparent 100%)',
             }}
           />
 
-          <div className="space-y-6 overflow-hidden py-2">
+          <div className="space-y-6 overflow-hidden py-3">
 
             {/* Row 1 — moves left */}
             <div className="marquee-rail overflow-hidden">
-              <div className="marquee-track-l flex gap-6 w-max">
+              <div className="marquee-track-l flex gap-5 w-max">
                 {row1Doubled.map((card, i) => (
                   <ProofCard key={`r1-${card.id}-${i}`} card={card} />
                 ))}
@@ -449,7 +461,7 @@ export default function WhatsappProofSection() {
 
             {/* Row 2 — moves right */}
             <div className="marquee-rail overflow-hidden">
-              <div className="marquee-track-r flex gap-6 w-max">
+              <div className="marquee-track-r flex gap-5 w-max">
                 {row2Doubled.map((card, i) => (
                   <ProofCard key={`r2-${card.id}-${i}`} card={card} />
                 ))}
@@ -459,9 +471,9 @@ export default function WhatsappProofSection() {
           </div>
         </div>
 
-        {/* ── CTA ───────────────────────────────────────────────────────── */}
+        {/* ── CTA ─────────────────────────────────────────────────────────── */}
         <motion.div
-          className="container-default mt-14 text-center"
+          className="container-default mt-16 text-center"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-60px' }}
@@ -469,7 +481,7 @@ export default function WhatsappProofSection() {
         >
           <motion.p
             variants={fadeUp}
-            className="mb-2 text-[0.7rem] font-bold uppercase tracking-[0.2em]"
+            className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em]"
             style={{ color: 'rgba(255,255,255,0.22)' }}
           >
             Your results could be next
@@ -477,7 +489,7 @@ export default function WhatsappProofSection() {
 
           <motion.h3
             variants={fadeUp}
-            className="mb-7 text-[1.6rem] font-black leading-[1.08] tracking-[-0.04em] text-white sm:text-[2rem]"
+            className="mb-8 text-[1.65rem] font-black leading-[1.08] tracking-[-0.04em] text-white sm:text-[2.1rem]"
           >
             Your Thyroid Story{' '}
             <span className="text-gradient">Could Be Next.</span>
@@ -486,7 +498,7 @@ export default function WhatsappProofSection() {
           <motion.div
             variants={fadeUp}
             className="mx-auto"
-            style={{ maxWidth: '22rem' }}
+            style={{ maxWidth: '23rem' }}
           >
             <div className="section-cta">
               <CtaButton
@@ -497,8 +509,8 @@ export default function WhatsappProofSection() {
                 location="whatsapp_proof_cta"
               />
               <p
-                className="text-center text-[0.68rem]"
-                style={{ color: 'rgba(255,255,255,0.28)' }}
+                className="text-center text-[0.67rem]"
+                style={{ color: 'rgba(255,255,255,0.26)' }}
               >
                 ₹299 · Fully refundable if no clarity · Limited slots weekly
               </p>
