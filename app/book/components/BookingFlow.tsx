@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
@@ -98,6 +98,7 @@ export default function BookingFlow() {
   const [leadId, setLeadId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleQualificationComplete = useCallback((data: Step1Data) => {
     const newLeadId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -134,7 +135,10 @@ export default function BookingFlow() {
     }).catch(() => {});
 
     setStage("payment");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scroll DOWN to the payment section — never upward
+    setTimeout(() => {
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
   }, []);
 
   const handlePayNow = useCallback(async () => {
@@ -219,7 +223,7 @@ export default function BookingFlow() {
   const activeStep = stage === "qualification" ? 1 : 2;
 
   return (
-    <div className="mx-auto max-w-[520px]">
+    <div ref={containerRef} id="secure-spot-section" className="mx-auto max-w-[520px]">
       <ProgressStepper activeStep={activeStep} />
 
       <AnimatePresence mode="wait">

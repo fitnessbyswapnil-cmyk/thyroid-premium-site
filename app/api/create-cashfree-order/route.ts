@@ -14,6 +14,15 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 
+// ── TEST MODE ─────────────────────────────────────────────────────────────────
+// Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
+// UI/copy always shows ₹299 — only the actual Cashfree transaction amount changes.
+// Flip back to false before going live.
+const IS_TEST_MODE = true;
+const DISPLAY_PRICE = 299;
+const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
+// ─────────────────────────────────────────────────────────────────────────────
+
 const CF_BASE =
   process.env.NODE_ENV === "production"
     ? "https://api.cashfree.com"
@@ -72,7 +81,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         order_id: orderId,
-        order_amount: 299,
+        order_amount: ACTUAL_PAYMENT_AMOUNT,
         order_currency: "INR",
         customer_details: {
           customer_id: leadId,
