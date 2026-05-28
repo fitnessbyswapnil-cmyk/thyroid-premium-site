@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
-import { pushDL, trackLead, trackInitiateCheckout, generateEventId } from "@/app/lib/analytics";
+import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -92,13 +92,28 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
 
 type FlowStage = "qualification" | "payment";
 
-export default function BookingFlow() {
+export default function BookingFlow({
+  onQualificationComplete,
+}: {
+  onQualificationComplete?: () => void;
+}) {
   const [stage, setStage] = useState<FlowStage>("qualification");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Ref-callback pattern: fires when payment section mounts (post AnimatePresence exit),
+  // guaranteeing the scroll target is in the DOM and always scrolls DOWNWARD.
+  const [step2El, setStep2El] = useState<HTMLDivElement | null>(null);
+  const [pendingScroll, setPendingScroll] = useState(false);
+
+  useEffect(() => {
+    if (pendingScroll && step2El) {
+      step2El.scrollIntoView({ behavior: "smooth", block: "start" });
+      setPendingScroll(false);
+    }
+  }, [pendingScroll, step2El]);
 
   const handleQualificationComplete = useCallback((data: Step1Data) => {
     const newLeadId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -135,11 +150,10 @@ export default function BookingFlow() {
     }).catch(() => {});
 
     setStage("payment");
-    // Scroll DOWN to the payment section — never upward
-    setTimeout(() => {
-      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
-  }, []);
+    onQualificationComplete?.();
+    // Request scroll — fires when step2El ref callback populates (payment section mounts)
+    setPendingScroll(true);
+  }, [onQualificationComplete]);
 
   const handlePayNow = useCallback(async () => {
     if (!step1Data || !leadId) return;
@@ -223,7 +237,7 @@ export default function BookingFlow() {
   const activeStep = stage === "qualification" ? 1 : 2;
 
   return (
-    <div ref={containerRef} id="secure-spot-section" className="mx-auto max-w-[520px]">
+    <div id="secure-spot-section" className="mx-auto max-w-[520px]">
       <ProgressStepper activeStep={activeStep} />
 
       <AnimatePresence mode="wait">
@@ -240,8 +254,10 @@ export default function BookingFlow() {
         )}
 
         {stage === "payment" && step1Data && (
+          // ref callback: fires when payment section mounts → triggers downward scroll
           <motion.div
             key="payment"
+            ref={setStep2El}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -18 }}

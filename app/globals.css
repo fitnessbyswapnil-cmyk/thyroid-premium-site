@@ -1337,6 +1337,33 @@ a {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+/* MARQUEE — infinite proof rails */
+
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+.marquee-track-l {
+  animation: marquee-left 45s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track-r {
+  animation: marquee-right 40s linear infinite;
+  will-change: transform;
+}
+
+.marquee-rail:hover .marquee-track-l,
+.marquee-rail:hover .marquee-track-r {
+  animation-play-state: paused;
+}
+
 /* REDUCED MOTION */
 
 @media (prefers-reduced-motion: reduce) {

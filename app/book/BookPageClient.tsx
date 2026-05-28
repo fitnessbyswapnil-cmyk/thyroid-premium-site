@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { COACH_IMAGE, COACH_NAME } from "@/app/lib/authority";
 
@@ -115,6 +115,9 @@ const COACH_POINTS = [
 
 export default function BookPageClient() {
   useEMQCapture();
+
+  const [qualCompleted, setQualCompleted] = useState(false);
+  const handleQualCompleted = useCallback(() => setQualCompleted(true), []);
 
   // Page-level tracking + scroll depth
   useEffect(() => {
@@ -547,34 +550,40 @@ export default function BookPageClient() {
         </div>
 
         <div className="container-narrow relative z-10">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-60px" }}
-            variants={stagger}
-            className="mb-10 text-center"
-          >
-            <motion.p variants={fadeUp} className="section-label">
-              Step 1 of 4
-            </motion.p>
-            <motion.h2
-              id="form-heading"
-              variants={fadeUp}
-              className="section-title mx-auto"
-              style={{ maxWidth: "26ch" }}
-            >
-              4 quick questions.{" "}
-              <span className="text-gradient">Then reserve your spot.</span>
-            </motion.h2>
-            <motion.p
-              variants={fadeUp}
-              className="section-lead mx-auto mt-3"
-              style={{ maxWidth: "42ch" }}
-            >
-              Under 2 minutes. This helps Swapnil understand your thyroid
-              situation so your 60-minute session is prepared entirely for you.
-            </motion.p>
-          </motion.div>
+          <AnimatePresence>
+            {!qualCompleted && (
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-60px" }}
+                variants={stagger}
+                exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: "hidden" }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="mb-10 text-center"
+              >
+                <motion.p variants={fadeUp} className="section-label">
+                  Step 1 of 4
+                </motion.p>
+                <motion.h2
+                  id="form-heading"
+                  variants={fadeUp}
+                  className="section-title mx-auto"
+                  style={{ maxWidth: "26ch" }}
+                >
+                  4 quick questions.{" "}
+                  <span className="text-gradient">Then reserve your spot.</span>
+                </motion.h2>
+                <motion.p
+                  variants={fadeUp}
+                  className="section-lead mx-auto mt-3"
+                  style={{ maxWidth: "42ch" }}
+                >
+                  Under 2 minutes. This helps Swapnil understand your thyroid
+                  situation so your 60-minute session is prepared entirely for you.
+                </motion.p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <motion.div
             initial="hidden"
@@ -582,7 +591,7 @@ export default function BookPageClient() {
             viewport={{ once: true, margin: "-40px" }}
             variants={fadeUp}
           >
-            <BookingFlow />
+            <BookingFlow onQualificationComplete={handleQualCompleted} />
           </motion.div>
         </div>
       </section>

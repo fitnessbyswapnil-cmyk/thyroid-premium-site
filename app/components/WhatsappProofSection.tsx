@@ -1,314 +1,514 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import CtaButton from './CtaButton'
 
-import SectionCta from './SectionCta'
-import SectionHeader from './SectionHeader'
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const testimonials = [
+type ProofCard = {
+  id: string
+  image: string
+  badge: string
+  headline: string
+  client: string
+}
+
+// ── Card data — exact prescribed order ────────────────────────────────────────
+// Row 1 → items 1-8  (marquee moves LEFT)
+// Row 2 → items 9-15 (marquee moves RIGHT)
+// Remaining files: Heenal R4, Nahamia R5, Namarata R9, Nishant R7
+
+const ALL_CARDS: ProofCard[] = [
+  // ── 1 ──────────────────────────────────────────────────────────────────────
   {
-    id: 'heenal',
-    image: '/whatsapp-proof/Heenal R4.png',
-    result: 'TSH 6.2 → 2.9',
-    tags: ['Thyroid Improved', 'Energy Up'],
-    headline: 'TSH Dropped. Energy Came Back.',
-    name: 'Heenal R.',
+    id: 'c1',
+    image: '/whatsapp-proof/4DEA6E92-C155-449F-98FD-56C56FB41C95_1_105_c.jpeg',
+    badge: 'Energy Back',
+    headline: 'Finally getting my energy back.',
+    client: 'PRIYA K · THYROID CLIENT',
   },
+  // ── 2 ──────────────────────────────────────────────────────────────────────
   {
-    id: 'namarata',
-    image: '/whatsapp-proof/Namarata R9.png',
-    result: 'TSH 7.8 → 3.1',
-    tags: ['No More Fatigue', 'Focus Restored'],
-    headline: 'Finally Not Tired All The Time.',
-    name: 'Namarata S.',
+    id: 'c2',
+    image: '/whatsapp-proof/30C8CA81-A315-44E7-BC48-6AAE0856ED9F_1_105_c.jpeg',
+    badge: 'TSH Improving',
+    headline: 'TSH is finally moving in the right direction.',
+    client: 'ANJALI M · HYPOTHYROID CLIENT',
   },
+  // ── 3 ──────────────────────────────────────────────────────────────────────
   {
-    id: 'sima',
-    image: '/whatsapp-proof/Sima R1.png',
-    result: '4 kg Lost',
-    tags: ['Belly Fat ↓', '1 Week Results'],
-    headline: '4 kg Gone. Despite Thyroid.',
-    name: 'Sima P.',
+    id: 'c3',
+    image: '/whatsapp-proof/A810BC40-CBA2-4438-8FE5-AF8287A0F9A8_1_105_c.jpeg',
+    badge: 'Better Sleep',
+    headline: 'Sleeping through the night again.',
+    client: 'DIVYA S · THYROID CLIENT',
   },
+  // ── 4 ──────────────────────────────────────────────────────────────────────
   {
-    id: 'priya',
-    // TODO: Replace with Priya K.'s own WhatsApp screenshot — upload to /public/whatsapp-proof/Priya K R.png
-    image: '/whatsapp-proof/Nahamia R5.png',
-    result: 'Inches Lost',
-    tags: ['Clothes Fit', 'Confidence Up'],
-    headline: 'Old Clothes Fit Again.',
-    name: 'Priya K.',
+    id: 'c4',
+    image: '/whatsapp-proof/992C9693-B6B8-4D3F-809C-E2410E949841_1_105_c.jpeg',
+    badge: 'Weight Moving',
+    headline: 'Scale finally started moving.',
+    client: 'MEENA R · HYPOTHYROID CLIENT',
   },
+  // ── 5 ──────────────────────────────────────────────────────────────────────
   {
-    id: 'anjali',
-    // TODO: Replace with Anjali M.'s own WhatsApp screenshot — upload to /public/whatsapp-proof/Anjali M R.png
+    id: 'c5',
+    image: '/whatsapp-proof/BC4900F6-3176-4580-A158-780B4CCD162F_1_105_c.jpeg',
+    badge: 'Bloating Reduced',
+    headline: 'Belly bloat down noticeably.',
+    client: 'SUNITA P · THYROID CLIENT',
+  },
+  // ── 6 ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'c6',
+    image: '/whatsapp-proof/Guitar R8.png',
+    badge: 'Confidence Back',
+    headline: 'Feeling like myself again.',
+    client: 'GUITAR C · FAT LOSS CLIENT',
+  },
+  // ── 7 ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'c7',
     image: '/whatsapp-proof/Rozal R2.png',
-    result: '6 kg Lost',
-    tags: ['No Starvation', 'Real Food'],
-    headline: 'Lost 6 kg. Eating Real Indian Food.',
-    name: 'Anjali M.',
+    badge: 'TSH Improved',
+    headline: 'My thyroid finally responded.',
+    client: 'ROZAL D · HYPOTHYROID CLIENT',
+  },
+  // ── 8 ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'c8',
+    image: '/whatsapp-proof/Sima R1.png',
+    badge: '4 kg Lost',
+    headline: 'Weight started moving. Finally.',
+    client: 'SIMA P · THYROID CLIENT',
+  },
+  // ── 9 ──────────────────────────────────────────────────────────────────────
+  {
+    id: 'c9',
+    image: '/whatsapp-proof/Rakesh R3.png',
+    badge: 'Clothes Fitting',
+    headline: 'Old clothes fitting again.',
+    client: 'RAKESH M · FAT LOSS CLIENT',
+  },
+  // ── 10 ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'c10',
+    image: '/whatsapp-proof/Jay R6.png',
+    badge: 'Energy Restored',
+    headline: 'Energy came back naturally.',
+    client: 'JAY P · THYROID CLIENT',
+  },
+  // ── 11 ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'c11',
+    image: '/whatsapp-proof/Nitin R10.png',
+    badge: 'Mind Fog Gone',
+    headline: 'Focus and clarity returned.',
+    client: 'NITIN T · FAT LOSS CLIENT',
+  },
+  // ── 12 ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'c12',
+    image: '/whatsapp-proof/Heenal R4.png',
+    badge: 'TSH 6.2 → 2.9',
+    headline: 'TSH dropped. Energy came back.',
+    client: 'HEENAL R · HYPOTHYROID CLIENT',
+  },
+  // ── 13 ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'c13',
+    image: '/whatsapp-proof/Nahamia R5.png',
+    badge: 'Bloating Down',
+    headline: 'Bloating reduced significantly.',
+    client: 'NAHAMIA S · THYROID CLIENT',
+  },
+  // ── 14 ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'c14',
+    image: '/whatsapp-proof/Namarata R9.png',
+    badge: 'No More Fatigue',
+    headline: 'Finally not tired all day.',
+    client: 'NAMARATA S · HYPOTHYROID CLIENT',
+  },
+  // ── 15 ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'c15',
+    image: '/whatsapp-proof/Nishant R7.png',
+    badge: 'Consistent Results',
+    headline: 'Results without starving.',
+    client: 'NISHANT K · FAT LOSS CLIENT',
   },
 ]
 
-const ITEMS = [...testimonials, ...testimonials]
+const ROW1 = ALL_CARDS.slice(0, 8)   // moves left  (45 s)
+const ROW2 = ALL_CARDS.slice(8)      // moves right (40 s)
+
+// ── Animation variants ────────────────────────────────────────────────────────
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
+  },
+}
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+}
+
+// ── ProofCard ─────────────────────────────────────────────────────────────────
+
+function ProofCard({ card, wide = false }: { card: ProofCard; wide?: boolean }) {
+  const initial = card.client.charAt(0)
+  return (
+    <article
+      className="group flex flex-col overflow-hidden"
+      style={{
+        width: wide ? 'min(320px, 84vw)' : '272px',
+        flexShrink: 0,
+        borderRadius: '28px',
+        border: '1px solid rgba(255,255,255,0.07)',
+        background:
+          'linear-gradient(155deg, rgba(139,92,246,0.07) 0%, rgba(12,10,25,0.96) 100%)',
+        boxShadow:
+          '0 0 0 1px rgba(255,255,255,0.055), 0 32px 72px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07)',
+        transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
+      onMouseEnter={(e) =>
+        ((e.currentTarget as HTMLElement).style.transform = 'translateY(-5px)')
+      }
+      onMouseLeave={(e) =>
+        ((e.currentTarget as HTMLElement).style.transform = 'translateY(0)')
+      }
+    >
+      {/* ── Badge ──────────────────────────────────────────────────────────── */}
+      <div className="px-5 pt-5">
+        <div
+          className="inline-flex items-center gap-2 rounded-full px-3 py-[5px]"
+          style={{
+            background: 'rgba(139,92,246,0.12)',
+            border: '1px solid rgba(139,92,246,0.28)',
+          }}
+        >
+          <span
+            className="h-[5px] w-[5px] shrink-0 rounded-full"
+            style={{
+              background: '#c084fc',
+              boxShadow: '0 0 7px rgba(192,132,252,0.9)',
+            }}
+            aria-hidden="true"
+          />
+          <span
+            className="text-[0.6rem] font-extrabold uppercase tracking-[0.16em]"
+            style={{ color: '#c084fc' }}
+          >
+            {card.badge}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Headline ───────────────────────────────────────────────────────── */}
+      <div className="px-5 pb-4 pt-2.5">
+        <p
+          className="text-[0.9rem] font-bold leading-[1.28] tracking-[-0.01em]"
+          style={{ color: 'rgba(255,255,255,0.9)' }}
+        >
+          {card.headline}
+        </p>
+      </div>
+
+      {/* ── Screenshot ─────────────────────────────────────────────────────── */}
+      {/* object-contain preserves full screenshot — no cropping */}
+      <div
+        className="relative mx-4 overflow-hidden"
+        style={{
+          aspectRatio: '9 / 14',
+          borderRadius: '18px',
+          background: '#07060e',
+          border: '1px solid rgba(255,255,255,0.065)',
+          boxShadow:
+            'inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 36px rgba(0,0,0,0.55)',
+        }}
+      >
+        {/* Ambient purple glow behind image */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            background:
+              'radial-gradient(ellipse at 50% 25%, rgba(139,92,246,0.09) 0%, transparent 60%)',
+          }}
+        />
+        {/* Subtle glass shimmer top-left */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(255,255,255,0.035) 0%, transparent 38%)',
+          }}
+        />
+        <Image
+          src={card.image}
+          alt={`WhatsApp conversation: ${card.headline}`}
+          fill
+          sizes="(max-width: 767px) 84vw, 272px"
+          className="object-contain"
+          draggable={false}
+          loading="lazy"
+        />
+      </div>
+
+      {/* ── Trust footer ───────────────────────────────────────────────────── */}
+      <div className="px-5 pb-5 pt-3.5">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.58rem] font-black text-white"
+            style={{
+              background: 'linear-gradient(135deg, #a855f7, #6d28d9)',
+              boxShadow: '0 0 0 1.5px rgba(139,92,246,0.3)',
+            }}
+            aria-hidden="true"
+          >
+            {initial}
+          </div>
+          <p
+            className="text-[0.6rem] font-semibold uppercase tracking-[0.14em]"
+            style={{ color: 'rgba(255,255,255,0.28)' }}
+          >
+            {card.client}
+          </p>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+// ── Section ───────────────────────────────────────────────────────────────────
 
 export default function WhatsappProofSection() {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const pauseRef = useRef(false)
-  const posRef = useRef(0)
-  const rafRef = useRef<number>(0)
-
-  useEffect(() => {
-    const el = trackRef.current
-    if (!el) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    const speed = 0.38
-
-    const tick = () => {
-      if (!pauseRef.current) {
-        posRef.current += speed
-        if (posRef.current >= el.scrollWidth / 2) {
-          posRef.current = 0
-        }
-        el.scrollLeft = posRef.current
-      }
-      rafRef.current = requestAnimationFrame(tick)
-    }
-
-    rafRef.current = requestAnimationFrame(tick)
-
-    const pause = () => { pauseRef.current = true }
-    const resume = () => { pauseRef.current = false }
-
-    el.addEventListener('pointerenter', pause)
-    el.addEventListener('pointerleave', resume)
-    el.addEventListener('touchstart', pause, { passive: true })
-    el.addEventListener('touchend', resume)
-
-    return () => {
-      cancelAnimationFrame(rafRef.current)
-      el.removeEventListener('pointerenter', pause)
-      el.removeEventListener('pointerleave', resume)
-      el.removeEventListener('touchstart', pause)
-      el.removeEventListener('touchend', resume)
-    }
-  }, [])
+  const row1Doubled = [...ROW1, ...ROW1]
+  const row2Doubled = [...ROW2, ...ROW2]
 
   return (
-    <section className="section-pad relative overflow-hidden bg-[var(--bg-section)] text-white">
-      {/* BACKGROUND GLOW */}
-      <div aria-hidden="true" className="section-glow">
-        <div className="glow-section" />
+    <section
+      className="section-pad relative overflow-hidden"
+      style={{ background: 'var(--bg-section)' }}
+    >
+      {/* ── Ambient background glows ─────────────────────────────────────── */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute left-1/2 top-[-8%] h-[min(65vw,340px)] w-[min(65vw,340px)] -translate-x-1/2 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        <div
+          className="absolute left-[15%] top-[30%] h-[200px] w-[200px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(109,40,217,0.07) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+        <div
+          className="absolute right-[10%] bottom-[20%] h-[180px] w-[180px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)',
+            filter: 'blur(50px)',
+          }}
+        />
       </div>
 
       <div className="relative z-10">
-        {/* HEADER */}
-        <div className="container-default mb-7 text-center">
-          <div className="badge-pill mx-auto mb-4 w-fit" role="status">
-            <span className="badge-dot shrink-0" aria-hidden="true" />
-            Real Client Conversations
-          </div>
-          <SectionHeader
-            className="!mb-0"
-            label="WhatsApp Proof"
-            title={
-              <>
-                Real Messages.{' '}
-                <span className="text-gradient">Real Thyroid Fat Loss.</span>
-              </>
-            }
-            lead="Indian women sharing real progress — belly fat down, energy back, clothes fitting again."
-            titleMaxCh="22ch"
-          />
-        </div>
 
-        {/* CAROUSEL */}
-        <div className="relative overflow-hidden">
-          <div
-            ref={trackRef}
-            data-carousel-track
-            className="flex gap-4 overflow-x-auto px-[clamp(1rem,4vw,2rem)] pb-2 scrollbar-hide"
-          >
-            {ITEMS.map((item, idx) => (
-              <article
-                key={`${item.id}-${idx}`}
-                className="flex-shrink-0 overflow-hidden"
+        {/* ── Section header ─────────────────────────────────────────────── */}
+        <motion.div
+          className="container-default mb-10 text-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-80px' }}
+          variants={stagger}
+        >
+          {/* Live badge */}
+          <motion.div variants={fadeUp} className="mb-5 flex justify-center">
+            <div
+              className="inline-flex items-center gap-2.5 rounded-full px-4 py-2"
+              style={{
+                background: 'rgba(139,92,246,0.1)',
+                border: '1px solid rgba(139,92,246,0.22)',
+              }}
+            >
+              <span
+                className="h-1.5 w-1.5 animate-pulse rounded-full"
                 style={{
-                  width: 'min(255px, 74vw)',
-                  borderRadius: '28px',
-                  background:
-                    'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-                  boxShadow:
-                    '0 0 0 1px rgba(255,255,255,0.07), 0 24px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.09)',
+                  background: '#c084fc',
+                  boxShadow: '0 0 8px rgba(192,132,252,0.9)',
                 }}
+                aria-hidden="true"
+              />
+              <span
+                className="text-[0.62rem] font-bold uppercase tracking-[0.2em]"
+                style={{ color: '#c084fc' }}
               >
+                Real Client Conversations
+              </span>
+            </div>
+          </motion.div>
 
-                {/* ① METRIC CHIP — above image, zero overlap */}
-                <div className="px-4 pt-4">
-                  <div
-                    className="inline-flex items-center gap-2 rounded-full px-3 py-[6px]"
-                    style={{
-                      background: 'rgba(139,92,246,0.14)',
-                      border: '1px solid rgba(139,92,246,0.3)',
-                    }}
-                  >
-                    <span
-                      className="h-[6px] w-[6px] shrink-0 rounded-full"
-                      style={{
-                        background: 'var(--p300)',
-                        boxShadow: '0 0 6px var(--p300)',
-                      }}
-                      aria-hidden="true"
-                    />
-                    <span className="font-mono text-[10.5px] font-extrabold tracking-[0.14em] text-[var(--p300)]">
-                      {item.result}
-                    </span>
-                  </div>
+          {/* Headline */}
+          <motion.h2
+            variants={fadeUp}
+            className="section-title mx-auto"
+            style={{ maxWidth: '22ch' }}
+          >
+            Real Conversations.{' '}
+            <span className="text-gradient">Real Thyroid Progress.</span>
+          </motion.h2>
+
+          {/* Lead */}
+          <motion.p
+            variants={fadeUp}
+            className="section-lead mx-auto mt-4 text-pretty"
+            style={{ maxWidth: '46ch' }}
+          >
+            These are actual messages from clients finally seeing their body respond again —
+            real people, real thyroid struggles, real results.
+          </motion.p>
+        </motion.div>
+
+        {/* ── MOBILE: wide snap-scroll row ──────────────────────────────── */}
+        {/* Single scrollable row, 84vw cards, full screenshots visible      */}
+        <div className="block md:hidden">
+          <div className="relative overflow-hidden">
+            {/* Left fade */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-0 top-0 z-20 h-full w-8"
+              style={{ background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
+            />
+            {/* Right fade */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute right-0 top-0 z-20 h-full w-8"
+              style={{ background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
+            />
+            <div
+              className="flex snap-x snap-mandatory gap-4 overflow-x-auto scrollbar-hide"
+              style={{ padding: '4px 1rem 12px' }}
+            >
+              {ALL_CARDS.map((card) => (
+                <div key={card.id} className="snap-center flex-shrink-0">
+                  <ProofCard card={card} wide />
                 </div>
-
-                {/* ② HEADLINE — above image, full readability */}
-                <div className="px-4 pb-3 pt-2.5">
-                  <p className="text-[14.5px] font-bold leading-[1.25] text-[var(--t1)]">
-                    {item.headline}
-                  </p>
-                </div>
-
-                {/* ③ SCREENSHOT — full-bleed, object-cover, zero black bars
-                    ─────────────────────────────────────────────────────────
-                    KEY FIX: `object-cover object-top` fills the frame edge-
-                    to-edge. The screenshot is the uneditable social proof —
-                    no text overlaid so the chat content is fully legible.
-                    Subtle bottom vignette only to blend into the card footer.
-                ──────────────────────────────────────────────────────────── */}
-                <div
-                  className="relative mx-3 overflow-hidden"
-                  style={{
-                    aspectRatio: '9 / 14',
-                    borderRadius: '18px',
-                    background: '#07060f',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    boxShadow:
-                      'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(0,0,0,0.5)',
-                  }}
-                >
-                  {/* Screen-glass shimmer — pure CSS, no extra image */}
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 z-10"
-                    style={{
-                      background:
-                        'linear-gradient(130deg, rgba(255,255,255,0.05) 0%, transparent 38%)',
-                    }}
-                  />
-
-                  {/* Bottom vignette only — blends into card footer */}
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16"
-                    style={{
-                      background:
-                        'linear-gradient(to top, rgba(8,6,20,0.82) 0%, transparent 100%)',
-                    }}
-                  />
-
-                  {/* Actual WhatsApp screenshot
-                      object-cover  → fills container, no black bars
-                      object-top    → anchors to top of image (key chat
-                                      messages are usually near the top)   */}
-                  <Image
-                    src={item.image}
-                    alt={`WhatsApp proof: ${item.headline}`}
-                    fill
-                    sizes="(max-width: 768px) 74vw, 255px"
-                    className="object-cover object-top"
-                    draggable={false}
-                    loading="lazy"
-                  />
-                </div>
-
-                {/* ④ TAGS + CLIENT — below image, clean reading zone */}
-                <div className="px-4 pb-4 pt-3">
-
-                  {/* Tags */}
-                  <div className="mb-3 flex flex-wrap gap-1.5">
-                    {item.tags.slice(0, 2).map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full px-2.5 py-[5px] text-[10px] font-medium"
-                        style={{
-                          background: 'rgba(139,92,246,0.10)',
-                          border: '1px solid rgba(139,92,246,0.20)',
-                          color: 'rgba(196,181,253,0.85)',
-                        }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Client identity */}
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                      style={{
-                        background:
-                          'linear-gradient(135deg, var(--p300), #7c3aed)',
-                        boxShadow: '0 0 0 1.5px rgba(139,92,246,0.25)',
-                      }}
-                      aria-hidden="true"
-                    >
-                      {item.name.charAt(0)}
-                    </div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--t4)]">
-                      {item.name} · Hypothyroid Client
-                    </p>
-                  </div>
-
-                </div>
-              </article>
-            ))}
+              ))}
+            </div>
           </div>
-
-          {/* LEFT EDGE FADE */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
-            style={{
-              background: 'linear-gradient(to right, var(--bg-section), transparent)',
-            }}
-          />
-
-          {/* RIGHT EDGE FADE */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 z-20 h-full w-[clamp(1.5rem,4vw,3rem)]"
-            style={{
-              background: 'linear-gradient(to left, var(--bg-section), transparent)',
-            }}
-          />
+          <p
+            className="mt-3 text-center text-[0.6rem] font-semibold uppercase tracking-[0.16em]"
+            style={{ color: 'rgba(255,255,255,0.18)' }}
+          >
+            Swipe to see more ›
+          </p>
         </div>
 
-        {/* MOBILE HINT */}
-        <p className="mt-3 text-center text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--t5)] md:hidden">
-          Swipe to see more
-        </p>
+        {/* ── DESKTOP: dual-row infinite marquee ────────────────────────── */}
+        {/* Row 1 → scrolls left | Row 2 → scrolls right                    */}
+        <div className="relative hidden md:block">
 
-        {/* CTA */}
-        <div className="container-default">
-          <SectionCta
-            variant="ghost"
+          {/* Edge fades — sit above both rows */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 z-20 h-full"
+            style={{
+              width: 'clamp(2rem, 5vw, 5rem)',
+              background: 'linear-gradient(to right, var(--bg-section) 0%, transparent 100%)',
+            }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 z-20 h-full"
+            style={{
+              width: 'clamp(2rem, 5vw, 5rem)',
+              background: 'linear-gradient(to left, var(--bg-section) 0%, transparent 100%)',
+            }}
+          />
+
+          <div className="space-y-5 overflow-hidden py-2">
+
+            {/* Row 1 — moves left */}
+            <div className="marquee-rail overflow-hidden">
+              <div className="marquee-track-l flex gap-5 w-max">
+                {row1Doubled.map((card, i) => (
+                  <ProofCard key={`r1-${card.id}-${i}`} card={card} />
+                ))}
+              </div>
+            </div>
+
+            {/* Row 2 — moves right */}
+            <div className="marquee-rail overflow-hidden">
+              <div className="marquee-track-r flex gap-5 w-max">
+                {row2Doubled.map((card, i) => (
+                  <ProofCard key={`r2-${card.id}-${i}`} card={card} />
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── CTA ───────────────────────────────────────────────────────── */}
+        <motion.div
+          className="container-default mt-12 text-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-60px' }}
+          variants={stagger}
+        >
+          <motion.p
+            variants={fadeUp}
+            className="mb-2 text-[0.7rem] font-bold uppercase tracking-[0.2em]"
+            style={{ color: 'rgba(255,255,255,0.22)' }}
+          >
+            Your results could be next
+          </motion.p>
+
+          <motion.h3
+            variants={fadeUp}
+            className="mb-7 text-[1.6rem] font-black leading-[1.08] tracking-[-0.04em] text-white sm:text-[2rem]"
+          >
+            Your Thyroid Story{' '}
+            <span className="text-gradient">Could Be Next.</span>
+          </motion.h3>
+
+          <motion.div
+            variants={fadeUp}
             className="mx-auto"
-            buttonClassName="w-full"
             style={{ maxWidth: '22rem' }}
-            label="Apply For Your ₹299 Strategy Session"
-            sublabel="See if this coaching program fits you"
-            trust="Premium thyroid coaching · Not a diet plan PDF"
-            ariaLabel="Apply for your 299 rupee strategy session"
-            location="whatsapp_proof"
-          />
-        </div>
+          >
+            <div className="section-cta">
+              <CtaButton
+                variant="primary"
+                label="Reserve My Private Thyroid Strategy Session"
+                sublabel="60-minute private consultation with Swapnil"
+                ariaLabel="Reserve your private thyroid strategy session"
+                location="whatsapp_proof_cta"
+              />
+              <p
+                className="text-center text-[0.68rem]"
+                style={{ color: 'rgba(255,255,255,0.28)' }}
+              >
+                ₹299 · Fully refundable if no clarity · Limited slots weekly
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+
       </div>
     </section>
   )

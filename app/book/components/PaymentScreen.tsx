@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 
 const TRUST_ITEMS = [
@@ -11,11 +12,6 @@ const TRUST_ITEMS = [
 
 const WHAT_NEXT = [
   {
-    num: "01",
-    title: "Pay the ₹299 session fee",
-    body: "Secures your private slot. Fully refundable if you don't leave with complete clarity.",
-  },
-  {
     num: "02",
     title: "Complete your thyroid assessment",
     body: "A short personalised intake — your symptoms, history, and frustrations. Swapnil studies this before you speak.",
@@ -25,6 +21,18 @@ const WHAT_NEXT = [
     title: "Pick your session time",
     body: "Choose any available private slot. Zoom link sent instantly to WhatsApp.",
   },
+  {
+    num: "04",
+    title: "Your private 60-minute strategy session",
+    body: "A focused call built entirely around your thyroid case. You leave with a clear, personal action plan.",
+  },
+];
+
+const CTA_BULLETS = [
+  "Personalized thyroid review",
+  "60-minute private strategy session",
+  "Written action plan included",
+  "Fully refundable if no clarity",
 ];
 
 export function PaymentScreen({
@@ -40,19 +48,33 @@ export function PaymentScreen({
 }) {
   const firstName = name.split(" ")[0] || name;
 
+  // Dynamic scarcity — computed once per mount; believable range 2–4
+  const slotCount = useMemo(() => Math.floor(Math.random() * 3) + 2, []);
+
   return (
     <div className="space-y-5">
-      {/* Approved badge */}
+
+      {/* Step label */}
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+        className="text-center text-[0.62rem] font-bold uppercase tracking-[0.22em] text-purple-400/70"
+      >
+        Step 2 of 4 · Secure Your Spot
+      </motion.p>
+
+      {/* Scarcity indicator */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ delay: 0.05, duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
         className="flex justify-center"
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 shadow-[0_0_24px_rgba(52,211,153,0.1)]">
-          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          <span className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-emerald-300">
-            Profile Accepted
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-4 py-2">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+          <span className="text-[0.64rem] font-bold uppercase tracking-[0.18em] text-emerald-300/90">
+            {slotCount} private slots remaining this week
           </span>
         </div>
       </motion.div>
@@ -61,76 +83,32 @@ export function PaymentScreen({
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ delay: 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
         className="rounded-[24px] border border-white/8 bg-white/[0.025] p-6 text-center backdrop-blur-xl"
       >
-        <h2 className="mb-3 text-[1.6rem] font-black leading-[1.1] tracking-[-0.04em] text-white">
-          Your profile has been{" "}
+        <h2 className="mb-3 text-[1.55rem] font-black leading-[1.1] tracking-[-0.04em] text-white">
+          Your Thyroid Consultation{" "}
           <span className="bg-gradient-to-r from-purple-300 to-violet-500 bg-clip-text text-transparent">
-            accepted{firstName ? `, ${firstName}` : ""}.
+            Spot Is Ready{firstName ? `, ${firstName}` : ""}.
           </span>
         </h2>
 
-        <div className="mb-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.07] p-3.5">
-          <p className="text-[0.83rem] font-semibold text-amber-200/85">
-            One step to secure your slot.
-          </p>
-          <p className="mt-1 text-[0.75rem] text-amber-200/50">
-            Your ₹299 fee lets Swapnil personally prepare for your specific case — so every minute of your session is focused entirely on you.
-          </p>
-        </div>
-
-        <p className="text-[0.8rem] leading-relaxed text-white/45">
-          After payment, you&apos;ll complete a short personalised assessment.
-          Swapnil studies your answers before you speak — nothing is wasted,
-          no time spent on basics.
+        <p className="text-[0.82rem] leading-relaxed text-white/50">
+          Your answers have been received successfully.
+          Swapnil will personally review your thyroid profile before the session.
         </p>
-      </motion.div>
-
-      {/* What happens next */}
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <p className="mb-3 text-center text-[0.62rem] font-bold uppercase tracking-[0.22em] text-white/20">
-          What happens after payment
+        <p className="mt-2 text-[0.82rem] font-medium leading-relaxed text-white/65">
+          Secure your private consultation slot now to continue.
         </p>
-        <div className="space-y-2.5">
-          {WHAT_NEXT.map((step) => (
-            <div
-              key={step.num}
-              className="flex gap-4 rounded-2xl border border-white/7 bg-white/[0.025] p-4"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-purple-500/25 bg-purple-500/10 text-[0.65rem] font-bold text-purple-300">
-                {step.num}
-              </div>
-              <div>
-                <p className="text-[0.84rem] font-semibold text-white/85">{step.title}</p>
-                <p className="mt-0.5 text-[0.74rem] leading-relaxed text-white/40">{step.body}</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </motion.div>
 
       {/* Payment card */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.22, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-[28px] border border-purple-500/20 bg-gradient-to-b from-purple-500/[0.10] to-transparent p-6 shadow-[0_20px_70px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+        transition={{ delay: 0.16, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="rounded-[28px] border border-purple-500/22 bg-gradient-to-b from-purple-500/[0.11] to-transparent p-6 shadow-[0_20px_70px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
       >
-        {/* Scarcity pill */}
-        <div className="mb-5 flex justify-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/10 px-4 py-2">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-300 shadow-[0_0_8px_rgba(196,181,253,0.8)]" />
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-purple-200/85">
-              Only 3 slots remaining this week
-            </span>
-          </div>
-        </div>
-
         {/* Session line */}
         <div className="mb-5 flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-4">
           <div>
@@ -157,13 +135,44 @@ export function PaymentScreen({
           className="group mb-4 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-purple-500 to-violet-600 px-5 py-5 shadow-[0_10px_40px_rgba(124,58,237,0.4)] transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_14px_50px_rgba(124,58,237,0.5)] active:scale-[0.99] disabled:opacity-70"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
-          <div className="text-[1.05rem] font-extrabold tracking-[-0.02em] text-white">
-            {loading ? "Opening payment…" : "Secure My Private Slot — ₹299"}
-          </div>
-          <div className="mt-1 text-[0.72rem] text-white/65">
-            {loading ? "Please wait…" : "Private · 60 min · Written action plan included"}
-          </div>
+          {loading ? (
+            <>
+              <div className="flex items-center justify-center gap-2">
+                <svg
+                  className="h-4 w-4 animate-spin text-white/80"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span className="text-[1rem] font-extrabold tracking-[-0.02em] text-white">
+                  Redirecting to secure payment…
+                </span>
+              </div>
+              <div className="mt-1 text-[0.72rem] text-white/60">Please wait, do not close this page</div>
+            </>
+          ) : (
+            <>
+              <div className="text-[1.05rem] font-extrabold tracking-[-0.02em] text-white">
+                Secure My Private Consultation — ₹299
+              </div>
+              <div className="mt-1 text-[0.72rem] text-white/65">
+                Tap to pay securely · All UPI & cards accepted
+              </div>
+            </>
+          )}
         </button>
+
+        {/* CTA bullet trust points */}
+        <ul className="mb-4 space-y-1.5">
+          {CTA_BULLETS.map((b) => (
+            <li key={b} className="flex items-center gap-2 text-[0.75rem] text-white/55">
+              <span className="text-emerald-400/80">✔</span>
+              {b}
+            </li>
+          ))}
+        </ul>
 
         {error && (
           <p className="mb-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-[0.78rem] text-red-300/90">
@@ -171,9 +180,36 @@ export function PaymentScreen({
           </p>
         )}
 
-        <p className="text-center text-[0.68rem] text-white/30">
+        <p className="text-center text-[0.66rem] text-white/25">
           Full refund if you do not leave with complete clarity
         </p>
+      </motion.div>
+
+      {/* What happens next */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.22, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <p className="mb-3 text-center text-[0.62rem] font-bold uppercase tracking-[0.22em] text-white/20">
+          After payment
+        </p>
+        <div className="space-y-2.5">
+          {WHAT_NEXT.map((step) => (
+            <div
+              key={step.num}
+              className="flex gap-4 rounded-2xl border border-white/7 bg-white/[0.025] p-4"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-purple-500/25 bg-purple-500/10 text-[0.65rem] font-bold text-purple-300">
+                {step.num}
+              </div>
+              <div>
+                <p className="text-[0.84rem] font-semibold text-white/85">{step.title}</p>
+                <p className="mt-0.5 text-[0.74rem] leading-relaxed text-white/40">{step.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </motion.div>
 
       {/* Trust row */}
