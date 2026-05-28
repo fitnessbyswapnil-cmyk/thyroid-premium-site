@@ -1350,12 +1350,12 @@ a {
 }
 
 .marquee-track-l {
-  animation: marquee-left 45s linear infinite;
+  animation: marquee-left 75s linear infinite;
   will-change: transform;
 }
 
 .marquee-track-r {
-  animation: marquee-right 40s linear infinite;
+  animation: marquee-right 70s linear infinite;
   will-change: transform;
 }
 
