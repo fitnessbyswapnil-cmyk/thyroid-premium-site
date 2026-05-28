@@ -5,6 +5,7 @@ import { ScarcityProvider } from "./context/ScarcityProvider";
 import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
 import { RouteTracker } from "./components/tracking/RouteTracker";
 import { UserIdentityTracker } from "./components/tracking/UserIdentityTracker";
+import { InputCookieCapture } from "./components/tracking/InputCookieCapture";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,6 +62,7 @@ export default function RootLayout({
         <GTMNoScript />
         <RouteTracker />
         <UserIdentityTracker />
+        <InputCookieCapture />
         <ScarcityProvider>{children}</ScarcityProvider>
       </body>
     </html>
