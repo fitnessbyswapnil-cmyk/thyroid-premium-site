@@ -15,133 +15,116 @@ type ProofCard = {
 }
 
 // ── Card data ─────────────────────────────────────────────────────────────────
-// Image → identity mapping verified against filenames per brief.
-// Every image appears EXACTLY ONCE across ALL_CARDS. No duplicates.
-//
+// Images used in exact order as specified.
 // ROW 1 (c1–c8)  → marquee moves LEFT  (desktop)
 // ROW 2 (c9–c15) → marquee moves RIGHT (desktop)
 // MOBILE         → single snap-scroll, all 15 cards
 
 const ALL_CARDS: ProofCard[] = [
-  // ── 1 — Heenal · JPEG screenshot ──────────────────────────────────────────
   {
     id: 'c1',
-    image: '/whatsapp-proof/4DEA6E92-C155-449F-98FD-56C56FB41C95_1_105_c.jpeg',
+    image: '/whatsapp-proof/Shariya-Sultana.jpeg',
     tags: ['TSH Improved', 'Energy Back'],
-    headline: 'TSH finally improving.',
-    client: 'HEENAL · HYPOTHYROID CLIENT',
+    headline: 'TSH is finally in range.',
+    client: 'SHARIYA SULTANA · THYROID CLIENT',
   },
-  // ── 2 — Sima · JPEG screenshot ────────────────────────────────────────────
   {
     id: 'c2',
-    image: '/whatsapp-proof/30C8CA81-A315-44E7-BC48-6AAE0856ED9F_1_105_c.jpeg',
+    image: '/whatsapp-proof/Sruthi-Reddy.jpeg',
     tags: ['Weight Moving', 'Bloating Down'],
-    headline: 'Weight finally started moving.',
-    client: 'SIMA · THYROID CLIENT',
+    headline: 'Weight started moving again.',
+    client: 'SRUTHI REDDY · THYROID CLIENT',
   },
-  // ── 3 — Guitar · JPEG screenshot ──────────────────────────────────────────
   {
     id: 'c3',
-    image: '/whatsapp-proof/A810BC40-CBA2-4438-8FE5-AF8287A0F9A8_1_105_c.jpeg',
-    tags: ['Body Fat Down', 'Strength Up'],
-    headline: 'Body fat finally came down.',
-    client: 'GUITAR · FAT LOSS CLIENT',
+    image: '/whatsapp-proof/Pooja-Sharma.jpeg',
+    tags: ['Hair Fall Stopped', 'Thyroid Healing'],
+    headline: 'Hair loss finally stopped.',
+    client: 'POOJA SHARMA · HYPOTHYROID CLIENT',
   },
-  // ── 4 — Namrata · JPEG screenshot ─────────────────────────────────────────
   {
     id: 'c4',
-    image: '/whatsapp-proof/992C9693-B6B8-4D3F-809C-E2410E949841_1_105_c.jpeg',
-    tags: ['TSH Improved', 'No More Fatigue'],
-    headline: 'Finally not tired all day.',
-    client: 'NAMRATA · HYPOTHYROID CLIENT',
+    image: '/whatsapp-proof/Priya-Shree.jpeg',
+    tags: ['Metabolism Fixed', 'Feeling Lighter'],
+    headline: 'Metabolism feels alive again.',
+    client: 'PRIYA SHREE · THYROID CLIENT',
   },
-  // ── 5 — Nahamia · JPEG screenshot ─────────────────────────────────────────
   {
     id: 'c5',
-    image: '/whatsapp-proof/BC4900F6-3176-4580-A158-780B4CCD162F_1_105_c.jpeg',
-    tags: ['Confidence Back', 'Clothes Fitting Again'],
-    headline: 'Clothes fitting again.',
-    client: 'NAHAMIA · THYROID CLIENT',
+    image: '/whatsapp-proof/Ritika-Deshmukh.jpeg',
+    tags: ['Fatigue Gone', 'Strength Restored'],
+    headline: 'No more morning exhaustion.',
+    client: 'RITIKA DESHMUKH · THYROID CLIENT',
   },
-  // ── 6 — Guitar R8 · PNG proof ─────────────────────────────────────────────
   {
     id: 'c6',
-    image: '/whatsapp-proof/Guitar R8.png',
-    tags: ['Body Fat Down'],
-    headline: 'Feeling like myself again.',
-    client: 'GUITAR · FAT LOSS CLIENT',
-  },
-  // ── 7 — Rozal R2 · PNG proof ──────────────────────────────────────────────
-  {
-    id: 'c7',
     image: '/whatsapp-proof/Rozal R2.png',
     tags: ['TSH Improved'],
     headline: 'My thyroid finally responded.',
     client: 'ROZAL · HYPOTHYROID CLIENT',
   },
-  // ── 8 — Sima R1 · PNG proof ───────────────────────────────────────────────
   {
-    id: 'c8',
-    image: '/whatsapp-proof/Sima R1.png',
-    tags: ['4 kg Lost'],
-    headline: 'Weight started moving. Finally.',
-    client: 'SIMA · THYROID CLIENT',
-  },
-  // ── 9 — Rakesh R3 · PNG proof ─────────────────────────────────────────────
-  {
-    id: 'c9',
-    image: '/whatsapp-proof/Rakesh R3.png',
-    tags: ['Clothes Fitting'],
-    headline: 'Old clothes fitting again.',
-    client: 'RAKESH · FAT LOSS CLIENT',
-  },
-  // ── 10 — Jay R6 · PNG proof ───────────────────────────────────────────────
-  {
-    id: 'c10',
-    image: '/whatsapp-proof/Jay R6.png',
-    tags: ['Energy Restored'],
-    headline: 'Energy came back naturally.',
-    client: 'JAY · THYROID CLIENT',
-  },
-  // ── 11 — Nitin R10 · PNG proof ────────────────────────────────────────────
-  {
-    id: 'c11',
-    image: '/whatsapp-proof/Nitin R10.png',
-    tags: ['Mind Fog Gone'],
-    headline: 'Focus and clarity returned.',
-    client: 'NITIN · FAT LOSS CLIENT',
-  },
-  // ── 12 — Heenal R4 · PNG proof ────────────────────────────────────────────
-  {
-    id: 'c12',
+    id: 'c7',
     image: '/whatsapp-proof/Heenal R4.png',
     tags: ['TSH 6.2 → 2.9'],
     headline: 'TSH dropped. Energy came back.',
     client: 'HEENAL · HYPOTHYROID CLIENT',
   },
-  // ── 13 — Nahamia R5 · PNG proof ───────────────────────────────────────────
   {
-    id: 'c13',
+    id: 'c8',
+    image: '/whatsapp-proof/Jay R6.png',
+    tags: ['Energy Restored'],
+    headline: 'Energy came back naturally.',
+    client: 'JAY · THYROID CLIENT',
+  },
+  {
+    id: 'c9',
     image: '/whatsapp-proof/Nahamia R5.png',
     tags: ['Bloating Down'],
     headline: 'Bloating reduced significantly.',
     client: 'NAHAMIA · THYROID CLIENT',
   },
-  // ── 14 — Namarata R9 · PNG proof ──────────────────────────────────────────
   {
-    id: 'c14',
+    id: 'c10',
     image: '/whatsapp-proof/Namarata R9.png',
     tags: ['No More Fatigue'],
     headline: 'Finally not tired all day.',
     client: 'NAMRATA · HYPOTHYROID CLIENT',
   },
-  // ── 15 — Nishant R7 · PNG proof ───────────────────────────────────────────
   {
-    id: 'c15',
+    id: 'c11',
     image: '/whatsapp-proof/Nishant R7.png',
     tags: ['Consistent Results'],
     headline: 'Results without starving.',
     client: 'NISHANT · FAT LOSS CLIENT',
+  },
+  {
+    id: 'c12',
+    image: '/whatsapp-proof/Nitin R10.png',
+    tags: ['Mind Fog Gone'],
+    headline: 'Focus and clarity returned.',
+    client: 'NITIN · FAT LOSS CLIENT',
+  },
+  {
+    id: 'c13',
+    image: '/whatsapp-proof/Rakesh R3.png',
+    tags: ['Clothes Fitting'],
+    headline: 'Old clothes fitting again.',
+    client: 'RAKESH · FAT LOSS CLIENT',
+  },
+  {
+    id: 'c14',
+    image: '/whatsapp-proof/Guitar R8.png',
+    tags: ['Body Fat Down'],
+    headline: 'Feeling like myself again.',
+    client: 'GUITAR · FAT LOSS CLIENT',
+  },
+  {
+    id: 'c15',
+    image: '/whatsapp-proof/Sima R1.png',
+    tags: ['4 kg Lost'],
+    headline: 'Weight started moving. Finally.',
+    client: 'SIMA · THYROID CLIENT',
   },
 ]
 
@@ -166,6 +149,12 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.12 } },
 }
 
+// ── Gold luxury constants ─────────────────────────────────────────────────────
+const GOLD = '#C9A84C'
+const GOLD_LIGHT = '#E8C96A'
+const GOLD_DIM = 'rgba(201,168,76,0.22)'
+const GOLD_GLOW = 'rgba(201,168,76,0.12)'
+
 // ── ProofCard ─────────────────────────────────────────────────────────────────
 
 function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boolean }) {
@@ -178,24 +167,24 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
         width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
         flexShrink: 0,
         borderRadius: '28px',
-        border: '1px solid rgba(139,92,246,0.15)',
+        border: `1px solid ${GOLD_DIM}`,
         background:
-          'linear-gradient(160deg, rgba(139,92,246,0.12) 0%, rgba(8,6,20,0.98) 50%, rgba(109,40,217,0.06) 100%)',
+          'linear-gradient(160deg, rgba(201,168,76,0.07) 0%, rgba(5,4,4,0.99) 45%, rgba(10,8,4,1) 100%)',
         boxShadow:
-          '0 0 0 1px rgba(255,255,255,0.06), 0 2px 4px rgba(139,92,246,0.08), 0 20px 60px rgba(0,0,0,0.75), 0 60px 120px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
+          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${GOLD_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
         transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = 'translateY(-8px) scale(1.012)'
         el.style.boxShadow =
-          '0 0 0 1px rgba(139,92,246,0.28), 0 2px 4px rgba(139,92,246,0.15), 0 24px 70px rgba(0,0,0,0.8), 0 60px 140px rgba(0,0,0,0.55), 0 0 60px rgba(139,92,246,0.12), inset 0 1px 0 rgba(255,255,255,0.1)'
+          `0 0 0 1px rgba(201,168,76,0.35), 0 2px 4px rgba(201,168,76,0.18), 0 24px 70px rgba(0,0,0,0.92), 0 60px 140px rgba(0,0,0,0.65), 0 0 60px rgba(201,168,76,0.1), inset 0 1px 0 rgba(255,255,255,0.08)`
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = 'translateY(0) scale(1)'
         el.style.boxShadow =
-          '0 0 0 1px rgba(255,255,255,0.06), 0 2px 4px rgba(139,92,246,0.08), 0 20px 60px rgba(0,0,0,0.75), 0 60px 120px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)'
+          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${GOLD_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`
       }}
     >
       {/* ── Header: Tags + Headline ─────────────────────────────────────────── */}
@@ -207,21 +196,21 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
               key={tag}
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px]"
               style={{
-                background: 'rgba(139,92,246,0.14)',
-                border: '1px solid rgba(139,92,246,0.32)',
+                background: 'rgba(201,168,76,0.09)',
+                border: `1px solid rgba(201,168,76,0.28)`,
               }}
             >
               <span
                 className="h-[5px] w-[5px] shrink-0 rounded-full"
                 style={{
-                  background: '#c084fc',
-                  boxShadow: '0 0 8px rgba(192,132,252,1)',
+                  background: GOLD,
+                  boxShadow: `0 0 8px ${GOLD}`,
                 }}
                 aria-hidden="true"
               />
               <span
                 className="text-[0.6rem] font-extrabold uppercase tracking-[0.18em]"
-                style={{ color: '#d8b4fe' }}
+                style={{ color: GOLD_LIGHT }}
               >
                 {tag}
               </span>
@@ -238,16 +227,16 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
         </p>
       </div>
 
-      {/* ── Screenshot — full-width, no side margins for maximum readability ── */}
+      {/* ── Screenshot ── */}
       <div
         className="relative overflow-hidden mx-3"
         style={{
           aspectRatio: '9 / 15',
           borderRadius: '18px',
-          background: '#05040f',
-          border: '1px solid rgba(139,92,246,0.12)',
+          background: '#050404',
+          border: `1px solid rgba(201,168,76,0.10)`,
           boxShadow:
-            'inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.5)',
+            'inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.6)',
         }}
       >
         {/* Subtle top glow inside image frame */}
@@ -256,7 +245,7 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
           className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(139,92,246,0.06) 0%, transparent 100%)',
+              'linear-gradient(to bottom, rgba(201,168,76,0.05) 0%, transparent 100%)',
           }}
         />
         <Image
@@ -274,13 +263,14 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
       <div className="px-5 py-4 mt-auto">
         <div
           className="flex items-center gap-2.5 pt-3"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}
+          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
         >
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black text-white"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black"
             style={{
-              background: 'linear-gradient(135deg, #a855f7 0%, #6d28d9 100%)',
-              boxShadow: '0 0 0 2px rgba(139,92,246,0.25), 0 2px 8px rgba(109,40,217,0.4)',
+              background: `linear-gradient(135deg, ${GOLD} 0%, #7A5C1E 100%)`,
+              boxShadow: `0 0 0 2px rgba(201,168,76,0.2), 0 2px 8px rgba(201,168,76,0.3)`,
+              color: '#0a0800',
             }}
             aria-hidden="true"
           >
@@ -301,7 +291,6 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
 // ── Section ───────────────────────────────────────────────────────────────────
 
 export default function WhatsappProofSection() {
-  // Double each row array for seamless infinite marquee loop (CSS translateX -50%)
   const row1Doubled = [...ROW1, ...ROW1]
   const row2Doubled = [...ROW2, ...ROW2]
 
@@ -315,21 +304,21 @@ export default function WhatsappProofSection() {
         <div
           className="absolute left-1/2 top-[-6%] h-[min(70vw,420px)] w-[min(70vw,420px)] -translate-x-1/2 rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(139,92,246,0.13) 0%, transparent 70%)',
+            background: `radial-gradient(circle, rgba(201,168,76,0.09) 0%, transparent 70%)`,
             filter: 'blur(100px)',
           }}
         />
         <div
           className="absolute left-[8%] top-[30%] h-[260px] w-[260px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(109,40,217,0.08) 0%, transparent 70%)',
+            background: `radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)`,
             filter: 'blur(80px)',
           }}
         />
         <div
           className="absolute right-[6%] bottom-[14%] h-[240px] w-[240px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(168,85,247,0.07) 0%, transparent 70%)',
+            background: `radial-gradient(circle, rgba(201,168,76,0.05) 0%, transparent 70%)`,
             filter: 'blur(70px)',
           }}
         />
@@ -349,21 +338,21 @@ export default function WhatsappProofSection() {
             <div
               className="inline-flex items-center gap-2.5 rounded-full px-4 py-2"
               style={{
-                background: 'rgba(139,92,246,0.1)',
-                border: '1px solid rgba(139,92,246,0.24)',
+                background: 'rgba(201,168,76,0.08)',
+                border: `1px solid rgba(201,168,76,0.22)`,
               }}
             >
               <span
                 className="h-1.5 w-1.5 animate-pulse rounded-full"
                 style={{
-                  background: '#c084fc',
-                  boxShadow: '0 0 10px rgba(192,132,252,1)',
+                  background: GOLD,
+                  boxShadow: `0 0 10px ${GOLD}`,
                 }}
                 aria-hidden="true"
               />
               <span
                 className="text-[0.62rem] font-bold uppercase tracking-[0.2em]"
-                style={{ color: '#c084fc' }}
+                style={{ color: GOLD_LIGHT }}
               >
                 Real Client Conversations
               </span>
@@ -390,16 +379,13 @@ export default function WhatsappProofSection() {
         </motion.div>
 
         {/* ── MOBILE: wide snap-scroll (single row, all 15 cards) ─────────── */}
-        {/* Only visible below md breakpoint                                   */}
         <div className="block md:hidden">
           <div className="relative overflow-hidden">
-            {/* Edge fade — left */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute left-0 top-0 z-20 h-full w-12"
               style={{ background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
             />
-            {/* Edge fade — right */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute right-0 top-0 z-20 h-full w-12"
@@ -424,10 +410,7 @@ export default function WhatsappProofSection() {
           </p>
         </div>
 
-        {/* ── DESKTOP: exactly 2 cinematic marquee rows ───────────────────── */}
-        {/* Row 1 → moves left  (90 s)                                        */}
-        {/* Row 2 → moves right (85 s)                                        */}
-        {/* Only visible at md breakpoint and above                            */}
+        {/* ── DESKTOP: 2 cinematic marquee rows ───────────────────────────── */}
         <div className="relative hidden md:block">
 
           {/* Edge fades */}
