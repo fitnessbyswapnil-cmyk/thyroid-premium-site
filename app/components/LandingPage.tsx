@@ -21,16 +21,16 @@ export default function LandingPage() {
   return (
     <ScarcityProvider>
       <Hero />
-      <AuthoritySection />
-      <ThyroidStrategySession />
-      <SocialProof />
-      <PostTestimonialCta />
-      <WhoIsThisForSection />
-      <ResultsSection />
-      <VideoTestimonial />
       <ProblemSection />
+      <WhoIsThisForSection />
+      <ThyroidStrategySession />
+      <AuthoritySection />
+      <VideoTestimonial />
+      <ResultsSection />
       <WhatsappProofSection />
       <FrameworkSection />
+      <SocialProof />
+      <PostTestimonialCta />
       <MoreThanFatLossSection />
       <FAQSection />
       <FinalCTASection />
