@@ -149,11 +149,13 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.12 } },
 }
 
-// ── Gold luxury constants ─────────────────────────────────────────────────────
-const GOLD = '#C9A84C'
-const GOLD_LIGHT = '#E8C96A'
-const GOLD_DIM = 'rgba(201,168,76,0.22)'
-const GOLD_GLOW = 'rgba(201,168,76,0.12)'
+// ── Violet brand accent constants ─────────────────────────────────────────────
+// Reuses the shared design tokens (--p400/--p500/--p600) so this section matches
+// the rest of the page's purple system.
+const ACCENT = 'var(--p500)'
+const ACCENT_LIGHT = 'var(--p400)'
+const ACCENT_DIM = 'rgba(168,85,247,0.22)'
+const ACCENT_GLOW = 'rgba(168,85,247,0.12)'
 
 // ── ProofCard ─────────────────────────────────────────────────────────────────
 
@@ -167,24 +169,24 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
         width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
         flexShrink: 0,
         borderRadius: '28px',
-        border: `1px solid ${GOLD_DIM}`,
+        border: `1px solid ${ACCENT_DIM}`,
         background:
-          'linear-gradient(160deg, rgba(201,168,76,0.07) 0%, rgba(5,4,4,0.99) 45%, rgba(10,8,4,1) 100%)',
+          'linear-gradient(160deg, rgba(168,85,247,0.07) 0%, rgba(5,4,4,0.99) 45%, rgba(10,8,4,1) 100%)',
         boxShadow:
-          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${GOLD_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
+          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${ACCENT_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
         transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = 'translateY(-8px) scale(1.012)'
         el.style.boxShadow =
-          `0 0 0 1px rgba(201,168,76,0.35), 0 2px 4px rgba(201,168,76,0.18), 0 24px 70px rgba(0,0,0,0.92), 0 60px 140px rgba(0,0,0,0.65), 0 0 60px rgba(201,168,76,0.1), inset 0 1px 0 rgba(255,255,255,0.08)`
+          `0 0 0 1px rgba(168,85,247,0.35), 0 2px 4px rgba(168,85,247,0.18), 0 24px 70px rgba(0,0,0,0.92), 0 60px 140px rgba(0,0,0,0.65), 0 0 60px rgba(168,85,247,0.1), inset 0 1px 0 rgba(255,255,255,0.08)`
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = 'translateY(0) scale(1)'
         el.style.boxShadow =
-          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${GOLD_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`
+          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${ACCENT_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`
       }}
     >
       {/* ── Header: Tags + Headline ─────────────────────────────────────────── */}
@@ -196,21 +198,21 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
               key={tag}
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px]"
               style={{
-                background: 'rgba(201,168,76,0.09)',
-                border: `1px solid rgba(201,168,76,0.28)`,
+                background: 'rgba(168,85,247,0.09)',
+                border: `1px solid rgba(168,85,247,0.28)`,
               }}
             >
               <span
                 className="h-[5px] w-[5px] shrink-0 rounded-full"
                 style={{
-                  background: GOLD,
-                  boxShadow: `0 0 8px ${GOLD}`,
+                  background: ACCENT,
+                  boxShadow: `0 0 8px ${ACCENT}`,
                 }}
                 aria-hidden="true"
               />
               <span
                 className="text-[0.6rem] font-extrabold uppercase tracking-[0.18em]"
-                style={{ color: GOLD_LIGHT }}
+                style={{ color: ACCENT_LIGHT }}
               >
                 {tag}
               </span>
@@ -234,7 +236,7 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
           aspectRatio: '9 / 15',
           borderRadius: '18px',
           background: '#050404',
-          border: `1px solid rgba(201,168,76,0.10)`,
+          border: `1px solid rgba(168,85,247,0.10)`,
           boxShadow:
             'inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.6)',
         }}
@@ -245,7 +247,7 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
           className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(201,168,76,0.05) 0%, transparent 100%)',
+              'linear-gradient(to bottom, rgba(168,85,247,0.05) 0%, transparent 100%)',
           }}
         />
         <Image
@@ -268,9 +270,9 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black"
             style={{
-              background: `linear-gradient(135deg, ${GOLD} 0%, #7A5C1E 100%)`,
-              boxShadow: `0 0 0 2px rgba(201,168,76,0.2), 0 2px 8px rgba(201,168,76,0.3)`,
-              color: '#0a0800',
+              background: `linear-gradient(135deg, ${ACCENT} 0%, var(--p600) 100%)`,
+              boxShadow: `0 0 0 2px rgba(168,85,247,0.2), 0 2px 8px rgba(168,85,247,0.3)`,
+              color: '#fff',
             }}
             aria-hidden="true"
           >
@@ -304,21 +306,21 @@ export default function WhatsappProofSection() {
         <div
           className="absolute left-1/2 top-[-6%] h-[min(70vw,420px)] w-[min(70vw,420px)] -translate-x-1/2 rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(201,168,76,0.09) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(168,85,247,0.09) 0%, transparent 70%)`,
             filter: 'blur(100px)',
           }}
         />
         <div
           className="absolute left-[8%] top-[30%] h-[260px] w-[260px] rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)`,
             filter: 'blur(80px)',
           }}
         />
         <div
           className="absolute right-[6%] bottom-[14%] h-[240px] w-[240px] rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(201,168,76,0.05) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(168,85,247,0.05) 0%, transparent 70%)`,
             filter: 'blur(70px)',
           }}
         />
@@ -338,21 +340,21 @@ export default function WhatsappProofSection() {
             <div
               className="inline-flex items-center gap-2.5 rounded-full px-4 py-2"
               style={{
-                background: 'rgba(201,168,76,0.08)',
-                border: `1px solid rgba(201,168,76,0.22)`,
+                background: 'rgba(168,85,247,0.08)',
+                border: `1px solid rgba(168,85,247,0.22)`,
               }}
             >
               <span
                 className="h-1.5 w-1.5 animate-pulse rounded-full"
                 style={{
-                  background: GOLD,
-                  boxShadow: `0 0 10px ${GOLD}`,
+                  background: ACCENT,
+                  boxShadow: `0 0 10px ${ACCENT}`,
                 }}
                 aria-hidden="true"
               />
               <span
                 className="text-[0.62rem] font-bold uppercase tracking-[0.2em]"
-                style={{ color: GOLD_LIGHT }}
+                style={{ color: ACCENT_LIGHT }}
               >
                 Real Client Conversations
               </span>
