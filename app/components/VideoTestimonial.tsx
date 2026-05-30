@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import CtaButton from "./CtaButton";
 
@@ -12,11 +12,22 @@ const SRCS = {
   rashmi: `/videos/${encodeURIComponent("🎥-Rashmis-3-Week-Thyroid-Fat-Loss-Transformation.mp4")}`,
 };
 
+// ── Poster images ───────────────────────────────────────────────────────────
+// Lightweight first-frame stills extracted from each video (keeps the 9:16
+// card looking intentional before play and prevents layout shift with
+// preload="none").
+const POSTERS = {
+  kshama: "/videos/posters/kshama.jpg",
+  fathima: "/videos/posters/fathima.jpg",
+  rashmi: "/videos/posters/rashmi.jpg",
+};
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 type Story = {
   id: string;
   src: string;
+  poster: string;
   featured?: boolean;
   name: string;
   role: string;
@@ -29,6 +40,7 @@ const STORIES: Story[] = [
   {
     id: "kshama",
     src: SRCS.kshama,
+    poster: POSTERS.kshama,
     featured: true,
     name: "Kshama Handa",
     role: "Age 55 · Partial Thyroidectomy",
@@ -44,6 +56,7 @@ const STORIES: Story[] = [
   {
     id: "fathima",
     src: SRCS.fathima,
+    poster: POSTERS.fathima,
     name: "Fathima P.",
     role: "Thyroid Coaching Client",
     headline: "I Thought My Body Was Just Broken.",
@@ -58,6 +71,7 @@ const STORIES: Story[] = [
   {
     id: "rashmi",
     src: SRCS.rashmi,
+    poster: POSTERS.rashmi,
     name: "Rashmi D.",
     role: "Hypothyroid Client",
     headline: "I Was Trying Everything. My Weight Wouldn't Move.",
@@ -99,8 +113,30 @@ function VideoCard({
   onPlay: () => void;
 }) {
   const localRef = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  const [muted, setMuted] = useState(false);
+  // Defer the source until the card is about to scroll into view, so the
+  // browser does no network work for this section on initial mobile load.
+  const [nearViewport, setNearViewport] = useState(false);
+
+  useEffect(() => {
+    if (nearViewport) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setNearViewport(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [nearViewport]);
 
   const refCallback = useCallback(
     (el: HTMLVideoElement | null) => {
@@ -111,6 +147,16 @@ function VideoCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  // Toggle sound without pausing/restarting playback. The actual `muted`
+  // state is driven by the video's volumechange event so it always reflects
+  // reality (e.g. when sound-on play is blocked and falls back to muted).
+  const toggleMute = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    const v = localRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+  }, []);
 
   const handleClick = useCallback(() => {
     const v = localRef.current;
@@ -181,6 +227,7 @@ function VideoCard({
 
       {/* ── Video container — strict 9:16 ── */}
       <div
+        ref={containerRef}
         className="relative w-full cursor-pointer overflow-hidden"
         style={{ aspectRatio: "9 / 16", background: "#08070f" }}
         onClick={handleClick}
@@ -196,8 +243,9 @@ function VideoCard({
       >
         <video
           ref={refCallback}
-          src={story.src}
-          preload="metadata"
+          src={nearViewport ? story.src : undefined}
+          poster={story.poster}
+          preload="none"
           playsInline
           onPause={() => setPlaying(false)}
           onEnded={() => {
@@ -207,6 +255,9 @@ function VideoCard({
           onWaiting={() => setBuffering(true)}
           onCanPlay={() => setBuffering(false)}
           onPlaying={() => setBuffering(false)}
+          onVolumeChange={() => {
+            if (localRef.current) setMuted(localRef.current.muted);
+          }}
           className="absolute inset-0 h-full w-full"
           style={{ objectFit: "contain" }}
           aria-label={`Transformation video: ${story.name}`}
@@ -245,6 +296,54 @@ function VideoCard({
               Watch Story
             </p>
           </div>
+        )}
+
+        {/* Mute / unmute toggle — appears once playing, toggles sound only */}
+        {playing && (
+          <button
+            type="button"
+            onClick={toggleMute}
+            onKeyDown={(e) => {
+              // Prevent Enter/Space from bubbling to the card's play handler
+              if (e.key === "Enter" || e.key === " ") e.stopPropagation();
+            }}
+            aria-label={muted ? "Unmute video" : "Mute video"}
+            className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 active:scale-95"
+            style={{
+              background: "rgba(0,0,0,0.55)",
+              border: "1px solid rgba(168,85,247,0.30)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            {muted ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M11 5 6 9H3v6h3l5 4V5z"
+                  fill="rgba(255,255,255,0.92)"
+                />
+                <path
+                  d="m16 9 5 6m0-6-5 6"
+                  stroke="rgba(255,255,255,0.92)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M11 5 6 9H3v6h3l5 4V5z"
+                  fill="rgba(255,255,255,0.92)"
+                />
+                <path
+                  d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"
+                  stroke="rgba(255,255,255,0.92)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </svg>
+            )}
+          </button>
         )}
 
         {/* Buffering spinner */}
