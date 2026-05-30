@@ -15,10 +15,16 @@ type ProofCard = {
 }
 
 // ── Card data ─────────────────────────────────────────────────────────────────
-// Images used in exact order as specified.
-// ROW 1 (c1–c8)  → marquee moves LEFT  (desktop)
-// ROW 2 (c9–c15) → marquee moves RIGHT (desktop)
-// MOBILE         → single snap-scroll, all 15 cards
+// Trimmed to the strongest 8 for mobile length (proof-fatigue reduction).
+// Selection was made for VARIETY OF RESULT TYPE using the captions/tags below
+// (labs/TSH, hair, metabolism, fatigue/energy, weight, mental clarity, confidence)
+// and to drop captions redundant with a stronger card. Image legibility /
+// authenticity was NOT assessed — the screenshots can't be seen from here, so
+// verify those 8 visually and swap from REMOVED_FOR_LENGTH if a kept one is weak.
+//
+// Card count drives both views automatically:
+//   DESKTOP → split in half into 2 marquee rows (see ROW1/ROW2 below)
+//   MOBILE  → single snap-scroll over every card
 
 const ALL_CARDS: ProofCard[] = [
   {
@@ -29,11 +35,11 @@ const ALL_CARDS: ProofCard[] = [
     client: 'SHARIYA SULTANA · THYROID CLIENT',
   },
   {
-    id: 'c2',
-    image: '/whatsapp-proof/Sruthi-Reddy.jpeg',
-    tags: ['Weight Moving', 'Bloating Down'],
-    headline: 'Weight started moving again.',
-    client: 'SRUTHI REDDY · THYROID CLIENT',
+    id: 'c7',
+    image: '/whatsapp-proof/Heenal R4.png',
+    tags: ['TSH 6.2 → 2.9'],
+    headline: 'TSH dropped. Energy came back.',
+    client: 'HEENAL · HYPOTHYROID CLIENT',
   },
   {
     id: 'c3',
@@ -57,18 +63,47 @@ const ALL_CARDS: ProofCard[] = [
     client: 'RITIKA DESHMUKH · THYROID CLIENT',
   },
   {
+    id: 'c15',
+    image: '/whatsapp-proof/Sima R1.png',
+    tags: ['4 kg Lost'],
+    headline: 'Weight started moving. Finally.',
+    client: 'SIMA · THYROID CLIENT',
+  },
+  {
+    id: 'c12',
+    image: '/whatsapp-proof/Nitin R10.png',
+    tags: ['Mind Fog Gone'],
+    headline: 'Focus and clarity returned.',
+    client: 'NITIN · FAT LOSS CLIENT',
+  },
+  {
+    id: 'c13',
+    image: '/whatsapp-proof/Rakesh R3.png',
+    tags: ['Clothes Fitting'],
+    headline: 'Old clothes fitting again.',
+    client: 'RAKESH · FAT LOSS CLIENT',
+  },
+]
+
+// Trimmed from carousel for mobile length. Re-add the strongest if needed.
+// (Removed mostly because each duplicates a result type already covered by a
+// kept card, or reads as vague.) Nothing here is deleted — restore by moving an
+// object back up into ALL_CARDS.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for easy restore
+const REMOVED_FOR_LENGTH: ProofCard[] = [
+  {
+    id: 'c2',
+    image: '/whatsapp-proof/Sruthi-Reddy.jpeg',
+    tags: ['Weight Moving', 'Bloating Down'],
+    headline: 'Weight started moving again.',
+    client: 'SRUTHI REDDY · THYROID CLIENT',
+  },
+  {
     id: 'c6',
     image: '/whatsapp-proof/Rozal R2.png',
     tags: ['TSH Improved'],
     headline: 'My thyroid finally responded.',
     client: 'ROZAL · HYPOTHYROID CLIENT',
-  },
-  {
-    id: 'c7',
-    image: '/whatsapp-proof/Heenal R4.png',
-    tags: ['TSH 6.2 → 2.9'],
-    headline: 'TSH dropped. Energy came back.',
-    client: 'HEENAL · HYPOTHYROID CLIENT',
   },
   {
     id: 'c8',
@@ -99,39 +134,20 @@ const ALL_CARDS: ProofCard[] = [
     client: 'NISHANT · FAT LOSS CLIENT',
   },
   {
-    id: 'c12',
-    image: '/whatsapp-proof/Nitin R10.png',
-    tags: ['Mind Fog Gone'],
-    headline: 'Focus and clarity returned.',
-    client: 'NITIN · FAT LOSS CLIENT',
-  },
-  {
-    id: 'c13',
-    image: '/whatsapp-proof/Rakesh R3.png',
-    tags: ['Clothes Fitting'],
-    headline: 'Old clothes fitting again.',
-    client: 'RAKESH · FAT LOSS CLIENT',
-  },
-  {
     id: 'c14',
     image: '/whatsapp-proof/Guitar R8.png',
     tags: ['Body Fat Down'],
     headline: 'Feeling like myself again.',
     client: 'GUITAR · FAT LOSS CLIENT',
   },
-  {
-    id: 'c15',
-    image: '/whatsapp-proof/Sima R1.png',
-    tags: ['4 kg Lost'],
-    headline: 'Weight started moving. Finally.',
-    client: 'SIMA · THYROID CLIENT',
-  },
 ]
 
-// ROW 1 = first 8 cards  → marquee moves left  (90 s)
-// ROW 2 = last  7 cards  → marquee moves right (85 s)
-const ROW1 = ALL_CARDS.slice(0, 8)
-const ROW2 = ALL_CARDS.slice(8)
+// Split the active cards in half across the two desktop marquee rows.
+// Derived from ALL_CARDS.length so the rows stay balanced if the count changes.
+// ROW 1 → marquee moves left (90 s) · ROW 2 → marquee moves right (85 s)
+const ROW1_COUNT = Math.ceil(ALL_CARDS.length / 2)
+const ROW1 = ALL_CARDS.slice(0, ROW1_COUNT)
+const ROW2 = ALL_CARDS.slice(ROW1_COUNT)
 
 // ── Animation variants ────────────────────────────────────────────────────────
 
@@ -380,7 +396,7 @@ export default function WhatsappProofSection() {
           </motion.p>
         </motion.div>
 
-        {/* ── MOBILE: wide snap-scroll (single row, all 15 cards) ─────────── */}
+        {/* ── MOBILE: wide snap-scroll (single row, all active cards) ─────── */}
         <div className="block md:hidden">
           <div className="relative overflow-hidden">
             <div
