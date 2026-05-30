@@ -118,8 +118,8 @@ export default function Hero() {
           <CtaButton
             variant="primary"
             className="relative z-[1]"
-            label="Start Understanding My Thyroid"
-            sublabel="&#8377;299 &middot; 60-minute private session with Swapnil"
+            label="Book My ₹299 Thyroid Session"
+            sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
             ariaLabel="Start understanding your thyroid — book a private 299 rupee session"
             location="hero"
           />

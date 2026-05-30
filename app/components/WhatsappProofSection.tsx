@@ -486,8 +486,8 @@ export default function WhatsappProofSection() {
             <div className="section-cta">
               <CtaButton
                 variant="primary"
-                label="Reserve My Private Thyroid Strategy Session"
-                sublabel="60-minute private consultation with Swapnil"
+                label="Book My ₹299 Thyroid Session"
+                sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
                 ariaLabel="Reserve your private thyroid strategy session"
                 location="whatsapp_proof_cta"
               />

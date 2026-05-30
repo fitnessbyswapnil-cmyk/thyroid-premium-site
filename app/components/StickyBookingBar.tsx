@@ -83,7 +83,7 @@ export default function StickyBookingBar() {
           aria-label="Book your 299 rupee private thyroid strategy session"
           className="btn-sticky shrink-0"
         >
-          Secure My Private Slot →
+          Book My ₹299 Thyroid Session
         </button>
       </div>
     </div>

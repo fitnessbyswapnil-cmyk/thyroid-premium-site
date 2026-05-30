@@ -88,8 +88,8 @@ export default function PostTestimonialCta() {
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
-              <span className="cta-label">This Sounds Like Me &mdash; Tell Me More</span>
-              <span className="cta-sub">Start with a ₹299 private thyroid session</span>
+              <span className="cta-label">This Sounds Like Me &mdash; Book My ₹299 Session</span>
+              <span className="cta-sub">60-min private 1-on-1 · Full refund if you don't get clarity</span>
             </button>
           </div>
 

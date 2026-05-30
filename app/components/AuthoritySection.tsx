@@ -160,9 +160,9 @@ export default function AuthoritySection() {
             <SectionCta
               className="mx-auto max-w-sm lg:mx-0 lg:items-start"
               buttonClassName="w-full"
-              label="Apply For Private Coaching"
-              sublabel="₹299 consultation · Limited weekly intake"
-              trust="Applications closing soon · Select clients only"
+              label="Book My ₹299 Thyroid Session"
+              sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
+              trust="Private 60-min session · Limited weekly intake"
               ariaLabel="Apply for private thyroid coaching"
               location="authority"
             />

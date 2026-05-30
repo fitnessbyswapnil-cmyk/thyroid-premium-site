@@ -39,7 +39,7 @@ const certChips = CERTIFICATIONS.map((c) => c.short);
 const GUARANTEE =
   "Full refund if you don't leave with complete clarity — no questions asked.";
 
-const PRIMARY_CTA_LABEL = "Book My ₹299 Session — I'm Ready";
+const PRIMARY_CTA_LABEL = "Book My ₹299 Thyroid Session";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -161,7 +161,7 @@ export default function FinalCTASection() {
             className="w-full cta-glow-strong"
             buttonClassName="w-full"
             label={PRIMARY_CTA_LABEL}
-            sublabel="60 min · Private · Written plan included"
+            sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
             ariaLabel="Book your 299 rupee private thyroid strategy session"
             location="final_cta"
           />

@@ -166,8 +166,8 @@ export default function FAQSection() {
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 280 }}
-            label="Book Your ₹299 Thyroid Assessment"
-            sublabel="See if this program fits you"
+            label="Book My ₹299 Thyroid Session"
+            sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
             trust="ACE · FITR · INFS Certified · 200+ Clients"
             ariaLabel="Book your 299 rupee thyroid assessment"
             location="faq"

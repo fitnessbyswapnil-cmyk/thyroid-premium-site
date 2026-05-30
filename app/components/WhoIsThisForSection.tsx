@@ -66,8 +66,8 @@ export default function WhoIsThisForSection() {
         </p>
 
         <SectionCta
-          label="Apply For Your ₹299 Strategy Session"
-          sublabel="Understand exactly what your thyroid needs"
+          label="Book My ₹299 Thyroid Session"
+          sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
           trust="200+ Indian women helped · ACE & INFS Certified"
           buttonClassName="w-full"
           style={{ maxWidth: "22rem" }}

@@ -192,7 +192,7 @@ export default function MoreThanFatLossSection() {
         <div className="mt-12">
           <SectionCta
             variant="ghost"
-            label="Start Your Thyroid Transformation →"
+            label="Book My ₹299 Thyroid Session"
             trust="200+ Indian women · Premium coaching results"
             ariaLabel="Start your thyroid transformation"
             location="more_than_fat_loss"
