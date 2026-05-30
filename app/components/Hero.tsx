@@ -33,7 +33,7 @@ export default function Hero() {
       <div className="container-default relative z-10 flex flex-col items-center pb-[clamp(4rem,9vw,6rem)] pt-[clamp(3rem,7vw,4.5rem)] text-center">
 
         {/* Category pill */}
-        <p className="section-label !mb-4 tracking-[0.065em] sm:!mb-5">
+        <p className="section-label !mb-3 tracking-[0.065em] sm:!mb-4">
           Thyroid fat-loss specialist&nbsp;&middot;&nbsp;Indian women
         </p>
 
@@ -48,15 +48,34 @@ export default function Hero() {
         </h1>
 
         {/* Subheadline */}
-        <p className="mt-5 max-w-[30ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t2)] sm:mt-6 sm:max-w-[38ch] sm:text-[length:var(--text-base)]">
-          You&apos;ve followed every diet. Taken every medication. Done
-          everything right. The weight stayed because your thyroid was never
-          actually the focus of the plan.
+        <p className="mt-4 max-w-[30ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t2)] sm:mt-5 sm:max-w-[38ch] sm:text-[length:var(--text-base)]">
+          You&apos;ve done everything right. The weight stayed because your
+          thyroid was never the focus.
         </p>
+
+        {/* CTA block — aspiration-led, LOW glow intensity */}
+        <div className="cta-wrap relative mt-6 w-full max-w-[min(100%,21rem)] sm:mt-7 sm:max-w-sm">
+          <CtaButton
+            variant="primary"
+            className="relative z-[1]"
+            label="Book My ₹299 Thyroid Session"
+            sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
+            ariaLabel="Start understanding your thyroid — book a private 299 rupee session"
+            location="hero"
+          />
+
+          {/* Risk reversal */}
+          <p className="mt-3.5 text-center text-[0.67rem] font-medium leading-[1.5] text-[var(--t4)]">
+            <span className="mr-1 text-emerald-400/70" aria-hidden="true">
+              &#10003;
+            </span>
+            Full refund if you don&apos;t leave with clarity &mdash; no questions asked
+          </p>
+        </div>
 
         {/* Outcome chips — pain → mechanism → what you get → proof → act */}
         <ul
-          className="mt-5 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:mt-6 sm:max-w-none"
+          className="mt-8 flex max-w-[22rem] flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:mt-9 sm:max-w-none"
           aria-label="What you can expect"
         >
           {OUTCOMES.map((item) => (
@@ -111,26 +130,6 @@ export default function Hero() {
               </span>
             </div>
           ))}
-        </div>
-
-        {/* CTA block — aspiration-led, LOW glow intensity */}
-        <div className="cta-wrap relative mt-8 w-full max-w-[min(100%,21rem)] sm:mt-9 sm:max-w-sm">
-          <CtaButton
-            variant="primary"
-            className="relative z-[1]"
-            label="Book My ₹299 Thyroid Session"
-            sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
-            ariaLabel="Start understanding your thyroid — book a private 299 rupee session"
-            location="hero"
-          />
-
-          {/* Risk reversal */}
-          <p className="mt-3.5 text-center text-[0.67rem] font-medium leading-[1.5] text-[var(--t4)]">
-            <span className="mr-1 text-emerald-400/70" aria-hidden="true">
-              &#10003;
-            </span>
-            Full refund if you don&apos;t leave with clarity &mdash; no questions asked
-          </p>
         </div>
 
         {/* Scarcity badge — placed after CTA, urgency only after intent is formed */}
