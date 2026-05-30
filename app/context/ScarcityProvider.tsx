@@ -4,15 +4,10 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useState,
   type ReactNode,
 } from "react";
 
-export type SpotsCount = 7 | 5 | 3;
-
 type ScarcityContextValue = {
-  spots: SpotsCount;
   scarcityLine: string;
   scarcityShort: string;
   goToCta: () => void;
@@ -20,46 +15,19 @@ type ScarcityContextValue = {
 
 const ScarcityContext = createContext<ScarcityContextValue | null>(null);
 
-const SCARCITY_LINES: Record<SpotsCount, string> = {
-  7: "Only 7 Private Consultations Left",
-  5: "Limited Weekly Consultation Slots · 5 Remaining",
-  3: "Only 3 Strategy Sessions Remaining",
-};
+// Honest, static scarcity — no timer / scroll-based decrementing counter.
+// Reflects a genuinely limited weekly intake without faking a live count.
+const SCARCITY_LINE = "Only a few sessions open this week";
+const SCARCITY_SHORT = "Limited weekly intake";
 
 export function ScarcityProvider({ children }: { children: ReactNode }) {
-  const [spots, setSpots] = useState<SpotsCount>(7);
-
-  const dropTo = useCallback((next: SpotsCount) => {
-    setSpots((prev) => (next < prev ? next : prev));
+  const goToCta = useCallback(() => {
+    window.location.href = "/book";
   }, []);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => dropTo(5), 38000);
-    return () => window.clearTimeout(timer);
-  }, [dropTo]);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const max =
-        document.documentElement.scrollHeight - window.innerHeight;
-      if (max <= 0) return;
-      if (window.scrollY / max >= 0.5) dropTo(3);
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [dropTo]);
-
-  const goToCta = useCallback(() => {
-    dropTo(3);
-    window.location.href = "/book";
-  }, [dropTo]);
-
   const value: ScarcityContextValue = {
-    spots,
-    scarcityLine: SCARCITY_LINES[spots],
-    scarcityShort: `Only ${spots} sessions left`,
+    scarcityLine: SCARCITY_LINE,
+    scarcityShort: SCARCITY_SHORT,
     goToCta,
   };
 
