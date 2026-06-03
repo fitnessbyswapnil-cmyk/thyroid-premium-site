@@ -48,8 +48,10 @@ export function PaymentScreen({
 }) {
   const firstName = name.split(" ")[0] || name;
 
-  // Dynamic scarcity — computed once per mount; believable range 2–4
-  const slotCount = useMemo(() => Math.floor(Math.random() * 3) + 2, []);
+  // Scarcity — DETERMINISTIC per calendar day (range 2–4). Previously
+  // Math.random() regenerated on every mount, so a refresh flipped the number
+  // (4 → 2 → 3) and destroyed credibility. Seeding by day keeps it stable.
+  const slotCount = useMemo(() => 2 + (Math.floor(Date.now() / 86_400_000) % 3), []);
 
   return (
     <div className="space-y-5">

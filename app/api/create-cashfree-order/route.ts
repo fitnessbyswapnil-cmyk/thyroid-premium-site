@@ -18,7 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
 // UI/copy always shows ₹299 — only the actual Cashfree transaction amount changes.
 // Flip back to false before going live.
-const IS_TEST_MODE = true;
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = 299;
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,9 +47,28 @@ export async function POST(req: NextRequest) {
     customerPhone?: string;
     customerName?: string;
     customerEmail?: string;
+    // Attribution — forwarded into Cashfree order_tags so the payment webhook
+    // can fire a FULLY-MATCHED server-side Purchase (fbc/fbp/visitor_id + UTMs).
+    fbc?: string;
+    fbp?: string;
+    visitorId?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
   };
 
-  const { leadId, customerPhone, customerName, customerEmail } = body;
+  const {
+    leadId,
+    customerPhone,
+    customerName,
+    customerEmail,
+    fbc,
+    fbp,
+    visitorId,
+    utmSource,
+    utmMedium,
+    utmCampaign,
+  } = body;
 
   if (!leadId || !customerPhone || !customerName) {
     return NextResponse.json(
@@ -70,6 +89,17 @@ export async function POST(req: NextRequest) {
   // order_id must be unique per transaction; include timestamp to allow retries
   const orderId = `thyroid_${leadId}_${Date.now()}`;
 
+  // Cashfree order_tags: string→string, max 10 keys, values ≤ 255 chars.
+  // The cashfree-webhook reads these back to enrich the Purchase CAPI event.
+  const cap = (v?: string) => (v ? String(v).slice(0, 255) : "");
+  const orderTags: Record<string, string> = {};
+  if (fbc) orderTags.fbc = cap(fbc);
+  if (fbp) orderTags.fbp = cap(fbp);
+  if (visitorId) orderTags.visitor_id = cap(visitorId);
+  if (utmSource) orderTags.utm_source = cap(utmSource);
+  if (utmMedium) orderTags.utm_medium = cap(utmMedium);
+  if (utmCampaign) orderTags.utm_campaign = cap(utmCampaign);
+
   try {
     const res = await fetch(`${CF_BASE}/pg/orders`, {
       method: "POST",
@@ -83,6 +113,7 @@ export async function POST(req: NextRequest) {
         order_id: orderId,
         order_amount: ACTUAL_PAYMENT_AMOUNT,
         order_currency: "INR",
+        ...(Object.keys(orderTags).length ? { order_tags: orderTags } : {}),
         customer_details: {
           customer_id: leadId,
           customer_phone: phone,

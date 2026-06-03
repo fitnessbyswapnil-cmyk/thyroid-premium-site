@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
+import { trackPurchase } from "../lib/analytics";
+import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
+import type { Step1Data } from "../book/components/BookingFlow";
 
 type Status = "verifying" | "confirmed";
 
@@ -13,6 +16,7 @@ export default function PaymentSuccessPage() {
   const [countdown, setCountdown] = useState(COUNTDOWN_S);
   const redirectedRef = useRef(false);
   const countdownStartedRef = useRef(false);
+  const purchaseFiredRef = useRef(false);
 
   // entrance fade — separate effect so it's not tangled with redirect logic
   useEffect(() => {
@@ -40,9 +44,40 @@ export default function PaymentSuccessPage() {
       window.location.replace(getDestUrl());
     }
 
+    // Fire the browser-side Purchase HERE — at payment confirmation, not after
+    // Calendly. event_id = `Purchase_<order_id>` so it deduplicates against the
+    // Cashfree server webhook (which keys on the same order_id).
+    function firePurchase() {
+      if (purchaseFiredRef.current) return;
+      const p = new URLSearchParams(window.location.search);
+      const oid = p.get("order_id") || p.get("payment_ref") || "";
+      if (!oid) return; // no order id → let the server webhook own Purchase (avoids an un-dedupable browser event)
+      purchaseFiredRef.current = true;
+
+      let identity: { first_name?: string; phone?: string; email?: string } | undefined;
+      try {
+        const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+        if (raw) {
+          const stored = JSON.parse(raw) as { step1?: Step1Data };
+          const s = stored.step1;
+          if (s) {
+            identity = {
+              first_name: s.name?.split(" ")[0],
+              phone: s.phone,
+              ...(s.email && { email: s.email }),
+            };
+            persistUserIdentity(identity);
+          }
+        }
+      } catch { /* non-critical */ }
+
+      trackPurchase(identity, `Purchase_${oid}`);
+    }
+
     function startCountdown() {
       if (countdownStartedRef.current) return;
       countdownStartedRef.current = true;
+      firePurchase();
       setStatus("confirmed");
       let c = COUNTDOWN_S;
       setCountdown(c);

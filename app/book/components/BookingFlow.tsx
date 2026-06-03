@@ -5,13 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
 import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
-import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
+import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
+import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type Step1Data = {
   name: string;
   phone: string;
+  email: string;
   thyroidCondition: string;
   thyroidDuration: string;
   mainGoal: string;
@@ -19,7 +21,7 @@ export type Step1Data = {
 
 export const NATIVE_BOOKING_KEY = "thyroid_native_booking";
 
-function readAttribution() {
+function readAttribution(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const utms = getUtmParams();
   const fbclid = getFbclid();
@@ -120,8 +122,20 @@ export default function BookingFlow({
     setLeadId(newLeadId);
     setStep1Data(data);
 
+    // Persist identity (email/phone/name) so downstream pages (payment-success,
+    // session-booked, Calendly) can enrich Purchase/Schedule with the same PII.
+    persistUserIdentity({
+      first_name: data.name.split(" ")[0],
+      phone: data.phone,
+      ...(data.email && { email: data.email }),
+    });
+
     // Browser Pixel Lead — capture returned event_id for server dedup
-    const leadEventId = trackLead({ first_name: data.name.split(" ")[0], phone: data.phone });
+    const leadEventId = trackLead({
+      first_name: data.name.split(" ")[0],
+      phone: data.phone,
+      ...(data.email && { email: data.email }),
+    });
     pushDL({ event: "native_form_completed", step: 1 });
 
     const attribution = readAttribution();
@@ -137,6 +151,7 @@ export default function BookingFlow({
         user_data: {
           first_name: data.name.split(" ")[0],
           phone: data.phone,
+          ...(data.email && { email: data.email }),
           ...(attribution.visitor_id && { external_id: attribution.visitor_id }),
         },
       }),
@@ -179,7 +194,9 @@ export default function BookingFlow({
     pushDL({ event: "native_payment_initiated", step: 2 });
 
     try {
-      // Step 1: Create order server-side to get a payment session ID
+      // Step 1: Create order server-side to get a payment session ID.
+      // Forward attribution so order_tags reach the Cashfree webhook → the
+      // server-side Purchase fires with full fbc/fbp/visitor_id + UTM matching.
       const orderRes = await fetch("/api/create-cashfree-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,6 +204,13 @@ export default function BookingFlow({
           leadId,
           customerPhone: step1Data.phone,
           customerName: step1Data.name,
+          ...(step1Data.email && { customerEmail: step1Data.email }),
+          fbc: getFbc(),
+          fbp: getFbp(),
+          visitorId: attribution.visitor_id,
+          utmSource: attribution.utm_source,
+          utmMedium: attribution.utm_medium,
+          utmCampaign: attribution.utm_campaign,
         }),
       });
 

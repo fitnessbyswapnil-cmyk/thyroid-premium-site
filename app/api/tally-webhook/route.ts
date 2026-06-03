@@ -123,9 +123,12 @@ async function processSubmission(req: NextRequest, body: TallyPayload) {
   }
 
   // Fire Generate_Lead CAPI event
+  // NOTE: This route is LEGACY (the live funnel uses the native /book form, not
+  // Tally). Keep it disabled in Tally unless Tally is your active form — running
+  // both fires a duplicate, un-deduplicable Lead. Source URL corrected to /book.
   const result = await sendCAPIEvent('Lead', {
     eventId,
-    sourceUrl: 'https://www.swapnilumbarkarfitness.in/case-studies',
+    sourceUrl: 'https://www.swapnilumbarkarfitness.in/book',
     userData,
     customData,
     testCode: process.env.META_TEST_EVENT_CODE,

@@ -6,11 +6,16 @@ import type { Step1Data } from "./BookingFlow";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type QuestionId = "name" | "phone" | "thyroidCondition" | "thyroidDuration" | "mainGoal";
+type QuestionId = "name" | "phone" | "email" | "thyroidCondition" | "thyroidDuration" | "mainGoal";
 
 const QUESTION_ORDER: QuestionId[] = [
-  "name", "phone", "thyroidCondition", "thyroidDuration", "mainGoal",
+  "name", "phone", "email", "thyroidCondition", "thyroidDuration", "mainGoal",
 ];
+
+// Basic email shape check — collected pre-sale so it can be hashed into the
+// Lead/Purchase CAPI events (highest-weight Meta match key) and used for no-show
+// follow-up. Without this the funnel had zero email until the Calendly step.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── Motion variants ───────────────────────────────────────────────────────────
 
@@ -182,6 +187,29 @@ function PhoneQuestion({
   );
 }
 
+function EmailQuestion({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <QuestionShell
+      label="Your email address"
+      hint="Your session confirmation, calendar invite and action plan are sent here."
+    >
+      <TextInput
+        value={value}
+        onChange={onChange}
+        placeholder="you@email.com"
+        type="email"
+        autoComplete="email"
+      />
+    </QuestionShell>
+  );
+}
+
 function ThyroidConditionQuestion({
   value,
   onChange,
@@ -294,6 +322,7 @@ export function QualificationForm({
   const [data, setData] = useState<Step1Data>({
     name: "",
     phone: "",
+    email: "",
     thyroidCondition: "",
     thyroidDuration: "",
     mainGoal: "",
@@ -309,7 +338,9 @@ export function QualificationForm({
 
   const isCurrentValid = useCallback((): boolean => {
     const val = getCurrentValue();
-    return typeof val === "string" && val.trim().length > 0;
+    if (typeof val !== "string" || val.trim().length === 0) return false;
+    if (currentQuestion === "email") return EMAIL_RE.test(val.trim());
+    return true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, currentQuestion]);
 
@@ -372,6 +403,9 @@ export function QualificationForm({
             )}
             {currentQuestion === "phone" && (
               <PhoneQuestion value={data.phone} onChange={(v) => update("phone", v)} />
+            )}
+            {currentQuestion === "email" && (
+              <EmailQuestion value={data.email} onChange={(v) => update("email", v)} />
             )}
             {currentQuestion === "thyroidCondition" && (
               <ThyroidConditionQuestion

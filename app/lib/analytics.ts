@@ -27,18 +27,30 @@ export type UserData = {
 };
 
 const STORAGE_KEY = "meta_user_identity";
-const EXTERNAL_ID_KEY = "meta_external_id";
 
 // ── Meta signal helpers ────────────────────────────────────────────────────────
 
-// Stable anonymous ID persisted in localStorage — used as external_id for CAPI.
+// Stable first-party ID used as external_id for CAPI.
+// UNIFIED on the middleware-issued `_visitor_id` (180-day cookie) so that the
+// browser Pixel, the server CAPI routes, and GTM all resolve to the SAME identity.
+// Previously this minted a separate `meta_external_id`, which disagreed with the
+// `_visitor_id` sent by the server — fragmenting match quality and breaking dedup.
 export function getOrCreateExternalId(): string {
   if (typeof window === "undefined") return "";
   try {
-    const existing = localStorage.getItem(EXTERNAL_ID_KEY);
-    if (existing) return existing;
-    const id = `u_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(EXTERNAL_ID_KEY, id);
+    // 1. Edge-middleware cookie is the source of truth.
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)_visitor_id=([^;]+)/);
+    const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : "";
+    if (fromCookie) {
+      localStorage.setItem("_visitor_id", fromCookie); // mirror for cookie-loss
+      return fromCookie;
+    }
+    // 2. localStorage mirror (survives cookie expiry/clearing).
+    const fromStorage = localStorage.getItem("_visitor_id");
+    if (fromStorage) return fromStorage;
+    // 3. Last resort — mint one under the SAME key the rest of the stack reads.
+    const id = `v_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem("_visitor_id", id);
     return id;
   } catch {
     return "";
@@ -167,8 +179,11 @@ export function trackInitiateCheckout() {
   return event_id;
 }
 
-export function trackPurchase(userData?: UserData) {
-  const event_id = generateEventId("purchase");
+// `eventId` lets the caller pass a DETERMINISTIC id (e.g. `Purchase_<order_id>`)
+// so the browser Pixel and the Cashfree server webhook share one id and Meta
+// deduplicates them. Without this they used random ids → double-counted revenue.
+export function trackPurchase(userData?: UserData, eventId?: string) {
+  const event_id = eventId || generateEventId("purchase");
   const payload = withUserSignals(
     { event: "purchase", event_id, content_type: "service", ...PRODUCT },
     userData,
@@ -177,12 +192,17 @@ export function trackPurchase(userData?: UserData) {
   return event_id;
 }
 
-export function trackSchedule(details?: {
-  name?: string;
-  date?: string;
-  time?: string;
-}) {
-  const event_id = generateEventId("schedule");
+// `eventId` lets the caller pass `Schedule_<invitee_uuid>` so the browser event
+// dedupes against the Calendly server webhook (which keys on the same uuid).
+export function trackSchedule(
+  details?: {
+    name?: string;
+    date?: string;
+    time?: string;
+  },
+  eventId?: string,
+) {
+  const event_id = eventId || generateEventId("schedule");
   // Reads identity from localStorage — by the time Calendly fires,
   // localStorage has the full merged identity from the purchase page.
   const payload = withUserSignals({

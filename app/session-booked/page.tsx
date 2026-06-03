@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { trackPurchase, trackSchedule } from "../lib/analytics";
+import { trackSchedule } from "../lib/analytics";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
+import { getCookie, getUtmParams, getVisitorId } from "@/lib/tracking";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,24 @@ const CALENDLY_URL = [
   "&text_color=171310",
   "&background_color=F7F4EF",
 ].join("");
+
+// Build the Calendly embed URL with prefilled identity + attribution so the
+// Calendly webhook receives utm_* (via tracking) and salesforce_uuid = visitor_id.
+// Without this, every Schedule arrived orphaned (no UTM, no stitchable id).
+function buildCalendlyUrl(prefill?: { name?: string; email?: string }): string {
+  if (typeof window === "undefined") return CALENDLY_URL;
+  const params = new URLSearchParams();
+  if (prefill?.name) params.set("name", prefill.name);
+  if (prefill?.email) params.set("email", prefill.email);
+  const utms = getUtmParams();
+  Object.entries(utms).forEach(([k, v]) => {
+    if (v) params.set(k, v);
+  });
+  const visitorId = getVisitorId() || getCookie("_visitor_id");
+  if (visitorId) params.set("salesforce_uuid", visitorId);
+  const qs = params.toString();
+  return qs ? `${CALENDLY_URL}&${qs}` : CALENDLY_URL;
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -451,8 +470,16 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
 
 // ── Calendly Step (Step 3) ────────────────────────────────────────────────────
 
-function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => void }) {
+function CalendlyStep({
+  onBooked,
+  prefill,
+}: {
+  onBooked: (date: string, time: string) => void;
+  prefill?: { name?: string; email?: string };
+}) {
   const [booked, setBooked] = useState(false);
+  // Compute once per mount so the inline widget reads a stable, attributed URL.
+  const calendlyUrl = useMemo(() => buildCalendlyUrl(prefill), [prefill]);
 
   useEffect(() => {
     if (document.querySelector('script[src*="calendly"]')) return;
@@ -486,7 +513,14 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
         }
         setBooked(true);
         onBooked(dateStr, timeStr);
-        trackSchedule({ name: payload?.invitee?.name || "", date: dateStr, time: timeStr });
+        // Derive the invitee uuid from its URI so the browser Schedule shares an
+        // event_id with the Calendly server webhook (`Schedule_<uuid>`) → dedup.
+        const inviteeUri: string = payload?.invitee?.uri || "";
+        const inviteeUuid = inviteeUri.split("/").filter(Boolean).pop() || "";
+        trackSchedule(
+          { name: payload?.invitee?.name || "", date: dateStr, time: timeStr },
+          inviteeUuid ? `Schedule_${inviteeUuid}` : undefined,
+        );
       }
     }
     window.addEventListener("message", handleMessage);
@@ -524,7 +558,7 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
       >
         <div
           className="calendly-inline-widget"
-          data-url={CALENDLY_URL}
+          data-url={calendlyUrl}
           style={{ minWidth: "100%", height: "680px" }}
         />
       </div>
@@ -697,6 +731,7 @@ export default function SessionBooked() {
             setStep1Data({
               name: data.name,
               phone: data.phone ?? "",
+              email: "",
               thyroidCondition: "",
               thyroidDuration: "",
               mainGoal: "",
@@ -736,30 +771,12 @@ export default function SessionBooked() {
     if (submittedRef.current) return;
     submittedRef.current = true;
 
-    // Fire Purchase pixel only now — after Calendly slot is confirmed.
-    // trackPurchase() returns the event_id it pushed to GTM — reuse it for the
-    // CAPI call so Meta can deduplicate browser pixel vs. server event correctly.
-    const lead = step1Data;
-    const purchaseEventId = trackPurchase(
-      lead ? { first_name: lead.name.split(" ")[0], phone: lead.phone } : undefined
-    );
-
-    // Server-side CAPI Purchase — runs in parallel, non-blocking
-    fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event_name: "Purchase",
-        event_id: purchaseEventId,
-        source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
-        value: 299,
-        currency: "INR",
-        user_data: {
-          ...(lead?.phone && { phone: lead.phone }),
-          ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
-        },
-      }),
-    }).catch(() => {});
+    // NOTE: Purchase is intentionally NOT fired here. It now fires once at
+    // payment confirmation (/payment-success, browser) and once via the Cashfree
+    // webhook (server), both keyed `Purchase_<order_id>` so Meta dedupes them.
+    // Firing it again here (after Calendly) would have been a third, un-dedupable
+    // event with the wrong timing semantics. The Schedule event below is the
+    // correct signal for this step.
 
     // Submit unified payload
     try {
@@ -869,7 +886,10 @@ export default function SessionBooked() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
             >
-              <CalendlyStep onBooked={handleBooked} />
+              <CalendlyStep
+                onBooked={handleBooked}
+                prefill={{ name: step1Data?.name, email: step1Data?.email }}
+              />
             </motion.div>
           )}
 
@@ -930,7 +950,9 @@ function LegacySessionBooked() {
         }
         setBookingDetails({ name, date: dateStr, time: timeStr });
         setBooked(true);
-        trackSchedule({ name, date: dateStr, time: timeStr });
+        const inviteeUri: string = payload?.invitee?.uri || "";
+        const inviteeUuid = inviteeUri.split("/").filter(Boolean).pop() || "";
+        trackSchedule({ name, date: dateStr, time: timeStr }, inviteeUuid ? `Schedule_${inviteeUuid}` : undefined);
         setTimeout(() => confirmRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
       }
     }
