@@ -1,0 +1,1108 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-06-03 00:00:00",
+  "containerVersion": {
+    "path": "accounts/6311846290/containers/229322364/versions/0",
+    "accountId": "6311846290",
+    "containerId": "229322364",
+    "containerVersionId": "0",
+    "name": "Web surgical fix — loop+dedup+EMQ",
+    "container": {
+      "accountId": "6311846290",
+      "containerId": "229322364",
+      "name": "swapnilumbarkarfitness.in",
+      "publicId": "GTM-P3S5BXQB",
+      "usageContext": [
+        "WEB"
+      ],
+      "fingerprint": "0"
+    },
+    "tag": [
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "tagId": "133",
+        "name": "Meta Pixel – InitiateCheckout",
+        "type": "cvt_5RM3Q",
+        "parameter": [
+          {
+            "type": "BOOLEAN",
+            "key": "disablePushState",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventId",
+            "value": "{{DL - event_id}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "standardEventName",
+            "value": "InitiateCheckout"
+          },
+          {
+            "type": "LIST",
+            "key": "advancedMatchingList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "em"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_email}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "ph"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_phone}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "fn"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "external_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - external_id}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "objectPropertiesFromVariable",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "consent",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "pixelId",
+            "value": "{{Meta Ads Pixel ID}}"
+          },
+          {
+            "type": "LIST",
+            "key": "objectPropertyList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "value"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "299"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "currency"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "INR"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "content_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "Private Thyroid Strategy Session"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "content_type"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "service"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "content_ids"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "thyroid_strategy_session"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "disableAutoConfig",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enhancedEcommerce",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "dpoLDU",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "standard"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "advancedMatching",
+            "value": "true"
+          }
+        ],
+        "fingerprint": "1780435654353",
+        "firingTriggerId": [
+          "172"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "monitoringMetadata": {
+          "type": "MAP"
+        },
+        "consentSettings": {
+          "consentStatus": "NOT_SET"
+        }
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "tagId": "129",
+        "name": "Meta Pixel – Purchase",
+        "type": "cvt_5RM3Q",
+        "parameter": [
+          {
+            "type": "BOOLEAN",
+            "key": "disablePushState",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventId",
+            "value": "{{DL - event_id}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "standardEventName",
+            "value": "Purchase"
+          },
+          {
+            "type": "LIST",
+            "key": "advancedMatchingList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "em"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_email}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "ph"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_phone}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "fn"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "external_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - external_id}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "objectPropertiesFromVariable",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "consent",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "pixelId",
+            "value": "{{Meta Ads Pixel ID}}"
+          },
+          {
+            "type": "LIST",
+            "key": "objectPropertyList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "value"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{DL - value}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "currency"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{DL - currency}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "content_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "Private Thyroid Strategy Session"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "Event ID"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS – Purchase Event ID (FIXED)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "content_type"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "service"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "content_ids"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "thyroid_strategy_session"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "disableAutoConfig",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enhancedEcommerce",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "dpoLDU",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "standard"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "advancedMatching",
+            "value": "true"
+          }
+        ],
+        "fingerprint": "1780435645782",
+        "firingTriggerId": [
+          "165"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "monitoringMetadata": {
+          "type": "MAP"
+        },
+        "consentSettings": {
+          "consentStatus": "NOT_SET"
+        }
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "tagId": "96",
+        "name": "Meta Pixel – Lead (Browser)",
+        "type": "cvt_5RM3Q",
+        "parameter": [
+          {
+            "type": "BOOLEAN",
+            "key": "disablePushState",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "pixelId",
+            "value": "{{Meta Ads Pixel ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventId",
+            "value": "{{DL - event_id}}"
+          },
+          {
+            "type": "LIST",
+            "key": "objectPropertyList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "page_location"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{Page URL}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "event_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{js – Persistent Lead ID}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "standardEventName",
+            "value": "Lead"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "disableAutoConfig",
+            "value": "true"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enhancedEcommerce",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "dpoLDU",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "standard"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "objectPropertiesFromVariable",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "consent",
+            "value": "true"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "advancedMatching",
+            "value": "true"
+          },
+          {
+            "type": "LIST",
+            "key": "advancedMatchingList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "em"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_email}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "ph"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_phone}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "fn"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "external_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - external_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "fingerprint": "1768733836320",
+        "firingTriggerId": [
+          "901"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "monitoringMetadata": {
+          "type": "MAP"
+        },
+        "consentSettings": {
+          "consentStatus": "NOT_SET"
+        }
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "tagId": "131",
+        "name": "Meta Pixel – ViewContent",
+        "type": "cvt_5RM3Q",
+        "parameter": [
+          {
+            "type": "BOOLEAN",
+            "key": "disablePushState",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "pixelId",
+            "value": "{{Meta Ads Pixel ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventId",
+            "value": "{{DL - event_id}}"
+          },
+          {
+            "type": "LIST",
+            "key": "objectPropertyList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "content_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "Private Thyroid Strategy Session"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "standardEventName",
+            "value": "ViewContent"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "disableAutoConfig",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enhancedEcommerce",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "dpoLDU",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "standard"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "objectPropertiesFromVariable",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "consent",
+            "value": "true"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "advancedMatching",
+            "value": "true"
+          },
+          {
+            "type": "LIST",
+            "key": "advancedMatchingList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "em"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_email}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "ph"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_phone}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "fn"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "external_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - external_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "fingerprint": "1780066123460",
+        "firingTriggerId": [
+          "902"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "monitoringMetadata": {
+          "type": "MAP"
+        },
+        "consentSettings": {
+          "consentStatus": "NOT_SET"
+        }
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "tagId": "77",
+        "name": "Meta Pixel - Schedule (Browser)",
+        "type": "cvt_5RM3Q",
+        "parameter": [
+          {
+            "type": "BOOLEAN",
+            "key": "disablePushState",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventId",
+            "value": "{{DL - event_id}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "standardEventName",
+            "value": "Schedule"
+          },
+          {
+            "type": "LIST",
+            "key": "advancedMatchingList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "em"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_email}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "ph"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_phone}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "fn"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - user_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "external_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{JS - external_id}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "objectPropertiesFromVariable",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "consent",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "pixelId",
+            "value": "{{Meta Ads Pixel ID}}"
+          },
+          {
+            "type": "LIST",
+            "key": "objectPropertyList",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "page_location"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "https://swapnilumbarkarfitness.in/call-booked/"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "disableAutoConfig",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enhancedEcommerce",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "dpoLDU",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "standard"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "advancedMatching",
+            "value": "true"
+          }
+        ],
+        "fingerprint": "1765872773178",
+        "firingTriggerId": [
+          "903"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "monitoringMetadata": {
+          "type": "MAP"
+        },
+        "consentSettings": {
+          "consentStatus": "NOT_SET"
+        }
+      }
+    ],
+    "trigger": [
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "triggerId": "165",
+        "name": "Purchase – DataLayer Trigger",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "purchase"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "1777969426923"
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "triggerId": "172",
+        "name": "Trigger -InitiateCheckout(Bundle)",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "initiate_checkout"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "1778494757742"
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "triggerId": "901",
+        "name": "CE - lead",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "lead"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "triggerId": "902",
+        "name": "CE - view_content",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "view_content"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "accountId": "6311846290",
+        "containerId": "229322364",
+        "triggerId": "903",
+        "name": "CE - calendly_booked",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "calendly_booked"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "fingerprint": "0"
+  }
+}
