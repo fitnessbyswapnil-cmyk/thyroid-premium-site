@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
-import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
+import { pushDL, trackLead, trackInitiateCheckout, normalizePhone, normalizeEmail } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 
@@ -122,25 +122,31 @@ export default function BookingFlow({
     setLeadId(newLeadId);
     setStep1Data(data);
 
+    const firstName = data.name.split(" ")[0];
+    const lastName = data.name.split(" ").slice(1).join(" ");
+    const phoneNorm = normalizePhone(data.phone);
+    const emailNorm = normalizeEmail(data.email);
+
     // Persist identity (email/phone/name) so downstream pages (payment-success,
     // session-booked, Calendly) can enrich Purchase/Schedule with the same PII.
     persistUserIdentity({
-      first_name: data.name.split(" ")[0],
-      phone: data.phone,
-      ...(data.email && { email: data.email }),
+      first_name: firstName,
+      phone: phoneNorm,
+      ...(emailNorm && { email: emailNorm }),
     });
 
     // Browser Pixel Lead — capture returned event_id for server dedup
     const leadEventId = trackLead({
-      first_name: data.name.split(" ")[0],
-      phone: data.phone,
-      ...(data.email && { email: data.email }),
+      first_name: firstName,
+      phone: phoneNorm,
+      ...(emailNorm && { email: emailNorm }),
     });
     pushDL({ event: "native_form_completed", step: 1 });
 
     const attribution = readAttribution();
 
-    // Server-side CAPI Lead (deduplicates with browser Pixel via same event_id)
+    // Server-side CAPI Lead (deduplicates with browser Pixel via same event_id).
+    // Sends the maximum match set: email, phone, first+last name, external_id.
     fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -149,9 +155,10 @@ export default function BookingFlow({
         event_id: leadEventId,
         source_url: "https://www.swapnilumbarkarfitness.in/book",
         user_data: {
-          first_name: data.name.split(" ")[0],
-          phone: data.phone,
-          ...(data.email && { email: data.email }),
+          first_name: firstName,
+          ...(lastName && { last_name: lastName }),
+          phone: phoneNorm,
+          ...(emailNorm && { email: emailNorm }),
           ...(attribution.visitor_id && { external_id: attribution.visitor_id }),
         },
       }),
@@ -190,8 +197,30 @@ export default function BookingFlow({
       );
     } catch { /* non-critical */ }
 
-    trackInitiateCheckout();
+    const icEventId = trackInitiateCheckout();
     pushDL({ event: "native_payment_initiated", step: 2 });
+
+    // Server-side CAPI InitiateCheckout (same event_id → dedupes with browser).
+    // Identity is available by now, so this is a high-EMQ mid-funnel signal.
+    const firstName = step1Data.name.split(" ")[0];
+    const lastName = step1Data.name.split(" ").slice(1).join(" ");
+    fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_name: "InitiateCheckout",
+        event_id: icEventId,
+        source_url: "https://www.swapnilumbarkarfitness.in/book",
+        custom_data: { value: 299, currency: "INR", content_name: "thyroid_session_fee" },
+        user_data: {
+          first_name: firstName,
+          ...(lastName && { last_name: lastName }),
+          phone: normalizePhone(step1Data.phone),
+          ...(step1Data.email && { email: normalizeEmail(step1Data.email) }),
+          ...(attribution.visitor_id && { external_id: attribution.visitor_id }),
+        },
+      }),
+    }).catch(() => {});
 
     try {
       // Step 1: Create order server-side to get a payment session ID.

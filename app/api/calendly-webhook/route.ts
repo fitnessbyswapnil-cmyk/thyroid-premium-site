@@ -37,6 +37,7 @@ type CalendlyEvent = {
       email: string
       timezone: string
       uuid: string
+      uri?: string
       questions_and_answers?: Array<{ question: string; answer: string }>
     }
     tracking: {
@@ -80,18 +81,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true })
     }
 
-    const invitee  = body.payload.invitee
-    const tracking = body.payload.tracking || {}
-    const name     = invitee.name || ''
-    const email    = invitee.email || ''
+    // Tolerate both Calendly payload shapes: v1-style (payload.invitee.*) and
+    // v2-style (payload.* with the invitee URI at payload.uri).
+    const p = body.payload as typeof body.payload & {
+      uri?: string
+      email?: string
+      name?: string
+      questions_and_answers?: Array<{ question: string; answer: string }>
+    }
+    const invitee  = p.invitee || ({} as typeof p.invitee)
+    const tracking = p.tracking || {}
+    const name     = invitee.name || p.name || ''
+    const email    = invitee.email || p.email || ''
     const firstName = name.split(' ')[0] || ''
     const lastName  = name.split(' ').slice(1).join(' ') || ''
 
-    // Try to extract phone from Q&A
-    const phoneField = invitee.questions_and_answers?.find(
+    // Try to extract phone from Q&A (either shape)
+    const qa = invitee.questions_and_answers || p.questions_and_answers
+    const phoneField = qa?.find(
       q => q.question.toLowerCase().includes('phone') || q.question.toLowerCase().includes('whatsapp')
     )
     const phone = phoneField?.answer || ''
+
+    // Derive the invitee uuid from its URI (last path segment) so the event_id
+    // matches what the browser computes → Pixel/CAPI Schedule deduplicates.
+    const inviteeUri = invitee.uri || p.uri || ''
+    const inviteeUuid = invitee.uuid || inviteeUri.split('/').filter(Boolean).pop() || ''
+
+    // external_id = the SAME _visitor_id used across the whole funnel, passed to
+    // Calendly as salesforce_uuid. Falls back to the invitee uuid only if missing.
+    const externalId = tracking.salesforce_uuid || inviteeUuid
 
     const clientIp  = getClientIp(req)
     const userAgent = getUserAgent(req)
@@ -101,13 +120,13 @@ export async function POST(req: NextRequest) {
       phone,
       firstName,
       lastName,
-      externalId: invitee.uuid,
+      externalId,
       clientIp,
       userAgent,
       country: 'in',
     })
 
-    const eventId = `Schedule_${invitee.uuid}`
+    const eventId = `Schedule_${inviteeUuid}`
 
     const result = await sendCAPIEvent('Schedule', {
       eventId,
@@ -115,7 +134,7 @@ export async function POST(req: NextRequest) {
       userData,
       customData: {
         content_name: 'thyroid_strategy_call',
-        event_type: body.payload.event_type.name,
+        ...(body.payload.event_type?.name ? { event_type: body.payload.event_type.name } : {}),
         ...(tracking.utm_source ? { utm_source: tracking.utm_source } : {}),
       },
       testCode: process.env.META_TEST_EVENT_CODE,

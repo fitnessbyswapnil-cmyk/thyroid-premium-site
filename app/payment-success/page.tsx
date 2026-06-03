@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
-import { trackPurchase } from "../lib/analytics";
+import { trackPurchase, normalizePhone, normalizeEmail } from "../lib/analytics";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import type { Step1Data } from "../book/components/BookingFlow";
 
@@ -63,8 +63,8 @@ export default function PaymentSuccessPage() {
           if (s) {
             identity = {
               first_name: s.name?.split(" ")[0],
-              phone: s.phone,
-              ...(s.email && { email: s.email }),
+              phone: normalizePhone(s.phone),
+              ...(s.email && { email: normalizeEmail(s.email) }),
             };
             persistUserIdentity(identity);
           }

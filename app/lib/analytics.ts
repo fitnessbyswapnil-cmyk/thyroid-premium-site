@@ -28,6 +28,23 @@ export type UserData = {
 
 const STORAGE_KEY = "meta_user_identity";
 
+// ── Normalization ───────────────────────────────────────────────────────────────
+// Browser Pixel advanced matching and server CAPI MUST hash the SAME string or
+// the event won't match/dedupe. Meta's browser SDK lowercases/trims email and
+// strips non-digits from phone but does NOT add a country code — so we normalize
+// phone to full E.164 digits (91XXXXXXXXXX for India) ourselves, everywhere.
+export function normalizeEmail(email?: string): string {
+  return (email || "").trim().toLowerCase();
+}
+
+export function normalizePhone(phone?: string): string {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.length === 10) return `91${digits}`;          // bare Indian mobile
+  if (digits.length === 11 && digits.startsWith("0")) return `91${digits.slice(1)}`;
+  return digits;                                            // already has country code
+}
+
 // ── Meta signal helpers ────────────────────────────────────────────────────────
 
 // Stable first-party ID used as external_id for CAPI.

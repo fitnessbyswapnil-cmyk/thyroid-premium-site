@@ -265,5 +265,33 @@
     {"tagId": "168", "name": "Meta – User Data Capture (Pre-Bundle)", "reason": "Paused, legacy"},
     {"tagId": "139", "name": "JS – Capture User Data (Checkout CTA)", "reason": "Paused, legacy"},
     {"tagId": "90", "name": "home-only page_view", "reason": "Paused, redundant with Google Tag"}
-  ]
+  ],
+
+  "PHASE_6_MAX_EMQ": {
+    "note": "Code now writes normalized FLAT localStorage keys (user_email, user_phone, user_name, external_id) and a normalized _visitor_id cookie. These container changes complete the highest-EMQ browser Pixel setup. Apply them all.",
+    "advanced_matching_enable_on_all_meta_tags": {
+      "tags": ["Meta Pixel – Base/PageView", "Meta Pixel – ViewContent", "Meta Pixel – Lead", "Meta Pixel – InitiateCheckout", "Meta Pixel – Purchase", "Meta Pixel – Schedule"],
+      "advancedMatchingList": [
+        {"name": "em", "value": "{{JS - user_email}}"},
+        {"name": "ph", "value": "{{JS - user_phone}}"},
+        {"name": "fn", "value": "{{JS - user_name}}"},
+        {"name": "external_id", "value": "{{JS - visitor_id}}"}
+      ],
+      "reason": "All browser Pixel events must carry em/ph/fn/external_id. Code guarantees these keys are populated + normalized (phone = 91XXXXXXXXXX, email lowercased) so they hash identically to the server CAPI side → match + dedupe."
+    },
+    "normalization_contract": {
+      "phone": "E.164 digits, country code, no symbols (Indian = 91 + 10 digits). Code: normalizePhone().",
+      "email": "trimmed + lowercased. Code: normalizeEmail().",
+      "external_id": "the middleware _visitor_id cookie — used by browser Pixel, server CAPI, Cashfree order_tags, and Calendly salesforce_uuid. ONE identity everywhere."
+    },
+    "dedup_keys": {
+      "Lead": "browser-generated event_id, forwarded to /api/events (shared)",
+      "InitiateCheckout": "browser-generated event_id, forwarded to /api/events (shared)",
+      "Purchase": "Purchase_<order_id> on BOTH browser (/payment-success) and Cashfree webhook",
+      "Schedule": "Schedule_<invitee_uuid> on BOTH browser and Calendly webhook"
+    },
+    "stape_sgtm": {
+      "recommendation": "Keep CAPI for Lead/InitiateCheckout/Purchase/Schedule in the Next.js API routes (already hashed, already attributed). Use Stape sGTM only to relay PageView/ViewContent for cookie-life extension. Do NOT relay the same event from BOTH sGTM and the Next routes — same event_id dedupes, but overlapping config invites drift."
+    }
+  }
 }
