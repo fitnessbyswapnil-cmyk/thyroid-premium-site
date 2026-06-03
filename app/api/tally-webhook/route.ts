@@ -59,6 +59,14 @@ function fieldValue(fields: TallyField[], key: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // LEGACY GUARD: the live funnel uses the native /book form (which already
+    // fires a deduplicated Lead). This route stays off unless explicitly enabled
+    // so a stray Tally form can't double-fire Lead and corrupt attribution.
+    // Set TALLY_WEBHOOK_ENABLED=true only if Tally is your active form.
+    if (process.env.TALLY_WEBHOOK_ENABLED !== 'true') {
+      return NextResponse.json({ ok: true, skipped: 'tally webhook disabled' })
+    }
+
     // Optional signature check
     if (TALLY_SIGNING_SECRET) {
       const signature = req.headers.get('tally-signature') || ''

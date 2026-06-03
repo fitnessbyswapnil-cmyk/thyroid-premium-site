@@ -50,12 +50,23 @@ export type EventData = {
   [key: string]: unknown
 }
 
+export type ActionSource =
+  | 'website'
+  | 'email'
+  | 'phone_call'
+  | 'chat'
+  | 'physical_store'
+  | 'system_generated'
+  | 'app'
+  | 'business_messaging'
+  | 'other'
+
 export type CAPIEvent = {
   event_name: string
   event_id: string
   event_time: number      // Unix timestamp
-  event_source_url: string
-  action_source: 'website'
+  event_source_url?: string
+  action_source: ActionSource
   user_data: UserData
   custom_data?: EventData
   opt_out?: boolean
@@ -171,19 +182,23 @@ export async function sendCAPIEvent(
   eventName: string,
   opts: {
     eventId: string
-    sourceUrl: string
+    sourceUrl?: string
     userData: UserData
     customData?: EventData
     testCode?: string
+    // Offline / non-website events (e.g. a high-ticket sale closed on a call)
+    // override these. Defaults preserve the original website behavior.
+    actionSource?: ActionSource
+    eventTime?: number          // Unix seconds — use the ACTUAL sale time
   }
 ): Promise<CAPIResult> {
   const event: CAPIEvent = {
     event_name: eventName,
     event_id: opts.eventId,
-    event_time: Math.floor(Date.now() / 1000),
-    event_source_url: opts.sourceUrl,
-    action_source: 'website',
+    event_time: opts.eventTime ?? Math.floor(Date.now() / 1000),
+    action_source: opts.actionSource ?? 'website',
     user_data: opts.userData,
+    ...(opts.sourceUrl ? { event_source_url: opts.sourceUrl } : {}),
     ...(opts.customData ? { custom_data: opts.customData } : {}),
   }
 

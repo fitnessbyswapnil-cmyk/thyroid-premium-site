@@ -74,11 +74,18 @@ export function getOrCreateExternalId(): string {
   }
 }
 
-// fbc = Facebook Click ID. Built from fbclid URL param and cached in sessionStorage
-// so it survives same-tab redirects (Cashfree return, etc.).
+// fbc = Facebook Click ID. Resolution order:
+//  1. The `_fbc` cookie set by edge middleware (canonical, stable timestamp,
+//     survives internal navigation and 180-day return visits).
+//  2. The fbclid URL param (first landing, before the cookie is readable).
+//  3. A sessionStorage cache (same-tab redirect fallback, e.g. Cashfree return).
+// Previously this skipped the cookie, so any page reached without fbclid in the
+// URL sent an EMPTY fbc — silently degrading match quality and attribution.
 export function getFbc(): string {
   if (typeof window === "undefined") return "";
   try {
+    const cookie = document.cookie.match(/(?:^|;\s*)_fbc=([^;]+)/);
+    if (cookie) return decodeURIComponent(cookie[1]);
     const fbclid = new URLSearchParams(window.location.search).get("fbclid");
     if (fbclid) {
       const fbc = `fb.1.${Date.now()}.${fbclid}`;

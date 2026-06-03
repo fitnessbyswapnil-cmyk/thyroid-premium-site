@@ -22,8 +22,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ paid: false, error: "Server configuration error" }, { status: 500 });
   }
 
+  const CF_BASE =
+    process.env.NODE_ENV === "production"
+      ? "https://api.cashfree.com"
+      : "https://sandbox.cashfree.com";
+
   try {
-    const res = await fetch(`https://api.cashfree.com/pg/orders/${encodeURIComponent(orderId)}`, {
+    const res = await fetch(`${CF_BASE}/pg/orders/${encodeURIComponent(orderId)}`, {
       headers: {
         "x-api-version": "2023-08-01",
         "x-client-id": appId,
