@@ -33,28 +33,29 @@ export default function Hero() {
       <div className="container-default relative z-10 flex flex-col items-center pb-[clamp(4rem,9vw,6rem)] pt-[clamp(3rem,7vw,4.5rem)] text-center">
 
         {/* Category pill */}
-        <p className="section-label !mb-3 tracking-[0.065em] sm:!mb-4">
+        <p className="section-label !mb-2 tracking-[0.065em] sm:!mb-3">
           Thyroid fat-loss specialist&nbsp;&middot;&nbsp;Indian women
         </p>
 
-        {/* Headline */}
+        {/* Headline — size = --text-hero scaled ~0.9 (≈10% smaller) to lift the CTA toward the fold */}
+        {/* Copy change: "Untreated" → "Misunderstood" for ad-safety. Revert this word if you prefer the original. */}
         <h1
           id="hero-heading"
-          className="mx-auto max-w-[14ch] text-balance text-[length:var(--text-hero)] font-black leading-[1.04] tracking-[-0.045em] sm:max-w-[17ch] sm:leading-[1.0] sm:tracking-[-0.055em]"
+          className="mx-auto max-w-[14ch] text-balance text-[length:clamp(2.35rem,1.7rem_+_2.7vw,4.3rem)] font-black leading-[1.04] tracking-[-0.045em] sm:max-w-[17ch] sm:leading-[1.0] sm:tracking-[-0.055em]"
         >
           Your Thyroid Weight{" "}
           <span className="text-gradient">Isn&apos;t Stubborn.</span>{" "}
-          It&apos;s Untreated.
+          It&apos;s Misunderstood.
         </h1>
 
         {/* Subheadline */}
-        <p className="mt-4 max-w-[30ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t2)] sm:mt-5 sm:max-w-[38ch] sm:text-[length:var(--text-base)]">
+        <p className="mt-3 max-w-[30ch] text-pretty text-[length:var(--text-sm)] leading-[1.75] text-[var(--t2)] sm:mt-4 sm:max-w-[38ch] sm:text-[length:var(--text-base)]">
           You&apos;ve done everything right. The weight stayed because your
           thyroid was never the focus.
         </p>
 
         {/* CTA block — aspiration-led, LOW glow intensity */}
-        <div className="cta-wrap relative mt-6 w-full max-w-[min(100%,21rem)] sm:mt-7 sm:max-w-sm">
+        <div className="cta-wrap relative mt-5 w-full max-w-[min(100%,21rem)] sm:mt-6 sm:max-w-sm">
           <CtaButton
             variant="primary"
             className="relative z-[1]"
