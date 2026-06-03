@@ -1,0 +1,276 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-06-03 00:00:00",
+  "containerVersion": {
+    "path": "accounts/0/containers/229322364/versions/0",
+    "accountId": "0",
+    "containerId": "229322364",
+    "containerVersionId": "0",
+    "name": "EMQ + Funnel Fix — FULL (vars + triggers + GA4 + Meta tags)",
+    "container": {
+      "accountId": "0",
+      "containerId": "229322364",
+      "name": "swapnilumbarkarfitness.in",
+      "publicId": "GTM-P3S5BXQB",
+      "usageContext": ["WEB"],
+      "fingerprint": "0"
+    },
+    "variable": [
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "101",
+        "name": "JS - user_email", "type": "jsm",
+        "parameter": [{ "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return localStorage.getItem('user_email')||'';}catch(e){return '';}}" }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "102",
+        "name": "JS - user_phone", "type": "jsm",
+        "parameter": [{ "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return localStorage.getItem('user_phone')||'';}catch(e){return '';}}" }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "103",
+        "name": "JS - user_name", "type": "jsm",
+        "parameter": [{ "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return localStorage.getItem('user_name')||'';}catch(e){return '';}}" }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "104",
+        "name": "JS - visitor_id", "type": "jsm",
+        "parameter": [{ "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return (document.cookie.match(/_visitor_id=([^;]+)/)||[])[1]||localStorage.getItem('_visitor_id')||'';}catch(e){return '';}}" }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "105",
+        "name": "DLV - event_id", "type": "v",
+        "parameter": [
+          { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" },
+          { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" },
+          { "type": "TEMPLATE", "key": "name", "value": "event_id" }
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "106",
+        "name": "DLV - value", "type": "v",
+        "parameter": [
+          { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" },
+          { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" },
+          { "type": "TEMPLATE", "key": "name", "value": "value" }
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "107",
+        "name": "DLV - currency", "type": "v",
+        "parameter": [
+          { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" },
+          { "type": "BOOLEAN", "key": "setDefaultValue", "value": "true" },
+          { "type": "TEMPLATE", "key": "defaultValue", "value": "INR" },
+          { "type": "TEMPLATE", "key": "name", "value": "currency" }
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "variableId": "108",
+        "name": "DLV - cta_location", "type": "v",
+        "parameter": [
+          { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" },
+          { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" },
+          { "type": "TEMPLATE", "key": "name", "value": "location" }
+        ]
+      }
+    ],
+    "trigger": [
+      {
+        "accountId": "0", "containerId": "229322364", "triggerId": "201",
+        "name": "CE - view_content", "type": "CUSTOM_EVENT",
+        "customEventFilter": [{ "type": "EQUALS", "parameter": [{ "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "view_content" }] }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "triggerId": "202",
+        "name": "CE - cta_click", "type": "CUSTOM_EVENT",
+        "customEventFilter": [{ "type": "EQUALS", "parameter": [{ "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "cta_click" }] }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "triggerId": "203",
+        "name": "CE - lead", "type": "CUSTOM_EVENT",
+        "customEventFilter": [{ "type": "EQUALS", "parameter": [{ "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "lead" }] }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "triggerId": "204",
+        "name": "CE - initiate_checkout", "type": "CUSTOM_EVENT",
+        "customEventFilter": [{ "type": "EQUALS", "parameter": [{ "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "initiate_checkout" }] }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "triggerId": "205",
+        "name": "CE - purchase", "type": "CUSTOM_EVENT",
+        "customEventFilter": [{ "type": "EQUALS", "parameter": [{ "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "purchase" }] }]
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "triggerId": "206",
+        "name": "CE - calendly_booked", "type": "CUSTOM_EVENT",
+        "customEventFilter": [{ "type": "EQUALS", "parameter": [{ "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "calendly_booked" }] }]
+      }
+    ],
+    "tag": [
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "301",
+        "name": "Meta Pixel - ViewContent", "type": "cvt_5RM3Q",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "pixelId", "value": "{{Meta Ads Pixel ID}}" },
+          { "type": "TEMPLATE", "key": "eventName", "value": "ViewContent" },
+          { "type": "TEMPLATE", "key": "eventId", "value": "{{DLV - event_id}}" },
+          { "type": "BOOLEAN", "key": "advancedMatching", "value": "true" },
+          { "type": "LIST", "key": "advancedMatchingList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "em" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_email}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "ph" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_phone}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "fn" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_name}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "external_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - visitor_id}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["201"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "302",
+        "name": "Meta Pixel - Lead", "type": "cvt_5RM3Q",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "pixelId", "value": "{{Meta Ads Pixel ID}}" },
+          { "type": "TEMPLATE", "key": "eventName", "value": "Lead" },
+          { "type": "TEMPLATE", "key": "eventId", "value": "{{DLV - event_id}}" },
+          { "type": "BOOLEAN", "key": "advancedMatching", "value": "true" },
+          { "type": "LIST", "key": "advancedMatchingList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "em" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_email}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "ph" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_phone}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "fn" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_name}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "external_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - visitor_id}}" }] }
+          ] },
+          { "type": "LIST", "key": "objectPropertyList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "value" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - value}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "currency" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - currency}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["203"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "303",
+        "name": "Meta Pixel - InitiateCheckout", "type": "cvt_5RM3Q",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "pixelId", "value": "{{Meta Ads Pixel ID}}" },
+          { "type": "TEMPLATE", "key": "eventName", "value": "InitiateCheckout" },
+          { "type": "TEMPLATE", "key": "eventId", "value": "{{DLV - event_id}}" },
+          { "type": "BOOLEAN", "key": "advancedMatching", "value": "true" },
+          { "type": "LIST", "key": "advancedMatchingList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "em" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_email}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "ph" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_phone}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "fn" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_name}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "external_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - visitor_id}}" }] }
+          ] },
+          { "type": "LIST", "key": "objectPropertyList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "value" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - value}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "currency" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - currency}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["204"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "304",
+        "name": "Meta Pixel - Purchase", "type": "cvt_5RM3Q",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "pixelId", "value": "{{Meta Ads Pixel ID}}" },
+          { "type": "TEMPLATE", "key": "eventName", "value": "Purchase" },
+          { "type": "TEMPLATE", "key": "eventId", "value": "{{DLV - event_id}}" },
+          { "type": "BOOLEAN", "key": "advancedMatching", "value": "true" },
+          { "type": "LIST", "key": "advancedMatchingList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "em" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_email}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "ph" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_phone}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "fn" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_name}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "external_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - visitor_id}}" }] }
+          ] },
+          { "type": "LIST", "key": "objectPropertyList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "value" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - value}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "currency" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - currency}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["205"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "305",
+        "name": "Meta Pixel - Schedule", "type": "cvt_5RM3Q",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "pixelId", "value": "{{Meta Ads Pixel ID}}" },
+          { "type": "TEMPLATE", "key": "eventName", "value": "Schedule" },
+          { "type": "TEMPLATE", "key": "eventId", "value": "{{DLV - event_id}}" },
+          { "type": "BOOLEAN", "key": "advancedMatching", "value": "true" },
+          { "type": "LIST", "key": "advancedMatchingList", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "em" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_email}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "ph" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_phone}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "fn" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - user_name}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "external_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{JS - visitor_id}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["206"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "306",
+        "name": "GA4 - view_content", "type": "gaawe",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "eventName", "value": "view_content" },
+          { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{ga4 measurement id}}" },
+          { "type": "LIST", "key": "eventParameters", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "event_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - event_id}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["201"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "307",
+        "name": "GA4 - lead", "type": "gaawe",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "eventName", "value": "lead" },
+          { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{ga4 measurement id}}" },
+          { "type": "LIST", "key": "eventParameters", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "event_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - event_id}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "value" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - value}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "currency" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - currency}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["203"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "308",
+        "name": "GA4 - initiate_checkout", "type": "gaawe",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "eventName", "value": "initiate_checkout" },
+          { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{ga4 measurement id}}" },
+          { "type": "LIST", "key": "eventParameters", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "event_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - event_id}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "value" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - value}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "currency" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - currency}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["204"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "309",
+        "name": "GA4 - purchase", "type": "gaawe",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "eventName", "value": "purchase" },
+          { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{ga4 measurement id}}" },
+          { "type": "LIST", "key": "eventParameters", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "event_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - event_id}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "value" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - value}}" }] },
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "currency" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - currency}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["205"], "tagFiringOption": "ONCE_PER_EVENT"
+      },
+      {
+        "accountId": "0", "containerId": "229322364", "tagId": "310",
+        "name": "GA4 - schedule", "type": "gaawe",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "eventName", "value": "schedule" },
+          { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{ga4 measurement id}}" },
+          { "type": "LIST", "key": "eventParameters", "list": [
+            { "type": "MAP", "map": [{ "type": "TEMPLATE", "key": "name", "value": "event_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - event_id}}" }] }
+          ] }
+        ],
+        "firingTriggerId": ["206"], "tagFiringOption": "ONCE_PER_EVENT"
+      }
+    ],
+    "fingerprint": "0"
+  }
+}
