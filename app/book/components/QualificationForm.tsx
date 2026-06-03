@@ -6,11 +6,15 @@ import type { Step1Data } from "./BookingFlow";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type QuestionId = "name" | "phone" | "thyroidCondition" | "thyroidDuration" | "mainGoal";
+type QuestionId = "name" | "phone" | "email" | "thyroidCondition" | "thyroidDuration" | "mainGoal";
 
 const QUESTION_ORDER: QuestionId[] = [
-  "name", "phone", "thyroidCondition", "thyroidDuration", "mainGoal",
+  "name", "phone", "email", "thyroidCondition", "thyroidDuration", "mainGoal",
 ];
+
+// Basic email shape check — email is the strongest Meta match key, so we require
+// a plausible address before advancing rather than passing junk to CAPI.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── Motion variants ───────────────────────────────────────────────────────────
 
@@ -182,6 +186,29 @@ function PhoneQuestion({
   );
 }
 
+function EmailQuestion({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <QuestionShell
+      label="Your best email"
+      hint="Your session details & call link are sent here."
+    >
+      <TextInput
+        value={value}
+        onChange={onChange}
+        placeholder="you@email.com"
+        type="email"
+        autoComplete="email"
+      />
+    </QuestionShell>
+  );
+}
+
 function ThyroidConditionQuestion({
   value,
   onChange,
@@ -294,6 +321,7 @@ export function QualificationForm({
   const [data, setData] = useState<Step1Data>({
     name: "",
     phone: "",
+    email: "",
     thyroidCondition: "",
     thyroidDuration: "",
     mainGoal: "",
@@ -309,7 +337,9 @@ export function QualificationForm({
 
   const isCurrentValid = useCallback((): boolean => {
     const val = getCurrentValue();
-    return typeof val === "string" && val.trim().length > 0;
+    if (typeof val !== "string" || val.trim().length === 0) return false;
+    if (currentQuestion === "email") return EMAIL_RE.test(val.trim());
+    return true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, currentQuestion]);
 
@@ -372,6 +402,9 @@ export function QualificationForm({
             )}
             {currentQuestion === "phone" && (
               <PhoneQuestion value={data.phone} onChange={(v) => update("phone", v)} />
+            )}
+            {currentQuestion === "email" && (
+              <EmailQuestion value={data.email} onChange={(v) => update("email", v)} />
             )}
             {currentQuestion === "thyroidCondition" && (
               <ThyroidConditionQuestion

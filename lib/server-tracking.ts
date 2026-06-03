@@ -13,6 +13,12 @@
 
 import crypto from 'crypto'
 
+// Placeholder email Cashfree requires when the customer gave none. It must
+// NEVER be sent to Meta CAPI — a uniform fake email hash across all buyers
+// poisons match quality. Both create-cashfree-order and cashfree-webhook
+// reference this constant to keep them in sync.
+export const PLACEHOLDER_EMAIL = 'noreply@swapnilumbarkarfitness.in'
+
 // ── Config ──────────────────────────────────────────────────────
 const PIXEL_ID   = process.env.META_PIXEL_ID!         // e.g. 123456789
 const ACCESS_TOKEN = process.env.META_CAPI_TOKEN!     // Meta System User token

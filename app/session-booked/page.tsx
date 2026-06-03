@@ -692,11 +692,12 @@ export default function SessionBooked() {
       setIsNativeFlow(true); // show native UI immediately while we fetch
       fetch(`/api/leads/${encodeURIComponent(urlLeadId)}`)
         .then((r) => (r.ok ? r.json() : null))
-        .then((data: { name?: string; phone?: string } | null) => {
+        .then((data: { name?: string; phone?: string; email?: string } | null) => {
           if (data?.name) {
             setStep1Data({
               name: data.name,
               phone: data.phone ?? "",
+              email: data.email ?? "",
               thyroidCondition: "",
               thyroidDuration: "",
               mainGoal: "",
@@ -704,6 +705,7 @@ export default function SessionBooked() {
             persistUserIdentity({
               first_name: data.name.split(" ")[0],
               ...(data.phone && { phone: data.phone }),
+              ...(data.email && { email: data.email }),
             });
           }
         })
@@ -736,12 +738,25 @@ export default function SessionBooked() {
     if (submittedRef.current) return;
     submittedRef.current = true;
 
+    // Read the stored booking so we can reuse the SAME Purchase id the Cashfree
+    // webhook used (`Purchase_${orderId}`) — that's what lets Meta dedup the
+    // browser Pixel, /api/events, and the payment webhook into one Purchase.
+    const storedRaw = localStorage.getItem(NATIVE_BOOKING_KEY);
+    const stored = storedRaw ? JSON.parse(storedRaw) as {
+      step1: Step1Data;
+      startedAt?: string;
+      leadId?: string;
+      orderId?: string;
+      attribution?: Record<string, string>;
+    } : null;
+
     // Fire Purchase pixel only now — after Calendly slot is confirmed.
-    // trackPurchase() returns the event_id it pushed to GTM — reuse it for the
-    // CAPI call so Meta can deduplicate browser pixel vs. server event correctly.
     const lead = step1Data;
     const purchaseEventId = trackPurchase(
-      lead ? { first_name: lead.name.split(" ")[0], phone: lead.phone } : undefined
+      lead
+        ? { first_name: lead.name.split(" ")[0], phone: lead.phone, ...(lead.email && { email: lead.email }) }
+        : undefined,
+      stored?.orderId ? `Purchase_${stored.orderId}` : undefined,
     );
 
     // Server-side CAPI Purchase — runs in parallel, non-blocking
@@ -757,6 +772,7 @@ export default function SessionBooked() {
         user_data: {
           ...(lead?.phone && { phone: lead.phone }),
           ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
+          ...(lead?.email && { email: lead.email }),
         },
       }),
     }).catch(() => {});
@@ -764,13 +780,6 @@ export default function SessionBooked() {
     // Submit unified payload
     try {
       setSubmitting(true);
-      const storedRaw = localStorage.getItem(NATIVE_BOOKING_KEY);
-      const stored = storedRaw ? JSON.parse(storedRaw) as {
-        step1: Step1Data;
-        startedAt?: string;
-        leadId?: string;
-        attribution?: Record<string, string>;
-      } : null;
 
       await fetch("/api/booking", {
         method: "POST",

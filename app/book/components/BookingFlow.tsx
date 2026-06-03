@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
 import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
-import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
+import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type Step1Data = {
   name: string;
   phone: string;
+  email: string;
   thyroidCondition: string;
   thyroidDuration: string;
   mainGoal: string;
@@ -121,7 +122,11 @@ export default function BookingFlow({
     setStep1Data(data);
 
     // Browser Pixel Lead — capture returned event_id for server dedup
-    const leadEventId = trackLead({ first_name: data.name.split(" ")[0], phone: data.phone });
+    const leadEventId = trackLead({
+      first_name: data.name.split(" ")[0],
+      phone: data.phone,
+      email: data.email,
+    });
     pushDL({ event: "native_form_completed", step: 1 });
 
     const attribution = readAttribution();
@@ -137,6 +142,7 @@ export default function BookingFlow({
         user_data: {
           first_name: data.name.split(" ")[0],
           phone: data.phone,
+          email: data.email,
           ...(attribution.visitor_id && { external_id: attribution.visitor_id }),
         },
       }),
@@ -179,7 +185,9 @@ export default function BookingFlow({
     pushDL({ event: "native_payment_initiated", step: 2 });
 
     try {
-      // Step 1: Create order server-side to get a payment session ID
+      // Step 1: Create order server-side to get a payment session ID.
+      // Pass visitor_id/fbc/fbp so they ride along as Cashfree order_tags and
+      // the Purchase webhook can attach external_id + fbc/fbp to Meta CAPI.
       const orderRes = await fetch("/api/create-cashfree-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,6 +195,10 @@ export default function BookingFlow({
           leadId,
           customerPhone: step1Data.phone,
           customerName: step1Data.name,
+          customerEmail: step1Data.email,
+          visitorId: getVisitorId(),
+          fbc: getFbc(),
+          fbp: getFbp(),
         }),
       });
 
@@ -199,6 +211,14 @@ export default function BookingFlow({
         paymentSessionId: string;
         orderId: string;
       };
+
+      // Persist the orderId so /session-booked can fire its Purchase with the
+      // SAME id (`Purchase_${orderId}`) the Cashfree webhook uses → Meta dedup.
+      try {
+        const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+        const obj = raw ? JSON.parse(raw) : {};
+        localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId }));
+      } catch { /* non-critical */ }
 
       // Step 2: Load SDK (CDN script injected once per page) and open modal
       const { load } = await import("@cashfreepayments/cashfree-js");

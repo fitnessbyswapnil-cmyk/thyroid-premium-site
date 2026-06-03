@@ -26,6 +26,7 @@ import {
   buildUserData,
   getClientIp,
   getUserAgent,
+  PLACEHOLDER_EMAIL,
 } from '@/lib/server-tracking'
 import crypto from 'crypto'
 import { google } from 'googleapis'
@@ -183,8 +184,15 @@ export async function POST(req: NextRequest) {
     const firstName = customer.customer_name.split(' ')[0] || ''
     const lastName  = customer.customer_name.split(' ').slice(1).join(' ') || ''
 
+    // Never send the Cashfree placeholder email to Meta — omit em entirely so a
+    // uniform fake hash doesn't poison match quality across all purchases.
+    const realEmail =
+      customer.customer_email && customer.customer_email !== PLACEHOLDER_EMAIL
+        ? customer.customer_email
+        : undefined
+
     const userData = buildUserData({
-      email: customer.customer_email,
+      email: realEmail,
       phone: customer.customer_phone,
       firstName,
       lastName,

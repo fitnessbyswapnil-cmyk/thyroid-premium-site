@@ -13,6 +13,7 @@
  *   NEXT_PUBLIC_APP_URL    — https://swapnilumbarkarfitness.in
  */
 import { NextRequest, NextResponse } from "next/server";
+import { PLACEHOLDER_EMAIL } from "@/lib/server-tracking";
 
 // ── TEST MODE ─────────────────────────────────────────────────────────────────
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
@@ -47,9 +48,12 @@ export async function POST(req: NextRequest) {
     customerPhone?: string;
     customerName?: string;
     customerEmail?: string;
+    visitorId?: string;
+    fbc?: string;
+    fbp?: string;
   };
 
-  const { leadId, customerPhone, customerName, customerEmail } = body;
+  const { leadId, customerPhone, customerName, customerEmail, visitorId, fbc, fbp } = body;
 
   if (!leadId || !customerPhone || !customerName) {
     return NextResponse.json(
@@ -87,8 +91,14 @@ export async function POST(req: NextRequest) {
           customer_id: leadId,
           customer_phone: phone,
           customer_name: customerName,
-          customer_email:
-            customerEmail || "noreply@swapnilumbarkarfitness.in",
+          customer_email: customerEmail || PLACEHOLDER_EMAIL,
+        },
+        // Ride-along identifiers — the Purchase webhook reads these back as
+        // order_tags to attach external_id + fbc/fbp to Meta CAPI.
+        order_tags: {
+          ...(visitorId ? { visitor_id: visitorId } : {}),
+          ...(fbc ? { fbc } : {}),
+          ...(fbp ? { fbp } : {}),
         },
         order_meta: {
           // {order_id} is a Cashfree template variable — replaced at redirect time

@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { pushDL, getOrCreateExternalId, getFbc, getFbp } from "../../lib/analytics";
+import {
+  pushDL,
+  getOrCreateExternalId,
+  getFbc,
+  getFbp,
+  generateEventId,
+  buildMetaUserData,
+  normalizeEmail,
+  normalizePhone,
+} from "../../lib/analytics";
 
 const STORAGE_KEY = "meta_user_identity";
 
@@ -17,15 +26,19 @@ declare global {
   }
 }
 
-// Builds a complete meta_userdata_ready payload with both nested user_data and
-// flat fields so GTM DLVs can map email/phone/etc. into GA4 event params.
+// Builds a complete metaUserDataReady payload. Event name matches the GTM
+// Custom Event trigger ("metaUserDataReady") that fires the GA4 "meta_userdata"
+// tag. Carries nested user_data, flat top-level fields, AND the metaUserData
+// object the tag reads — all with real, normalized values, never "undefined".
 function buildIdentityPayload(identity: UserIdentity): Record<string, unknown> {
+  const event_id = generateEventId("meta_userdata");
   const payload: Record<string, unknown> = {
-    event: "meta_userdata_ready",
+    event: "metaUserDataReady",
+    event_id,
     user_data: { ...identity },
   };
-  if (identity.email) payload.email = identity.email;
-  if (identity.phone) payload.phone = identity.phone;
+  if (identity.email) payload.email = normalizeEmail(identity.email);
+  if (identity.phone) payload.phone = normalizePhone(identity.phone);
   if (identity.first_name) payload.first_name = identity.first_name;
   const external_id = getOrCreateExternalId();
   const fbc = getFbc();
@@ -33,10 +46,11 @@ function buildIdentityPayload(identity: UserIdentity): Record<string, unknown> {
   if (external_id) payload.external_id = external_id;
   if (fbc) payload.fbc = fbc;
   if (fbp) payload.fbp = fbp;
+  payload.metaUserData = buildMetaUserData(identity, event_id);
   return payload;
 }
 
-// Fires meta_userdata_ready on every page load when localStorage has identity.
+// Fires metaUserDataReady on every page load when localStorage has identity.
 // GTM should listen for this event to set user properties before other events.
 export function UserIdentityTracker() {
   useEffect(() => {
