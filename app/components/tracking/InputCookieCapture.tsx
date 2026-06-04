@@ -1,34 +1,13 @@
-"use client";
+// InputCookieCapture — REMOVED
+//
+// This component previously wrote user_email, user_phone, and user_name to
+// document.cookie via an input event listener. That behaviour has been
+// replaced: lead data now goes exclusively to the Make webhook POST in
+// BookingFlow.tsx (handleQualificationComplete → postToMakeWebhook).
+//
+// The export is kept as a no-op so any residual import doesn't break the
+// build while layout.tsx is updated in the same commit.
 
-import { useEffect } from "react";
-import { setCookie } from "@/lib/tracking";
-
-// Captures email/phone/name from any form inputs on the page and persists them
-// as first-party cookies so GTM/CAPI can read them server-side even without
-// a dataLayer push (e.g., early exits before form submission).
 export function InputCookieCapture() {
-  useEffect(() => {
-    function handleInput() {
-      const email =
-        (document.querySelector("input[type='email']") as HTMLInputElement)
-          ?.value || "";
-      const phone =
-        (document.querySelector("input[type='tel']") as HTMLInputElement)
-          ?.value || "";
-      const name =
-        (document.querySelector("input[type='text']") as HTMLInputElement)
-          ?.value || "";
-
-      if (email || phone) {
-        if (email) setCookie("user_email", email);
-        if (phone) setCookie("user_phone", phone);
-        if (name) setCookie("user_name", name);
-      }
-    }
-
-    document.addEventListener("input", handleInput);
-    return () => document.removeEventListener("input", handleInput);
-  }, []);
-
-  return null;
+    return null;
 }
