@@ -358,4 +358,4 @@ export default function BookingFlow({
                 </AnimatePresence>
           </div>
         );
-}</div>
+}
