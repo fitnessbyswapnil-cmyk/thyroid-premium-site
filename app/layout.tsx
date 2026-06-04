@@ -57,13 +57,13 @@ export default function RootLayout({
                 >
                 <head>
                         <GTMScript />
-                </head>head>
+                </head>
                 <body className="min-h-full flex flex-col">
                         <GTMNoScript />
                         <RouteTracker />
                         <UserIdentityTracker />
-                        <ScarcityProvider>{children}</ScarcityProvider>ScarcityProvider>
-                </body>body>
-          </html>html>
+                        <ScarcityProvider>{children}</ScarcityProvider>
+                </body>
+          </html>
         );
-}</html>
+}
