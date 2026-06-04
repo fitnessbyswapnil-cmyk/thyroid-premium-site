@@ -153,6 +153,17 @@ function withUserSignals(payload: DLPayload, userData?: UserData): DLPayload {
 // ── Tracking functions ─────────────────────────────────────────────────────────
 
 export function trackViewContent(pageType = "landing") {
+  // Fire ONCE per session. ViewContent is called from both the landing page
+  // (RouteTracker) and /book (BookPageClient) so it covers either entry point —
+  // but it must not fire twice when a user goes landing → /book in one session.
+  if (typeof window !== "undefined") {
+    try {
+      if (sessionStorage.getItem("_vc_fired")) return;
+      sessionStorage.setItem("_vc_fired", "1");
+    } catch {
+      /* sessionStorage unavailable — fall through and fire */
+    }
+  }
   const event_id = generateEventId("view_content");
   pushDL(
     withUserSignals({
