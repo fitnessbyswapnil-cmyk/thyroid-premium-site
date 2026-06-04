@@ -114,22 +114,22 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
                                                             {done ? (
                                                                                               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                                                                                                                   <path d="M2 5l2.5 2.5 3.5-4" stroke="#c084fc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                                                </svg>svg>
+                                                                                                </svg>
                                                                                             ) : (
-                                                                                              <span>{step.id}</span>span>
+                                                                                              <span>{step.id}</span>
                                                                           )}
                                                             {active && (
                                                                                               <span className="absolute inset-0 animate-ping rounded-full bg-purple-500/20" />
                                                                                             )}
-                                                          </div>div>
+                                                          </div>
                                                           <span
                                                                             className={`mt-1.5 hidden text-[0.56rem] font-semibold uppercase tracking-[0.12em] sm:block ${
                                                                                                 done ? "text-purple-400/60" : active ? "text-purple-300/80" : "text-white/15"
                                                                             }`}
                                                                           >
                                                             {step.label}
-                                                          </span>span>
-                                            </div>div>
+                                                          </span>
+                                            </div>
                                   {i < FLOW_STEPS.length - 1 && (
                                                 <div
                                                                   className={`mx-2 h-px w-8 sm:w-12 transition-all duration-700 ${
@@ -137,10 +137,10 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
                                                                   }`}
                                                                 />
                                               )}
-                                </div>div>
+                                </div>
                               );
           })}
-          </div>div>
+          </div>
         );
 }
 
@@ -334,7 +334,7 @@ export default function BookingFlow({
                                     transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
                                   >
                                   <QualificationForm onComplete={handleQualificationComplete} />
-                      </motion.div>motion.div>
+                      </motion.div>
                     )}
                 
                   {stage === "payment" && step1Data && (
@@ -353,9 +353,9 @@ export default function BookingFlow({
                                                   loading={paymentLoading}
                                                   error={paymentError}
                                                 />
-                      </motion.div>motion.div>
+                      </motion.div>
                     )}
-                </AnimatePresence>AnimatePresence>
-          </div>div>
+                </AnimatePresence>
+          </div>
         );
 }</div>
