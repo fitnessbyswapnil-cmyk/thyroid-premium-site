@@ -77,7 +77,6 @@ export default function PaymentSuccessPage() {
     function startCountdown() {
       if (countdownStartedRef.current) return;
       countdownStartedRef.current = true;
-      firePurchase();
       setStatus("confirmed");
       let c = COUNTDOWN_S;
       setCountdown(c);
@@ -115,6 +114,10 @@ export default function PaymentSuccessPage() {
         const data = await res.json() as { paid: boolean };
 
         if (data.paid) {
+          // Purchase fires ONLY here — payment is confirmed paid by Cashfree.
+          // The fallback branches below still advance the UX but must NOT fire
+          // Purchase (the signed server webhook is the sole source otherwise).
+          firePurchase();
           startCountdown();
         } else if (verifyAttempts < 4) {
           // Retry — Cashfree may still be processing
