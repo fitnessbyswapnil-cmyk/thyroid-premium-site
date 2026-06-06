@@ -460,10 +460,10 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
       let p = function (a: any, ar: any) { a.q.push(ar); };
       let d = C.document;
       C.Cal = C.Cal || function () {
-        let cal = C.Cal; let ar = arguments;
+        let cal: any = C.Cal; let ar: any = arguments;
         if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; }
         if (ar[0] === L) {
-          const api = function () { p(api, arguments); };
+          const api: any = function () { p(api, arguments); };
           const namespace = ar[1]; api.q = api.q || [];
           if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar);
           return;
