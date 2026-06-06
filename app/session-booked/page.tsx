@@ -455,42 +455,83 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
   const [booked, setBooked] = useState(false);
 
   useEffect(() => {
-    if (document.querySelector('script[src*="calendly"]')) return;
-    const script = document.createElement("script");
-    script.src = "https://assets.calendly.com/assets/external/widget.js";
-    script.async = true;
-    document.head.appendChild(script);
-  }, []);
+    // Inject Cal.com embed loader (runs once)
+    (function (C: any, A: string, L: string) {
+      let p = function (a: any, ar: any) { a.q.push(ar); };
+      let d = C.document;
+      C.Cal = C.Cal || function () {
+        let cal = C.Cal; let ar = arguments;
+        if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; }
+        if (ar[0] === L) {
+          const api = function () { p(api, arguments); };
+          const namespace = ar[1]; api.q = api.q || [];
+          if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar);
+          return;
+        }
+        p(cal, ar);
+      };
+    })(window, "https://app.cal.com/embed/embed.js", "init");
 
-  useEffect(() => {
-    function handleMessage(e: MessageEvent) {
-      if (!e.data || typeof e.data !== "object") return;
-      const { event, payload } = e.data;
-      if (event === "calendly.event_scheduled") {
-        const startTime: string = payload?.event?.start_time || "";
+    const Cal = (window as any).Cal;
+    Cal("init", "60min", { origin: "https://cal.com" });
+
+    Cal.ns["60min"]("inline", {
+      elementOrSelector: "#cal-inline",
+      config: { layout: "month_view", theme: "dark" },
+      calLink: "swapnilumbarkarfitness/60min",
+    });
+
+    Cal.ns["60min"]("ui", {
+      theme: "dark",
+      styles: { branding: { brandColor: "#7c3aed" } },
+      hideEventTypeDetails: false,
+      layout: "month_view",
+    });
+
+    // Cal.com booking-success callback (replaces Calendly's postMessage)
+    Cal.ns["60min"]("on", {
+      action: "bookingSuccessful",
+      callback: (e: any) => {
+        const data = e?.detail?.data || {};
+        // Defensive extraction — Cal.com payload shape varies by version
+        const startTime: string =
+          data?.booking?.startTime ||
+          data?.startTime ||
+          data?.date ||
+          data?.booking?.start ||
+          data?.confirmedEvent?.startTime ||
+          "";
+        const name: string =
+          data?.booking?.attendees?.[0]?.name ||
+          data?.attendees?.[0]?.name ||
+          data?.booking?.responses?.name?.value ||
+          data?.responses?.name?.value ||
+          data?.booking?.name ||
+          "";
+
         let dateStr = "";
         let timeStr = "";
         if (startTime) {
-          const d = new Date(startTime);
-          dateStr = d.toLocaleDateString("en-IN", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          });
-          timeStr = d.toLocaleTimeString("en-IN", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          });
+          const dt = new Date(startTime);
+          if (!isNaN(dt.getTime())) {
+            dateStr = dt.toLocaleDateString("en-IN", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            });
+            timeStr = dt.toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            });
+          }
         }
         setBooked(true);
         onBooked(dateStr, timeStr);
-        trackSchedule({ name: payload?.invitee?.name || "", date: dateStr, time: timeStr });
-      }
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+        trackSchedule({ name, date: dateStr, time: timeStr });
+      },
+    });
   }, [onBooked]);
 
   return (
@@ -523,9 +564,8 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
         style={{ background: "rgba(13,11,26,0.6)" }}
       >
         <div
-          className="calendly-inline-widget"
-          data-url={CALENDLY_URL}
-          style={{ minWidth: "100%", height: "680px" }}
+          id="cal-inline"
+          style={{ minWidth: "100%", height: "680px", overflow: "scroll" }}
         />
       </div>
     </div>
