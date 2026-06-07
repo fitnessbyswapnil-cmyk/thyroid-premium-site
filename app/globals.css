@@ -1396,3 +1396,15 @@ a {
     font-size: clamp(1.55rem, 1.2rem + 1.8vw, 2rem);
   }
 }
+/* ── Hero entrance — staggered fade-up (native purple/Geist hero) ─────────────── */
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-rise {
+  opacity: 0;
+  animation: hero-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise { animation: none; opacity: 1; transform: none; }
+}
