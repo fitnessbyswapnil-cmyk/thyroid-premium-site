@@ -159,8 +159,11 @@ export default function BookingFlow({
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [paymentError, setPaymentError] = useState("");
   
-    // Double-fire guard: webhook fires at most once per component mount
-    const webhookFiredRef = useRef(false);
+    // Idempotency guard: the entire qualification-complete side-effect block
+    // (Lead Pixel + Lead CAPI + leads/webhook writes) fires AT MOST ONCE per
+    // mount, so a double-click or re-render can't emit duplicate Lead events
+    // (which, having distinct event_ids, would NOT deduplicate in Meta).
+    const completedRef = useRef(false);
   
     // Ref-callback pattern: fires when payment section mounts (post AnimatePresence exit),
     // guaranteeing the scroll target is in the DOM and always scrolls DOWNWARD.
@@ -175,6 +178,10 @@ export default function BookingFlow({
     }, [pendingScroll, step2El]);
   
     const handleQualificationComplete = useCallback((data: Step1Data) => {
+          // Idempotency: fire Lead (and all downstream sends) exactly once.
+          if (completedRef.current) return;
+          completedRef.current = true;
+
           const newLeadId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
           setLeadId(newLeadId);
           setStep1Data(data);
@@ -213,11 +220,10 @@ export default function BookingFlow({
                   body: JSON.stringify({ leadId: newLeadId, step1: data, attribution }),
           }).catch(() => {});
       
-          // ── Make webhook POST (fires once, never blocks user) ─────────────────
-          if (!webhookFiredRef.current) {
-                  webhookFiredRef.current = true;
-                  postToMakeWebhook(data);
-          }
+          // ── Make webhook POST (never blocks user) ─────────────────────────────
+          // The single-fire guarantee now comes from completedRef at the top of
+          // this handler, which also covers the Lead Pixel + Lead CAPI sends.
+          postToMakeWebhook(data);
       
           setStage("payment");
           onQualificationComplete?.();
