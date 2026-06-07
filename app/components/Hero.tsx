@@ -1,13 +1,34 @@
 "use client";
 
+import Image from "next/image";
 import CtaButton from "./CtaButton";
 
+// ── Founder portrait (trust visual) ─────────────────────────────────────────────
+// No portrait asset ships in /public yet, so the photo block is gated behind this
+// flag to avoid a broken image. Drop the file at PORTRAIT_SRC (see below), then
+// flip HAS_PORTRAIT to true.
+const HAS_PORTRAIT = false;
+const PORTRAIT_SRC = "/swapnil-portrait.jpg";
+
+// ── Social proof slot ────────────────────────────────────────────────────────────
+// This line is REAL (already used at app/book/BookPageClient.tsx:111) — it is NOT
+// fabricated. It is OFF by default to preserve the selective/premium hero
+// positioning (heavy volume/rating proof lives below the fold). Flip the flag to
+// surface it. TODO: Real social proof goes here — do not fabricate.
+const SHOW_SOCIAL_PROOF = false;
+const SOCIAL_PROOF_LINE = "4.9 ★ average rating across 200+ clients";
+
 // Proof chips — one row, wraps on mobile, separated by small gold dots.
-const PROOF_CHIPS = [
-  "ACE & INFS certified",
+// "ACE & INFS certified" moves into the founder caption when the portrait is shown
+// (CHANGE 4). When the portrait is absent, the credential stays in the chip row so
+// it is never lost — it appears exactly once either way, never duplicated.
+const BASE_CHIPS = [
   "Thyroid specialist, not general fitness",
   "By private intake",
-] as const;
+];
+const PROOF_CHIPS: string[] = HAS_PORTRAIT
+  ? BASE_CHIPS
+  : ["ACE & INFS certified", ...BASE_CHIPS];
 
 // Warm champagne-gold text accent (the ONLY non-purple highlight) — used solely
 // for the "8–10 kg of fat" number. Gold against the site's violet is a classic
@@ -76,16 +97,16 @@ export default function Hero() {
           <span className="text-gradient italic">Your thyroid is.</span>
         </h1>
 
-        {/* Subhead — opacity ladder starts here (brightest) */}
+        {/* Subhead — opacity ladder starts here (brightest). The only new emphasis is
+            "your thyroid was never the focus": semibold, default white, no color. */}
         <p
           className="hero-rise mt-[26px] max-w-[52ch] text-pretty text-[length:clamp(1rem,0.94rem_+_0.4vw,1.16rem)] leading-[1.66] text-[var(--t2)]"
           style={{ animationDelay: "240ms" }}
         >
-          You&apos;ve tried every diet. The weight won&apos;t move because your
-          thyroid was never the focus. In a private 60-minute session, see exactly
-          why &mdash; and how clients typically lose{" "}
-          <span style={GOLD_TEXT}>8&ndash;10&nbsp;kg of fat</span> in 3 months,
-          eating real Indian food.
+          You&apos;ve tried every diet. The weight won&apos;t move because{" "}
+          <span className="font-semibold text-white">your thyroid was never the focus</span>. In one
+          private 60-minute session, see exactly why &mdash; and how clients typically lose{" "}
+          <span style={GOLD_TEXT}>8&ndash;10&nbsp;kg of fat</span> in 3 months, eating real Indian food.
         </p>
 
         {/* Proof chips — gold-dot separators */}
@@ -108,8 +129,57 @@ export default function Hero() {
           ))}
         </ul>
 
+        {/* Founder portrait + caption (trust visual). Placed just below the chips —
+            keeps the emotional headline as the first strong beat, puts the founder's
+            face at the decision point next to the CTA, and protects the mobile
+            above-the-fold CTA height. Gated behind HAS_PORTRAIT so it never breaks. */}
+        {HAS_PORTRAIT && (
+          <div
+            className="hero-rise mt-[36px] flex flex-col items-center"
+            style={{ animationDelay: "420ms" }}
+          >
+            <div
+              className="relative h-16 w-16 overflow-hidden rounded-full sm:h-20 sm:w-20"
+              style={{
+                boxShadow:
+                  "0 0 0 1px rgba(213,183,101,0.55), 0 0 28px rgba(168,85,247,0.28)",
+              }}
+            >
+              <Image
+                src={PORTRAIT_SRC}
+                alt="Swapnil Umbarkar, thyroid fat-loss coach"
+                width={160}
+                height={160}
+                preload
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <p className="mt-2.5 flex items-center gap-2 text-[12px] font-medium leading-none text-[var(--t3)]">
+              <span>Swapnil Umbarkar</span>
+              <span
+                aria-hidden="true"
+                className="inline-block h-1 w-1 shrink-0 rounded-full"
+                style={{ background: GOLD_DOT }}
+              />
+              <span>ACE &amp; INFS certified thyroid coach</span>
+            </p>
+          </div>
+        )}
+
+        {/* Social proof slot — render ONLY real data. Off by default (see flag above)
+            to protect the premium positioning. TODO: Real social proof goes here —
+            do not fabricate. */}
+        {SHOW_SOCIAL_PROOF && (
+          <p
+            className="hero-rise mt-[28px] text-[13px] font-medium leading-none text-[var(--t3)]"
+            style={{ animationDelay: "450ms" }}
+          >
+            {SOCIAL_PROOF_LINE}
+          </p>
+        )}
+
         {/* CTA — native purple primary (matches every other CTA on the page).
-            Label/microcopy updated; original booking link + tracking preserved. */}
+            Label/microcopy and tracking wiring preserved EXACTLY. */}
         <div className="hero-rise mt-[42px] w-full max-w-[min(100%,23rem)]" style={{ animationDelay: "480ms" }}>
           <CtaButton
             variant="primary"
