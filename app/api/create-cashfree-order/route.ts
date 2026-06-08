@@ -19,7 +19,7 @@ import { PLACEHOLDER_EMAIL } from "@/lib/server-tracking";
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
 // UI/copy always shows ₹299 — only the actual Cashfree transaction amount changes.
 // Flip back to false before going live.
-const IS_TEST_MODE = true;
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = 299;
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
