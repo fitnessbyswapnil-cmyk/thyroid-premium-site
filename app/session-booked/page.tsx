@@ -765,9 +765,29 @@ export default function SessionBooked() {
 
   const handleIntakeComplete = useCallback((data: Step2_5Data) => {
     setIntakeData(data);
+
+    // Persist the answers onto the lead's sheet row NOW (fire-and-forget).
+    // Previously they were only sent after the calendar step completed, so
+    // anyone abandoning before picking a slot lost their intake entirely.
+    let leadId = "";
+    try {
+      const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+      if (raw) leadId = (JSON.parse(raw) as { leadId?: string }).leadId || "";
+    } catch { /* non-critical */ }
+    if (!leadId) {
+      try {
+        leadId = new URLSearchParams(window.location.search).get("leadId") || "";
+      } catch { /* non-critical */ }
+    }
+    fetch("/api/intake", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId, email: step1Data?.email || "", answers: data }),
+    }).catch(() => {});
+
     setStage("calendly");
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [step1Data]);
 
   const handleBooked = useCallback(async (date: string, time: string) => {
     setBookingDate(date);
