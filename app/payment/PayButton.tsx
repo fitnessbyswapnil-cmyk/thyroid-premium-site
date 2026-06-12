@@ -5,7 +5,7 @@ import { pushDL, generateEventId, buildMetaUserData } from "@/app/lib/analytics"
 // CTA for the high-ticket program page. Mirrors the site's initiate_checkout
 // dataLayer shape (same event name + event_id convention so existing GTM
 // triggers fire) but with THIS program's value — the shared trackInitiateCheckout
-// hardcodes the ₹299 session product and would report the wrong amount here.
+// hardcodes the ₹199 session product and would report the wrong amount here.
 export default function PayButton({ href }: { href: string }) {
   const handleClick = () => {
     const event_id = generateEventId("initiate_checkout");

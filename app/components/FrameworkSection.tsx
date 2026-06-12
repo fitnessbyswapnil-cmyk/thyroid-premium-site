@@ -107,7 +107,7 @@ export default function FrameworkSection() {
 
         <SectionCta
           style={{ maxWidth: 320 }}
-          label="Book My ₹299 Thyroid Session"
+          label="Book My ₹199 Thyroid Session"
           sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
           trust="Private 60-min session · Limited weekly intake"
           ariaLabel="Reserve your thyroid consultation"

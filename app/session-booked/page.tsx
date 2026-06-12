@@ -807,7 +807,7 @@ export default function SessionBooked() {
         event_name: "Purchase",
         event_id: purchaseEventId,
         source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
-        value: 299,
+        value: 199,
         currency: "INR",
         user_data: {
           ...(lead?.phone && { phone: lead.phone }),

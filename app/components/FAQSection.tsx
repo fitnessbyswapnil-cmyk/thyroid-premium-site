@@ -11,11 +11,11 @@ const faqs = [
     a: 'Yes. Coaching works alongside your medication — we focus on nutrition, lifestyle, and sustainable fat loss, not replacing your doctor.',
   },
   {
-    q: 'What happens in the ₹299 strategy session?',
+    q: 'What happens in the ₹199 strategy session?',
     a: "Swapnil reviews your intake personally before the call — your thyroid history, symptoms, and what you've already tried. In 60 minutes, you'll understand exactly why fat isn't moving, what your thyroid specifically needs, and what your next 3 steps are. A written summary arrives within 24 hours. Whether or not you continue to coaching, this session stands completely on its own.",
   },
   {
-    q: 'Is the ₹299 fully refundable?',
+    q: 'Is the ₹199 fully refundable?',
     a: "Yes. If you complete the 60-minute session and don't leave with at least one specific, actionable step forward for your thyroid — you get every rupee back. No forms, no waiting, no questions. In 3 years and 200+ sessions, we've never had a refund request.",
   },
   {
@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: "I've tried coaching before and it didn't work. How is this different?",
-    a: "Most coaching programs treat thyroid clients exactly like everyone else — same calorie deficits, same exercise plans. This coaching is built specifically around hypothyroid fat-loss physiology. The approach is different because the problem is different. The ₹299 session exists precisely to show you what that difference looks like for your specific case — before you commit to anything further.",
+    a: "Most coaching programs treat thyroid clients exactly like everyone else — same calorie deficits, same exercise plans. This coaching is built specifically around hypothyroid fat-loss physiology. The approach is different because the problem is different. The ₹199 session exists precisely to show you what that difference looks like for your specific case — before you commit to anything further.",
   },
 ]
 
@@ -139,7 +139,7 @@ export default function FAQSection() {
         <SectionHeader
           label="FAQs"
           title="Common Questions"
-          lead="Everything you want to know before applying for your private ₹299 session."
+          lead="Everything you want to know before applying for your private ₹199 session."
           titleMaxCh="20ch"
         />
 
@@ -160,16 +160,16 @@ export default function FAQSection() {
             Still have questions?
           </p>
           <p className="mb-5 text-[length:var(--text-xs)] text-[var(--t4)]">
-            Get clarity on your thyroid fat-loss path in a private ₹299 session.
+            Get clarity on your thyroid fat-loss path in a private ₹199 session.
           </p>
           <SectionCta
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 280 }}
-            label="Book My ₹299 Thyroid Session"
+            label="Book My ₹199 Thyroid Session"
             sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
             trust="ACE · FITR · INFS Certified · 200+ Clients"
-            ariaLabel="Book your 299 rupee thyroid assessment"
+            ariaLabel="Book your 199 rupee thyroid assessment"
             location="faq"
           />
         </div>

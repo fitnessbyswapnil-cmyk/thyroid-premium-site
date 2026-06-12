@@ -3,8 +3,9 @@
 @theme inline {
   --color-background: #0f1012;
   --color-foreground: #ececf1;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display), Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :root {
@@ -88,11 +89,24 @@ body {
   margin: 0;
   background: var(--bg-page);
   color: var(--t1);
-  font-family: var(--font-sans), sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.65;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Headlines render in Fraunces (display); body/UI stays on Inter. */
+h1, h2, h3,
+.section-title {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+/* Large display headings get Fraunces' true display cut. */
+h1,
+.section-title {
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 144;
 }
 
 section {
@@ -1396,7 +1410,7 @@ a {
     font-size: clamp(1.55rem, 1.2rem + 1.8vw, 2rem);
   }
 }
-/* ── Hero entrance — staggered fade-up (native purple/Geist hero) ─────────────── */
+/* ── Hero entrance — staggered fade-up ───────────────────────────────────────── */
 @keyframes hero-rise {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
