@@ -237,20 +237,31 @@ export function trackPurchase(userData?: UserData, eventId?: string) {
   return event_id;
 }
 
-export function trackSchedule(details?: {
-  name?: string;
-  date?: string;
-  time?: string;
-}) {
-  const event_id = generateEventId("schedule");
-  // Reads identity from localStorage — by the time Calendly fires,
-  // localStorage has the full merged identity from the purchase page.
-  const payload = withUserSignals({
-    event: "calendly_booked",
-    event_id,
-    ...PRODUCT,
-    ...(details ?? {}),
-  });
+// eventId: pass a deterministic id (e.g. `Schedule_${calcomBookingUid}`) so the
+// browser Pixel and the server CAPI Schedule share ONE id and Meta deduplicates
+// to a single Schedule. Falls back to a generated id when the booking uid is
+// unknown. userData lets the caller pass the booker's identity explicitly.
+export function trackSchedule(
+  details?: {
+    name?: string;
+    date?: string;
+    time?: string;
+  },
+  eventId?: string,
+  userData?: UserData,
+) {
+  const event_id = eventId || generateEventId("schedule");
+  // Reads identity from localStorage (or the passed userData) — by the time the
+  // booking fires, localStorage has the full merged identity from the purchase page.
+  const payload = withUserSignals(
+    {
+      event: "calendly_booked",
+      event_id,
+      ...PRODUCT,
+      ...(details ?? {}),
+    },
+    userData,
+  );
   pushDL(payload);
   return event_id;
 }

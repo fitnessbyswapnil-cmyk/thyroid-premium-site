@@ -453,6 +453,9 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
 
 function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => void }) {
   const [booked, setBooked] = useState(false);
+  // Idempotency: Schedule fires AT MOST once per mount, even if Cal.com emits
+  // the bookingSuccessful event more than once.
+  const scheduleFiredRef = useRef(false);
 
   useEffect(() => {
     // Inject Cal.com embed loader (runs once)
@@ -492,6 +495,10 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
     Cal.ns["60min"]("on", {
       action: "bookingSuccessful",
       callback: (e: any) => {
+        // Fire the Schedule conversion exactly once per booking.
+        if (scheduleFiredRef.current) return;
+        scheduleFiredRef.current = true;
+
         const data = e?.detail?.data || {};
         // Defensive extraction — Cal.com payload shape varies by version
         const startTime: string =
@@ -507,6 +514,14 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
           data?.booking?.responses?.name?.value ||
           data?.responses?.name?.value ||
           data?.booking?.name ||
+          "";
+        // Cal.com booking uid — the canonical booking id, identical in the
+        // BOOKING_CREATED webhook. Keying the event_id on it lets any server-side
+        // Schedule deduplicate against this browser Schedule.
+        const uid: string =
+          data?.booking?.uid ||
+          data?.uid ||
+          data?.confirmedEvent?.uid ||
           "";
 
         let dateStr = "";
@@ -527,9 +542,40 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
             });
           }
         }
+
         setBooked(true);
         onBooked(dateStr, timeStr);
-        trackSchedule({ name, date: dateStr, time: timeStr });
+
+        // ONE shared event_id for browser Pixel + server CAPI → Meta dedup.
+        const scheduleEventId = trackSchedule(
+          { name, date: dateStr, time: timeStr },
+          uid ? `Schedule_${uid}` : undefined,
+        );
+
+        // Server-side CAPI Schedule (deduplicates with the browser Pixel via the
+        // shared event_id). The /api/events route hashes em/ph + attaches
+        // _fbc/_fbp/_visitor_id and sets action_source=website + event_time.
+        let identity: { email?: string; phone?: string; first_name?: string } = {};
+        try {
+          identity = JSON.parse(localStorage.getItem("meta_user_identity") || "{}");
+        } catch { /* non-critical */ }
+        const firstName = name.split(" ")[0] || identity.first_name;
+        const lastName = name.split(" ").slice(1).join(" ");
+        fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event_name: "Schedule",
+            event_id: scheduleEventId,
+            source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
+            user_data: {
+              ...(identity.email && { email: identity.email }),
+              ...(identity.phone && { phone: identity.phone }),
+              ...(firstName && { first_name: firstName }),
+              ...(lastName && { last_name: lastName }),
+            },
+          }),
+        }).catch(() => {});
       },
     });
   }, [onBooked]);
