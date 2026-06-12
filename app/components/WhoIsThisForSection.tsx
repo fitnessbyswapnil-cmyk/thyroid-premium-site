@@ -66,12 +66,12 @@ export default function WhoIsThisForSection() {
         </p>
 
         <SectionCta
-          label="Book My ₹299 Thyroid Session"
+          label="Book My ₹199 Thyroid Session"
           sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
           trust="200+ Indian women helped · ACE & INFS Certified"
           buttonClassName="w-full"
           style={{ maxWidth: "22rem" }}
-          ariaLabel="Apply for your 299 rupee thyroid strategy session"
+          ariaLabel="Apply for your 199 rupee thyroid strategy session"
           location="who_is_this_for"
         />
       </div>

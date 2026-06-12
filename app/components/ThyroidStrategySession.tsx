@@ -488,7 +488,7 @@ function CTABlock() {
       <div className="cta-wrap cta-glow-mid">
         <CtaButton
           variant="primary"
-          label="Book My ₹299 Thyroid Session"
+          label="Book My ₹199 Thyroid Session"
           sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
           ariaLabel="Reserve your private thyroid clarity session"
           location="strategy_session"

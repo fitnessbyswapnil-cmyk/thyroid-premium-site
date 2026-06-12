@@ -557,7 +557,7 @@ export default function VideoTestimonial() {
             <CtaButton
               variant="primary"
               className="w-full"
-              label="Book My ₹299 Thyroid Session"
+              label="Book My ₹199 Thyroid Session"
               sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
               ariaLabel="Apply for private thyroid coaching"
               location="video_testimonial"

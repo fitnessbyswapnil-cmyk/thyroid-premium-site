@@ -18,7 +18,7 @@ interface Testimonial {
 //
 // Psychological sequencing (cold Meta traffic):
 //   Card 1 — Session-specific: "Is this a sales call?" objection pre-handled by
-//             a real person describing the ₹299 session experience.
+//             a real person describing the ₹199 session experience.
 //   Card 2 — Outcome: weight-loss result with specific, culturally resonant
 //             detail ("without giving up roti").
 //   Card 3 — Emotional peak (featured): the most powerful sentence on the page,
@@ -33,7 +33,7 @@ const TESTIMONIALS: Testimonial[] = [
     initials: "KN",
     condition: "Hashimoto's · Strategy session",
     quote:
-      "I walked in expecting a sales pitch. He spent the full hour on my actual reports — my TSH history, my food, my sleep. I left with three specific things to try that evening. That alone was worth ₹299.",
+      "I walked in expecting a sales pitch. He spent the full hour on my actual reports — my TSH history, my food, my sleep. I left with three specific things to try that evening. That alone was worth ₹199.",
     result: "Strategy session",
     featured: false,
   },

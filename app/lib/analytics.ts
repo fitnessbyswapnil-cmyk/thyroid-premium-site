@@ -16,7 +16,7 @@ export function generateEventId(eventName: string): string {
 const PRODUCT = {
   content_name: "Private Thyroid Strategy Session",
   content_category: "thyroid_coaching",
-  value: 299,
+  value: 199,
   currency: "INR",
 } as const;
 

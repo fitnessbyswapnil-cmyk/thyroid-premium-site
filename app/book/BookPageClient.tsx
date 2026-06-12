@@ -95,7 +95,7 @@ const STEPS = [
   {
     num: "02",
     title: "Secure your private slot",
-    body: "₹299 reserves your session. Then complete a short personalised assessment Swapnil studies before you meet.",
+    body: "₹199 reserves your session. Then complete a short personalised assessment Swapnil studies before you meet.",
   },
   {
     num: "03",
@@ -181,7 +181,7 @@ export default function BookPageClient() {
             <motion.div variants={fadeUp} className="mb-6">
               <span className="badge-pill">
                 <span className="badge-dot" aria-hidden="true" />
-                ₹299 · Private Thyroid Strategy Session
+                ₹199 · Private Thyroid Strategy Session
               </span>
             </motion.div>
 
@@ -239,7 +239,7 @@ export default function BookPageClient() {
               >
                 <span className="cta-label">Begin My Thyroid Assessment</span>
                 <span className="cta-sub">
-                  4 questions · Under 2 minutes · ₹299 session
+                  4 questions · Under 2 minutes · ₹199 session
                 </span>
               </button>
             </motion.div>
@@ -415,7 +415,7 @@ export default function BookPageClient() {
               className="cta-button relative z-[1]"
             >
               <span className="cta-label">Reserve My Strategy Session</span>
-              <span className="cta-sub">₹299 · 60 minutes · Limited slots</span>
+              <span className="cta-sub">₹199 · 60 minutes · Limited slots</span>
             </button>
           </motion.div>
         </div>
@@ -638,7 +638,7 @@ export default function BookPageClient() {
             >
               Leave with clarity —{" "}
               <span className="text-gradient">
-                or your ₹299 back. No questions.
+                or your ₹199 back. No questions.
               </span>
             </motion.h2>
             <motion.p
@@ -663,7 +663,7 @@ export default function BookPageClient() {
               >
                 <span className="cta-label">Begin My Thyroid Assessment</span>
                 <span className="cta-sub">
-                  ₹299 · Fully refundable if not satisfied
+                  ₹199 · Fully refundable if not satisfied
                 </span>
               </button>
             </motion.div>

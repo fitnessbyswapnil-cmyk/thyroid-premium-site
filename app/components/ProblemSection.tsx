@@ -61,10 +61,10 @@ export default function ProblemSection() {
         <SectionCta
           className="mx-auto max-w-sm"
           buttonClassName="w-full"
-          label="Book My ₹299 Thyroid Session"
+          label="Book My ₹199 Thyroid Session"
           sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
           trust="Private 60-min session · Limited weekly intake"
-          ariaLabel="Book your 299 rupee thyroid assessment"
+          ariaLabel="Book your 199 rupee thyroid assessment"
           location="problem"
         />
       </div>
