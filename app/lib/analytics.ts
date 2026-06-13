@@ -237,20 +237,30 @@ export function trackPurchase(userData?: UserData, eventId?: string) {
   return event_id;
 }
 
-export function trackSchedule(details?: {
-  name?: string;
-  date?: string;
-  time?: string;
-}) {
-  const event_id = generateEventId("schedule");
-  // Reads identity from localStorage — by the time Calendly fires,
-  // localStorage has the full merged identity from the purchase page.
-  const payload = withUserSignals({
-    event: "calendly_booked",
-    event_id,
-    ...PRODUCT,
-    ...(details ?? {}),
-  });
+// Schedule = a confirmed Cal.com booking (the Meta optimization event).
+// eventId: pass the deterministic `schedule_<cal_booking_uid>` so the browser
+// Pixel and the Cal.com webhook CAPI share ONE id and Meta deduplicates to a
+// single Schedule. Falls back to a generated id only when the uid is unknown.
+// Pushes dataLayer event "schedule" (the GTM web trigger must listen for this).
+export function trackSchedule(
+  details?: {
+    name?: string;
+    date?: string;
+    time?: string;
+  },
+  eventId?: string,
+  userData?: UserData,
+) {
+  const event_id = eventId || generateEventId("schedule");
+  const payload = withUserSignals(
+    {
+      event: "schedule",
+      event_id,
+      ...PRODUCT,
+      ...(details ?? {}),
+    },
+    userData,
+  );
   pushDL(payload);
   return event_id;
 }

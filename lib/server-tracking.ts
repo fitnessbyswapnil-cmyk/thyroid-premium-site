@@ -4,7 +4,7 @@
  * Use from:
  *  - app/api/events/route.ts     (generic event endpoint)
  *  - app/api/tally-webhook/route.ts
- *  - app/api/calendly-webhook/route.ts
+ *  - app/api/cal-webhook/route.ts
  *  - app/api/cashfree-webhook/route.ts
  *
  * NEVER import this in client components — it has no 'use client'

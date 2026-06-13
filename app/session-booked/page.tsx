@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Cal, { getCalApi } from "@calcom/embed-react";
 import { trackPurchase, trackSchedule } from "../lib/analytics";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
@@ -451,121 +452,155 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
 
 // ── Calendly Step (Step 3) ────────────────────────────────────────────────────
 
-function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => void }) {
+function CalendlyStep({
+  onBooked,
+  prefillName = "",
+  prefillEmail = "",
+}: {
+  onBooked: (date: string, time: string) => void;
+  prefillName?: string;
+  prefillEmail?: string;
+}) {
   const [booked, setBooked] = useState(false);
+  // Idempotency: Schedule fires AT MOST once per mount, even if Cal.com emits
+  // bookingSuccessful more than once.
+  const scheduleFiredRef = useRef(false);
 
   useEffect(() => {
-    // Inject Cal.com embed loader (runs once)
-    (function (C: any, A: string, L: string) {
-      let p = function (a: any, ar: any) { a.q.push(ar); };
-      let d = C.document;
-      C.Cal = C.Cal || function () {
-        let cal: any = C.Cal; let ar: any = arguments;
-        if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; }
-        if (ar[0] === L) {
-          const api: any = function () { p(api, arguments); };
-          const namespace = ar[1]; api.q = api.q || [];
-          if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar);
-          return;
-        }
-        p(cal, ar);
-      };
-    })(window, "https://app.cal.com/embed/embed.js", "init");
+    let cancelled = false;
+    (async () => {
+      const cal = await getCalApi({ namespace: "60min" });
+      if (cancelled) return;
 
-    const Cal = (window as any).Cal;
-    Cal("init", "60min", { origin: "https://cal.com" });
+      // Premium, on-brand styling. month_view = calendar on top, time slots
+      // directly below. cal-brand (plum-rose) drives the selected day + chosen
+      // slot highlight.
+      cal("ui", {
+        theme: "light",
+        layout: "month_view",
+        hideEventTypeDetails: false,
+        cssVarsPerTheme: {
+          light: { "cal-brand": "#7D4F5A" },
+          dark: { "cal-brand": "#7D4F5A" },
+        },
+      });
 
-    Cal.ns["60min"]("inline", {
-      elementOrSelector: "#cal-inline",
-      config: { layout: "month_view", theme: "dark" },
-      calLink: "swapnilumbarkarfitness/60min",
-    });
+      cal("on", {
+        action: "bookingSuccessful",
+        callback: (e: unknown) => {
+          // Real booking only (never fires on page load), and at most once per mount.
+          if (scheduleFiredRef.current) return;
+          scheduleFiredRef.current = true;
 
-    Cal.ns["60min"]("ui", {
-      theme: "dark",
-      styles: { branding: { brandColor: "#7c3aed" } },
-      hideEventTypeDetails: false,
-      layout: "month_view",
-    });
+          const data =
+            ((e as { detail?: { data?: Record<string, any> } })?.detail?.data) || {};
+          // Defensive extraction — Cal.com payload shape varies by version
+          const startTime: string =
+            data?.booking?.startTime ||
+            data?.startTime ||
+            data?.date ||
+            data?.booking?.start ||
+            data?.confirmedEvent?.startTime ||
+            "";
+          const name: string =
+            data?.booking?.attendees?.[0]?.name ||
+            data?.attendees?.[0]?.name ||
+            data?.booking?.responses?.name?.value ||
+            data?.responses?.name?.value ||
+            data?.booking?.name ||
+            prefillName ||
+            "";
+          const email: string =
+            data?.booking?.attendees?.[0]?.email ||
+            data?.attendees?.[0]?.email ||
+            data?.booking?.responses?.email?.value ||
+            data?.responses?.email?.value ||
+            prefillEmail ||
+            "";
+          // Cal.com booking uid — the canonical booking id, IDENTICAL in the
+          // BOOKING_CREATED webhook. Keying event_id on it lets the server CAPI
+          // Schedule deduplicate against this browser Schedule.
+          const uid: string =
+            data?.uid ||
+            data?.booking?.uid ||
+            data?.confirmedEvent?.uid ||
+            "";
 
-    // Cal.com booking-success callback (replaces Calendly's postMessage)
-    Cal.ns["60min"]("on", {
-      action: "bookingSuccessful",
-      callback: (e: any) => {
-        const data = e?.detail?.data || {};
-        // Defensive extraction — Cal.com payload shape varies by version
-        const startTime: string =
-          data?.booking?.startTime ||
-          data?.startTime ||
-          data?.date ||
-          data?.booking?.start ||
-          data?.confirmedEvent?.startTime ||
-          "";
-        const name: string =
-          data?.booking?.attendees?.[0]?.name ||
-          data?.attendees?.[0]?.name ||
-          data?.booking?.responses?.name?.value ||
-          data?.responses?.name?.value ||
-          data?.booking?.name ||
-          "";
-
-        let dateStr = "";
-        let timeStr = "";
-        if (startTime) {
-          const dt = new Date(startTime);
-          if (!isNaN(dt.getTime())) {
-            dateStr = dt.toLocaleDateString("en-IN", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            });
-            timeStr = dt.toLocaleTimeString("en-IN", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            });
+          let dateStr = "";
+          let timeStr = "";
+          if (startTime) {
+            const dt = new Date(startTime);
+            if (!isNaN(dt.getTime())) {
+              dateStr = dt.toLocaleDateString("en-IN", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              });
+              timeStr = dt.toLocaleTimeString("en-IN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
+            }
           }
-        }
-        setBooked(true);
-        onBooked(dateStr, timeStr);
-        trackSchedule({ name, date: dateStr, time: timeStr });
-      },
-    });
-  }, [onBooked]);
+
+          setBooked(true);
+          onBooked(dateStr, timeStr);
+
+          // Browser Pixel Schedule. event_id = schedule_<uid> (shared with the
+          // Cal.com webhook). Booking name/email passed for advanced matching.
+          trackSchedule(
+            { name, date: dateStr, time: timeStr },
+            uid ? `schedule_${uid}` : undefined,
+            {
+              ...(email && { email }),
+              ...(name && { first_name: name.split(" ")[0] }),
+            },
+          );
+        },
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [onBooked, prefillName, prefillEmail]);
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-[24px] border border-white/8 bg-white/[0.025] p-5 text-center">
-        <div className="mb-2 flex items-center justify-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-purple-500/30 bg-purple-500/15 text-[0.55rem] font-bold text-purple-300">
-            3
-          </div>
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-purple-400/70">
-            Book Your Session
-          </p>
-        </div>
-        <h2 className="mb-2 text-[1.4rem] font-black leading-tight tracking-[-0.035em] text-white">
-          {booked ? (
-            <>Your session is <span className="bg-gradient-to-r from-emerald-300 to-green-500 bg-clip-text text-transparent">confirmed.</span></>
-          ) : (
-            <>Almost there. <span className="bg-gradient-to-r from-purple-300 to-violet-500 bg-clip-text text-transparent">Choose your time.</span></>
-          )}
+    <div className="mx-auto w-full max-w-[640px]">
+      {/* Heading — Fraunces display (site --font-display), Inter subline */}
+      <div className="mb-5 text-center">
+        <h2
+          className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-[1.12] tracking-[-0.01em] text-white"
+          style={{ fontFamily: "var(--font-display), Georgia, serif", fontWeight: 600 }}
+        >
+          {booked ? "Your session is confirmed." : "Choose a time that works for you"}
         </h2>
-        <p className="text-[0.78rem] leading-relaxed text-white/45">
+        <p className="mx-auto mt-2.5 max-w-[42ch] text-[0.85rem] leading-relaxed text-white/55">
           {booked
-            ? "Swapnil will review your full intake before you speak. Check your email for the calendar invite."
-            : "Swapnil will personally review your intake before you speak. Pick any available slot below."}
+            ? "Swapnil reviews your full intake before you speak — check your email for the calendar invite."
+            : "Swapnil personally reviews your intake before the call. Pick any open slot below."}
         </p>
       </div>
 
+      {/* Premium ivory card wrapping the embed */}
       <div
-        className="overflow-hidden rounded-[20px] border border-white/7"
-        style={{ background: "rgba(13,11,26,0.6)" }}
+        className="overflow-hidden rounded-[24px] p-2 sm:p-3"
+        style={{
+          background: "#FBF8F3",
+          boxShadow:
+            "0 24px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(201,162,75,0.30)",
+        }}
       >
-        <div
-          id="cal-inline"
-          style={{ minWidth: "100%", height: "680px", overflow: "scroll" }}
+        <Cal
+          namespace="60min"
+          calLink="swapnilumbarkarfitness/60min"
+          style={{ width: "100%", height: "100%", minHeight: "640px", overflow: "scroll" }}
+          config={{
+            layout: "month_view",
+            ...(prefillName ? { name: prefillName } : {}),
+            ...(prefillEmail ? { email: prefillEmail } : {}),
+          }}
         />
       </div>
     </div>
@@ -918,7 +953,11 @@ export default function SessionBooked() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
             >
-              <CalendlyStep onBooked={handleBooked} />
+              <CalendlyStep
+                onBooked={handleBooked}
+                prefillName={step1Data?.name || ""}
+                prefillEmail={step1Data?.email || ""}
+              />
             </motion.div>
           )}
 
