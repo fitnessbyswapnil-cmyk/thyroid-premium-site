@@ -1,3 +1,5 @@
+import { SESSION_PRICE } from "./pricing";
+
 type DLPayload = Record<string, unknown>;
 
 export function pushDL(payload: DLPayload) {
@@ -16,7 +18,7 @@ export function generateEventId(eventName: string): string {
 const PRODUCT = {
   content_name: "Private Thyroid Strategy Session",
   content_category: "thyroid_coaching",
-  value: 199,
+  value: SESSION_PRICE,
   currency: "INR",
 } as const;
 

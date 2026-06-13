@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { trackPurchase, trackSchedule } from "../lib/analytics";
+import { SESSION_PRICE } from "../lib/pricing";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
@@ -848,7 +849,7 @@ export default function SessionBooked() {
         event_id: purchaseEventId,
         source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
         custom_data: {
-          value: 199,
+          value: SESSION_PRICE,
           currency: "INR",
           ...(stored?.orderId && { order_id: stored.orderId }),
         },
