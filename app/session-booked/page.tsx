@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { trackPurchase, trackSchedule } from "../lib/analytics";
+import { SESSION_PRICE } from "../lib/pricing";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
@@ -832,9 +833,14 @@ export default function SessionBooked() {
         ? { first_name: lead.name.split(" ")[0], phone: lead.phone, ...(lead.email && { email: lead.email }) }
         : undefined,
       stored?.orderId ? `Purchase_${stored.orderId}` : undefined,
+      stored?.orderId,
     );
 
-    // Server-side CAPI Purchase — runs in parallel, non-blocking
+    // Server-side CAPI Purchase — runs in parallel, non-blocking.
+    // value/currency MUST live in custom_data: /api/events forwards custom_data
+    // to CAPI and ignores any top-level value/currency. 199 = the ₹199 session
+    // price (matches the webhook's dynamic payment_amount); shares the same
+    // event_id so it dedupes with the webhook + browser Pixel Purchase.
     fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -842,8 +848,11 @@ export default function SessionBooked() {
         event_name: "Purchase",
         event_id: purchaseEventId,
         source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
-        value: 199,
-        currency: "INR",
+        custom_data: {
+          value: SESSION_PRICE,
+          currency: "INR",
+          ...(stored?.orderId && { order_id: stored.orderId }),
+        },
         user_data: {
           ...(lead?.phone && { phone: lead.phone }),
           ...(lead?.name && { first_name: lead.name.split(" ")[0] }),

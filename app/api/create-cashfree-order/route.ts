@@ -14,13 +14,14 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { PLACEHOLDER_EMAIL } from "@/lib/server-tracking";
+import { SESSION_PRICE } from "@/app/lib/pricing";
 
 // ── TEST MODE ─────────────────────────────────────────────────────────────────
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹199.
 // UI/copy always shows ₹199 — only the actual Cashfree transaction amount changes.
 // Flip back to false before going live.
 const IS_TEST_MODE = false;
-const DISPLAY_PRICE = 199;
+const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
 

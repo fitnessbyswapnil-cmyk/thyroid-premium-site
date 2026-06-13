@@ -1,3 +1,5 @@
+import { SESSION_PRICE } from "./pricing";
+
 type DLPayload = Record<string, unknown>;
 
 export function pushDL(payload: DLPayload) {
@@ -16,7 +18,7 @@ export function generateEventId(eventName: string): string {
 const PRODUCT = {
   content_name: "Private Thyroid Strategy Session",
   content_category: "thyroid_coaching",
-  value: 199,
+  value: SESSION_PRICE,
   currency: "INR",
 } as const;
 
@@ -227,10 +229,16 @@ export function trackInitiateCheckout() {
 // eventId: pass `Purchase_${orderId}` so the browser Pixel, /api/events, AND
 // the Cashfree webhook all share ONE id and Meta deduplicates to a single
 // Purchase. Falls back to a generated id only when the order id is unknown.
-export function trackPurchase(userData?: UserData, eventId?: string) {
+export function trackPurchase(userData?: UserData, eventId?: string, transactionId?: string) {
   const event_id = eventId || generateEventId("purchase");
   const payload = withUserSignals(
-    { event: "purchase", event_id, content_type: "service", ...PRODUCT },
+    {
+      event: "purchase",
+      event_id,
+      content_type: "service",
+      ...PRODUCT,
+      ...(transactionId ? { transaction_id: transactionId } : {}),
+    },
     userData,
   );
   pushDL(payload);
