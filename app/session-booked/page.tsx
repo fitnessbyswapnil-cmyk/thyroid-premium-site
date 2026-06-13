@@ -453,6 +453,9 @@ function DeepIntakeForm({ onComplete }: { onComplete: (data: Step2_5Data) => voi
 
 function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => void }) {
   const [booked, setBooked] = useState(false);
+  // Idempotency: Schedule fires AT MOST once per mount, even if Cal.com emits
+  // bookingSuccessful more than once.
+  const scheduleFiredRef = useRef(false);
 
   useEffect(() => {
     // Inject Cal.com embed loader (runs once)
@@ -492,6 +495,11 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
     Cal.ns["60min"]("on", {
       action: "bookingSuccessful",
       callback: (e: any) => {
+        // Real booking only (this callback never fires on page load), and at
+        // most once per mount.
+        if (scheduleFiredRef.current) return;
+        scheduleFiredRef.current = true;
+
         const data = e?.detail?.data || {};
         // Defensive extraction — Cal.com payload shape varies by version
         const startTime: string =
@@ -507,6 +515,20 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
           data?.booking?.responses?.name?.value ||
           data?.responses?.name?.value ||
           data?.booking?.name ||
+          "";
+        const email: string =
+          data?.booking?.attendees?.[0]?.email ||
+          data?.attendees?.[0]?.email ||
+          data?.booking?.responses?.email?.value ||
+          data?.responses?.email?.value ||
+          "";
+        // Cal.com booking uid — the canonical booking id, IDENTICAL in the
+        // BOOKING_CREATED webhook. Keying the event_id on it lets the server
+        // CAPI Schedule deduplicate against this browser Schedule.
+        const uid: string =
+          data?.booking?.uid ||
+          data?.uid ||
+          data?.confirmedEvent?.uid ||
           "";
 
         let dateStr = "";
@@ -527,9 +549,20 @@ function CalendlyStep({ onBooked }: { onBooked: (date: string, time: string) => 
             });
           }
         }
+
         setBooked(true);
         onBooked(dateStr, timeStr);
-        trackSchedule({ name, date: dateStr, time: timeStr });
+
+        // Browser Pixel Schedule. event_id = schedule_<uid> (shared with the
+        // Cal.com webhook). Booking name/email passed for advanced matching.
+        trackSchedule(
+          { name, date: dateStr, time: timeStr },
+          uid ? `schedule_${uid}` : undefined,
+          {
+            ...(email && { email }),
+            ...(name && { first_name: name.split(" ")[0] }),
+          },
+        );
       },
     });
   }, [onBooked]);
