@@ -26,6 +26,7 @@ export type UserData = {
   email?: string;
   phone?: string;
   first_name?: string;
+  last_name?: string;
 };
 
 const STORAGE_KEY = "meta_user_identity";
@@ -130,6 +131,7 @@ export function buildMetaUserData(
   if (em) md.em = em;
   if (ph) md.ph = ph;
   if (identity?.first_name) md.fn = identity.first_name.trim().toLowerCase();
+  if (identity?.last_name) md.ln = identity.last_name.trim().toLowerCase();
   if (external_id) md.external_id = external_id;
   if (eventId) md.event_id = eventId;
   if (fbp) md.fbp = fbp;
@@ -158,6 +160,7 @@ function withUserSignals(payload: DLPayload, userData?: UserData): DLPayload {
     if (identity.email) payload.email = normalizeEmail(identity.email);
     if (identity.phone) payload.phone = normalizePhone(identity.phone);
     if (identity.first_name) payload.first_name = identity.first_name;
+    if (identity.last_name) payload.last_name = identity.last_name;
   }
   if (external_id) payload.external_id = external_id;
   if (fbc) payload.fbc = fbc;
@@ -174,6 +177,22 @@ function withUserSignals(payload: DLPayload, userData?: UserData): DLPayload {
 }
 
 // ── Tracking functions ─────────────────────────────────────────────────────────
+
+// PageView — fired on every route. Routed through withUserSignals so it carries
+// the full metaUserData (external_id always, + em/ph/fn/ln when identity is
+// already stored) instead of bare external_id/fbc/fbp. This is the biggest EMQ
+// lift: external_id on every anonymous PageView, hydrated on later loads.
+export function trackPageView(pagePath?: string) {
+  const event_id = generateEventId("page_view");
+  pushDL(
+    withUserSignals({
+      event: "page_view",
+      event_id,
+      ...(pagePath ? { page_path: pagePath } : {}),
+    }),
+  );
+  return event_id;
+}
 
 export function trackViewContent(pageType = "landing") {
   const event_id = generateEventId("view_content");

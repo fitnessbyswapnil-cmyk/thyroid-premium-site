@@ -856,6 +856,7 @@ export default function SessionBooked() {
         user_data: {
           ...(lead?.phone && { phone: lead.phone }),
           ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
+          ...(lead?.name && lead.name.split(" ").slice(1).join(" ") && { last_name: lead.name.split(" ").slice(1).join(" ") }),
           ...(lead?.email && { email: lead.email }),
         },
       }),

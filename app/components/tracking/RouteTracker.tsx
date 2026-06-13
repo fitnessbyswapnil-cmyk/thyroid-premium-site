@@ -2,33 +2,15 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import {
-  generateEventId,
-  pushDL,
-  trackViewContent,
-  getOrCreateExternalId,
-  getFbc,
-  getFbp,
-} from "../../lib/analytics";
+import { trackPageView, trackViewContent } from "../../lib/analytics";
 
 export function RouteTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const event_id = generateEventId("page_view");
-    const external_id = getOrCreateExternalId();
-    const fbc = getFbc();
-    const fbp = getFbp();
-    const payload: Record<string, unknown> = {
-      event: "page_view",
-      event_id,
-      page_path: pathname,
-    };
-    if (external_id) payload.external_id = external_id;
-    if (fbc) payload.fbc = fbc;
-    if (fbp) payload.fbp = fbp;
-    pushDL(payload);
+    // Carries full metaUserData (external_id always; em/ph/fn/ln when stored).
+    trackPageView(pathname);
 
     if (pathname === "/") {
       const timer = setTimeout(() => trackViewContent("landing"), 3000);
