@@ -42,8 +42,8 @@ type FlowStage = "intake" | "calendly" | "confirmation";
 const STEPS = [
   { id: 1, label: "Your Profile" },
   { id: 2, label: "Secure Slot" },
-  { id: 3, label: "Deep Intake" },
-  { id: 4, label: "Book Session" },
+  { id: 3, label: "Pick Time" },
+  { id: 4, label: "Confirmed" },
 ];
 
 function ProgressStepper({ activeStep }: { activeStep: number }) {
@@ -731,9 +731,13 @@ function ConfirmationStep({
 
 export default function SessionBooked() {
   const [show, setShow] = useState(false);
-  const [stage, setStage] = useState<FlowStage>("intake");
+  // Land straight on the calendar after payment — the second-round questions no
+  // longer block booking (they move to the post-booking confirmation, optional).
+  const [stage, setStage] = useState<FlowStage>("calendly");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [intakeData, setIntakeData] = useState<Step2_5Data | null>(null);
+  const [leadId, setLeadId] = useState("");
+  const [intakeDone, setIntakeDone] = useState(false);
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
   const [isNativeFlow, setIsNativeFlow] = useState(false);
@@ -799,11 +803,21 @@ export default function SessionBooked() {
     return () => clearTimeout(t);
   }, []);
 
-  const handleIntakeComplete = useCallback((data: Step2_5Data) => {
+  // Optional post-booking intake — updates the lead's row IN PLACE via /api/intake
+  // (matched by leadId). Fire-and-forget; never blocks. Schedule + Purchase have
+  // already fired at the booking step, so this touches no tracking.
+  const handlePostIntake = useCallback((data: Step2_5Data) => {
     setIntakeData(data);
-    setStage("calendly");
+    setIntakeDone(true);
+    if (leadId) {
+      fetch("/api/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId, step2_5: data }),
+      }).catch(() => {});
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [leadId]);
 
   const handleBooked = useCallback(async (date: string, time: string) => {
     setBookingDate(date);
@@ -825,6 +839,9 @@ export default function SessionBooked() {
       orderId?: string;
       attribution?: Record<string, string>;
     } : null;
+
+    // Keep leadId for the optional post-booking intake (localStorage is cleared below).
+    if (stored?.leadId) setLeadId(stored.leadId);
 
     // Fire Purchase pixel only now — after Calendly slot is confirmed.
     const lead = step1Data;
@@ -888,7 +905,7 @@ export default function SessionBooked() {
     }
   }, [step1Data, intakeData]);
 
-  const activeStepNum = stage === "intake" ? 3 : stage === "calendly" ? 4 : 4;
+  const activeStepNum = stage === "calendly" ? 3 : 4;
 
   // Fall back to legacy behavior if not native flow (old Tally users)
   if (!isNativeFlow && show) {
@@ -925,36 +942,6 @@ export default function SessionBooked() {
         <ProgressStepper activeStep={activeStepNum} />
 
         <AnimatePresence mode="wait">
-          {stage === "intake" && (
-            <motion.div
-              key="intake"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {/* Welcome back message */}
-              <div className="mb-6 rounded-2xl border border-purple-500/20 bg-purple-500/[0.07] p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-400/10">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M2 7l3 3 7-7" stroke="rgba(134,239,172,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[0.84rem] font-semibold text-white/90">
-                      Your spot is secured{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}. Welcome.
-                    </p>
-                    <p className="text-[0.72rem] text-white/40">
-                      Personalised thyroid assessment · Then pick your time
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <DeepIntakeForm onComplete={handleIntakeComplete} />
-            </motion.div>
-          )}
-
           {stage === "calendly" && (
             <motion.div
               key="calendly"
@@ -963,6 +950,23 @@ export default function SessionBooked() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
             >
+              {/* Payment-received confirmation — unmistakable, then the calendar. */}
+              <div className="mb-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-4 text-center">
+                <div className="mb-1.5 flex items-center justify-center gap-2">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-400/15">
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 7l3 3 7-7" stroke="rgba(134,239,172,0.95)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <p className="text-[0.9rem] font-bold text-white/95">
+                    Payment received — you&apos;re confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
+                  </p>
+                </div>
+                <p className="text-[0.78rem] text-white/55">
+                  Last step: pick your call time below.
+                </p>
+              </div>
+
               <CalendlyStep
                 onBooked={handleBooked}
                 prefillName={step1Data?.name || ""}
@@ -984,6 +988,28 @@ export default function SessionBooked() {
                 date={bookingDate}
                 time={bookingTime}
               />
+
+              {/* Deep Intake — relocated here, AFTER the booking is locked in, and
+                  fully OPTIONAL. It never gates the calendar. Persists in place via
+                  /api/intake. Hidden once submitted. */}
+              {!intakeDone && (
+                <div className="mt-8">
+                  <div className="mb-4 text-center">
+                    <p className="text-[0.82rem] font-semibold text-white/85">
+                      Optional: help Swapnil prepare for your call
+                    </p>
+                    <p className="mt-1 text-[0.72rem] text-white/40">
+                      A few quick questions so your 60 minutes are spent entirely on you.
+                    </p>
+                  </div>
+                  <DeepIntakeForm onComplete={handlePostIntake} />
+                </div>
+              )}
+              {intakeDone && (
+                <p className="mt-6 text-center text-[0.72rem] text-emerald-300/70">
+                  Thank you — Swapnil will review your answers before the call.
+                </p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
