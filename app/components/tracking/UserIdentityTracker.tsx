@@ -18,6 +18,7 @@ export type UserIdentity = {
   email?: string;
   phone?: string;
   first_name?: string;
+  last_name?: string;
 };
 
 declare global {
@@ -40,6 +41,7 @@ function buildIdentityPayload(identity: UserIdentity): Record<string, unknown> {
   if (identity.email) payload.email = normalizeEmail(identity.email);
   if (identity.phone) payload.phone = normalizePhone(identity.phone);
   if (identity.first_name) payload.first_name = identity.first_name;
+  if (identity.last_name) payload.last_name = identity.last_name;
   const external_id = getOrCreateExternalId();
   const fbc = getFbc();
   const fbp = getFbp();

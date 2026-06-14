@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
 import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
+import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -178,10 +179,24 @@ export default function BookingFlow({
           const newLeadId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
           setLeadId(newLeadId);
           setStep1Data(data);
-      
+
+          const firstName = data.name.split(" ")[0];
+          const lastName = data.name.split(" ").slice(1).join(" ");
+
+          // Persist identity at the EARLIEST capture so every later event
+          // (InitiateCheckout, Purchase, Schedule) AND later page loads hydrate
+          // advanced matching (em/ph/fn/ln) from localStorage.
+          persistUserIdentity({
+                  email: data.email,
+                  phone: data.phone,
+                  first_name: firstName,
+                  ...(lastName && { last_name: lastName }),
+          });
+
           // Browser Pixel Lead — capture returned event_id for server dedup
           const leadEventId = trackLead({
-                  first_name: data.name.split(" ")[0],
+                  first_name: firstName,
+                  ...(lastName && { last_name: lastName }),
                   phone: data.phone,
                   email: data.email,
           });
@@ -198,7 +213,8 @@ export default function BookingFlow({
                             event_id: leadEventId,
                             source_url: "https://www.swapnilumbarkarfitness.in/book",
                             user_data: {
-                                        first_name: data.name.split(" ")[0],
+                                        first_name: firstName,
+                                        ...(lastName && { last_name: lastName }),
                                         phone: data.phone,
                                         email: data.email,
                                         ...(attribution.visitor_id && { external_id: attribution.visitor_id }),
