@@ -42,8 +42,8 @@ type FlowStage = "intake" | "calendly" | "confirmation";
 const STEPS = [
   { id: 1, label: "Your Profile" },
   { id: 2, label: "Secure Slot" },
-  { id: 3, label: "Deep Intake" },
-  { id: 4, label: "Book Session" },
+  { id: 3, label: "Pick Time" },
+  { id: 4, label: "Confirmed" },
 ];
 
 function ProgressStepper({ activeStep }: { activeStep: number }) {
