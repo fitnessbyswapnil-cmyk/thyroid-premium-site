@@ -20,7 +20,7 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹199.
 // UI/copy always shows ₹199 — only the actual Cashfree transaction amount changes.
 // Flip back to false before going live.
-const IS_TEST_MODE = false;
+const IS_TEST_MODE = true;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
