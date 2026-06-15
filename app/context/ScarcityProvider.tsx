@@ -22,10 +22,8 @@ const SCARCITY_SHORT = "Limited weekly intake";
 
 export function ScarcityProvider({ children }: { children: ReactNode }) {
   const goToCta = useCallback(() => {
-    // Landing CTAs route directly to the hosted Cashfree form (per request).
-    // NOTE: this bypasses /book, so Lead / InitiateCheckout do not fire and the
-    // Purchase/Schedule attribution the /book→PG-modal flow provided is lost.
-    window.location.href = "https://payments.cashfree.com/forms?code=thyroid_consultation_booking";
+    // Landing CTAs route to the embedded qualify + Cashfree flow on /book.
+    window.location.href = "/book";
   }, []);
 
   const value: ScarcityContextValue = {

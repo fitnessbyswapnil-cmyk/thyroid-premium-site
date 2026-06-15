@@ -134,6 +134,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       paymentSessionId: order.payment_session_id,
       orderId: order.order_id ?? orderId,
+      amount: ACTUAL_PAYMENT_AMOUNT, // dynamic charged amount (₹1 in test mode, else ₹199)
     });
   } catch (err) {
     console.error("[create-cashfree-order] fetch error:", err instanceof Error ? err.message : String(err));

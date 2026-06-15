@@ -248,7 +248,9 @@ export function trackInitiateCheckout() {
 // eventId: pass `Purchase_${orderId}` so the browser Pixel, /api/events, AND
 // the Cashfree webhook all share ONE id and Meta deduplicates to a single
 // Purchase. Falls back to a generated id only when the order id is unknown.
-export function trackPurchase(userData?: UserData, eventId?: string, transactionId?: string) {
+// value: pass the REAL charged amount (₹1 in test mode, ₹199 live) so the Pixel
+// Purchase value isn't hardcoded; falls back to PRODUCT.value when omitted.
+export function trackPurchase(userData?: UserData, eventId?: string, transactionId?: string, value?: number) {
   const event_id = eventId || generateEventId("purchase");
   const payload = withUserSignals(
     {
@@ -256,6 +258,7 @@ export function trackPurchase(userData?: UserData, eventId?: string, transaction
       event_id,
       content_type: "service",
       ...PRODUCT,
+      ...(value != null ? { value } : {}),
       ...(transactionId ? { transaction_id: transactionId } : {}),
     },
     userData,
