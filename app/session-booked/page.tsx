@@ -35,26 +35,26 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
               <div
                 className={`relative flex h-7 w-7 items-center justify-center rounded-full border text-[0.6rem] font-bold transition-all duration-500 ${
                   done
-                    ? "border-[#7D4F5A]/60 bg-[#7D4F5A]/20 text-[#7D4F5A]"
+                    ? "border-[#a855f7]/60 bg-[#a855f7]/20 text-[#a855f7]"
                     : active
-                    ? "border-[#7D4F5A]/80 bg-[#7D4F5A]/25 text-[#7D4F5A] shadow-[0_0_14px_rgba(168,85,247,0.4)]"
-                    : "border-[#7D4F5A]/10 bg-white/70 text-[#2A2630]/20"
+                    ? "border-[#a855f7]/80 bg-[#a855f7]/25 text-[#a855f7] shadow-[0_0_14px_rgba(168,85,247,0.4)]"
+                    : "border-[#a855f7]/10 bg-white/[0.04] text-white/20"
                 }`}
               >
                 {done ? (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2.5 2.5 3.5-4" stroke="#7D4F5A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M2 5l2.5 2.5 3.5-4" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : (
                   <span>{step.id}</span>
                 )}
                 {active && (
-                  <span className="absolute inset-0 animate-ping rounded-full bg-[#7D4F5A]/20" />
+                  <span className="absolute inset-0 animate-ping rounded-full bg-[#a855f7]/20" />
                 )}
               </div>
               <span
                 className={`mt-1.5 hidden text-[0.56rem] font-semibold uppercase tracking-[0.12em] sm:block ${
-                  done ? "text-[#7D4F5A]/60" : active ? "text-[#7D4F5A]/80" : "text-[#2A2630]/15"
+                  done ? "text-[#a855f7]/60" : active ? "text-[#a855f7]/80" : "text-white/15"
                 }`}
               >
                 {step.label}
@@ -63,7 +63,7 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
             {i < STEPS.length - 1 && (
               <div
                 className={`mx-2 h-px w-8 sm:w-12 transition-all duration-700 ${
-                  step.id < activeStep ? "bg-[#7D4F5A]/40" : "bg-[#7D4F5A]/30"
+                  step.id < activeStep ? "bg-[#a855f7]/40" : "bg-[#a855f7]/30"
                 }`}
               />
             )}
@@ -104,12 +104,12 @@ function CalcomStep({
       // directly below. cal-brand (plum-rose) drives the selected day + chosen
       // slot highlight.
       cal("ui", {
-        theme: "light",
+        theme: "dark",
         layout: "month_view",
         hideEventTypeDetails: false,
         cssVarsPerTheme: {
-          light: { "cal-brand": "#7D4F5A" },
-          dark: { "cal-brand": "#7D4F5A" },
+          light: { "cal-brand": "#a855f7" },
+          dark: { "cal-brand": "#a855f7" },
         },
       });
 
@@ -199,25 +199,25 @@ function CalcomStep({
       {/* Heading — Fraunces display (site --font-display), Inter subline */}
       <div className="mb-5 text-center">
         <h2
-          className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-[1.12] tracking-[-0.01em] text-[#2A2630]"
+          className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-[1.12] tracking-[-0.01em] text-white"
           style={{ fontFamily: "var(--font-display), Georgia, serif", fontWeight: 600 }}
         >
           {booked ? "Your session is confirmed." : "Choose a time that works for you"}
         </h2>
-        <p className="mx-auto mt-2.5 max-w-[42ch] text-[0.85rem] leading-relaxed text-[#2A2630]/55">
+        <p className="mx-auto mt-2.5 max-w-[42ch] text-[0.85rem] leading-relaxed text-white/55">
           {booked
             ? "Swapnil reviews your full intake before you speak — check your email for the calendar invite."
             : "Swapnil personally reviews your intake before the call. Pick any open slot below."}
         </p>
       </div>
 
-      {/* Premium ivory card wrapping the embed */}
+      {/* Elevated dark card wrapping the embed — blends into the dark page */}
       <div
         className="overflow-hidden rounded-[24px] p-2 sm:p-3"
         style={{
-          background: "#FBF8F3",
+          background: "var(--bg-elevated)",
           boxShadow:
-            "0 24px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(201,162,75,0.30)",
+            "0 24px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(168,85,247,0.22)",
         }}
       >
         <Cal
@@ -261,25 +261,25 @@ function ConfirmationStep({
     >
       {/* Confirmed badge */}
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#C9A24B]/25 bg-[#C9A24B]/10 px-4 py-2 shadow-[0_0_24px_rgba(52,211,153,0.12)]">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#c5a24d]/25 bg-[#c5a24d]/10 px-4 py-2 shadow-[0_0_24px_rgba(52,211,153,0.12)]">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 6.5l2.5 2.5 5.5-5.5" stroke="#7D4F5A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2 6.5l2.5 2.5 5.5-5.5" stroke="#a855f7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-[#7D4F5A]">
+          <span className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-[#a855f7]">
             Session Confirmed
           </span>
         </div>
       </div>
 
       {/* Headline */}
-      <div className="rounded-[24px] border border-[#C9A24B]/15 bg-[#C9A24B]/[0.06] p-6 text-center">
-        <h1 className="mb-3 text-[1.7rem] font-black leading-tight tracking-[-0.04em] text-[#2A2630]">
+      <div className="rounded-[24px] border border-[#c5a24d]/15 bg-[#c5a24d]/[0.06] p-6 text-center">
+        <h1 className="mb-3 text-[1.7rem] font-black leading-tight tracking-[-0.04em] text-white">
           You&apos;re all set{name ? `, ${name.split(" ")[0]}` : ""}.{" "}
-          <span className="bg-gradient-to-r from-[#7D4F5A] to-[#C9A24B] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#a855f7] to-[#c5a24d] bg-clip-text text-transparent">
             See you soon.
           </span>
         </h1>
-        <p className="text-[0.82rem] leading-relaxed text-[#2A2630]/50">
+        <p className="text-[0.82rem] leading-relaxed text-white/50">
           Swapnil will review everything you shared before you meet. Come with an open mind.
           Leave with a clear direction.
         </p>
@@ -287,22 +287,22 @@ function ConfirmationStep({
 
       {/* Session details */}
       {(date || time) && (
-        <div className="rounded-2xl border border-[#7D4F5A]/8 bg-white/70 p-5">
-          <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#2A2630]/25">
+        <div className="rounded-2xl border border-[#a855f7]/8 bg-white/[0.04] p-5">
+          <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-white/25">
             Your session details
           </p>
           <div className="grid grid-cols-2 gap-3">
             {date && (
-              <div className="rounded-xl border border-[#7D4F5A]/7 bg-white/70 p-3.5">
-                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#C9A24B]/65">Date</p>
-                <p className="text-[0.82rem] font-semibold leading-snug text-[#2A2630]/88">{date}</p>
+              <div className="rounded-xl border border-[#a855f7]/7 bg-white/[0.04] p-3.5">
+                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#c5a24d]/65">Date</p>
+                <p className="text-[0.82rem] font-semibold leading-snug text-white/88">{date}</p>
               </div>
             )}
             {time && (
-              <div className="rounded-xl border border-[#7D4F5A]/7 bg-white/70 p-3.5">
-                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#C9A24B]/65">Time</p>
-                <p className="text-[0.82rem] font-semibold text-[#2A2630]/88">{time}</p>
-                <p className="mt-0.5 text-[0.65rem] text-[#2A2630]/30">India Standard Time</p>
+              <div className="rounded-xl border border-[#a855f7]/7 bg-white/[0.04] p-3.5">
+                <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#c5a24d]/65">Time</p>
+                <p className="text-[0.82rem] font-semibold text-white/88">{time}</p>
+                <p className="mt-0.5 text-[0.65rem] text-white/30">India Standard Time</p>
               </div>
             )}
           </div>
@@ -310,14 +310,14 @@ function ConfirmationStep({
       )}
 
       {/* WhatsApp notice */}
-      <div className="rounded-2xl border border-[#7D4F5A]/20 bg-[#7D4F5A]/[0.07] p-4">
+      <div className="rounded-2xl border border-[#a855f7]/20 bg-[#a855f7]/[0.07] p-4">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 text-lg leading-none">💬</span>
           <div>
-            <p className="text-[0.85rem] font-semibold text-[#2A2630]/90">
+            <p className="text-[0.85rem] font-semibold text-white/90">
               Expect a WhatsApp message from Swapnil
             </p>
-            <p className="mt-1 text-[0.76rem] leading-relaxed text-[#2A2630]/45">
+            <p className="mt-1 text-[0.76rem] leading-relaxed text-white/45">
               You&apos;ll receive your Google Meet link and a reminder message before your session.
               Keep an eye on WhatsApp.
             </p>
@@ -326,8 +326,8 @@ function ConfirmationStep({
       </div>
 
       {/* What to prepare */}
-      <div className="rounded-2xl border border-[#7D4F5A]/7 bg-white/70 p-5">
-        <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#2A2630]/25">
+      <div className="rounded-2xl border border-[#a855f7]/7 bg-white/[0.04] p-5">
+        <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-white/25">
           Before your session
         </p>
         <div className="space-y-3">
@@ -338,12 +338,12 @@ function ConfirmationStep({
             { icon: "❓", title: "Know your one key question", body: "The single thing you most want clarity on. Swapnil will open there." },
           ].map((tip) => (
             <div key={tip.title} className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#7D4F5A]/20 bg-[#7D4F5A]/10 text-sm">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#a855f7]/20 bg-[#a855f7]/10 text-sm">
                 {tip.icon}
               </div>
               <div>
-                <p className="text-[0.82rem] font-semibold text-[#2A2630]/85">{tip.title}</p>
-                <p className="text-[0.72rem] leading-relaxed text-[#2A2630]/40">{tip.body}</p>
+                <p className="text-[0.82rem] font-semibold text-white/85">{tip.title}</p>
+                <p className="text-[0.72rem] leading-relaxed text-white/40">{tip.body}</p>
               </div>
             </div>
           ))}
@@ -353,7 +353,7 @@ function ConfirmationStep({
       {/* Trust footer */}
       <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 pt-2">
         {["Private & confidential", "200+ women helped", "ACE & INFS certified", "Full refund guaranteed"].map((item) => (
-          <span key={item} className="text-[0.6rem] text-[#2A2630]/18">{item}</span>
+          <span key={item} className="text-[0.6rem] text-white/18">{item}</span>
         ))}
       </div>
     </motion.div>
@@ -532,7 +532,7 @@ export default function SessionBooked() {
   return (
     <main
       className="relative min-h-screen overflow-hidden"
-      style={{ background: "#FBF8F3", color: "#2A2630" }}
+      style={{ background: "var(--bg-page)", color: "#f3f4f7" }}
     >
       {/* Ambient brand tints (champagne gold on confirm, plum-rose otherwise) */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
@@ -541,12 +541,12 @@ export default function SessionBooked() {
           style={{
             background:
               stage === "confirmation"
-                ? "radial-gradient(ellipse, rgba(201,162,75,0.14) 0%, transparent 70%)"
-                : "radial-gradient(ellipse, rgba(125,79,82,0.10) 0%, transparent 70%)",
+                ? "radial-gradient(ellipse, rgba(213,183,101,0.14) 0%, transparent 70%)"
+                : "radial-gradient(ellipse, rgba(168,85,247,0.10) 0%, transparent 70%)",
           }}
         />
-        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(201,169,166,0.22)" }} />
-        <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(201,162,75,0.12)" }} />
+        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(168,85,247,0.22)" }} />
+        <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(213,183,101,0.12)" }} />
       </div>
 
       <div
@@ -570,22 +570,22 @@ export default function SessionBooked() {
               {/* Payment-received confirmation — unmistakable, then the calendar. */}
               <div
                 className="mb-6 rounded-2xl border p-4 text-center"
-                style={{ borderColor: "rgba(201,162,75,0.45)", background: "rgba(201,162,75,0.08)" }}
+                style={{ borderColor: "rgba(213,183,101,0.45)", background: "rgba(213,183,101,0.08)" }}
               >
                 <div className="mb-1.5 flex items-center justify-center gap-2">
                   <div
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
-                    style={{ borderColor: "rgba(125,79,82,0.45)", background: "rgba(125,79,82,0.12)" }}
+                    style={{ borderColor: "rgba(168,85,247,0.45)", background: "rgba(168,85,247,0.12)" }}
                   >
                     <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                      <path d="M2 7l3 3 7-7" stroke="#7D4F5A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2 7l3 3 7-7" stroke="#a855f7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <p className="text-[0.9rem] font-bold" style={{ color: "#2A2630" }}>
+                  <p className="text-[0.9rem] font-bold" style={{ color: "#f3f4f7" }}>
                     Payment received — you&apos;re confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
                   </p>
                 </div>
-                <p className="text-[0.78rem]" style={{ color: "#7D4F5A" }}>
+                <p className="text-[0.78rem]" style={{ color: "#a855f7" }}>
                   Last step: pick your call time below.
                 </p>
               </div>
@@ -618,7 +618,7 @@ export default function SessionBooked() {
         </AnimatePresence>
 
         {submitting && (
-          <p className="mt-4 text-center text-[0.65rem] text-[#2A2630]/20">
+          <p className="mt-4 text-center text-[0.65rem] text-white/20">
             Saving your profile…
           </p>
         )}
