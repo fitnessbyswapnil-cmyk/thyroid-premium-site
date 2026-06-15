@@ -460,41 +460,45 @@ export default function SessionBooked() {
       attribution?: Record<string, string>;
     } : null;
 
-    // Fire Purchase pixel only now — after Cal.com slot is confirmed.
+    // Purchase fires ONLY for a real payment (orderId present). A booking with no
+    // orderId (e.g. a direct /session-booked visit that never paid) still fires
+    // Schedule below, but NOT Purchase — we never mint a fake Purchase id.
     const lead = step1Data;
-    const purchaseEventId = trackPurchase(
-      lead
-        ? { first_name: lead.name.split(" ")[0], phone: lead.phone, ...(lead.email && { email: lead.email }) }
-        : undefined,
-      stored?.orderId ? `Purchase_${stored.orderId}` : undefined,
-      stored?.orderId,
-    );
+    if (stored?.orderId) {
+      const purchaseEventId = trackPurchase(
+        lead
+          ? { first_name: lead.name.split(" ")[0], phone: lead.phone, ...(lead.email && { email: lead.email }) }
+          : undefined,
+        `Purchase_${stored.orderId}`,
+        stored.orderId,
+      );
 
-    // Server-side CAPI Purchase — runs in parallel, non-blocking.
-    // value/currency MUST live in custom_data: /api/events forwards custom_data
-    // to CAPI and ignores any top-level value/currency. 199 = the ₹199 session
-    // price (matches the webhook's dynamic payment_amount); shares the same
-    // event_id so it dedupes with the webhook + browser Pixel Purchase.
-    fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event_name: "Purchase",
-        event_id: purchaseEventId,
-        source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
-        custom_data: {
-          value: SESSION_PRICE,
-          currency: "INR",
-          ...(stored?.orderId && { order_id: stored.orderId }),
-        },
-        user_data: {
-          ...(lead?.phone && { phone: lead.phone }),
-          ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
-          ...(lead?.name && lead.name.split(" ").slice(1).join(" ") && { last_name: lead.name.split(" ").slice(1).join(" ") }),
-          ...(lead?.email && { email: lead.email }),
-        },
-      }),
-    }).catch(() => {});
+      // Server-side CAPI Purchase — runs in parallel, non-blocking.
+      // value/currency MUST live in custom_data: /api/events forwards custom_data
+      // to CAPI and ignores any top-level value/currency. 199 = the ₹199 session
+      // price (matches the webhook's dynamic payment_amount); shares the same
+      // event_id so it dedupes with the webhook + browser Pixel Purchase.
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_name: "Purchase",
+          event_id: purchaseEventId,
+          source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
+          custom_data: {
+            value: SESSION_PRICE,
+            currency: "INR",
+            order_id: stored.orderId,
+          },
+          user_data: {
+            ...(lead?.phone && { phone: lead.phone }),
+            ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
+            ...(lead?.name && lead.name.split(" ").slice(1).join(" ") && { last_name: lead.name.split(" ").slice(1).join(" ") }),
+            ...(lead?.email && { email: lead.email }),
+          },
+        }),
+      }).catch(() => {});
+    }
 
     // Submit unified payload
     try {
