@@ -287,17 +287,19 @@ export default function BookingFlow({
                             throw new Error(err.error || "Failed to create payment order");
                   }
             
-                  const { paymentSessionId, orderId } = await orderRes.json() as {
+                  const { paymentSessionId, orderId, amount } = await orderRes.json() as {
                             paymentSessionId: string;
                             orderId: string;
+                            amount?: number;
                   };
-            
-                  // Persist the orderId so /session-booked can fire its Purchase with the
-                  // SAME id (`Purchase_${orderId}`) the Cashfree webhook uses → Meta dedup.
+
+                  // Persist orderId + the dynamic charged amount so /session-booked can
+                  // fire its Purchase with the SAME id (`Purchase_${orderId}`) the Cashfree
+                  // webhook uses → Meta dedup, and report the REAL amount (not hardcoded).
                   try {
                             const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
                             const obj = raw ? JSON.parse(raw) : {};
-                            localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId }));
+                            localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId, amount }));
                   } catch { /* non-critical */ }
             
                   // Step 2: Load SDK (CDN script injected once per page) and open modal
@@ -319,8 +321,9 @@ export default function BookingFlow({
                             setPaymentError("Payment was not completed. Please try again or use UPI.");
                             setPaymentLoading(false);
                   } else if (result.paymentDetails) {
-                            // Success — redirect to payment-success with leadId + orderId for verification
-                            window.location.href = `/payment-success?leadId=${leadId}&order_id=${orderId}`;
+                            // Success — go straight to the calendar stage. Purchase fires on
+                            // /session-booked page load (guarded on orderId), NOT here.
+                            window.location.href = `/session-booked?orderId=${orderId}&leadId=${leadId}`;
                             // Keep loading=true; the page is navigating away
                   } else {
                             // Modal dismissed without completing (user closed it)
