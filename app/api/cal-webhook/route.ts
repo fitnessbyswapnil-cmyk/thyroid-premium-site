@@ -2,7 +2,7 @@
  * app/api/cal-webhook/route.ts
  *
  * Cal.com booking webhook → Meta CAPI "Schedule" (the ad optimization event).
- * Replaces the dead Calendly-shaped /api/calendly-webhook.
+ * Sole booking webhook (the legacy predecessor route was removed).
  *
  * SETUP IN CAL.COM:
  *  1. Cal.com → Settings → Developer → Webhooks → New

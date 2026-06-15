@@ -9,22 +9,10 @@ import { persistUserIdentity } from "../components/tracking/UserIdentityTracker"
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
 
-// ── Config ────────────────────────────────────────────────────────────────────
-
-const CALENDLY_URL = [
-  "https://calendly.com/fitnessbyswapnil/60min",
-  "?hide_event_type_details=1",
-  "&hide_gdpr_banner=1",
-  "&hide_landing_page_details=1",
-  "&primary_color=3B5A33",
-  "&text_color=171310",
-  "&background_color=F7F4EF",
-].join("");
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 
-type FlowStage = "calendly" | "confirmation";
+type FlowStage = "booking" | "confirmation";
 
 // ── Progress Stepper ──────────────────────────────────────────────────────────
 
@@ -86,9 +74,9 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
   );
 }
 
-// ── Calendly Step (Step 3) ────────────────────────────────────────────────────
+// ── Cal.com Step (Step 3) ────────────────────────────────────────────────────
 
-function CalendlyStep({
+function CalcomStep({
   onBooked,
   prefillName = "",
   prefillEmail = "",
@@ -378,7 +366,7 @@ export default function SessionBooked() {
   const [show, setShow] = useState(false);
   // Land straight on the calendar after payment — the second-round questions no
   // longer block booking (they move to the post-booking confirmation, optional).
-  const [stage, setStage] = useState<FlowStage>("calendly");
+  const [stage, setStage] = useState<FlowStage>("booking");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   // leadId + orderId are threaded into the Cal.com embed as metadata so the
   // BOOKING_CREATED webhook can tie a booking back to the right lead/payment.
@@ -386,7 +374,6 @@ export default function SessionBooked() {
   const [orderId, setOrderId] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
-  const [isNativeFlow, setIsNativeFlow] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submittedRef = useRef(false);
 
@@ -410,7 +397,6 @@ export default function SessionBooked() {
         if (stored.orderId) setOrderId(stored.orderId);
         if (stored.step1) {
           setStep1Data(stored.step1);
-          setIsNativeFlow(true);
           foundInStorage = true;
           persistUserIdentity({ first_name: stored.step1.name, phone: stored.step1.phone });
         }
@@ -420,7 +406,6 @@ export default function SessionBooked() {
     // Fallback: localStorage empty but leadId is in URL (different browser/device).
     // Fetch the name/phone from the API so the greeting still works.
     if (!foundInStorage && urlLeadId) {
-      setIsNativeFlow(true); // show native UI immediately while we fetch
       fetch(`/api/leads/${encodeURIComponent(urlLeadId)}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data: { name?: string; phone?: string; email?: string } | null) => {
@@ -475,7 +460,7 @@ export default function SessionBooked() {
       attribution?: Record<string, string>;
     } : null;
 
-    // Fire Purchase pixel only now — after Calendly slot is confirmed.
+    // Fire Purchase pixel only now — after Cal.com slot is confirmed.
     const lead = step1Data;
     const purchaseEventId = trackPurchase(
       lead
@@ -536,13 +521,10 @@ export default function SessionBooked() {
     }
   }, [step1Data]);
 
-  const activeStepNum = stage === "calendly" ? 3 : 4;
+  const activeStepNum = stage === "booking" ? 3 : 4;
 
-  // Fall back to legacy behavior if not native flow (old Tally users)
-  if (!isNativeFlow && show) {
-    return <LegacySessionBooked />;
-  }
-
+  // Cal.com renders for EVERYONE — direct visits and no-context/cross-device
+  // included. No Cal.com path remains.
   return (
     <main
       className="relative min-h-screen overflow-hidden"
@@ -573,9 +555,9 @@ export default function SessionBooked() {
         <ProgressStepper activeStep={activeStepNum} />
 
         <AnimatePresence mode="wait">
-          {stage === "calendly" && (
+          {stage === "booking" && (
             <motion.div
-              key="calendly"
+              key="booking"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
@@ -604,7 +586,7 @@ export default function SessionBooked() {
                 </p>
               </div>
 
-              <CalendlyStep
+              <CalcomStep
                 onBooked={handleBooked}
                 prefillName={step1Data?.name || ""}
                 prefillEmail={step1Data?.email || ""}
@@ -635,73 +617,6 @@ export default function SessionBooked() {
           <p className="mt-4 text-center text-[0.65rem] text-[#2A2630]/20">
             Saving your profile…
           </p>
-        )}
-      </div>
-    </main>
-  );
-}
-
-// ── Legacy fallback (old Tally → Cashfree → session-booked flow) ──────────────
-
-function LegacySessionBooked() {
-  const [booked, setBooked] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState<{ name?: string; date?: string; time?: string }>({});
-  const confirmRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (document.querySelector('script[src*="calendly"]')) return;
-    const script = document.createElement("script");
-    script.src = "https://assets.calendly.com/assets/external/widget.js";
-    script.async = true;
-    document.head.appendChild(script);
-  }, []);
-
-  useEffect(() => {
-    function handleMessage(e: MessageEvent) {
-      if (!e.data || typeof e.data !== "object") return;
-      const { event, payload } = e.data;
-      if (event === "calendly.event_scheduled") {
-        const name = payload?.invitee?.name || "";
-        const startTime: string = payload?.event?.start_time || "";
-        let dateStr = "", timeStr = "";
-        if (startTime) {
-          const d = new Date(startTime);
-          dateStr = d.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-          timeStr = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-        }
-        setBookingDetails({ name, date: dateStr, time: timeStr });
-        setBooked(true);
-        trackSchedule({ name, date: dateStr, time: timeStr });
-        setTimeout(() => confirmRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
-      }
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  return (
-    <main style={{ background: "#07060f", minHeight: "100vh", color: "#fff", position: "relative" }}>
-      <div style={{ maxWidth: "660px", margin: "0 auto", padding: "48px 20px 80px", position: "relative", zIndex: 10 }}>
-        <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "999px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", marginBottom: "14px" }}>
-            <span style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.16em", color: "rgba(134,239,172,0.85)" }}>Payment Confirmed</span>
-          </div>
-          <h1 style={{ fontSize: "clamp(1.55rem, 4vw, 1.9rem)", fontWeight: 900, lineHeight: 1.12, letterSpacing: "-0.035em", marginBottom: "12px" }}>
-            {booked ? "Your Session Is Confirmed." : "One Step Left. Choose Your Session Time."}
-          </h1>
-          <p style={{ fontSize: "0.88rem", lineHeight: 1.65, color: "rgba(255,255,255,0.5)", maxWidth: "38ch", margin: "0 auto" }}>
-            {booked ? "Swapnil will review your intake before you speak. Check your email for the calendar invite." : "Pick any available time below."}
-          </p>
-        </div>
-
-        <div style={{ borderRadius: "20px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", marginBottom: "32px", minHeight: "700px", background: "rgba(13,11,26,0.6)" }}>
-          <div className="calendly-inline-widget" data-url={CALENDLY_URL} style={{ minWidth: "100%", height: "700px" }} />
-        </div>
-
-        {booked && (
-          <div ref={confirmRef}>
-            <ConfirmationStep name={bookingDetails.name || ""} date={bookingDetails.date || ""} time={bookingDetails.time || ""} />
-          </div>
         )}
       </div>
     </main>
