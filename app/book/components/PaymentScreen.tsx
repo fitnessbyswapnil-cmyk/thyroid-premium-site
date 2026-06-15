@@ -19,7 +19,7 @@ const WHAT_NEXT = [
   {
     num: "03",
     title: "Pick your session time",
-    body: "Choose any available private slot. Zoom link sent instantly to WhatsApp.",
+    body: "Choose any available private slot. Google Meet link sent instantly to WhatsApp.",
   },
   {
     num: "04",

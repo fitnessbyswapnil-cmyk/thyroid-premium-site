@@ -355,7 +355,7 @@ export default function PaymentSuccessPage() {
                 lineHeight: 1.5,
               }}
             >
-              Deep intake · Calendar booking · Zoom confirmation
+              Deep intake · Calendar booking · Google Meet confirmation
             </p>
           </>
         )}
