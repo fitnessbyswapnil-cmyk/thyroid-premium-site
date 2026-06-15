@@ -1,7 +1,7 @@
 /**
  * /api/booking
  *
- * Receives the unified booking payload after Calendly confirmation and
+ * Receives the unified booking payload after Cal.com confirmation and
  * writes one row to Google Sheets.
  *
  * ENV VARS REQUIRED:

@@ -233,39 +233,3 @@ export function trackEngagement(depth: number, seconds: number): void {
     session_id: getSessionId(),
   })
 }
-
-/* ================================================================
-   CALENDLY POSTMESSAGE LISTENER
-   Detects Calendly booking events from embedded iframe.
-   Call this once in the /session-booked page.
-================================================================ */
-
-export type CalendlyEventData = {
-  invitee_name?: string
-  invitee_email?: string
-  invitee_uuid?: string
-  event_type_name?: string
-  scheduled_event_uri?: string
-}
-
-export function listenCalendly(onBook: (data: CalendlyEventData) => void): () => void {
-  if (typeof window === 'undefined') return () => {}
-
-  const handler = (e: MessageEvent) => {
-    if (!e.origin.includes('calendly.com')) return
-    const type = e.data?.event
-    if (type === 'calendly.event_scheduled') {
-      const payload = e.data?.payload || {}
-      onBook({
-        invitee_name: payload.invitee?.name,
-        invitee_email: payload.invitee?.email,
-        invitee_uuid: payload.invitee?.uuid,
-        event_type_name: payload.event_type?.name,
-        scheduled_event_uri: payload.event?.uri,
-      })
-    }
-  }
-
-  window.addEventListener('message', handler)
-  return () => window.removeEventListener('message', handler)
-}
