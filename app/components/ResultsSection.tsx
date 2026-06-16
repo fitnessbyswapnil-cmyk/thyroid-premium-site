@@ -158,8 +158,8 @@ export default function ResultsSection() {
         </div>
 
         <SectionCta
-          label="Book My ₹199 Thyroid Session"
-          sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
+          label="Book My Free Thyroid Session"
+          sublabel="60-min private 1-on-1 · Free, no card needed"
           trust="Private 60-min session · Limited weekly intake"
           buttonClassName="w-full"
           style={{ maxWidth: '22rem' }}

@@ -488,8 +488,8 @@ function CTABlock() {
       <div className="cta-wrap cta-glow-mid">
         <CtaButton
           variant="primary"
-          label="Book My ₹199 Thyroid Session"
-          sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
+          label="Book My Free Thyroid Session"
+          sublabel="60-min private 1-on-1 · Free, no card needed"
           ariaLabel="Reserve your private thyroid clarity session"
           location="strategy_session"
         />
@@ -497,7 +497,7 @@ function CTABlock() {
 
       <p className="mt-3.5 text-[11px] font-medium leading-[1.5] text-white/28">
         <span className="mr-1.5 text-emerald-400/65" aria-hidden>✓</span>
-        Full refund if you don&apos;t leave with complete clarity — no questions asked
+        Free — no card needed. If you don&apos;t leave with total clarity, you&apos;ve lost nothing but an hour
       </p>
 
       <div className="mt-3.5 flex flex-wrap justify-center gap-x-4 gap-y-1.5">
