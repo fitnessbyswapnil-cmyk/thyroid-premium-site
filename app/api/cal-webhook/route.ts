@@ -100,6 +100,10 @@ export async function POST(req: NextRequest) {
 
   const signature = req.headers.get('x-cal-signature-256') || ''
 
+  // Invocation log — proves whether Cal.com is hitting this endpoint at all,
+  // independent of signature/trigger outcome below.
+  console.log(`[cal-webhook] invoked — bytes=${rawBody.length} signaturePresent=${!!signature}`)
+
   // ── 2. Signature — the ONLY path allowed to return a non-2xx ──
   const sig = verifyCalSignature(rawBody, signature)
   if (sig === 'mismatch') {
@@ -172,17 +176,26 @@ export async function POST(req: NextRequest) {
       country: 'in',
     })
 
+    const eventId = `schedule_${uid}`
+    const testCode = process.env.META_TEST_EVENT_CODE
+    console.log(
+      `[cal-webhook] BOOKING_CREATED — sending Schedule CAPI: trigger=${trigger} uid=${uid} event_id=${eventId} test_event_code=${testCode || '(unset)'}`,
+    )
+
     const result = await sendCAPIEvent('Schedule', {
-      eventId: `schedule_${uid}`, // SAME id as the browser Pixel → Meta dedup
+      eventId, // SAME id as the browser Pixel → Meta dedup
       sourceUrl: SOURCE_URL,
       userData,
       customData: { content_name: 'thyroid_strategy_call' },
-      testCode: process.env.META_TEST_EVENT_CODE,
+      testCode,
     })
 
+    // Full Meta CAPI response (status implied by success + the raw body), so the
+    // Vercel logs show whether the Schedule was accepted by Meta.
     console.log(
-      `[cal-webhook] 200 — Schedule processed uid=${uid} event_id=schedule_${uid} capi_success=${result.success}` +
-        (result.error ? ` capi_error=${result.error}` : ''),
+      `[cal-webhook] 200 — Schedule CAPI result uid=${uid} event_id=${eventId} success=${result.success} events_received=${result.events_received ?? 0}` +
+        (result.error ? ` error=${result.error}` : '') +
+        ` response=${JSON.stringify(result.raw ?? null)}`,
     )
     return NextResponse.json({ received: true, capi: result })
   } catch (err) {
