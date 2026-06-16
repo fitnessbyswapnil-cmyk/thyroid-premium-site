@@ -222,14 +222,51 @@ export function trackCtaClick(location: string, buttonLabel?: string) {
   );
 }
 
-export function trackLead(userData?: UserData) {
-  const event_id = generateEventId("lead");
+export function trackLead(userData?: UserData, eventId?: string) {
+  const event_id = eventId || generateEventId("lead");
   const payload = withUserSignals(
     { event: "lead", event_id, ...PRODUCT },
     userData,
   );
   pushDL(payload);
   return event_id;
+}
+
+// Session-wide guard so the Lead server+browser pair fires at most once per tab,
+// shared between the /book form completion and the /booking-confirmed bypass.
+export const LEAD_FIRED_SESSION_KEY = "thyroid_lead_fired";
+
+// Sends the server-side (CAPI) leg of a Lead to /api/events, sharing the
+// browser event_id for Meta dedup. Unlike a bare `.catch(()=>{})`, this LOGS the
+// outcome (console.error on non-2xx / network error, console.info on success) so
+// a failing server Lead is visible in the browser console and Vercel logs.
+export async function sendLeadToCapi(
+  eventId: string,
+  userData: Record<string, string>,
+  sourceUrl: string,
+): Promise<void> {
+  try {
+    const res = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_name: "Lead",
+        event_id: eventId,
+        source_url: sourceUrl,
+        user_data: userData,
+      }),
+    });
+    const text = await res.text();
+    let body: unknown = text;
+    try { body = JSON.parse(text); } catch { /* non-JSON body */ }
+    if (!res.ok) {
+      console.error(`[lead-capi] /api/events failed: ${res.status}`, body);
+    } else {
+      console.info(`[lead-capi] /api/events ok: ${res.status}`, body);
+    }
+  } catch (err) {
+    console.error("[lead-capi] /api/events network error", err);
+  }
 }
 
 export function trackInitiateCheckout() {

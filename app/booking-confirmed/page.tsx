@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
-import { trackSchedule } from "../lib/analytics";
+import { trackSchedule, trackLead, sendLeadToCapi, getOrCreateExternalId, LEAD_FIRED_SESSION_KEY } from "../lib/analytics";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 
 // ── Confirmation page ───────────────────────────────────────────────────────
@@ -23,6 +23,7 @@ function BookingConfirmedInner() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const scheduleFiredRef = useRef(false);
+  const leadFiredRef = useRef(false);
 
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
@@ -58,6 +59,41 @@ function BookingConfirmedInner() {
         );
       } else {
         scheduleFiredRef.current = true;
+      }
+    }
+
+    // ── Lead bypass on load ─────────────────────────────────────────────────
+    // If the visitor reached here WITHOUT completing the /book form (e.g. a
+    // direct Cal.com link), the form never fired Lead. Fire it once here —
+    // deduped against the form via the shared session flag, so a normal
+    // /book → booking does NOT double-fire. Deterministic event_id (lead_<uid>)
+    // is shared by the browser + server legs for Meta dedup.
+    if (!leadFiredRef.current && uid) {
+      let leadAlreadyFired = false;
+      try { leadAlreadyFired = !!sessionStorage.getItem(LEAD_FIRED_SESSION_KEY); } catch { /* unavailable */ }
+
+      if (!leadAlreadyFired) {
+        leadFiredRef.current = true;
+        try { sessionStorage.setItem(LEAD_FIRED_SESSION_KEY, "1"); } catch { /* non-critical */ }
+
+        const firstName = urlName ? urlName.split(" ")[0] : "";
+        const leadEventId = `lead_${uid}`;
+        const externalId = getOrCreateExternalId();
+
+        // Browser Pixel Lead — deterministic event_id for server dedup.
+        trackLead(firstName ? { first_name: firstName } : undefined, leadEventId);
+
+        // Server CAPI Lead — same event_id → Meta dedup. Logged (not silent).
+        sendLeadToCapi(
+          leadEventId,
+          {
+            ...(firstName && { first_name: firstName }),
+            ...(externalId && { external_id: externalId }),
+          },
+          "https://www.swapnilumbarkarfitness.in/booking-confirmed",
+        );
+      } else {
+        leadFiredRef.current = true;
       }
     }
 
