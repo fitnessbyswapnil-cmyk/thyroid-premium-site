@@ -6,14 +6,22 @@
  *
  * SETUP IN CAL.COM:
  *  1. Cal.com → Settings → Developer → Webhooks → New
- *  2. Subscriber URL: https://swapnilumbarkarfitness.in/api/cal-webhook
+ *  2. Subscriber URL: https://www.swapnilumbarkarfitness.in/api/cal-webhook
  *  3. Event triggers: "Booking created"
  *  4. Secret → CAL_WEBHOOK_SECRET env var (Vercel). Cal.com signs the raw body
- *     with HMAC-SHA256 and sends it as the `x-cal-signature-256` header.
+ *     with HMAC-SHA256 and sends it as the `x-cal-signature-256` header. The
+ *     Vercel value MUST equal the secret entered on the Cal.com webhook.
  *
  * DEDUP: the event_id is `schedule_<payload.uid>` — the SAME id the browser
  * Pixel pushes from the Cal.com embed bookingSuccessful callback — so Meta
  * collapses the browser + server Schedule into one.
+ *
+ * DELIVERY CONTRACT (why Cal.com was logging "failed" before):
+ *  - The ONLY non-2xx this route returns is 401, and ONLY on a genuine
+ *    signature mismatch. Cal.com retries non-2xx and shows them as failed, so
+ *    once a request is accepted (signature ok / unconfigured) we ALWAYS return
+ *    200 — even for unknown triggers, missing uid, malformed JSON, or a failed
+ *    Meta CAPI call. A Meta outage must never make Cal.com mark delivery failed.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import {
@@ -47,18 +55,27 @@ type CalWebhook = {
   }
 }
 
-function verifyCalSignature(rawBody: string, signature: string): boolean {
-  if (!CAL_WEBHOOK_SECRET) return true // skip only if not configured
-  if (!signature) return false
+type SignatureResult = 'valid' | 'mismatch' | 'unconfigured'
+
+/**
+ * Verify Cal.com's HMAC-SHA256 over the RAW request body.
+ * - rawBody must be the exact bytes received (await req.text()), NOT a
+ *   re-serialized parse — re-stringifying changes key order/whitespace and
+ *   breaks the HMAC.
+ * - Explicit length check before timingSafeEqual (which throws on unequal
+ *   length) so a malformed header is a clean 'mismatch', not an exception.
+ */
+function verifyCalSignature(rawBody: string, signature: string): SignatureResult {
+  if (!CAL_WEBHOOK_SECRET) return 'unconfigured'
+  if (!signature) return 'mismatch'
   const computed = crypto
     .createHmac('sha256', CAL_WEBHOOK_SECRET)
-    .update(rawBody)
+    .update(rawBody, 'utf8')
     .digest('hex')
-  try {
-    return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(signature))
-  } catch {
-    return false
-  }
+  const a = Buffer.from(computed, 'utf8')
+  const b = Buffer.from(signature, 'utf8')
+  if (a.length !== b.length) return 'mismatch'
+  return crypto.timingSafeEqual(a, b) ? 'valid' : 'mismatch'
 }
 
 function responseValue(
@@ -70,31 +87,62 @@ function responseValue(
 }
 
 export async function POST(req: NextRequest) {
+  // ── 1. Read the raw body ONCE — required to HMAC the exact signed bytes ──
+  let rawBody: string
   try {
-    const rawBody = await req.text()
-    const signature = req.headers.get('x-cal-signature-256') || ''
+    rawBody = await req.text()
+  } catch (err) {
+    // Can't read the body → can't verify or process. Don't 500 (Cal.com would
+    // retry forever); acknowledge so it stops.
+    console.error('[cal-webhook] 200 — could not read request body', err)
+    return NextResponse.json({ ok: true, skipped: 'unreadable body' })
+  }
 
-    if (!verifyCalSignature(rawBody, signature)) {
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-    }
+  const signature = req.headers.get('x-cal-signature-256') || ''
 
-    const body = JSON.parse(rawBody) as CalWebhook
+  // ── 2. Signature — the ONLY path allowed to return a non-2xx ──
+  const sig = verifyCalSignature(rawBody, signature)
+  if (sig === 'mismatch') {
+    console.warn('[cal-webhook] 401 — signature mismatch (check CAL_WEBHOOK_SECRET matches the Cal.com webhook secret)')
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+  if (sig === 'unconfigured') {
+    console.warn('[cal-webhook] CAL_WEBHOOK_SECRET is not set — skipping signature verification. Set it in Vercel to secure this endpoint.')
+  }
 
-    if (body.triggerEvent !== 'BOOKING_CREATED') {
-      return NextResponse.json({ ok: true, skipped: true })
-    }
+  // ── 3. From here we ALWAYS return 200 so Cal.com never marks it failed ──
+  let body: CalWebhook
+  try {
+    body = JSON.parse(rawBody) as CalWebhook
+  } catch {
+    console.warn('[cal-webhook] 200 — accepted but body was not valid JSON; nothing to do')
+    return NextResponse.json({ ok: true, skipped: 'invalid json' })
+  }
 
-    const payload = body.payload || {}
-    const uid = payload.uid || ''
-    if (!uid) {
-      return NextResponse.json({ ok: true, skipped: 'no uid' })
-    }
+  const trigger = body.triggerEvent || ''
+  if (trigger !== 'BOOKING_CREATED') {
+    // PING (webhook test), BOOKING_CANCELLED, etc. — acknowledge, don't process.
+    console.log(`[cal-webhook] 200 — ignored trigger=${trigger || 'none'}`)
+    return NextResponse.json({ ok: true, skipped: trigger || 'no trigger' })
+  }
 
-    if (processedUids.has(uid)) {
-      return NextResponse.json({ ok: true, deduped: true })
-    }
-    processedUids.add(uid)
+  const payload = body.payload || {}
+  const uid = payload.uid || ''
+  if (!uid) {
+    console.warn('[cal-webhook] 200 — BOOKING_CREATED with no uid; cannot key Schedule for dedup')
+    return NextResponse.json({ ok: true, skipped: 'no uid' })
+  }
 
+  if (processedUids.has(uid)) {
+    console.log(`[cal-webhook] 200 — deduped (same instance) uid=${uid}`)
+    return NextResponse.json({ ok: true, deduped: true })
+  }
+  processedUids.add(uid)
+
+  // ── 4. Send the Schedule CAPI event — isolated so a Meta failure can NEVER
+  //        bubble a 500 back to Cal.com (sendCAPIEvent already returns instead
+  //        of throwing, but the try/catch guarantees it for any future change) ──
+  try {
     const attendee = payload.attendees?.[0] || {}
     const name = attendee.name || responseValue(payload.responses, 'name') || ''
     const email = attendee.email || responseValue(payload.responses, 'email') || ''
@@ -132,10 +180,14 @@ export async function POST(req: NextRequest) {
       testCode: process.env.META_TEST_EVENT_CODE,
     })
 
-    console.log('[cal-webhook] Schedule CAPI result:', result)
+    console.log(
+      `[cal-webhook] 200 — Schedule processed uid=${uid} event_id=schedule_${uid} capi_success=${result.success}` +
+        (result.error ? ` capi_error=${result.error}` : ''),
+    )
     return NextResponse.json({ received: true, capi: result })
   } catch (err) {
-    console.error('[cal-webhook]', err)
-    return NextResponse.json({ error: 'Error' }, { status: 500 })
+    // Schedule send failed unexpectedly — log, but still 200 so Cal.com is happy.
+    console.error(`[cal-webhook] 200 — Schedule send threw (swallowed) uid=${uid}`, err)
+    return NextResponse.json({ received: true, capi: { success: false, error: String(err) } })
   }
 }
