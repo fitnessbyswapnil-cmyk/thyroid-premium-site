@@ -504,8 +504,8 @@ export default function WhatsappProofSection() {
             <div className="section-cta">
               <CtaButton
                 variant="primary"
-                label="Book My ₹199 Thyroid Session"
-                sublabel="60-min private 1-on-1 · Full refund if you don't get clarity"
+                label="Book My Free Thyroid Session"
+                sublabel="60-min private 1-on-1 · Free, no card needed"
                 ariaLabel="Reserve your private thyroid strategy session"
                 location="whatsapp_proof_cta"
               />
@@ -513,7 +513,7 @@ export default function WhatsappProofSection() {
                 className="text-center text-[0.67rem]"
                 style={{ color: 'rgba(255,255,255,0.26)' }}
               >
-                ₹199 · Fully refundable if no clarity · Limited slots weekly
+                Free · No card needed · Limited slots weekly
               </p>
             </div>
           </motion.div>

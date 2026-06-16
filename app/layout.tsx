@@ -23,11 +23,11 @@ const inter = Inter({
 export const metadata: Metadata = {
     title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
     description:
-          "Book a private 60-minute thyroid strategy session with Swapnil Umbarkar. Specialized fat-loss coaching for Indian women with hypothyroidism and Hashimoto's. ₹199 with full refund guarantee.",
+          "Book a free private 60-minute thyroid strategy session with Swapnil Umbarkar. Specialized fat-loss coaching for Indian women with hypothyroidism and Hashimoto's. Free, no card needed.",
     openGraph: {
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:
-                  "60-minute private thyroid session for Indian women. Understand why nothing worked — and what changes next. ₹199 · Full refund guarantee.",
+                  "Free 60-minute private thyroid session for Indian women. Understand why nothing worked — and what changes next. Free · No card needed.",
           url: "https://swapnilumbarkarfitness.in",
           images: [
             {
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
           card: "summary_large_image",
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:
-                  "60-minute private thyroid session for Indian women. ₹199 · Full refund guarantee.",
+                  "Free 60-minute private thyroid session for Indian women. Free · No card needed.",
           images: ["https://swapnilumbarkarfitness.in/og-image.jpg"],
     },
 };

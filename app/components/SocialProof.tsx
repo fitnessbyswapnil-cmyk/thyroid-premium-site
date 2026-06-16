@@ -33,7 +33,7 @@ const TESTIMONIALS: Testimonial[] = [
     initials: "KN",
     condition: "Hashimoto's · Strategy session",
     quote:
-      "I walked in expecting a sales pitch. He spent the full hour on my actual reports — my TSH history, my food, my sleep. I left with three specific things to try that evening. That alone was worth ₹199.",
+      "I walked in expecting a sales pitch. He spent the full hour on my actual reports — my TSH history, my food, my sleep. I left with three specific things to try that evening. That alone was honestly worth far more than I expected.",
     result: "Strategy session",
     featured: false,
   },
