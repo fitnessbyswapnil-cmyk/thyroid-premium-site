@@ -47,9 +47,15 @@ const STEPS: Step[] = [
     id: "intro",
     type: "intro",
     question: "Let's find out why your weight won't move.",
-    sub: "12 quick questions. About 2 minutes. Then pick a time that suits you.",
+    sub: "Takes about 2 minutes · 12 questions · Personalised result",
   },
-  { id: "name", type: "text", question: "First — what should I call you?", placeholder: "Your first name" },
+  {
+    id: "name",
+    type: "text",
+    question: "Let's start with your first name.",
+    sub: "I'll use your name when building your personalised thyroid fat-loss roadmap.",
+    placeholder: "e.g. Kavitha",
+  },
   {
     id: "goal",
     type: "single",
@@ -239,17 +245,29 @@ function computeScore(answers: Answers): { score: number; band: "Hot" | "Warm" |
 // ── Small UI pieces ─────────────────────────────────────────────────────────
 
 function ProgressBar({ pct }: { pct: number }) {
+  // Keep the PERCENTAGE label (explicit step counts hurt completion). The
+  // VISUAL fill never drops below ~8% so the bar never reads as empty/unstarted.
   const label = pct < 50 ? `${pct}% complete` : pct < 100 ? `Almost there · ${pct}%` : "Done";
+  const fill = Math.max(pct, 8);
   return (
-    <div className="mb-8 w-full">
+    <div className="mb-6 w-full">
+      {/* Sticky trust chips near the progress bar */}
+      <div className="mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-white/30">
+        <span>Personalised</span>
+        <span aria-hidden className="text-white/15">·</span>
+        <span>Thyroid-specific</span>
+        <span aria-hidden className="text-white/15">·</span>
+        <span>Coach-reviewed</span>
+      </div>
       <div className="mb-2 flex justify-between text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-white/30">
         <span>{label}</span>
       </div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.07]">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
         <motion.div
           className="h-full rounded-full"
           style={{ background: "linear-gradient(90deg, #a855f7, #c5a24d)" }}
-          animate={{ width: `${pct}%` }}
+          initial={false}
+          animate={{ width: `${fill}%` }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         />
       </div>
@@ -613,8 +631,19 @@ export default function QualifyingFlow() {
   }, [step, selectSingle, goNext, goBack]);
 
   // ── Render ────────────────────────────────────────────────────────────────
+  // Show the "Press Enter" hint only on screens where Enter actually advances
+  // (single-select uses number keys; finish has no advance).
+  const enterAdvances =
+    step.type === "intro" ||
+    step.type === "info" ||
+    step.type === "multi" ||
+    step.type === "text" ||
+    step.type === "tel" ||
+    step.type === "email" ||
+    (step.type === "scale" && answers[step.id] != null);
+
   return (
-    <div className="mx-auto w-full max-w-[720px] px-5">
+    <div className="mx-auto w-full max-w-[580px] px-5">
       {step.type !== "intro" && step.type !== "finish" && <ProgressBar pct={pct} />}
 
       <AnimatePresence mode="wait">
@@ -627,7 +656,16 @@ export default function QualifyingFlow() {
         >
           {/* INTRO */}
           {step.type === "intro" && (
-            <div className="py-10 text-center">
+            <div className="py-6 text-center">
+              {/* Eyebrow — value proposition label */}
+              <p className="mb-4 text-[0.66rem] font-bold uppercase tracking-[0.22em] text-[#c5a24d]/80">
+                Personalised Thyroid Assessment
+              </p>
+              {/* Emotional trigger — motivation above the headline */}
+              <p className="mx-auto mb-5 max-w-[40ch] text-[0.92rem] leading-relaxed text-white/55">
+                Most women with thyroid issues struggle because they&apos;re following generic advice.
+                Let&apos;s personalise yours.
+              </p>
               <h1
                 className="mx-auto max-w-[16ch] text-[length:clamp(2rem,1.4rem+3vw,3.25rem)] font-black leading-[1.05] tracking-[-0.03em] text-white"
                 style={{ fontFamily: "var(--font-display), Georgia, serif" }}
@@ -641,7 +679,7 @@ export default function QualifyingFlow() {
                 className="mt-9 inline-flex items-center gap-2 rounded-full px-8 py-4 text-[1rem] font-bold text-white transition-transform hover:scale-[1.02]"
                 style={{ background: "linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)", boxShadow: "0 12px 36px rgba(168,85,247,0.35)" }}
               >
-                Start →
+                Let&apos;s Begin →
               </button>
               <p className="mt-4 text-[0.72rem] text-white/25">Free session · No payment required</p>
             </div>
@@ -746,6 +784,11 @@ export default function QualifyingFlow() {
                 placeholder={step.placeholder}
                 error={error}
               />
+              {step.id === "name" && (
+                <p className="-mt-1 text-[0.74rem] leading-relaxed text-white/35">
+                  🔒 Your information stays private. No spam, no sales calls.
+                </p>
+              )}
               <ContinueButton onClick={submitText} />
             </div>
           )}
@@ -771,6 +814,13 @@ export default function QualifyingFlow() {
         >
           ← Back
         </button>
+      )}
+
+      {/* Keyboard hint — subtle, bottom-right; only where Enter advances */}
+      {enterAdvances && (
+        <p className="pointer-events-none fixed bottom-4 right-4 z-20 hidden text-[0.68rem] text-white/25 sm:block">
+          Press Enter ↵
+        </p>
       )}
     </div>
   );
@@ -820,6 +870,16 @@ function FinishStep({ name, email, phone, leadId }: { name: string; email: strin
               </motion.div>
             ))}
           </div>
+          {shown >= checks.length && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              className="mt-6 text-[0.95rem] font-semibold text-white/70"
+            >
+              Building your personalised result…
+            </motion.p>
+          )}
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
