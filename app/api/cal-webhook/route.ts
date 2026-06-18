@@ -52,6 +52,10 @@ type CalWebhook = {
     startTime?: string
     attendees?: Array<{ name?: string; email?: string; phoneNumber?: string }>
     responses?: Record<string, { value?: unknown } | undefined>
+    // Set by the /book Cal embed (CalendarStep) — carries first-party signals the
+    // server leg can't read from cookies (Cal.com → here is machine-to-machine):
+    // visitor_id (external_id), city, _fbc, _fbp.
+    metadata?: Record<string, unknown>
   }
 }
 
@@ -83,6 +87,11 @@ function responseValue(
   key: string,
 ): string {
   const v = responses?.[key]?.value
+  return typeof v === 'string' ? v : ''
+}
+
+function metaValue(metadata: Record<string, unknown> | undefined, key: string): string {
+  const v = metadata?.[key]
   return typeof v === 'string' ? v : ''
 }
 
@@ -159,20 +168,29 @@ export async function POST(req: NextRequest) {
     const firstName = name.split(' ')[0] || ''
     const lastName = name.split(' ').slice(1).join(' ') || ''
 
-    // Cal.com is server-to-server: no browser cookies for fbp. We still pass any
-    // _fbc/_fbp that happen to ride along (usually absent here) + ip/ua. The
-    // browser-leg Pixel carries the strong fbp/fbc match; this leg carries
-    // hashed email/phone — together they give high EMQ on the deduped Schedule.
+    // Cal.com → here is machine-to-machine, so there are no browser cookies on
+    // this request. The /book Cal embed forwards the visitor's first-party
+    // signals in booking metadata; we read them here (falling back to any cookie
+    // that happens to ride along, then to the booking uid for external_id).
+    const metadata = payload.metadata
+    const city = responseValue(payload.responses, 'city') || metaValue(metadata, 'city')
+    // SAME external_id the browser Schedule sends (visitor_id) so they match;
+    // uid only as a last resort. event_id (schedule_<uid>) is unchanged either way.
+    const externalId = metaValue(metadata, 'visitor_id') || uid
+    const fbc = metaValue(metadata, 'fbc') || getCookieFromReq(req, '_fbc')
+    const fbp = metaValue(metadata, 'fbp') || getCookieFromReq(req, '_fbp')
+
     const userData = buildUserData({
       email,
       phone,
       firstName,
       lastName,
-      externalId: uid,
+      city,
+      externalId,
       clientIp: getClientIp(req),
       userAgent: getUserAgent(req),
-      fbc: getCookieFromReq(req, '_fbc'),
-      fbp: getCookieFromReq(req, '_fbp'),
+      fbc,
+      fbp,
       country: 'in',
     })
 

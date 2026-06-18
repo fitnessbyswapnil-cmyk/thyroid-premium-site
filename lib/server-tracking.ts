@@ -114,7 +114,8 @@ export function buildUserData(raw: {
   if (raw.phone)      ud.ph = hashPhone(raw.phone)
   if (raw.firstName)  ud.fn = hashValue(raw.firstName)
   if (raw.lastName)   ud.ln = hashValue(raw.lastName)
-  if (raw.city)       ud.ct = hashValue(raw.city)
+  // Meta city normalization: lowercase + strip spaces/punctuation ("New Delhi" → "newdelhi").
+  if (raw.city)       ud.ct = hashValue(raw.city.replace(/[^a-z0-9]/gi, ''))
   if (raw.state)      ud.st = hashValue(raw.state)
   if (raw.zip)        ud.zp = hashValue(raw.zip)
   if (raw.country)    ud.country = hashValue(raw.country || 'in')
