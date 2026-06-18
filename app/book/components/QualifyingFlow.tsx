@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cal, { getCalApi } from "@calcom/embed-react";
-import { pushDL, trackLead } from "@/app/lib/analytics";
+import { pushDL, trackLead, sendLeadToCapi, LEAD_FIRED_SESSION_KEY } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
 
@@ -546,6 +546,8 @@ export default function QualifyingFlow() {
   useEffect(() => {
     if (step.type !== "finish" || leadFiredRef.current) return;
     leadFiredRef.current = true;
+    // Record the session-wide guard so /booking-confirmed won't double-fire Lead.
+    try { sessionStorage.setItem(LEAD_FIRED_SESSION_KEY, "1"); } catch { /* non-critical */ }
 
     const nm = typeof answers.name === "string" ? answers.name : "";
     const phone = typeof answers.whatsapp === "string" ? answers.whatsapp : "";
@@ -573,23 +575,18 @@ export default function QualifyingFlow() {
     const visitorId = getVisitorId();
     const attribution = { ...utms, ...(fbclid && { fbclid }), ...(visitorId && { visitor_id: visitorId }) };
 
-    // Server CAPI Lead — same event_id → Meta dedup
-    fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event_name: "Lead",
-        event_id: leadEventId,
-        source_url: "https://www.swapnilumbarkarfitness.in/book",
-        user_data: {
-          ...(firstName && { first_name: firstName }),
-          ...(lastName && { last_name: lastName }),
-          ...(phone && { phone }),
-          ...(email && { email }),
-          ...(visitorId && { external_id: visitorId }),
-        },
-      }),
-    }).catch(() => {});
+    // Server CAPI Lead — same event_id → Meta dedup. Logged (no longer silent).
+    sendLeadToCapi(
+      leadEventId,
+      {
+        ...(firstName && { first_name: firstName }),
+        ...(lastName && { last_name: lastName }),
+        ...(phone && { phone }),
+        ...(email && { email }),
+        ...(visitorId && { external_id: visitorId }),
+      },
+      "https://www.swapnilumbarkarfitness.in/book",
+    );
 
     // Full lead payload → Make webhook (silent score/band for manual review only)
     const { score, band } = computeScore(answers);
