@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
         phone?: string
         first_name?: string
         last_name?: string
+        city?: string
         external_id?: string
       }
       custom_data?: Record<string, unknown>
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
       phone: user_data.phone,
       firstName: user_data.first_name,
       lastName: user_data.last_name,
+      city: user_data.city,
       externalId: user_data.external_id || visitorId,
       clientIp,
       userAgent,

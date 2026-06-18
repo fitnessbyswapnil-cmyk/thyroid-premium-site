@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
-import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
+import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 
 // ── Step model ─────────────────────────────────────────────────────────────────
 // One question per screen. `points` maps an option label → score (silent).
@@ -370,14 +370,32 @@ function CalendarStep({
   name,
   email,
   phone,
+  city,
   leadId,
 }: {
   name: string;
   email: string;
   phone: string;
+  city: string;
   leadId: string;
 }) {
   const bookedRef = useRef(false);
+
+  // Booking metadata → rides into the Cal.com BOOKING_CREATED webhook so the
+  // server Schedule CAPI can include the SAME first-party signals as the browser
+  // leg (it has no cookies of its own). Only non-empty values are sent.
+  const calMetadata = useMemo(() => {
+    const m: Record<string, string> = {};
+    if (leadId) m.leadId = leadId;
+    if (city) m.city = city;
+    const visitorId = getVisitorId();
+    const fbc = getFbc();
+    const fbp = getFbp();
+    if (visitorId) m.visitor_id = visitorId;
+    if (fbc) m.fbc = fbc;
+    if (fbp) m.fbp = fbp;
+    return m;
+  }, [leadId, city]);
 
   useEffect(() => {
     let cancelled = false;
@@ -437,7 +455,7 @@ function CalendarStep({
             ...(name ? { name } : {}),
             ...(email ? { email } : {}),
             ...(phone ? { attendeePhoneNumber: phone, smsReminderNumber: phone } : {}),
-            ...(leadId ? { metadata: { leadId } } : {}),
+            ...(Object.keys(calMetadata).length ? { metadata: calMetadata } : {}),
           }}
         />
       </div>
@@ -550,6 +568,7 @@ export default function QualifyingFlow() {
     const nm = typeof answers.name === "string" ? answers.name : "";
     const phone = typeof answers.whatsapp === "string" ? answers.whatsapp : "";
     const email = typeof answers.email === "string" ? answers.email : "";
+    const city = typeof answers.city === "string" ? answers.city : "";
     const firstName = nm.split(" ")[0] || "";
     const lastName = nm.split(" ").slice(1).join(" ");
 
@@ -586,6 +605,7 @@ export default function QualifyingFlow() {
           ...(lastName && { last_name: lastName }),
           ...(phone && { phone }),
           ...(email && { email }),
+          ...(city && { city }),
           ...(visitorId && { external_id: visitorId }),
         },
       }),
@@ -799,6 +819,7 @@ export default function QualifyingFlow() {
               name={name}
               email={typeof answers.email === "string" ? answers.email : ""}
               phone={typeof answers.whatsapp === "string" ? answers.whatsapp : ""}
+              city={typeof answers.city === "string" ? answers.city : ""}
               leadId={leadIdRef.current}
             />
           )}
@@ -839,7 +860,7 @@ function ContinueButton({ onClick, label = "Continue →" }: { onClick: () => vo
   );
 }
 
-function FinishStep({ name, email, phone, leadId }: { name: string; email: string; phone: string; leadId: string }) {
+function FinishStep({ name, email, phone, city, leadId }: { name: string; email: string; phone: string; city: string; leadId: string }) {
   const [revealCalendar, setRevealCalendar] = useState(false);
   const checks = ["Profile complete", "Goals identified", "Matching you to the right session…"];
   const [shown, setShown] = useState(0);
@@ -889,7 +910,7 @@ function FinishStep({ name, email, phone, leadId }: { name: string; email: strin
             </h2>
             <p className="mx-auto mt-2.5 max-w-[40ch] text-[0.88rem] text-white/50">Your free 60-minute thyroid strategy session. Swapnil reviews your answers before you meet.</p>
           </div>
-          <CalendarStep name={name} email={email} phone={phone} leadId={leadId} />
+          <CalendarStep name={name} email={email} phone={phone} city={city} leadId={leadId} />
         </motion.div>
       )}
     </div>
