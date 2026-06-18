@@ -9,9 +9,12 @@ import Image from "next/image";
 import PayButton from "./PayButton";
 
 // ── Editable constants ─────────────────────────────────────────────────────────
-const CASHFREE_URL =
-  "https://payments.cashfree.com/forms?code=PersonalizThyroid_Fat_Loss_Blueprint";
-const PROGRAM_PRICE = "₹45,000 · 3 months"; // change, or set to "" to hide
+const CASHFREE_URL = "https://payments.cashfree.com/forms?code=appp";
+// Loyalty pricing — original struck through, instant-signup discount applied.
+const ORIGINAL_PRICE = "₹30,000";
+const FINAL_PRICE = "₹25,000";
+const DISCOUNT_LABEL = "₹5,000 loyalty discount · instant signup";
+const PROGRAM_TERM = "3 months";
 // ───────────────────────────────────────────────────────────────────────────────
 
 const GOLD = "rgba(213,183,101,0.85)";
@@ -139,11 +142,18 @@ export default function PaymentPage() {
             <h2 id="enroll-heading" className="text-center text-[1.3rem] font-black leading-snug tracking-[-0.02em]">
               Secure your place
             </h2>
-            {PROGRAM_PRICE && (
-              <p className="mt-3 text-center text-[1.5rem] font-black">
-                <span className="text-gradient">{PROGRAM_PRICE}</span>
+            <div className="mt-4 text-center">
+              <span className="inline-flex items-center rounded-full border border-[var(--p-border)] bg-[var(--p400)]/10 px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--p400)]">
+                {DISCOUNT_LABEL}
+              </span>
+              <p className="mt-3 flex items-baseline justify-center gap-2.5">
+                <span className="text-[1.15rem] font-semibold text-[var(--t4)] line-through decoration-[var(--t5)]">
+                  {ORIGINAL_PRICE}
+                </span>
+                <span className="text-gradient text-[1.7rem] font-black">{FINAL_PRICE}</span>
               </p>
-            )}
+              <p className="mt-1 text-[12px] text-[var(--t4)]">{PROGRAM_TERM}</p>
+            </div>
             <div className="mt-7">
               <PayButton href={CASHFREE_URL} />
             </div>
