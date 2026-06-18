@@ -196,6 +196,12 @@ export async function POST(req: NextRequest) {
 
     const eventId = `schedule_${uid}`
     const testCode = process.env.META_TEST_EVENT_CODE
+    // Names only, never values — confirms which match signals actually arrived
+    // (esp. whether ct/fbc/fbp/external_id rode in via Cal booking metadata).
+    const matchKeys = Object.keys(userData).filter((k) => userData[k as keyof typeof userData])
+    console.log(
+      `[cal-webhook] Schedule match keys present: [${matchKeys.join(',')}] metadataPresent=${!!metadata} external_id_source=${metaValue(metadata, 'visitor_id') ? 'visitor_id' : 'uid'}`,
+    )
     console.log(
       `[cal-webhook] BOOKING_CREATED — sending Schedule CAPI: trigger=${trigger} uid=${uid} event_id=${eventId} test_event_code=${testCode || '(unset)'}`,
     )
