@@ -18,7 +18,7 @@ const trustPoints = [
   'Evidence-based protocol built for hypothyroid Indian women',
 ]
 
-const credBadges = ['ACE Certified', 'INFS Certified', 'AHA BLS']
+const credBadges = ['ACE Certified', 'INFS Certified', 'AIHM Certified', 'AHA BLS']
 
 export default function AuthoritySection() {
   return (

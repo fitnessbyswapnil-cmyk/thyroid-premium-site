@@ -3,8 +3,6 @@ export const COACH_IMAGE =
 
 export const COACH_NAME = 'Swapnil Umbarkar'
 
-// AIHM removed: the only available image was an AI-generated mockup
-// (ChatGPT-Image-…webp) — restore the entry when a real scan is uploaded.
 export const CERTIFICATIONS = [
   {
     id: 'ace',
@@ -17,6 +15,12 @@ export const CERTIFICATIONS = [
     title: 'INFS Certification',
     short: 'INFS',
     image: '/certifications/INFS Certificate SU.webp',
+  },
+  {
+    id: 'aihm',
+    title: 'AIHM · Nutrition for Hashimoto’s Thyroiditis',
+    short: 'AIHM',
+    image: '/certifications/AIHM Certificate SU.webp',
   },
   {
     id: 'aha-bls',
