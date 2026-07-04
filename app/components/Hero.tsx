@@ -130,9 +130,9 @@ export default function Hero({ variant = "default" }: { variant?: HeroVariant })
           <CtaButton
             variant="primary"
             className="relative z-[1]"
-            label="Book Your Private Thyroid Session — ₹299"
+            label="Book My Free Thyroid Session"
             sublabel="60 minutes, 1-on-1 · Your full case studied before we speak"
-            ariaLabel="Book your private thyroid session for 299 rupees"
+            ariaLabel="Book your free private thyroid session"
             location="hero"
           />
         </div>
