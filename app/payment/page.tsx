@@ -42,7 +42,7 @@ const PROOF = [
   { image: "/whatsapp-proof/Pooja-Sharma.jpeg", name: "Pooja Sharma", line: "Hair loss stopped." },
   { image: "/whatsapp-proof/Priya-Shree.jpeg", name: "Priya Shree", line: "Metabolism alive again." },
   { image: "/whatsapp-proof/Ritika-Deshmukh.jpeg", name: "Ritika Deshmukh", line: "No more exhaustion." },
-  { image: "/whatsapp-proof/Heenal R4.png", name: "Heenal", line: "TSH 6.2 → 2.9." },
+  { image: "/whatsapp-proof/Heenal R4.png", name: "Heenal", line: "TSH back in range." },
   { image: "/whatsapp-proof/Sima R1.png", name: "Sima", line: "Weight finally moving." },
 ] as const;
 

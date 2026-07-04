@@ -7,9 +7,9 @@ import { CERTIFICATIONS, COACH_IMAGE, COACH_NAME } from '../lib/authority'
 import SectionCta from './SectionCta'
 
 const stats = [
-  { num: '5+', label: 'Years Experience' },
-  { num: '200+', label: 'Clients Transformed' },
-  { num: '93%', label: 'See Real Results' },
+  { num: '5+', label: 'Years Coaching' },
+  { num: '200+', label: 'Women Coached' },
+  { num: 'Thyroid-only', label: 'Practice' },
 ]
 
 const trustPoints = [
@@ -18,7 +18,7 @@ const trustPoints = [
   'Evidence-based protocol built for hypothyroid Indian women',
 ]
 
-const credBadges = ['ACE Certified', 'INFS Certified', 'AIHM Certified', 'AHA BLS']
+const credBadges = ['ACE Certified', 'INFS Certified', 'AHA BLS']
 
 export default function AuthoritySection() {
   return (

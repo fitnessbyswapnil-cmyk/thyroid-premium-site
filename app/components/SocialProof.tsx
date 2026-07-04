@@ -315,9 +315,10 @@ function TestimonialCard({
   );
 }
 
-// ─── AggregateRating — replaces the Unicode-star bottom anchor ───────────────
+// ─── TrustLine — bottom anchor (numeric rating removed: no documentable
+// public source to cite, and an unsourced score reads as invented) ───────────
 
-function AggregateRating() {
+function TrustLine() {
   return (
     <div
       style={{
@@ -328,19 +329,6 @@ function AggregateRating() {
         marginTop: 36,
       }}
     >
-      {/* SVG stars — consistent with card design, not Unicode characters */}
-      <span aria-label="4.9 out of 5 stars" role="img">
-        <span aria-hidden="true" style={{ display: "inline-flex", gap: 3 }}>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <svg key={i} width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
-              <path
-                d="M6 1L7.545 4.13L11 4.635L8.5 7.07L9.09 10.5L6 8.875L2.91 10.5L3.5 7.07L1 4.635L4.455 4.13L6 1Z"
-                fill="rgba(244,196,48,0.6)"
-              />
-            </svg>
-          ))}
-        </span>
-      </span>
       <p
         style={{
           fontSize: 11,
@@ -352,7 +340,7 @@ function AggregateRating() {
           letterSpacing: "0.01em",
         }}
       >
-        4.9 · Trusted by 200+ Indian hypothyroid women · Thyroid-specific coaching only
+        Trusted by 200+ Indian hypothyroid women · Thyroid-specific coaching only
       </p>
     </div>
   );
@@ -418,8 +406,8 @@ export default function SocialProof() {
           ))}
         </div>
 
-        {/* Aggregate rating — SVG stars, restrained typography */}
-        <AggregateRating />
+        {/* Trust line — restrained typography */}
+        <TrustLine />
 
       </div>
     </section>

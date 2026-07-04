@@ -14,13 +14,38 @@ type ProofCard = {
   client: string
 }
 
+// ── Featured stories ──────────────────────────────────────────────────────────
+// All three live ads cite Heenal's result as headline proof, so she leads this
+// section (folded in from the removed "More Than Weight Loss" section, together
+// with Surekha). The results-vary line below the block appears once and covers
+// every number on the page.
+
+const FEATURED = [
+  {
+    image: '/MoreThanFatLossSection/heenal.png',
+    name: 'Heenal S.',
+    meta: 'IT professional, Bengaluru',
+    result: '15 kg over her 90-day program — energy and hormone markers stabilized',
+    quote: 'Finally lost the weight thyroid stole from me for 4 years.',
+  },
+  {
+    image: '/MoreThanFatLossSection/surekha.png',
+    name: 'Surekha M.',
+    meta: 'Hypothyroid client',
+    result: 'Bloating gone — no more afternoon fatigue',
+    quote: 'My clothes fit again. I finally feel like myself.',
+  },
+] as const
+
+const RESULTS_VARY =
+  'Individual results vary with condition, consistency, and starting point.'
+
 // ── Card data ─────────────────────────────────────────────────────────────────
 // Trimmed to the strongest 8 for mobile length (proof-fatigue reduction).
-// Selection was made for VARIETY OF RESULT TYPE using the captions/tags below
-// (labs/TSH, hair, metabolism, fatigue/energy, weight, mental clarity, confidence)
-// and to drop captions redundant with a stronger card. Image legibility /
-// authenticity was NOT assessed — the screenshots can't be seen from here, so
-// verify those 8 visually and swap from REMOVED_FOR_LENGTH if a kept one is weak.
+// Women only — this page speaks to hypothyroid women, so the proof does too.
+// Image legibility / authenticity was NOT assessed — the screenshots can't be
+// seen from here, so verify the 8 visually and swap from REMOVED_FOR_LENGTH if
+// a kept one is weak.
 //
 // Card count drives both views automatically:
 //   DESKTOP → split in half into 2 marquee rows (see ROW1/ROW2 below)
@@ -32,113 +57,114 @@ const ALL_CARDS: ProofCard[] = [
     image: '/whatsapp-proof/Shariya-Sultana.jpeg',
     tags: ['TSH Improved', 'Energy Back'],
     headline: 'TSH is finally in range.',
-    client: 'SHARIYA SULTANA · THYROID CLIENT',
+    client: 'Shariya Sultana · Thyroid client',
   },
   {
     id: 'c7',
     image: '/whatsapp-proof/Heenal R4.png',
-    tags: ['TSH 6.2 → 2.9'],
+    tags: ['TSH In Range'],
     headline: 'TSH dropped. Energy came back.',
-    client: 'HEENAL · HYPOTHYROID CLIENT',
+    client: 'Heenal · Hypothyroid client',
   },
   {
     id: 'c3',
     image: '/whatsapp-proof/Pooja-Sharma.jpeg',
     tags: ['Hair Fall Stopped', 'Thyroid Healing'],
     headline: 'Hair loss finally stopped.',
-    client: 'POOJA SHARMA · HYPOTHYROID CLIENT',
+    client: 'Pooja Sharma · Hypothyroid client',
   },
   {
     id: 'c4',
     image: '/whatsapp-proof/Priya-Shree.jpeg',
     tags: ['Metabolism Fixed', 'Feeling Lighter'],
     headline: 'Metabolism feels alive again.',
-    client: 'PRIYA SHREE · THYROID CLIENT',
+    client: 'Priya Shree · Thyroid client',
   },
   {
     id: 'c5',
     image: '/whatsapp-proof/Ritika-Deshmukh.jpeg',
     tags: ['Fatigue Gone', 'Strength Restored'],
     headline: 'No more morning exhaustion.',
-    client: 'RITIKA DESHMUKH · THYROID CLIENT',
+    client: 'Ritika Deshmukh · Thyroid client',
   },
   {
     id: 'c15',
     image: '/whatsapp-proof/Sima R1.png',
     tags: ['4 kg Lost'],
     headline: 'Weight started moving. Finally.',
-    client: 'SIMA · THYROID CLIENT',
+    client: 'Sima · Thyroid client',
   },
-  {
-    id: 'c12',
-    image: '/whatsapp-proof/Nitin R10.png',
-    tags: ['Mind Fog Gone'],
-    headline: 'Focus and clarity returned.',
-    client: 'NITIN · FAT LOSS CLIENT',
-  },
-  {
-    id: 'c13',
-    image: '/whatsapp-proof/Rakesh R3.png',
-    tags: ['Clothes Fitting'],
-    headline: 'Old clothes fitting again.',
-    client: 'RAKESH · FAT LOSS CLIENT',
-  },
-]
-
-// Trimmed from carousel for mobile length. Re-add the strongest if needed.
-// (Removed mostly because each duplicates a result type already covered by a
-// kept card, or reads as vague.) Nothing here is deleted — restore by moving an
-// object back up into ALL_CARDS.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for easy restore
-const REMOVED_FOR_LENGTH: ProofCard[] = [
   {
     id: 'c2',
     image: '/whatsapp-proof/Sruthi-Reddy.jpeg',
     tags: ['Weight Moving', 'Bloating Down'],
     headline: 'Weight started moving again.',
-    client: 'SRUTHI REDDY · THYROID CLIENT',
-  },
-  {
-    id: 'c6',
-    image: '/whatsapp-proof/Rozal R2.png',
-    tags: ['TSH Improved'],
-    headline: 'My thyroid finally responded.',
-    client: 'ROZAL · HYPOTHYROID CLIENT',
-  },
-  {
-    id: 'c8',
-    image: '/whatsapp-proof/Jay R6.png',
-    tags: ['Energy Restored'],
-    headline: 'Energy came back naturally.',
-    client: 'JAY · THYROID CLIENT',
-  },
-  {
-    id: 'c9',
-    image: '/whatsapp-proof/Nahamia R5.png',
-    tags: ['Bloating Down'],
-    headline: 'Bloating reduced significantly.',
-    client: 'NAHAMIA · THYROID CLIENT',
+    client: 'Sruthi Reddy · Thyroid client',
   },
   {
     id: 'c10',
     image: '/whatsapp-proof/Namarata R9.png',
     tags: ['No More Fatigue'],
     headline: 'Finally not tired all day.',
-    client: 'NAMRATA · HYPOTHYROID CLIENT',
+    client: 'Namrata · Hypothyroid client',
+  },
+]
+
+// Trimmed from carousel for mobile length. Re-add the strongest if needed.
+// (Removed mostly because each duplicates a result type already covered by a
+// kept card, reads as vague, or — Nitin/Rakesh/Nishant/Jay/Guitar — is a male
+// fat-loss client on a page speaking to hypothyroid women.) Nothing here is
+// deleted — restore by moving an object back up into ALL_CARDS.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for easy restore
+const REMOVED_FOR_LENGTH: ProofCard[] = [
+  {
+    id: 'c6',
+    image: '/whatsapp-proof/Rozal R2.png',
+    tags: ['TSH Improved'],
+    headline: 'My thyroid finally responded.',
+    client: 'Rozal · Hypothyroid client',
+  },
+  {
+    id: 'c8',
+    image: '/whatsapp-proof/Jay R6.png',
+    tags: ['Energy Restored'],
+    headline: 'Energy came back naturally.',
+    client: 'Jay · Thyroid client',
+  },
+  {
+    id: 'c9',
+    image: '/whatsapp-proof/Nahamia R5.png',
+    tags: ['Bloating Down'],
+    headline: 'Bloating reduced significantly.',
+    client: 'Nahamia · Thyroid client',
+  },
+  {
+    id: 'c12',
+    image: '/whatsapp-proof/Nitin R10.png',
+    tags: ['Mind Fog Gone'],
+    headline: 'Focus and clarity returned.',
+    client: 'Nitin · Fat loss client',
+  },
+  {
+    id: 'c13',
+    image: '/whatsapp-proof/Rakesh R3.png',
+    tags: ['Clothes Fitting'],
+    headline: 'Old clothes fitting again.',
+    client: 'Rakesh · Fat loss client',
   },
   {
     id: 'c11',
     image: '/whatsapp-proof/Nishant R7.png',
     tags: ['Consistent Results'],
     headline: 'Results without starving.',
-    client: 'NISHANT · FAT LOSS CLIENT',
+    client: 'Nishant · Fat loss client',
   },
   {
     id: 'c14',
     image: '/whatsapp-proof/Guitar R8.png',
     tags: ['Body Fat Down'],
     headline: 'Feeling like myself again.',
-    client: 'GUITAR · FAT LOSS CLIENT',
+    client: 'Guitar · Fat loss client',
   },
 ]
 
@@ -172,6 +198,81 @@ const ACCENT = 'var(--p500)'
 const ACCENT_LIGHT = 'var(--p400)'
 const ACCENT_DIM = 'rgba(168,85,247,0.22)'
 const ACCENT_GLOW = 'rgba(168,85,247,0.12)'
+
+// ── FeaturedStoryCard ─────────────────────────────────────────────────────────
+
+function FeaturedStoryCard({
+  story,
+  featured,
+}: {
+  story: (typeof FEATURED)[number]
+  featured?: boolean
+}) {
+  return (
+    <article
+      className="overflow-hidden rounded-[28px]"
+      style={{
+        border: featured
+          ? '1px solid rgba(168,85,247,0.35)'
+          : `1px solid ${ACCENT_DIM}`,
+        background:
+          'linear-gradient(160deg, rgba(168,85,247,0.07) 0%, rgba(5,4,4,0.99) 45%, rgba(10,8,4,1) 100%)',
+        boxShadow: featured
+          ? '0 0 0 1px rgba(168,85,247,0.12), 0 20px 60px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.06)'
+          : `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${ACCENT_GLOW}, 0 20px 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05)`,
+      }}
+    >
+      <div className="grid sm:grid-cols-[180px_1fr]">
+        <div className="relative min-h-[220px] sm:min-h-[240px] overflow-hidden">
+          <Image
+            src={story.image}
+            alt={`${story.name} transformation`}
+            fill
+            sizes="(max-width: 640px) 90vw, 180px"
+            className="object-cover object-top"
+            loading="lazy"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(to top, rgba(5,4,4,0.7) 0%, transparent 40%)',
+            }}
+          />
+        </div>
+
+        <div className="flex flex-col justify-center p-6">
+          {featured && (
+            <span
+              className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-[5px] text-[0.6rem] font-extrabold uppercase tracking-[0.18em]"
+              style={{
+                background: 'rgba(168,85,247,0.09)',
+                border: '1px solid rgba(168,85,247,0.28)',
+                color: ACCENT_LIGHT,
+              }}
+            >
+              Featured story
+            </span>
+          )}
+
+          <p className="mb-1 text-[0.95rem] font-bold tracking-[-0.01em] text-white/95">
+            {story.name}{' '}
+            <span className="font-medium text-white/40">· {story.meta}</span>
+          </p>
+
+          <p className="mb-3 text-[0.85rem] font-semibold leading-[1.5]" style={{ color: ACCENT_LIGHT }}>
+            {story.result}
+          </p>
+
+          <p className="text-[0.85rem] italic leading-[1.65] text-white/55">
+            &ldquo;{story.quote}&rdquo;
+          </p>
+        </div>
+      </div>
+    </article>
+  )
+}
 
 // ── ProofCard ─────────────────────────────────────────────────────────────────
 
@@ -295,8 +396,8 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
             {initial}
           </div>
           <p
-            className="text-[0.59rem] font-semibold uppercase tracking-[0.15em]"
-            style={{ color: 'rgba(255,255,255,0.28)' }}
+            className="text-[0.66rem] font-semibold tracking-[0.08em]"
+            style={{ color: 'rgba(255,255,255,0.32)' }}
           >
             {card.client}
           </p>
@@ -372,7 +473,7 @@ export default function WhatsappProofSection() {
                 className="text-[0.62rem] font-bold uppercase tracking-[0.2em]"
                 style={{ color: ACCENT_LIGHT }}
               >
-                Real Client Conversations
+                Client conversations
               </span>
             </div>
           </motion.div>
@@ -382,8 +483,8 @@ export default function WhatsappProofSection() {
             className="section-title mx-auto"
             style={{ maxWidth: '22ch' }}
           >
-            Real Conversations.{' '}
-            <span className="text-gradient">Real Thyroid Progress.</span>
+            Real conversations.{' '}
+            <span className="text-gradient">Real thyroid progress.</span>
           </motion.h2>
 
           <motion.p
@@ -391,9 +492,33 @@ export default function WhatsappProofSection() {
             className="section-lead mx-auto mt-4 text-pretty"
             style={{ maxWidth: '46ch' }}
           >
-            These are actual messages from clients finally seeing their body respond again —
-            real people, real thyroid struggles, real results.
+            Actual client messages, shared with permission.
           </motion.p>
+        </motion.div>
+
+        {/* ── Featured stories — Heenal leads (cited in every live ad) ────── */}
+        <motion.div
+          className="container-default mb-12"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-60px' }}
+          variants={stagger}
+        >
+          <div className="mx-auto flex max-w-[720px] flex-col gap-4">
+            <motion.div variants={fadeUp}>
+              <FeaturedStoryCard story={FEATURED[0]} featured />
+            </motion.div>
+            <motion.div variants={fadeUp}>
+              <FeaturedStoryCard story={FEATURED[1]} />
+            </motion.div>
+            <motion.p
+              variants={fadeUp}
+              className="text-center text-[0.7rem] leading-relaxed"
+              style={{ color: 'rgba(255,255,255,0.28)' }}
+            >
+              {RESULTS_VARY}
+            </motion.p>
+          </div>
         </motion.div>
 
         {/* ── MOBILE: wide snap-scroll (single row, all active cards) ─────── */}
@@ -492,8 +617,8 @@ export default function WhatsappProofSection() {
             variants={fadeUp}
             className="mb-8 text-[1.65rem] font-black leading-[1.08] tracking-[-0.04em] text-white sm:text-[2.1rem]"
           >
-            Your Thyroid Story{' '}
-            <span className="text-gradient">Could Be Next.</span>
+            Your thyroid story{' '}
+            <span className="text-gradient">could be next.</span>
           </motion.h3>
 
           <motion.div

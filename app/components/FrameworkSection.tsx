@@ -70,7 +70,12 @@ export default function FrameworkSection() {
           ))}
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-[var(--r-xl)] border border-[var(--b-soft)] bg-[var(--s1)]">
+        {/* Timeline — retitled to echo the ads' 90-day promise */}
+        <p className="mb-3 mt-8 text-center text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--p400)]">
+          Your 90 days, week by week
+        </p>
+
+        <div className="overflow-hidden rounded-[var(--r-xl)] border border-[var(--b-soft)] bg-[var(--s1)]">
           <div className="flex flex-col sm:flex-row">
             {timeline.map((t, i) => (
               <div
@@ -104,6 +109,13 @@ export default function FrameworkSection() {
             ))}
           </div>
         </div>
+
+        {/* Retention line — filters overnight-numbers seekers, sets honest pace */}
+        <p className="mx-auto mt-4 max-w-[52ch] text-center text-[12.5px] leading-[1.7] text-[var(--t4)]">
+          The first three weeks are about energy and digestion — the scale follows
+          once your body responds. If you need overnight numbers, this isn&apos;t
+          your program.
+        </p>
 
         <SectionCta
           style={{ maxWidth: 320 }}
