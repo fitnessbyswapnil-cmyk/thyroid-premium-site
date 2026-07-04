@@ -34,6 +34,18 @@ const faqs = [
     q: "I've tried coaching before and it didn't work. How is this different?",
     a: "Most coaching programs treat thyroid clients exactly like everyone else — same calorie deficits, same exercise plans. This coaching is built specifically around hypothyroid fat-loss physiology. The approach is different because the problem is different. The free session exists precisely to show you what that difference looks like for your specific case — before you commit to anything further.",
   },
+  {
+    q: 'Will you pitch me on the call?',
+    a: "Only if you ask. If coaching looks like a fit, options and pricing come up in the last ten minutes. The session's value stands on its own either way.",
+  },
+  {
+    q: 'How much time does coaching take each week?',
+    a: 'Around 30–40 minutes of movement, 3–4 days a week, plus a 10-minute weekly check-in. Meals are built from what your kitchen already cooks.',
+  },
+  {
+    q: 'What should I bring to the session?',
+    a: "Your most recent thyroid reports if you have them — TSH, T3, T4, and iron if tested. No reports? Come anyway; we'll map what to test.",
+  },
 ]
 
 function AccordionItem({
@@ -168,7 +180,7 @@ export default function FAQSection() {
             style={{ maxWidth: 280 }}
             label="Book My Free Thyroid Session"
             sublabel="60-min private 1-on-1 · Free, no card needed"
-            trust="ACE · FITR · INFS Certified · 200+ Clients"
+            trust="ACE · INFS Certified · 200+ Clients"
             ariaLabel="Book your free thyroid assessment"
             location="faq"
           />

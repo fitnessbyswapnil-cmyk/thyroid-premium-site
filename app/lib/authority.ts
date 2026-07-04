@@ -3,13 +3,9 @@ export const COACH_IMAGE =
 
 export const COACH_NAME = 'Swapnil Umbarkar'
 
+// AIHM removed: the only available image was an AI-generated mockup
+// (ChatGPT-Image-…webp) — restore the entry when a real scan is uploaded.
 export const CERTIFICATIONS = [
-  {
-    id: 'aihm',
-    title: 'AIHM Certification',
-    short: 'AIHM',
-    image: '/certifications/ChatGPT-Image-May-12-2026-11_50_26-PM.webp',
-  },
   {
     id: 'ace',
     title: 'ACE Certification',

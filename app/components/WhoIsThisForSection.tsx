@@ -61,8 +61,8 @@ export default function WhoIsThisForSection() {
         </div>
 
         <p className="mt-6 text-center text-[12.5px] italic leading-relaxed text-[var(--t4)]">
-          This is not for you if you&apos;re looking for a quick fix or aren&apos;t open to
-          making small, consistent changes.
+          This is not for you if you want a quick fix, won&apos;t make three small
+          changes a week, or won&apos;t get basic labs done when they&apos;re needed.
         </p>
 
         <SectionCta
