@@ -1,59 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-
-import { pushDL } from "../lib/analytics";
 import CtaButton from "./CtaButton";
-
-export type HeroVariant = "default" | "eatless" | "labs";
-
-// Message-matched copy — H1s are verbatim from the live ad images so each
-// clicker lands on the exact promise she tapped. The proof-strip quote is the
-// quote from that same ad.
-const VARIANTS: Record<
-  HeroVariant,
-  {
-    h1Lead: string;
-    h1Accent: string;
-    body: string;
-    quote: string;
-    quoteBy: string;
-  }
-> = {
-  default: {
-    h1Lead: "You're not the problem.",
-    h1Accent: "Your thyroid is.",
-    body: "Doing everything right and the weight still won't move? In a private 60-minute session, see exactly what's blocking your fat loss — and the 90-day plan to restart it. Real Indian food, no crash diets.",
-    quote: "Metabolism feels alive again.",
-    quoteBy: "Priya S.",
-  },
-  eatless: {
-    h1Lead: "Eating less makes it worse.",
-    h1Accent: "It slows your thyroid down.",
-    body: "Under-eating pushes a slow thyroid even slower. That's why every diet left you more stuck, not lighter. In a private 60-minute session, see what your metabolism actually needs before fat loss can start. Real food, no starving.",
-    quote: "No starvation. Real food. Real results.",
-    quoteBy: "Anjali M.",
-  },
-  labs: {
-    h1Lead: "Your labs say “normal.”",
-    h1Accent: "But you still feel stuck.",
-    body: "Tired all day with a “normal” TSH? Bring your reports. In your 60-minute session we go through your TSH, T3, T4 and iron together — and you'll see what they mean for your fat loss.",
-    quote: "My TSH is finally in range.",
-    quoteBy: "Shariya S.",
-  },
-};
 
 const GOLD_DOT = "rgba(213,183,101,0.8)";
 
-export default function Hero({ variant = "default" }: { variant?: HeroVariant }) {
-  const v = VARIANTS[variant];
-
-  // Expose the variant on the dataLayer so GTM can attach it to
-  // ViewContent/Lead and LP→Lead can be read per ad angle in Events Manager.
-  useEffect(() => {
-    pushDL({ event: "lp_variant", lp_variant: variant });
-  }, [variant]);
-
+export default function Hero() {
   return (
     <section
       className="relative overflow-hidden bg-[var(--bg-page)] text-white"
@@ -97,22 +48,27 @@ export default function Hero({ variant = "default" }: { variant?: HeroVariant })
           />
         </div>
 
-        {/* Headline (single H1) — message-matched to the ad that was clicked */}
+        {/* Headline (single H1) */}
         <h1
           id="hero-heading"
           className="hero-rise mx-auto mt-[30px] max-w-[15ch] text-balance text-[length:clamp(2.4rem,1.75rem_+_2.9vw,4.4rem)] font-black leading-[1.04] tracking-[-0.03em] sm:max-w-[18ch]"
           style={{ animationDelay: "120ms" }}
         >
-          {v.h1Lead}{" "}
-          <span className="text-gradient italic">{v.h1Accent}</span>
+          You&apos;re not the problem.{" "}
+          <span className="text-gradient italic">Your thyroid is.</span>
         </h1>
 
-        {/* Subhead — opacity ladder starts here (brightest) */}
+        {/* Subhead — opacity ladder starts here (brightest). One static body
+            speaking to all three ad angles (eating less / normal labs / not you). */}
         <p
           className="hero-rise mt-[26px] max-w-[52ch] text-pretty text-[length:clamp(1rem,0.94rem_+_0.4vw,1.16rem)] leading-[1.66] text-[var(--t2)]"
           style={{ animationDelay: "240ms" }}
         >
-          {v.body}
+          Eating less. &lsquo;Normal&rsquo; labs. Doing everything right. The
+          weight still won&apos;t move &mdash; because your thyroid was never
+          the focus. In one private 60-minute session, see what&apos;s blocking
+          your fat loss and the 90-day plan to restart it. Real Indian food, no
+          starving.
         </p>
 
         {/* Credentials — collapsed to one line so the CTA sits above the fold */}
@@ -137,7 +93,7 @@ export default function Hero({ variant = "default" }: { variant?: HeroVariant })
           />
         </div>
 
-        {/* Prep line — pays AD2's "read your reports" promise, lifts show-up quality */}
+        {/* Prep line — pays the "read your reports" ad promise, lifts show-up quality */}
         <p
           className="hero-rise mt-[16px] text-[12.5px] font-medium leading-[1.5] text-[var(--t3)]"
           style={{ animationDelay: "540ms" }}
@@ -145,14 +101,14 @@ export default function Hero({ variant = "default" }: { variant?: HeroVariant })
           Have your latest thyroid reports? Keep them handy for the session.
         </p>
 
-        {/* Proof strip — the exact quote from the ad she just tapped */}
+        {/* Proof strip — client quote + trust line */}
         <div
           className="hero-rise mt-[24px] flex flex-col items-center gap-1.5"
           style={{ animationDelay: "600ms" }}
         >
           <p className="max-w-[42ch] text-[13.5px] italic leading-[1.6] text-[var(--t2)]">
-            &ldquo;{v.quote}&rdquo;{" "}
-            <span className="not-italic text-[var(--t3)]">— {v.quoteBy}</span>
+            &ldquo;Metabolism feels alive again.&rdquo;{" "}
+            <span className="not-italic text-[var(--t3)]">— Priya S.</span>
           </p>
           <p className="flex items-center gap-2 text-[11.5px] font-medium tracking-[0.02em] text-[var(--t4)]">
             <span
