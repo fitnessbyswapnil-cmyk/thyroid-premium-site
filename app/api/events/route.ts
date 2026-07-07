@@ -18,7 +18,12 @@ import {
   getCookieFromReq,
 } from '@/lib/server-tracking'
 
-// Allowed events from browser
+// Allowed events from browser.
+// 'Schedule' is deliberately ABSENT: the Cal.com BOOKING_CREATED webhook
+// (/api/cal-webhook) is the ONLY server-side Schedule sender, keyed
+// schedule_<uid> to dedupe with the browser Pixel. Relaying Schedule here as
+// well produced a second server event (with whatever event_id the caller
+// chose), which Meta could not collapse — 2 server Schedules per booking.
 const ALLOWED_EVENTS = new Set([
   'PageView',
   'ViewContent',
@@ -28,7 +33,6 @@ const ALLOWED_EVENTS = new Set([
   'WhatsAppClick',
   'InitiateCheckout',
   'AddPaymentInfo',
-  'Schedule',
   'SessionQualified',
   'Engagement',
   'ScrollDepth',
@@ -54,6 +58,18 @@ export async function POST(req: NextRequest) {
     const { event_name, event_id, source_url, user_data = {}, custom_data } = body
 
     // Validate
+    if (event_name === 'Schedule') {
+      // Explicit, loggable rejection so any legacy caller / GTM server tag
+      // that still relays Schedule is visible in Vercel logs instead of
+      // silently double-counting in Meta.
+      console.warn(
+        `[api/events] 409 — Schedule relay rejected (event_id=${event_id}); /api/cal-webhook is the sole server Schedule sender`,
+      )
+      return NextResponse.json(
+        { error: 'Schedule is sent server-side only by /api/cal-webhook (event_id schedule_<uid>)' },
+        { status: 409 },
+      )
+    }
     if (!ALLOWED_EVENTS.has(event_name)) {
       return NextResponse.json({ error: 'Invalid event' }, { status: 400 })
     }

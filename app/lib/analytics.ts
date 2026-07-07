@@ -272,27 +272,34 @@ export function trackPurchase(userData?: UserData, eventId?: string, transaction
 // Pixel and the Cal.com webhook CAPI share ONE id and Meta deduplicates to a
 // single Schedule. Falls back to a generated id only when the uid is unknown.
 // Pushes dataLayer event "schedule" (the GTM web trigger must listen for this).
+// DEDUP CONTRACT: a Schedule event_id is ALWAYS `schedule_<cal_booking_uid>` —
+// shared with the /api/cal-webhook server leg so Meta collapses the pair.
+// eventId is therefore REQUIRED; a Schedule with a random/timestamp id can
+// never dedupe, so if there is no uid we don't fire at all.
 export function trackSchedule(
-  details?: {
+  details: {
     name?: string;
     date?: string;
     time?: string;
   },
-  eventId?: string,
+  eventId: string,
   userData?: UserData,
 ) {
-  const event_id = eventId || generateEventId("schedule");
+  if (!eventId.startsWith("schedule_")) {
+    console.warn(`[analytics] trackSchedule skipped — event_id "${eventId}" violates the schedule_<uid> contract`);
+    return "";
+  }
   const payload = withUserSignals(
     {
       event: "schedule",
-      event_id,
+      event_id: eventId,
       ...PRODUCT,
       ...(details ?? {}),
     },
     userData,
   );
   pushDL(payload);
-  return event_id;
+  return eventId;
 }
 
 export function trackScrollDepth(depth: number, pageType = "landing") {
