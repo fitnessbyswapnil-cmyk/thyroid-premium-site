@@ -9,36 +9,60 @@ import { persistUserIdentity } from "../components/tracking/UserIdentityTracker"
 // Reached after a confirmed Cal.com booking. /session-booked redirects here with
 // ?uid=<cal_booking_uid>&date=…&time=…&name=…&orderId=…
 //
-// SCHEDULE fires HERE, on page load — guarded so it fires AT MOST once per
-// booking, even on refresh / back-forward navigation:
+// PII SCRUB: the query string carries the attendee's real name, so it is read
+// ONCE and stripped via history.replaceState DURING FIRST RENDER — before any
+// React effect (RouteTracker page_view, Schedule below) can push to the
+// dataLayer — so the name never reaches Meta in page_location. The values live
+// on in component state only.
+//
+// SCHEDULE fires on page load — guarded so it fires AT MOST once per booking,
+// even on refresh / back-forward navigation:
 //   • scheduleFiredRef   → once per mount
 //   • sessionStorage key → once per uid, across remounts in this tab
 // event_id = schedule_<uid> (shared with the Cal.com BOOKING_CREATED webhook
 // CAPI) so Meta deduplicates the browser Pixel and server Schedule into one.
 // No uid → never fire (we don't mint a fake Schedule id).
 
+type BookingParams = { uid: string; name: string; date: string; time: string };
+
+// Runs in the useState initializer (first render, client only): capture the
+// params, then immediately strip the query string from the address bar.
+function captureAndScrubParams(): BookingParams {
+  if (typeof window === "undefined") {
+    return { uid: "", name: "", date: "", time: "" };
+  }
+  const p = new URLSearchParams(window.location.search);
+  const params = {
+    uid: p.get("uid") || "",
+    name: p.get("name") || "",
+    date: p.get("date") || "",
+    time: p.get("time") || "",
+  };
+  if (window.location.search) {
+    try {
+      history.replaceState(null, "", window.location.pathname);
+    } catch { /* non-critical — worst case the URL keeps its query */ }
+  }
+  return params;
+}
+
 function BookingConfirmedInner() {
   const [show, setShow] = useState(false);
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [{ uid, name, date, time }] = useState(captureAndScrubParams);
+  // The prerendered HTML has no params, so displaying them on the hydration
+  // render would mismatch — show them only after mount (`show` flips in the
+  // first effect, same as the entrance transition).
+  const dispName = show ? name : "";
+  const dispDate = show ? date : "";
+  const dispTime = show ? time : "";
   const scheduleFiredRef = useRef(false);
 
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 80);
 
-    const p = new URLSearchParams(window.location.search);
-    const uid = p.get("uid") || "";
-    const urlName = p.get("name") || "";
-    const urlDate = p.get("date") || "";
-    const urlTime = p.get("time") || "";
-    if (urlName) setName(urlName);
-    if (urlDate) setDate(urlDate);
-    if (urlTime) setTime(urlTime);
-
     // Keep identity hydrated for the Schedule advanced-matching signals.
     try {
-      if (urlName) persistUserIdentity({ first_name: urlName.split(" ")[0] });
+      if (name) persistUserIdentity({ first_name: name.split(" ")[0] });
     } catch { /* non-critical */ }
 
     // ── Schedule on load ──────────────────────────────────────────────────────
@@ -52,9 +76,9 @@ function BookingConfirmedInner() {
         try { sessionStorage.setItem(sessionKey, "1"); } catch { /* non-critical */ }
 
         trackSchedule(
-          { name: urlName, date: urlDate, time: urlTime },
+          { name, date, time },
           `schedule_${uid}`,
-          urlName ? { first_name: urlName.split(" ")[0] } : undefined,
+          name ? { first_name: name.split(" ")[0] } : undefined,
         );
       } else {
         scheduleFiredRef.current = true;
@@ -62,6 +86,7 @@ function BookingConfirmedInner() {
     }
 
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- params are captured once at mount
   }, []);
 
   return (
@@ -107,7 +132,7 @@ function BookingConfirmedInner() {
           {/* Headline */}
           <div className="rounded-[24px] border border-[#c5a24d]/15 bg-[#c5a24d]/[0.06] p-6 text-center">
             <h1 className="mb-3 text-[1.7rem] font-black leading-tight tracking-[-0.04em] text-white">
-              You&apos;re all set{name ? `, ${name.split(" ")[0]}` : ""}.{" "}
+              You&apos;re all set{dispName ? `, ${dispName.split(" ")[0]}` : ""}.{" "}
               <span className="bg-gradient-to-r from-[#a855f7] to-[#c5a24d] bg-clip-text text-transparent">
                 See you soon.
               </span>
@@ -119,22 +144,22 @@ function BookingConfirmedInner() {
           </div>
 
           {/* Session details */}
-          {(date || time) && (
+          {(dispDate || dispTime) && (
             <div className="rounded-2xl border border-[#a855f7]/8 bg-white/[0.04] p-5">
               <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-white/25">
                 Your session details
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {date && (
+                {dispDate && (
                   <div className="rounded-xl border border-[#a855f7]/7 bg-white/[0.04] p-3.5">
                     <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#c5a24d]/65">Date</p>
-                    <p className="text-[0.82rem] font-semibold leading-snug text-white/88">{date}</p>
+                    <p className="text-[0.82rem] font-semibold leading-snug text-white/88">{dispDate}</p>
                   </div>
                 )}
-                {time && (
+                {dispTime && (
                   <div className="rounded-xl border border-[#a855f7]/7 bg-white/[0.04] p-3.5">
                     <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#c5a24d]/65">Time</p>
-                    <p className="text-[0.82rem] font-semibold text-white/88">{time}</p>
+                    <p className="text-[0.82rem] font-semibold text-white/88">{dispTime}</p>
                     <p className="mt-0.5 text-[0.65rem] text-white/30">India Standard Time</p>
                   </div>
                 )}
