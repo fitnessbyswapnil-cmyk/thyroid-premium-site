@@ -23,7 +23,10 @@ const credBadges = ['ACE Certified', 'INFS Certified', 'AIHM Certified', 'AHA BL
 export default function AuthoritySection() {
   return (
     <section
-      className="section-pad relative bg-[var(--bg-page)] text-white"
+      // overflow-x-clip: the portrait halo (inset -3.5rem) spills ~14px past
+      // the viewport at 375px and forced horizontal page scroll. clip (not
+      // hidden) contains it without creating a scroll container.
+      className="section-pad relative overflow-x-clip bg-[var(--bg-page)] text-white"
       aria-labelledby="authority-heading"
     >
       {/* ambient page glow */}
