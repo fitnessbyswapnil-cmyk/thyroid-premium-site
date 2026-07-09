@@ -9,6 +9,7 @@ import VideoTestimonial from "@/app/components/VideoTestimonial";
 import ProblemSection from "@/app/components/ProblemSection";
 import WhatsappProofSection from "@/app/components/WhatsappProofSection";
 import FrameworkSection from "@/app/components/FrameworkSection";
+import HowItWorksSection from "@/app/components/HowItWorksSection";
 import FAQSection from "@/app/components/FAQSection";
 import FinalCTASection from "@/app/components/FinalCTASection";
 import StickyBookingBar from "@/app/components/StickyBookingBar";
@@ -30,6 +31,7 @@ export default function Home() {
       <ResultsSection />
       <WhatsappProofSection />
       <FAQSection />
+      <HowItWorksSection />
       <FinalCTASection />
       <StickyBookingBar />
     </main>

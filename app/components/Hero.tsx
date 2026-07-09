@@ -101,6 +101,16 @@ export default function Hero() {
           Have your latest thyroid reports? Keep them handy for the session.
         </p>
 
+        {/* Secondary link — smooth-scrolls (global scroll-behavior) to the
+            6-step session breakdown just above the final CTA */}
+        <a
+          href="#how-it-works"
+          className="hero-rise mt-[10px] text-[14px] font-medium text-[var(--t3)] underline decoration-[rgba(168,85,247,0.4)] underline-offset-4 transition-colors hover:text-[var(--t2)]"
+          style={{ animationDelay: "570ms" }}
+        >
+          See how the session works ↓
+        </a>
+
         {/* Proof strip — client quote + trust line */}
         <div
           className="hero-rise mt-[24px] flex flex-col items-center gap-1.5"
