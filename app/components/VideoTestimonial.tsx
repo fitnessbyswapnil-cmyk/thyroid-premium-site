@@ -2,7 +2,6 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import CtaButton from "./CtaButton";
 
 // ── Video source paths (emoji filenames must be percent-encoded in URLs) ──────
 
@@ -413,12 +412,7 @@ function VideoCard({
 
       {/* ── Text content ── */}
       <div className="flex flex-1 flex-col p-5 pb-6">
-        <h3 className="mb-2.5 text-[0.98rem] font-extrabold leading-snug tracking-[-0.025em] text-[var(--t1)]">
-          &ldquo;{story.headline}&rdquo;
-        </h3>
-        <p className="mb-5 flex-1 text-[0.78rem] leading-relaxed text-[var(--t3)]">
-          {story.subtext}
-        </p>
+        <div className="mb-4 flex-1" />
 
         {/* Client identity */}
         <div className="flex items-center gap-3">
@@ -478,41 +472,8 @@ export default function VideoTestimonial() {
           className="mb-12 text-center sm:mb-14"
         >
           <motion.p variants={fadeUp} className="section-label">
-            Client Stories
+            In Their Own Words
           </motion.p>
-          <motion.h2
-            id="testimonial-heading"
-            variants={fadeUp}
-            className="section-title mx-auto"
-            style={{ maxWidth: "22ch" }}
-          >
-            They Thought Their Thyroid Would{" "}
-            <span className="text-gradient">Never Let Them Lose Weight.</span>
-          </motion.h2>
-          <motion.p
-            variants={fadeUp}
-            className="section-lead mx-auto mt-4"
-            style={{ maxWidth: "48ch" }}
-          >
-            Real Indian women. Real thyroid diagnoses. Real results — finally,
-            with a method built for how a thyroid body actually works.
-          </motion.p>
-
-          {/* Social proof pill */}
-          <motion.div variants={fadeUp} className="mt-6 flex justify-center">
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2"
-              style={{
-                background: "rgba(168,85,247,0.07)",
-                border: "1px solid rgba(168,85,247,0.18)",
-              }}
-            >
-              <span className="text-[0.72rem] text-[var(--p300)]" aria-hidden>★★★★★</span>
-              <span className="text-[0.68rem] font-semibold text-white/50">
-                200+ women transformed across India
-              </span>
-            </div>
-          </motion.div>
         </motion.div>
 
         {/* ── Video grid ── */}
@@ -536,34 +497,7 @@ export default function VideoTestimonial() {
         </motion.div>
 
         {/* ── CTA block ── */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUp}
-          className="mx-auto mt-14 max-w-[min(100%,22rem)]"
-        >
-          <div
-            className="cta-wrap section-cta rounded-[28px] p-5"
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              backdropFilter: "blur(16px)",
-            }}
-          >
-            <p className="mb-4 text-center text-[0.7rem] text-[var(--t5)]">
-              No pressure · Personalised fit review
-            </p>
-            <CtaButton
-              variant="primary"
-              className="w-full"
-              label="Book My Free Thyroid Session"
-              sublabel="60-min private 1-on-1 · Free, no card needed"
-              ariaLabel="Apply for private thyroid coaching"
-              location="video_testimonial"
-            />
-          </div>
-        </motion.div>
+
       </div>
 
       <style>{`@keyframes vt-spin { to { transform: rotate(360deg); } }`}</style>
