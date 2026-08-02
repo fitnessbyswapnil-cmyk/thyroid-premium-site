@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 
-import SectionCta from "./SectionCta";
 import { useInView } from "../lib/useInView";
 
 // Wordless transformation wall — the 1080×1920 composites carry the whole
@@ -68,15 +67,6 @@ export default function TransformationWall() {
         <p className="mt-6 text-center text-[11px] text-[var(--t5)]">
           Individual results vary. Not a substitute for medical advice.
         </p>
-
-        <SectionCta
-          variant="primary"
-          className="mx-auto max-w-sm"
-          buttonClassName="w-full"
-          label="Book My Free Thyroid Session"
-          ariaLabel="Book your free private thyroid session"
-          location="transformations"
-        />
       </div>
     </section>
   );

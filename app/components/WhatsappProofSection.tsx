@@ -337,13 +337,6 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
           ))}
         </div>
 
-        {/* Headline */}
-        <p
-          className="text-[0.95rem] font-bold leading-[1.3] tracking-[-0.015em]"
-          style={{ color: 'rgba(255,255,255,0.93)' }}
-        >
-          {card.headline}
-        </p>
       </div>
 
       {/* ── Screenshot ── */}
@@ -453,73 +446,14 @@ export default function WhatsappProofSection() {
           viewport={{ once: true, margin: '-80px' }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="mb-5 flex justify-center">
-            <div
-              className="inline-flex items-center gap-2.5 rounded-full px-4 py-2"
-              style={{
-                background: 'rgba(168,85,247,0.08)',
-                border: `1px solid rgba(168,85,247,0.22)`,
-              }}
-            >
-              <span
-                className="h-1.5 w-1.5 animate-pulse rounded-full"
-                style={{
-                  background: ACCENT,
-                  boxShadow: `0 0 10px ${ACCENT}`,
-                }}
-                aria-hidden="true"
-              />
-              <span
-                className="text-[0.62rem] font-bold uppercase tracking-[0.2em]"
-                style={{ color: ACCENT_LIGHT }}
-              >
-                Client conversations
-              </span>
-            </div>
-          </motion.div>
-
-          <motion.h2
-            variants={fadeUp}
-            className="section-title mx-auto"
-            style={{ maxWidth: '22ch' }}
-          >
-            Real conversations.{' '}
-            <span className="text-gradient">Real thyroid progress.</span>
-          </motion.h2>
-
-          <motion.p
-            variants={fadeUp}
-            className="section-lead mx-auto mt-4 text-pretty"
-            style={{ maxWidth: '46ch' }}
-          >
-            Actual client messages, shared with permission.
+          <motion.p variants={fadeUp} className="section-label">
+            Unedited Messages
           </motion.p>
         </motion.div>
 
-        {/* ── Featured stories — Heenal leads (cited in every live ad) ────── */}
-        <motion.div
-          className="container-default mb-12"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-        >
-          <div className="mx-auto flex max-w-[720px] flex-col gap-4">
-            <motion.div variants={fadeUp}>
-              <FeaturedStoryCard story={FEATURED[0]} featured />
-            </motion.div>
-            <motion.div variants={fadeUp}>
-              <FeaturedStoryCard story={FEATURED[1]} />
-            </motion.div>
-            <motion.p
-              variants={fadeUp}
-              className="text-center text-[0.7rem] leading-relaxed"
-              style={{ color: 'rgba(255,255,255,0.28)' }}
-            >
-              {RESULTS_VARY}
-            </motion.p>
-          </div>
-        </motion.div>
+        <p className="container-default mb-10 text-center text-[0.7rem] leading-relaxed" style={{ color: 'rgba(255,255,255,0.28)' }}>
+          {RESULTS_VARY}
+        </p>
 
         {/* ── MOBILE: wide snap-scroll (single row, all active cards) ─────── */}
         <div className="block md:hidden">
@@ -596,53 +530,6 @@ export default function WhatsappProofSection() {
 
           </div>
         </div>
-
-        {/* ── CTA ─────────────────────────────────────────────────────────── */}
-        <motion.div
-          className="container-default mt-16 text-center"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-        >
-          <motion.p
-            variants={fadeUp}
-            className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.22em]"
-            style={{ color: 'rgba(255,255,255,0.22)' }}
-          >
-            Your results could be next
-          </motion.p>
-
-          <motion.h3
-            variants={fadeUp}
-            className="mb-8 text-[1.65rem] font-black leading-[1.08] tracking-[-0.04em] text-white sm:text-[2.1rem]"
-          >
-            Your thyroid story{' '}
-            <span className="text-gradient">could be next.</span>
-          </motion.h3>
-
-          <motion.div
-            variants={fadeUp}
-            className="mx-auto"
-            style={{ maxWidth: '23rem' }}
-          >
-            <div className="section-cta">
-              <CtaButton
-                variant="primary"
-                label="Book My Free Thyroid Session"
-                sublabel="60-min private 1-on-1 · Free, no card needed"
-                ariaLabel="Reserve your private thyroid strategy session"
-                location="whatsapp_proof_cta"
-              />
-              <p
-                className="text-center text-[0.67rem]"
-                style={{ color: 'rgba(255,255,255,0.26)' }}
-              >
-                Free · No card needed · Limited slots weekly
-              </p>
-            </div>
-          </motion.div>
-        </motion.div>
 
       </div>
     </section>

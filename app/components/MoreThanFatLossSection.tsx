@@ -80,10 +80,6 @@ function StoryCard({
               ))}
             </div>
 
-            <p className="mb-5 text-[15px] font-medium leading-relaxed text-[var(--t2)]">
-              &ldquo;{story.quote}&rdquo;
-            </p>
-
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--t4)]">
               {story.name}
             </p>
@@ -129,11 +125,6 @@ function StoryCard({
           ))}
         </div>
 
-        {/* QUOTE */}
-        <p className="mb-3 text-[14px] leading-relaxed text-[var(--t2)]">
-          &ldquo;{story.quote}&rdquo;
-        </p>
-
         {/* NAME */}
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--t4)]">
           {story.name}
@@ -152,21 +143,9 @@ export default function MoreThanFatLossSection() {
       </div>
 
       <div className="container-default relative z-10">
-        <SectionHeader
-          label="Real Client Transformations"
-          title={
-            <>
-              More Than Weight Loss.{" "}
-              <span className="text-gradient">
-                Confidence Returned.
-              </span>
-            </>
-          }
-          lead="These women didn't just lose belly fat — they got their energy, confidence, and daily life back."
-          titleMaxCh="18ch"
-        />
+        <p className="section-label text-center">More Than Fat Loss</p>
 
-        {/* DESKTOP */}
+                {/* DESKTOP */}
         <div className="hidden gap-6 md:grid md:grid-cols-2">
           {stories.map((story) => (
             <StoryCard
@@ -188,16 +167,17 @@ export default function MoreThanFatLossSection() {
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="mt-12">
-          <SectionCta
-            variant="ghost"
-            label="Book My Free Thyroid Session"
-            trust="200+ Indian women · Premium coaching results"
-            ariaLabel="Start your thyroid transformation"
-            location="more_than_fat_loss"
-          />
-        </div>
+        {/* The ONE conversion point after the whole proof stack (hero and
+            FinalCTA are the other two; sticky bar always on). */}
+        <SectionCta
+          variant="primary"
+          className="mx-auto mt-12 max-w-sm"
+          buttonClassName="w-full"
+          label="Book My Free Thyroid Session"
+          sublabel="60-min private 1-on-1 · Free, no card needed"
+          ariaLabel="Book your free private thyroid session"
+          location="transformations"
+        />
       </div>
     </section>
   );
