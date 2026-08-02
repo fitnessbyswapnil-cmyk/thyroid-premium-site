@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { Fragment } from 'react'
 
-import { CERTIFICATIONS, COACH_IMAGE, COACH_NAME } from '../lib/authority'
+import { COACH_IMAGE, COACH_NAME } from '../lib/authority'
 import SectionCta from './SectionCta'
 
 const stats = [
@@ -173,53 +173,7 @@ export default function AuthoritySection() {
           </div>
         </div>
 
-        {/* ── CERTIFICATIONS GRID ──────────────────────────── */}
-        <div className="authority-cert-section">
-
-          <div className="authority-cert-header">
-            <span className="authority-cert-header-line" aria-hidden="true" />
-            <p className="section-label" style={{ margin: 0 }}>Curated Credentials</p>
-            <span className="authority-cert-header-line" aria-hidden="true" />
-          </div>
-
-          <div
-            className="authority-cert-grid"
-            role="list"
-            aria-label="Certifications"
-          >
-            {CERTIFICATIONS.map((cert) => (
-              <figure
-                key={cert.id}
-                className="authority-cert-card"
-                role="listitem"
-              >
-                {/* image area */}
-                <div className="authority-cert-img-wrap">
-                  <Image
-                    src={cert.image}
-                    alt={cert.title}
-                    fill
-                    sizes="(max-width: 640px) 44vw, (max-width: 1024px) 22vw, 260px"
-                    className="object-contain p-3"
-                    loading="lazy"
-                  />
-                  {/* subtle inner glow on hover (handled via CSS) */}
-                  <div className="authority-cert-img-overlay" aria-hidden="true" />
-                </div>
-
-                {/* label */}
-                <figcaption className="authority-cert-label">
-                  {cert.title}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-
-          <p className="mt-5 text-center text-[0.7rem] leading-relaxed text-[var(--t5)]">
-            Credentials support your coaching — not a substitute for medical care.
-          </p>
-
-        </div>
+        {/* Certifications grid moved to CertificationsSection (after the hero). */}
 
       </div>
     </section>

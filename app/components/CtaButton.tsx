@@ -14,6 +14,9 @@ type CtaButtonProps = {
   ariaLabel?: string;
   style?: React.CSSProperties;
   location?: string;
+  /** Appends a right-pointing arrow after the label (hero mockup style).
+      Optional and default-off so the other call sites are untouched. */
+  showArrow?: boolean;
 };
 
 const variantClass: Record<CtaVariant, string> = {
@@ -32,6 +35,7 @@ export default function CtaButton({
   ariaLabel,
   style,
   location = "unknown",
+  showArrow = false,
 }: CtaButtonProps) {
   const { goToCta } = useScarcity();
 
@@ -49,7 +53,25 @@ export default function CtaButton({
       style={style}
       onClick={handleClick}
     >
-      <span className="cta-label">{label}</span>
+      <span className="cta-label">
+        {label}
+        {showArrow && (
+          <svg
+            aria-hidden="true"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ display: "inline-block", verticalAlign: "-3px", marginLeft: "10px" }}
+          >
+            <path d="M4 12h15M13 6l6 6-6 6" />
+          </svg>
+        )}
+      </span>
 
       {sublabel ? (
         <span className="cta-sub">{sublabel}</span>

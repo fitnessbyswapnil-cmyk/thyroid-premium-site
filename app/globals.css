@@ -1422,3 +1422,46 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .hero-rise { animation: none; opacity: 1; transform: none; }
 }
+
+/* Handwritten annotation (hero video note) */
+.font-hand { font-family: var(--font-hand), cursive; }
+
+/* Hero VSL seek slider — styled range input, keyboard-accessible */
+.vsl-seek {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--s3);
+  border-radius: 999px;
+  cursor: pointer;
+  accent-color: var(--p500);
+}
+.vsl-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--p400);
+}
+.vsl-seek::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  border: none;
+  border-radius: 50%;
+  background: var(--p400);
+}
+.vsl-seek:focus-visible {
+  outline: 2px solid var(--p400);
+  outline-offset: 3px;
+}
+
+/* Transformation wall — hover lift on pointer devices only */
+@media (hover: hover) {
+  .wall-cell:hover {
+    transform: scale(1.015) !important;
+    border-color: var(--p-border);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wall-cell { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
