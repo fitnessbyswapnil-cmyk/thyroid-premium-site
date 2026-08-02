@@ -8,7 +8,6 @@ import MoreThanFatLossSection from "@/app/components/MoreThanFatLossSection";
 import SocialProof from "@/app/components/SocialProof";
 import PostTestimonialCta from "@/app/components/PostTestimonialCta";
 import FAQSection from "@/app/components/FAQSection";
-import FinalCTASection from "@/app/components/FinalCTASection";
 import StickyBookingBar from "@/app/components/StickyBookingBar";
 
 // VSL-first strip-down: hero carries the pitch, proof carries the argument,
@@ -28,7 +27,6 @@ export default function Home() {
       <SocialProof />              {/* named written testimonials */}
       <PostTestimonialCta />
       <FAQSection />
-      <FinalCTASection />
       <StickyBookingBar />
     </main>
   );
