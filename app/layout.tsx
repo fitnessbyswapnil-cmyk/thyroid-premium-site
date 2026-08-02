@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Caveat, Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { ScarcityProvider } from "./context/ScarcityProvider";
 import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
@@ -18,6 +18,14 @@ const inter = Inter({
     subsets: ["latin"],
     display: "swap",
     variable: "--font-body",
+});
+
+// Handwritten annotation font (hero "Watch 45 Sec Video" note only).
+const caveat = Caveat({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-hand",
+    weight: ["600"],
 });
 
 export const metadata: Metadata = {
@@ -56,7 +64,7 @@ export default function RootLayout({
     return (
           <html
                   lang="en"
-                  className={`${fraunces.variable} ${inter.variable} h-full antialiased`}
+                  className={`${fraunces.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
                 >
                 <head>
                         <GTMScript />

@@ -25,24 +25,13 @@ const results = [
     method: 'THYROID L.E.A.N. Method',
     img: '/transformations/Surekha 3.png',
   },
-  {
-    id: 'nehamia',
-    name: 'Nehamia R.',
-    age: 38,
-    headline: 'Lost 5.2 kg in 10 Weeks',
-    quote: "I finally felt in control again.",
-    method: 'THYROID L.E.A.N. Method',
-    img: '/transformations/Rozal 2.png',
-  },
-  {
-    id: 'anjali',
-    name: 'Anjali M.',
-    age: 36,
-    headline: 'Lost 4.1 kg in 9 Weeks',
-    quote: "No starvation. Real food. Real results.",
-    method: 'THYROID L.E.A.N. Method',
-    img: '/transformations/Heenal 7.png',
-  },
+  // REMOVED two cards whose photos belonged to OTHER clients (a real
+  // testimonial-integrity problem, verified by opening the images):
+  //  - "Nehamia R." used Rozal's photo; both "Rozal 2.png" AND "Nehamia 6.png"
+  //    are MALE clients, so there is no truthful female image for that card.
+  //  - "Anjali M." used Heenal's photo (the same woman already credited as
+  //    Heenal elsewhere on the page). No Anjali image exists in the repo —
+  //    restore the card only when her own before/after is available.
 ] as const
 
 export default function ResultsSection() {

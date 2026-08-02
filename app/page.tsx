@@ -1,5 +1,7 @@
 import { ScrollDepthTracker } from "@/app/components/tracking/ScrollDepthTracker";
 import Hero from "@/app/components/Hero";
+import CertificationsSection from "@/app/components/CertificationsSection";
+import TransformationWall from "@/app/components/TransformationWall";
 import AuthoritySection from "@/app/components/AuthoritySection";
 import ThyroidStrategySession from "@/app/components/ThyroidStrategySession";
 import SocialProof from "@/app/components/SocialProof";
@@ -20,6 +22,8 @@ export default function Home() {
     <main>
       <ScrollDepthTracker />
       <Hero />
+      <CertificationsSection />
+      <TransformationWall />
       <ProblemSection />
       <ThyroidStrategySession />
       <SocialProof />

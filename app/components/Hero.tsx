@@ -1,8 +1,13 @@
 "use client";
 
 import CtaButton from "./CtaButton";
+import HeroVideo from "./HeroVideo";
+import HeroProofStrip from "./HeroProofStrip";
 
-const GOLD_DOT = "rgba(213,183,101,0.8)";
+// VSL hero — mockup layout: eyebrow → serif headline → subhead → credential
+// strip → video frame → social-proof strip → CTA → reassurance line.
+// Free-session copy matches the sitewide free funnel (every other CTA, FAQ,
+// sticky bar — the paid ₹299 flow no longer exists anywhere on this site).
 
 export default function Hero() {
   return (
@@ -29,9 +34,9 @@ export default function Hero() {
         }}
       />
 
-      <div className="container-default relative z-10 mx-auto flex max-w-[680px] flex-col items-center pb-[clamp(4rem,11vw,6rem)] pt-[clamp(3.25rem,8vw,5rem)] text-center">
+      <div className="container-default relative z-10 mx-auto flex flex-col items-center pb-[clamp(4rem,11vw,6rem)] pt-[clamp(3.25rem,8vw,5rem)] text-center">
 
-        {/* Eyebrow — gold hairline rules each side (sm+), muted uppercase text */}
+        {/* a) Eyebrow — unchanged */}
         <div className="hero-rise flex w-full items-center justify-center gap-3" style={{ animationDelay: "0ms" }}>
           <span
             aria-hidden="true"
@@ -48,94 +53,107 @@ export default function Hero() {
           />
         </div>
 
-        {/* Headline (single H1) */}
+        {/* b) Headline */}
         <h1
           id="hero-heading"
-          className="hero-rise mx-auto mt-[30px] max-w-[15ch] text-balance text-[length:clamp(2.4rem,1.75rem_+_2.9vw,4.4rem)] font-black leading-[1.04] tracking-[-0.03em] sm:max-w-[18ch]"
-          style={{ animationDelay: "120ms" }}
+          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-bold leading-[1.06] tracking-[-0.02em] sm:max-w-[24ch]"
+          style={{
+            animationDelay: "100ms",
+            fontSize: "clamp(2.05rem, 1.5rem + 2.6vw, 3.9rem)",
+            fontFamily: "var(--font-display), Georgia, serif",
+          }}
         >
-          You&apos;re not the problem.{" "}
-          <span className="text-gradient italic">Your thyroid is.</span>
+          Finally, a Thyroid-Specific Plan
+          <br className="hidden sm:block" />{" "}
+          That Helps You{" "}
+          <span className="text-gradient italic">
+            Lose Weight &amp; Get Your Energy Back.
+          </span>
         </h1>
 
-        {/* Subhead — opacity ladder starts here (brightest). One static body
-            speaking to all three ad angles (eating less / normal labs / not you). */}
+        {/* c) Subhead */}
         <p
-          className="hero-rise mt-[26px] max-w-[52ch] text-pretty text-[length:clamp(1rem,0.94rem_+_0.4vw,1.16rem)] leading-[1.66] text-[var(--t2)]"
-          style={{ animationDelay: "240ms" }}
+          className="hero-rise mt-[22px] max-w-[46ch] text-pretty leading-[1.6] text-[var(--t2)]"
+          style={{ animationDelay: "200ms", fontSize: "clamp(0.98rem, 0.94rem + 0.35vw, 1.1rem)" }}
         >
-          Eating less. &lsquo;Normal&rsquo; labs. Doing everything right. The
-          weight still won&apos;t move &mdash; because your thyroid was never
-          the focus. In one private 60-minute session, see what&apos;s blocking
-          your fat loss and the 90-day plan to restart it. Real Indian food, no
-          starving.
+          One private 60-minute session to find your root cause and get your
+          90-day plan.
+          <span className="mt-1 block">Real Indian food. No starving.</span>
         </p>
 
-        {/* Credentials — collapsed to one line so the CTA sits above the fold */}
-        <p
-          className="hero-rise mt-[36px] text-[13px] font-medium leading-[1.5] text-[var(--t3)]"
-          style={{ animationDelay: "360ms" }}
+        {/* d) Credential strip */}
+        <div
+          className="hero-rise mt-[26px] flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
+          style={{ animationDelay: "300ms" }}
           aria-label="Credentials"
         >
-          ACE &amp; INFS certified · Thyroid-only · By private intake
-        </p>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--p400)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5 4.5-1.35 8-6.25 8-11.5V6l-8-4z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+          {["ACE & INFS Certified", "Thyroid-Only", "By Private Intake"].map((c, i) => (
+            <span key={c} className="flex items-center gap-x-3">
+              {i > 0 && <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--t5)]" />}
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--t3)]">
+                {c}
+              </span>
+            </span>
+          ))}
+        </div>
 
-        {/* CTA — native purple primary (matches every other CTA on the page).
-            Label/microcopy updated; original booking link + tracking preserved. */}
-        <div className="hero-rise mt-[38px] w-full max-w-[min(100%,23rem)]" style={{ animationDelay: "480ms" }}>
+        {/* e) VSL video frame */}
+        <div className="hero-rise w-full" style={{ animationDelay: "400ms" }}>
+          <HeroVideo />
+        </div>
+
+        {/* f) Social-proof strip */}
+        <div className="hero-rise w-full" style={{ animationDelay: "520ms" }}>
+          <HeroProofStrip />
+        </div>
+
+        {/* g) Primary CTA */}
+        <div className="hero-rise mt-[40px] w-full max-w-[720px]" style={{ animationDelay: "620ms" }}>
           <CtaButton
             variant="primary"
-            className="relative z-[1]"
+            className="relative z-[1] w-full"
             label="Book My Free Thyroid Session"
-            sublabel="60 minutes, 1-on-1 · Your full case studied before we speak"
+            sublabel="60-min private 1-on-1 · Free, no card needed · Limited weekly intake"
             ariaLabel="Book your free private thyroid session"
             location="hero"
+            showArrow
           />
         </div>
 
-        {/* Prep line — pays the "read your reports" ad promise, lifts show-up quality */}
+        {/* h) Reassurance line */}
         <p
-          className="hero-rise mt-[16px] text-[12.5px] font-medium leading-[1.5] text-[var(--t3)]"
-          style={{ animationDelay: "540ms" }}
+          className="hero-rise mt-[18px] flex items-center gap-2 text-[12px] text-[var(--t4)]"
+          style={{ animationDelay: "720ms" }}
         >
-          Have your latest thyroid reports? Keep them handy for the session.
-        </p>
-
-        {/* Secondary link — smooth-scrolls (global scroll-behavior) to the
-            6-step session breakdown just above the final CTA */}
-        <a
-          href="#how-it-works"
-          className="hero-rise mt-[10px] text-[14px] font-medium text-[var(--t3)] underline decoration-[rgba(168,85,247,0.4)] underline-offset-4 transition-colors hover:text-[var(--t2)]"
-          style={{ animationDelay: "570ms" }}
-        >
-          See how the session works ↓
-        </a>
-
-        {/* Proof strip — client quote + trust line */}
-        <div
-          className="hero-rise mt-[24px] flex flex-col items-center gap-1.5"
-          style={{ animationDelay: "600ms" }}
-        >
-          <p className="max-w-[42ch] text-[13.5px] italic leading-[1.6] text-[var(--t2)]">
-            &ldquo;Metabolism feels alive again.&rdquo;{" "}
-            <span className="not-italic text-[var(--t3)]">— Priya S.</span>
-          </p>
-          <p className="flex items-center gap-2 text-[11.5px] font-medium tracking-[0.02em] text-[var(--t4)]">
-            <span
-              aria-hidden="true"
-              className="inline-block h-1 w-1 shrink-0 rounded-full"
-              style={{ background: GOLD_DOT }}
-            />
-            Trusted by 200+ Indian women with hypothyroidism
-          </p>
-        </div>
-
-        {/* Scarcity — quiet, static, no looping animation */}
-        <p
-          className="hero-rise mt-[22px] text-[12px] font-medium tracking-[0.01em] text-[var(--t4)]"
-          style={{ animationDelay: "660ms" }}
-        >
-          Private intake is limited each week
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="4" y="10" width="16" height="11" rx="2" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+          </svg>
+          Private. Personalised. Built around YOUR thyroid.
         </p>
 
       </div>
