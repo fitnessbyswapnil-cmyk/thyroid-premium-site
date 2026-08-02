@@ -1465,3 +1465,11 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .wall-cell { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
+
+
+/* Proof rails — uniform mobile card format (video + story sections) */
+@media (max-width: 639px) {
+  .vt-rail > * { flex: 0 0 82vw; scroll-snap-align: center; }
+  .vt-rail { scrollbar-width: none; scroll-padding-inline: 1.25rem; }
+  .vt-rail::-webkit-scrollbar { display: none; }
+}

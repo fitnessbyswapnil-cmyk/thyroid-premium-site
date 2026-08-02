@@ -10,11 +10,14 @@ import { Fragment } from "react";
 // Never use stock photos here — consent/advertising-standards problem.
 type ProofAvatar = { initials: string; name: string; claim: string; img?: string };
 
-// Claims match SocialProof.tsx and ResultsSection.tsx exactly.
+// Claims match SocialProof.tsx exactly. Heenal's photo is her REAL portrait
+// (cropped from her own story graphic). The other three render initials until
+// real client photos land at public/avatars/{priya-r,divya-m,shariya-s}.jpg —
+// set `img` and they drop straight in. Never stock faces.
 const PROOF: ProofAvatar[] = [
   { initials: "PR", name: "Priya R.", claim: "Lost 4.5 kg in 6 weeks" },
   { initials: "DM", name: "Divya M.", claim: "Lost 6 kg in 10 weeks" },
-  { initials: "HS", name: "Heenal S.", claim: "Lost 15 kg in 90 days" },
+  { initials: "HS", name: "Heenal S.", claim: "Lost 15 kg in 90 days", img: "/avatars/heenal-s.jpg" },
   { initials: "SS", name: "Shariya S.", claim: "More energy, TSH is in range" },
 ];
 

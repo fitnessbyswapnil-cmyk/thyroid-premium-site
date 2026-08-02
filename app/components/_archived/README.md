@@ -11,6 +11,7 @@ Files are untouched; restore any one with:
 | WhoIsThisForSection.tsx | "This consultation is specifically for you if:" |
 | FrameworkSection.tsx | "The Thyroid L.E.A.N. Method" + 90-day timeline |
 | ThyroidStrategySession.tsx | "How Your Thyroid Root-Cause Session Works" (#how-it-works Session Clock) |
+| FinalCTASection.tsx | "You've been doing this alone long enough." (final CTA + coach card + guarantee) |
 | ProblemSection.tsx | "Why You Feel Stuck — The Real Reason Thyroid Fat Won't Move" |
 | ResultsSection.tsx | "Transformations — They thought it was their willpower." (archived per Task 4.4: duplicates TransformationWall, this brief prefers the wordless version) |
 

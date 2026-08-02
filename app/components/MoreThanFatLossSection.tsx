@@ -157,7 +157,7 @@ export default function MoreThanFatLossSection() {
         </div>
 
         {/* MOBILE */}
-        <div className="space-y-5 md:hidden">
+        <div className="vt-rail flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 md:hidden">
           {stories.map((story) => (
             <StoryCard
               key={story.name}

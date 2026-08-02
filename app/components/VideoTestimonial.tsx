@@ -412,7 +412,7 @@ function VideoCard({
 
       {/* ── Text content ── */}
       <div className="flex flex-1 flex-col p-5 pb-6">
-        <div className="mb-4 flex-1" />
+        <div className="mb-4 flex-1" aria-hidden="true" />
 
         {/* Client identity */}
         <div className="flex items-center gap-3">
@@ -482,7 +482,7 @@ export default function VideoTestimonial() {
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
           variants={stagger}
-          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="vt-rail flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:pb-0 lg:grid-cols-3"
         >
           {STORIES.map((story, i) => (
             <VideoCard
