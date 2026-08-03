@@ -3,16 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { trackCtaClick, trackVideoEvent } from "../lib/analytics";
 
-// Hero VSL frame, served from Bunny Stream.
-// Set NEXT_PUBLIC_VSL_BASE in Vercel to the video's CDN base, i.e.
-//   https://vz-<zone>.b-cdn.net/<video-guid>
-// (Bunny library needs "MP4 Fallback" enabled so play_720p/play_1080p exist.)
-// Unset, the component falls back to the local paths and renders the graceful
-// "Video coming soon" state. No keys anywhere — these are public CDN URLs.
-const VSL_BASE = process.env.NEXT_PUBLIC_VSL_BASE || "";
-const SRC_1080 = VSL_BASE ? `${VSL_BASE}/play_1080p.mp4` : "/videos/vsl.mp4";
-const SRC_720 = VSL_BASE ? `${VSL_BASE}/play_720p.mp4` : "/videos/vsl.mp4";
-const VSL_POSTER = VSL_BASE ? `${VSL_BASE}/thumbnail.jpg` : "/videos/posters/vsl.jpg";
+// Hero VSL frame, served from Vercel Blob (single plain MP4 — no HLS, no
+// rendition switching; one file for mobile and desktop).
+//
+// Set NEXT_PUBLIC_VSL_URL in Vercel to the Blob object's public URL, i.e.
+//   https://<store-id>.public.blob.vercel-storage.com/vsl-<hash>.mp4
+// Unset, the component renders the graceful "Video coming soon" state.
+// This is a PUBLIC read URL — no token is involved, nothing secret is bundled.
+//
+// The poster ships from /public (small, edge-cached, loads instantly) and is
+// the ONLY video-related byte fetched before the user clicks play.
+const VSL_URL = process.env.NEXT_PUBLIC_VSL_URL || "";
+const VSL_POSTER = "/videos/posters/vsl.jpg";
 
 // Progress milestones — each fires exactly once per mount (Set guard), so
 // scrubbing back and forth can never re-fire one.
@@ -37,7 +39,10 @@ export default function HeroVideo() {
   const [muted, setMuted] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [missing, setMissing] = useState(false);
+  // No Blob URL configured yet → show the "coming soon" frame immediately
+  // rather than waiting on a load probe. Build-time inlined, so server and
+  // client agree and there is no hydration mismatch.
+  const [missing, setMissing] = useState(!VSL_URL);
   // Lazy source: null until the first play click, so NOTHING of the video
   // (not even metadata) downloads before the user asks for it. Only the
   // poster image loads up front.
@@ -120,9 +125,9 @@ export default function HeroVideo() {
         }
       }
       setStarted(true);
-      // 720p rendition on small screens, 1080p on desktop.
-      const small = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
-      setSrc(small ? SRC_720 : SRC_1080);
+      // Single MP4 for every device — attaching the src here is what starts
+      // the download. Nothing before this line costs video bandwidth.
+      setSrc(VSL_URL);
       return;
     }
     if (v.paused) {
