@@ -14,7 +14,7 @@ import { trackCtaClick, trackVideoEvent } from "../lib/analytics";
 // The poster ships from /public (small, edge-cached, loads instantly) and is
 // the ONLY video-related byte fetched before the user clicks play.
 const VSL_URL = process.env.NEXT_PUBLIC_VSL_URL || "";
-const VSL_POSTER = "/videos/posters/vsl.jpg";
+const VSL_POSTER = "/videos/posters/vsl-poster.jpg";
 
 // Progress milestones — each fires exactly once per mount (Set guard), so
 // scrubbing back and forth can never re-fire one.
