@@ -5,7 +5,7 @@ import HeroVideo from "./HeroVideo";
 import HeroProofStrip from "./HeroProofStrip";
 
 // VSL hero — mockup layout: eyebrow → serif headline → subhead → credential
-// strip → video frame → social-proof strip → CTA → reassurance line.
+// strip → video frame → social-proof strip → CTA.
 // Free-session copy matches the sitewide free funnel (every other CTA, FAQ,
 // sticky bar — the paid ₹299 flow no longer exists anywhere on this site).
 
@@ -44,7 +44,7 @@ export default function Hero() {
             style={{ background: "linear-gradient(90deg,transparent,rgba(213,183,101,0.55))" }}
           />
           <p className="max-w-[34ch] text-[11px] font-semibold uppercase leading-[1.5] tracking-[0.2em] text-[var(--t3)] sm:max-w-none sm:text-[11.5px] sm:tracking-[0.22em]">
-            For busy working women, 28+, living with hypothyroidism
+            For working women 28+ with hypothyroidism
           </p>
           <span
             aria-hidden="true"
@@ -63,9 +63,9 @@ export default function Hero() {
             fontFamily: "var(--font-display), Georgia, serif",
           }}
         >
-          Finally, a Thyroid-Specific Plan
+          Finally &mdash; a Thyroid-Specific Plan
           <br className="hidden sm:block" />{" "}
-          That Helps You{" "}
+          to{" "}
           <span className="text-gradient italic">
             Lose Weight &amp; Get Your Energy Back.
           </span>
@@ -134,27 +134,8 @@ export default function Hero() {
           />
         </div>
 
-        {/* h) Reassurance line */}
-        <p
-          className="hero-rise mt-[18px] flex items-center gap-2 text-[12px] text-[var(--t4)]"
-          style={{ animationDelay: "720ms" }}
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="4" y="10" width="16" height="11" rx="2" />
-            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-          </svg>
-          Private. Personalised. Built around YOUR thyroid.
-        </p>
+        {/* Reassurance line removed per audit — the credential chips above
+            already say Thyroid-Only + By Private Intake. */}
 
       </div>
     </section>

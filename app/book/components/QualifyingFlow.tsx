@@ -908,7 +908,7 @@ function FinishStep({ name, email, phone, city, leadId }: { name: string; email:
             <h2 className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-white" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
               Pick a time that works for you{name ? `, ${name.split(" ")[0]}` : ""} 👇
             </h2>
-            <p className="mx-auto mt-2.5 max-w-[40ch] text-[0.88rem] text-white/50">Your free 60-minute thyroid strategy session. Swapnil reviews your answers before you meet.</p>
+            <p className="mx-auto mt-2.5 max-w-[40ch] text-[0.88rem] text-white/50">Your free 60-minute thyroid strategy session. I review your answers before you meet.</p>
           </div>
           <CalendarStep name={name} email={email} phone={phone} city={city} leadId={leadId} />
         </motion.div>

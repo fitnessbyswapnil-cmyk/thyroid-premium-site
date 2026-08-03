@@ -48,8 +48,8 @@ const STORIES: Story[] = [
       "After years of failed methods and coaches who didn't understand her condition, Kshama finally started seeing real results.",
     stats: [
       { num: "Age 55", label: "Client" },
-      { num: "2 Wks", label: "Results" },
-      { num: "50%", label: "Thyroid" },
+      { num: "½ Thyroid", label: "Removed" },
+      { num: "2 Wks", label: "To Results" },
     ],
   },
   {
@@ -471,9 +471,14 @@ export default function VideoTestimonial() {
           variants={stagger}
           className="mb-12 text-center sm:mb-14"
         >
-          <motion.p variants={fadeUp} className="section-label">
+          {/* Real H2 (was an eyebrow-only <p>) — SEO + screen-reader landmark */}
+          <motion.h2
+            id="testimonial-heading"
+            variants={fadeUp}
+            className="section-label"
+          >
             In Their Own Words
-          </motion.p>
+          </motion.h2>
         </motion.div>
 
         {/* ── Video grid ── */}

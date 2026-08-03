@@ -95,7 +95,7 @@ export function PaymentScreen({
 
         <p className="text-[0.82rem] leading-relaxed text-white/50">
           Your answers have been received successfully.
-          Swapnil will personally review your thyroid profile before the session.
+          I&apos;ll personally review your thyroid profile before the session.
         </p>
         <p className="mt-2 text-[0.82rem] font-medium leading-relaxed text-white/65">
           Secure your private consultation slot now to continue.

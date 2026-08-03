@@ -12,11 +12,11 @@ const faqs = [
   },
   {
     q: 'What happens in the free strategy session?',
-    a: "Swapnil reviews your intake personally before the call — your thyroid history, symptoms, and what you've already tried. In 60 minutes, you'll understand exactly why fat isn't moving, what your thyroid specifically needs, and what your next 3 steps are. A written summary arrives within 24 hours. Whether or not you continue to coaching, this session stands completely on its own.",
+    a: "I review your intake before the call. In 60 minutes: why fat isn't moving, what your thyroid needs, and your next 3 steps — with a written summary in 24 hours.",
   },
   {
     q: "Is it really free — what's the catch?",
-    a: "No catch — the session is genuinely free. I only take a few people a week, so I keep it valuable: come with your reports and questions, and you'll leave with at least one specific, actionable step for your thyroid.",
+    a: "No catch. I take only a few sessions a week — come with your reports, and you'll leave with at least one specific step for your thyroid.",
   },
   {
     q: 'How fast will I see results?',
@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: "I've tried coaching before and it didn't work. How is this different?",
-    a: "Most coaching programs treat thyroid clients exactly like everyone else — same calorie deficits, same exercise plans. This coaching is built specifically around hypothyroid fat-loss physiology. The approach is different because the problem is different. The free session exists precisely to show you what that difference looks like for your specific case — before you commit to anything further.",
+    a: "Generic programs give thyroid clients the same deficits as everyone else. This is built only around hypothyroid fat-loss physiology — the free session shows you that difference for your case.",
   },
   {
     q: 'Will you pitch me on the call?',
@@ -151,7 +151,7 @@ export default function FAQSection() {
         <SectionHeader
           label="FAQs"
           title="Common Questions"
-          lead="Everything you want to know before applying for your free session."
+          lead="Everything to know before your free session."
           titleMaxCh="20ch"
         />
 
@@ -179,7 +179,7 @@ export default function FAQSection() {
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 280 }}
             label="Book My Free Thyroid Session"
-            sublabel="60-min private 1-on-1 · Free, no card needed"
+            sublabel="60-min private 1-on-1 · Free, no card needed · Limited weekly intake"
             trust="ACE · INFS Certified · 200+ Clients"
             ariaLabel="Book your free thyroid assessment"
             location="faq"
