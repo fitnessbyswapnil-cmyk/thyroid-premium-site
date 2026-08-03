@@ -305,3 +305,35 @@ export function trackSchedule(
 export function trackScrollDepth(depth: number, pageType = "landing") {
   pushDL({ event: "scroll_depth", depth, page_type: pageType });
 }
+
+// ── VSL engagement ─────────────────────────────────────────────────────────────
+// Same contract as every other event: generated event_id so the server-side
+// leg (GTM/CAPI) dedupes, full user signals for EMQ. The component guarantees
+// each milestone fires at most once (no re-fire on scrub); video_play is
+// additionally once-per-session there.
+export type VideoEventName =
+  | "video_play"
+  | "video_progress_25"
+  | "video_progress_50"
+  | "video_progress_75"
+  | "video_progress_95"
+  | "video_complete";
+
+export function trackVideoEvent(
+  name: VideoEventName,
+  position: number,
+  duration: number,
+) {
+  const event_id = generateEventId(name);
+  pushDL(
+    withUserSignals({
+      event: name,
+      event_id,
+      video_position: Math.round(position),
+      video_duration: Math.round(duration),
+      video_percent: duration ? Math.round((position / duration) * 100) : 0,
+      page_type: "landing",
+    }),
+  );
+  return event_id;
+}

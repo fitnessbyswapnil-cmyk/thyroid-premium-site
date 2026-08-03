@@ -1,12 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { trackCtaClick } from "../lib/analytics";
+import { trackCtaClick, trackVideoEvent } from "../lib/analytics";
 
-// Hero VSL frame. The video file does not exist yet — this renders a graceful
-// "Video coming soon" state until the file lands at these paths:
-const VSL_SRC = "/videos/vsl.mp4";
-const VSL_POSTER = "/videos/posters/vsl.jpg";
+// Hero VSL frame, served from Bunny Stream.
+// Set NEXT_PUBLIC_VSL_BASE in Vercel to the video's CDN base, i.e.
+//   https://vz-<zone>.b-cdn.net/<video-guid>
+// (Bunny library needs "MP4 Fallback" enabled so play_720p/play_1080p exist.)
+// Unset, the component falls back to the local paths and renders the graceful
+// "Video coming soon" state. No keys anywhere — these are public CDN URLs.
+const VSL_BASE = process.env.NEXT_PUBLIC_VSL_BASE || "";
+const SRC_1080 = VSL_BASE ? `${VSL_BASE}/play_1080p.mp4` : "/videos/vsl.mp4";
+const SRC_720 = VSL_BASE ? `${VSL_BASE}/play_720p.mp4` : "/videos/vsl.mp4";
+const VSL_POSTER = VSL_BASE ? `${VSL_BASE}/thumbnail.jpg` : "/videos/posters/vsl.jpg";
+
+// Progress milestones — each fires exactly once per mount (Set guard), so
+// scrubbing back and forth can never re-fire one.
+const MILESTONES = [
+  { pct: 0.25, event: "video_progress_25" },
+  { pct: 0.5, event: "video_progress_50" },
+  { pct: 0.75, event: "video_progress_75" },
+  { pct: 0.95, event: "video_progress_95" },
+] as const;
 
 function fmt(t: number): string {
   if (!isFinite(t) || t < 0) t = 0;
@@ -23,14 +38,39 @@ export default function HeroVideo() {
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [missing, setMissing] = useState(false);
+  // Lazy source: null until the first play click, so NOTHING of the video
+  // (not even metadata) downloads before the user asks for it. Only the
+  // poster image loads up front.
+  const [src, setSrc] = useState<string | null>(null);
   const firstPlayTracked = useRef(false);
+  const milestonesFired = useRef<Set<string>>(new Set());
+  const completeFired = useRef(false);
 
   useEffect(() => {
     const v = videoRef.current;
-    if (!v) return;
-    const onTime = () => setTime(v.currentTime);
+    if (!v || !src) return;
+    const onTime = () => {
+      setTime(v.currentTime);
+      // Milestones: once each, keyed by name — scrubbing can't re-fire.
+      if (v.duration > 0) {
+        const pct = v.currentTime / v.duration;
+        for (const m of MILESTONES) {
+          if (pct >= m.pct && !milestonesFired.current.has(m.event)) {
+            milestonesFired.current.add(m.event);
+            trackVideoEvent(m.event, v.currentTime, v.duration);
+          }
+        }
+      }
+    };
     const onMeta = () => setDuration(v.duration || 0);
-    const onEnded = () => { setPlaying(false); setStarted(false); };
+    const onEnded = () => {
+      setPlaying(false);
+      setStarted(false);
+      if (!completeFired.current) {
+        completeFired.current = true;
+        trackVideoEvent("video_complete", v.duration || 0, v.duration || 0);
+      }
+    };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
     v.addEventListener("timeupdate", onTime);
@@ -38,13 +78,13 @@ export default function HeroVideo() {
     v.addEventListener("ended", onEnded);
     v.addEventListener("play", onPlay);
     v.addEventListener("pause", onPause);
-    // Chromium doesn't reliably fire `error` for a 404'd preload=metadata
-    // source — probe instead: no metadata + no source after 3s = missing file.
+    // Chromium doesn't reliably fire `error` for a 404'd source — probe after
+    // the source is attached: no metadata + no source after 4s = missing file.
     const probe = window.setTimeout(() => {
       if (v.readyState === 0 && (v.networkState === 3 || v.networkState === 0)) {
         setMissing(true);
       }
-    }, 3000);
+    }, 4000);
     const clearProbe = () => window.clearTimeout(probe);
     v.addEventListener("loadedmetadata", clearProbe, { once: true });
     return () => {
@@ -55,17 +95,37 @@ export default function HeroVideo() {
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
     };
-  }, [missing]);
+  }, [src]);
+
+  // Once the source is attached (first play click), start playback.
+  useEffect(() => {
+    if (!src) return;
+    videoRef.current?.play().catch(() => setMissing(true));
+  }, [src]);
 
   const toggle = () => {
     const v = videoRef.current;
     if (!v || missing) return;
-    if (v.paused) {
+    if (!src) {
       if (!firstPlayTracked.current) {
         firstPlayTracked.current = true;
-        // Measures VSL engagement against booking rate.
+        // Existing engagement event — kept as-is.
         trackCtaClick("hero_video", "vsl_play");
+        // video_play: first play only, once per session (survives remounts).
+        let already = false;
+        try { already = !!sessionStorage.getItem("vsl_play_fired"); } catch { /* unavailable */ }
+        if (!already) {
+          try { sessionStorage.setItem("vsl_play_fired", "1"); } catch { /* non-critical */ }
+          trackVideoEvent("video_play", 0, 0);
+        }
       }
+      setStarted(true);
+      // 720p rendition on small screens, 1080p on desktop.
+      const small = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+      setSrc(small ? SRC_720 : SRC_1080);
+      return;
+    }
+    if (v.paused) {
       setStarted(true);
       v.play().catch(() => setMissing(true));
     } else {
@@ -99,7 +159,7 @@ export default function HeroVideo() {
             <>
               <video
                 ref={videoRef}
-                src={VSL_SRC}
+                src={src ?? undefined}
                 poster={VSL_POSTER}
                 playsInline
                 preload="metadata"
@@ -113,7 +173,7 @@ export default function HeroVideo() {
                 <button
                   type="button"
                   onClick={toggle}
-                  aria-label="Play the 45 second video"
+                  aria-label="Play the video"
                   className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full outline-offset-4 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p400)]"
                   style={{
                     background: "linear-gradient(135deg,#a855f7,#7e22ce)",
@@ -148,7 +208,7 @@ export default function HeroVideo() {
                     <polyline points="26,3 32,3 31,9" strokeLinejoin="round" fill="none" />
                   </svg>
                   <span className="font-hand text-[20px] leading-none text-[var(--t2)]">
-                    Watch 45 Sec Video
+                    Watch the Video
                   </span>
                 </div>
               )}
@@ -186,7 +246,7 @@ export default function HeroVideo() {
                   className="shrink-0 text-[11.5px] text-[var(--t4)]"
                   style={{ fontFamily: "var(--font-geist-mono, monospace)" }}
                 >
-                  {fmt(time)} / {fmt(duration || 45)}
+                  {fmt(time)} / {fmt(duration)}
                 </span>
 
                 <button
