@@ -166,7 +166,7 @@ function PhoneQuestion({
   return (
     <QuestionShell
       label="Your WhatsApp number"
-      hint="Swapnil will send your session confirmation here."
+      hint="I&apos;ll send your session confirmation here."
     >
       <div className="relative">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[0.95rem] text-white/35 select-none">

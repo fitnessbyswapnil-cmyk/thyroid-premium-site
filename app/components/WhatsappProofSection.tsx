@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import CtaButton from './CtaButton'
+import SectionCta from './SectionCta'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,13 +60,6 @@ const ALL_CARDS: ProofCard[] = [
     client: 'Shariya Sultana · Thyroid client',
   },
   {
-    id: 'c7',
-    image: '/whatsapp-proof/Heenal R4.png',
-    tags: ['TSH In Range'],
-    headline: 'TSH dropped. Energy came back.',
-    client: 'Heenal · Hypothyroid client',
-  },
-  {
     id: 'c3',
     image: '/whatsapp-proof/Pooja-Sharma.jpeg',
     tags: ['Hair Fall Stopped', 'Thyroid Healing'],
@@ -117,6 +110,15 @@ const ALL_CARDS: ProofCard[] = [
 // deleted — restore by moving an object back up into ALL_CARDS.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for easy restore
 const REMOVED_FOR_LENGTH: ProofCard[] = [
+  {
+    // Removed per audit: Heenal already appears twice on the page (hero
+    // avatar strip + transformation wall) — cap any one client at 2 placements.
+    id: 'c7',
+    image: '/whatsapp-proof/Heenal R4.png',
+    tags: ['TSH In Range'],
+    headline: 'TSH dropped. Energy came back.',
+    client: 'Heenal · Hypothyroid client',
+  },
   {
     id: 'c6',
     image: '/whatsapp-proof/Rozal R2.png',
@@ -276,11 +278,22 @@ function FeaturedStoryCard({
 
 // ── ProofCard ─────────────────────────────────────────────────────────────────
 
-function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boolean }) {
+function ProofCard({
+  card,
+  isMobile = false,
+  ariaHidden = false,
+}: {
+  card: ProofCard
+  isMobile?: boolean
+  // Marquee clone copies are presentation-only — hide them from the
+  // accessibility tree so screen readers announce each client exactly once.
+  ariaHidden?: boolean
+}) {
   const initial = card.client.charAt(0)
 
   return (
     <article
+      aria-hidden={ariaHidden || undefined}
       className="group flex flex-col overflow-hidden proof-card"
       style={{
         width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
@@ -403,13 +416,11 @@ function ProofCard({ card, isMobile = false }: { card: ProofCard; isMobile?: boo
 // ── Section ───────────────────────────────────────────────────────────────────
 
 export default function WhatsappProofSection() {
-  const row1Doubled = [...ROW1, ...ROW1]
-  const row2Doubled = [...ROW2, ...ROW2]
-
   return (
     <section
       className="section-pad relative overflow-hidden"
       style={{ background: 'var(--bg-section)' }}
+      aria-labelledby="whatsapp-proof-heading"
     >
       {/* ── Ambient background glows ──────────────────────────────────────── */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -446,9 +457,14 @@ export default function WhatsappProofSection() {
           viewport={{ once: true, margin: '-80px' }}
           variants={stagger}
         >
-          <motion.p variants={fadeUp} className="section-label">
+          {/* Real H2 (was an eyebrow-only <p>) — SEO + screen-reader landmark */}
+          <motion.h2
+            id="whatsapp-proof-heading"
+            variants={fadeUp}
+            className="section-label"
+          >
             Unedited Messages
-          </motion.p>
+          </motion.h2>
         </motion.div>
 
         <p className="container-default mb-10 text-center text-[0.7rem] leading-relaxed" style={{ color: 'rgba(255,255,255,0.28)' }}>
@@ -510,11 +526,15 @@ export default function WhatsappProofSection() {
 
           <div className="space-y-6 overflow-hidden py-3">
 
-            {/* Row 1 — moves left */}
+            {/* Row 1 — moves left. Second pass = seamless-loop clones,
+                aria-hidden so SRs hear each client once. */}
             <div className="marquee-rail overflow-hidden">
               <div className="marquee-track-l flex gap-5 w-max">
-                {row1Doubled.map((card, i) => (
-                  <ProofCard key={`r1-${card.id}-${i}`} card={card} />
+                {ROW1.map((card) => (
+                  <ProofCard key={`r1-${card.id}`} card={card} />
+                ))}
+                {ROW1.map((card) => (
+                  <ProofCard key={`r1-${card.id}-clone`} card={card} ariaHidden />
                 ))}
               </div>
             </div>
@@ -522,13 +542,31 @@ export default function WhatsappProofSection() {
             {/* Row 2 — moves right */}
             <div className="marquee-rail overflow-hidden">
               <div className="marquee-track-r flex gap-5 w-max">
-                {row2Doubled.map((card, i) => (
-                  <ProofCard key={`r2-${card.id}-${i}`} card={card} />
+                {ROW2.map((card) => (
+                  <ProofCard key={`r2-${card.id}`} card={card} />
+                ))}
+                {ROW2.map((card) => (
+                  <ProofCard key={`r2-${card.id}-clone`} card={card} ariaHidden />
                 ))}
               </div>
             </div>
 
           </div>
+        </div>
+
+        {/* THE single stack CTA — the one conversion point after the whole
+            proof stack (moved here from the removed More Than Fat Loss
+            section; hero + sticky bar are the other two touchpoints). */}
+        <div className="container-default">
+          <SectionCta
+            variant="primary"
+            className="mx-auto mt-12 max-w-sm"
+            buttonClassName="w-full"
+            label="Book My Free Thyroid Session"
+            sublabel="60-min private 1-on-1 · Free, no card needed"
+            ariaLabel="Book your free private thyroid session"
+            location="transformations"
+          />
         </div>
 
       </div>

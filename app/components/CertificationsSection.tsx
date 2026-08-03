@@ -19,7 +19,7 @@ export default function CertificationsSection() {
 
       <div className="container-default relative z-10">
         <header className="section-header">
-          <p className="section-label">Curated Credentials</p>
+          <p className="section-label">Credentials</p>
           <h2 id="certifications-heading" className="section-title mx-auto" style={{ maxWidth: "22ch" }}>
             Certified to coach this, specifically.
           </h2>
