@@ -47,4 +47,8 @@ export type LeadRow = {
   score: number | null;
   showed: string; // "Y" | "N" | ""
   closedAmt: number | null;
+  meetLink: string;
+  msg1: string; // "Y" | ""
+  msg2: string; // "Y" | ""
+  msg3: string; // "Y" | ""
 };
