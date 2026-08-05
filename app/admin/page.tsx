@@ -51,6 +51,72 @@ const CRIT = "#d03b3b";
 const KEY_STORE = "admin_dash_key";
 const dayMs = 86400000;
 
+// ── personalized WhatsApp message builder ───────────────────────────────────
+// Deterministic templates in Swapnil's voice, personalized from form answers.
+// The right template is picked from the lead's STATE; the pain line from
+// their "Biggest Challenge" answer. Sent via wa.me ?text= prefill — the
+// owner always reviews in WhatsApp before hitting send.
+
+const SIGN = "\n\n— *Swapnil Umbarkar*\nACE & INFS Certified Thyroid Fat-Loss Coach 🦋";
+
+function painLine(l: Lead): string {
+  const c = l.challenge.toLowerCase();
+  const tried = l.triedBefore.toLowerCase();
+  const effort =
+    tried && !tried.includes("nothing")
+      ? " What you tried before wasn't wrong effort — those plans were built for a body without hypothyroidism."
+      : "";
+  if (c.includes("won't move") || c.includes("weight"))
+    return `You mentioned the weight won't move no matter what — that's exactly what we'll decode on the call. It's not a willpower problem. 💪${effort}`;
+  if (c.includes("hair") || c.includes("skin"))
+    return `You mentioned hair thinning and skin issues along with the weight — a classic sign the thyroid side was never properly addressed. We'll cover both.${effort}`;
+  if (c.includes("bloat") || c.includes("puffi"))
+    return `You mentioned the bloating and puffiness — that's usually the first thing we can calm down. We'll map it on the call.${effort}`;
+  if (c.includes("energy") || c.includes("tired") || c.includes("exhaust"))
+    return `You mentioned the exhaustion — that's your thyroid talking, not laziness. We'll find what it actually needs.${effort}`;
+  return `I've read your form carefully — on the call we'll get to the root of what's been holding your progress back.${effort}`;
+}
+
+const REPORTS =
+  "If you have recent reports (TSH, T3, T4 + iron/vit D), share them here — I review them personally before the call. No reports? Come anyway.";
+
+function buildMessage(l: Lead): { kind: string; text: string } | null {
+  const first = (l.name.trim().split(/\s+/)[0] || "there").replace(/^./, (c) => c.toUpperCase());
+  const time = l.sessionDate.match(/\d{1,2}:\d{2} [AP]M/)?.[0] ?? "";
+  const dateNice = l.sessionDate.replace(/ \d{4}/, "");
+
+  if ((l.closedAmt ?? 0) > 0) return null; // already a client
+  if (l.showed === "Y")
+    return {
+      kind: "Follow-up",
+      text: `Hi ${first}! Great speaking with you today 😊 As promised, your session summary and next steps are on the way. Any question at all — message me right here.\n\n— *Swapnil*`,
+    };
+  if (l.showed === "N")
+    return {
+      kind: "Rebook",
+      text: `Hi ${first}, missed you at our session — no worries at all, life happens 😊\n\nYour *free thyroid strategy session* is still yours. Rebook in one tap: swapnilumbarkarfitness.in/book\n\n— *Swapnil*`,
+    };
+  if (l.booked && isToday(l.sessionDate))
+    return {
+      kind: "Remind",
+      text: `Hi ${first}! 😊 Reminder — your *free thyroid session is TODAY at ${time || dateNice}.* Your slot is reserved.\n\nJoin link is in your email. If you have your thyroid reports, send them here before we start. See you soon! 🙌\n\n— *Swapnil*`,
+    };
+  if (l.booked)
+    return {
+      kind: "Confirm",
+      text: `Hi ${first}! 😊 Confirming your *free thyroid strategy session — ${dateNice}.*\n\nPlease reply *YES* to lock your slot.\n\n${painLine(l)}\n\n${REPORTS}${SIGN}`,
+    };
+  return {
+    kind: "Nudge",
+    text: `Hi ${first}! 😊 This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your *free 60-min strategy session* — pick your time here: swapnilumbarkarfitness.in/book\n\nI take only a few sessions a week, so grab a slot while there's space. 💛${SIGN}`,
+  };
+}
+
+function waHref(phone: string, text?: string): string {
+  const p = phone.length === 10 ? "91" + phone : phone;
+  return `https://wa.me/${p}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}
+
 const fmtDay = (d: Date) =>
   d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
@@ -238,6 +304,25 @@ function HBars({ data, color, suffix }: { data: { label: string; value: number; 
         </div>
       ))}
     </div>
+  );
+}
+
+function CopyBtn({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setDone(true);
+          window.setTimeout(() => setDone(false), 1500);
+        } catch { /* clipboard unavailable */ }
+      }}
+      title="Copy message"
+      style={{ background: "transparent", border: `1px solid ${GRID}`, color: done ? GOOD : INK2, borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}
+    >
+      {done ? "✓ Copied" : "⧉ Copy"}
+    </button>
   );
 }
 
@@ -496,12 +581,16 @@ export default function AdminDashboard() {
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{l.name || "—"}</span>
                         <span style={{ fontSize: 11, color: MUTED }}>score {l.score ?? "–"}</span>
                         <span style={{ fontSize: 11, color: rc, marginLeft: "auto" }}>{rl}</span>
-                        {l.phone && (
-                          <a href={`https://wa.me/${l.phone.length === 10 ? "91" + l.phone : l.phone}`} target="_blank" rel="noreferrer"
-                            style={{ fontSize: 11.5, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
-                            WhatsApp
-                          </a>
-                        )}
+                        {l.phone && (() => {
+                          const msg = buildMessage(l);
+                          return (
+                            <a href={waHref(l.phone, msg?.text)} target="_blank" rel="noreferrer"
+                              title={msg ? `Opens WhatsApp with the ${msg.kind} message pre-typed` : undefined}
+                              style={{ fontSize: 11.5, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
+                              WA · {msg?.kind ?? "Chat"}
+                            </a>
+                          );
+                        })()}
                       </div>
                     );
                   })}
@@ -580,14 +669,29 @@ export default function AdminDashboard() {
                         <td style={{ padding: "8px", whiteSpace: "nowrap", color: l.booked ? INK1 : MUTED }}>
                           {l.booked ? l.sessionDate.replace(/ \d{4}/, "") : "not booked"}
                         </td>
-                        <td style={{ padding: "8px" }}>
-                          {l.phone ? (
-                            <a href={`https://wa.me/${l.phone.length === 10 ? "91" + l.phone : l.phone}`} target="_blank" rel="noreferrer" style={{ color: GOOD, fontWeight: 700, textDecoration: "none" }}>
-                              WhatsApp ↗
-                            </a>
-                          ) : (
-                            <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
-                          )}
+                        <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
+                          {(() => {
+                            const msg = buildMessage(l);
+                            if (!l.phone)
+                              return msg ? (
+                                <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
+                                  <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
+                                  <CopyBtn text={msg.text} />
+                                </span>
+                              ) : (
+                                <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
+                              );
+                            return (
+                              <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
+                                <a href={waHref(l.phone, msg?.text)} target="_blank" rel="noreferrer"
+                                  title={msg ? `Opens WhatsApp with the ${msg.kind} message pre-typed — review, then send` : "Open chat"}
+                                  style={{ color: GOOD, fontWeight: 700, textDecoration: "none" }}>
+                                  WA · {msg?.kind ?? "Chat"} ↗
+                                </a>
+                                {msg && <CopyBtn text={msg.text} />}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
                           {(l.closedAmt ?? 0) > 0 ? (
