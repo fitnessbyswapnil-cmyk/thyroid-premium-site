@@ -173,7 +173,7 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
   if (l.showed === "Y")
     return {
       kind: "Follow-up",
-      text: `Hi ${first}! Great speaking with you today. As promised, your session summary and next steps are on the way. Any question at all — message me right here.${SIGN}`,
+      text: `Hi ${first}! Great speaking with you today ☺ As promised, your session summary and next steps are on the way. Any question at all — message me right here.${SIGN}`,
     };
   if (l.showed === "N")
     return {
