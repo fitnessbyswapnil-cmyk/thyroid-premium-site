@@ -60,16 +60,14 @@ const dayMs = 86400000;
 // Sent via wa.me ?text= prefill — the owner always reviews in WhatsApp before
 // hitting send.
 //
-// SYMBOL SAFETY: pictographic emoji (😊 💛 🙌 🦋 …) are astral-plane
-// characters (surrogate pairs in UTF-16) and showed up as "�" mojibake when
-// delivered through the wa.me prefill. The symbols below (☺ ✓ → ★) are BMP
-// characters — a single UTF-16 code unit each — which is the class of symbol
-// that does NOT require a surrogate pair, so they don't hit that failure
-// mode. If any of these still render as a box on a real send, stop using
-// symbols entirely and say so — don't wait, the Copy button is always the
-// safe fallback.
+// SYMBOL SAFETY: two rounds tested on real sends both broke — first
+// pictographic emoji (😊 💛), then a plain BMP symbol (☺) — while the
+// em-dash "—" rendered fine both times. There is no reliable "safe" symbol
+// class in this pipeline, so message TEXT is now plain ASCII + the em-dash
+// only. Symbols/emoji are fine in the dashboard's own UI (buttons, badges)
+// — they just never go into a wa.me-prefilled message again.
 const SITE = "https://www.swapnilumbarkarfitness.in";
-const SIGN = "\n\n— Swapnil Umbarkar ☺\nACE & INFS Certified Thyroid Fat-Loss Coach";
+const SIGN = "\n\n— Swapnil Umbarkar\nACE & INFS Certified Thyroid Fat-Loss Coach";
 const MANUAL_OFFER =
   "If it's easier, just reply with a day and time that works for you — I'll schedule it myself from my end.";
 const REPORTS =
@@ -124,6 +122,9 @@ function fmtFull(sessionDate: string): string {
 }
 
 function meetLine(l: Lead): string {
+  // meetLink is auto-fetched from Cal.com's API by the dashboard route when
+  // CAL_API_KEY is configured (falls back to a manually pasted sheet value,
+  // then to this generic line if neither is available).
   return l.meetLink
     ? `\n\nJoin link: ${l.meetLink}`
     : "\n\nJoin link will be in your confirmation email — reply here if you don't see it.";
@@ -172,17 +173,17 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
   if (l.showed === "Y")
     return {
       kind: "Follow-up",
-      text: `Hi ${first}! Great speaking with you today ☺ As promised, your session summary and next steps are on the way. Any question at all — message me right here.${SIGN}`,
+      text: `Hi ${first}! Great speaking with you today. As promised, your session summary and next steps are on the way. Any question at all — message me right here.${SIGN}`,
     };
   if (l.showed === "N")
     return {
       kind: "Rebook",
-      text: `Hi ${first}, missed you at our session — no worries at all, life happens.\n\nYour free thyroid strategy session is still yours. Rebook in one tap → ${SITE}/book\n\n${MANUAL_OFFER}${SIGN}`,
+      text: `Hi ${first}, missed you at our session — no worries at all, life happens.\n\nYour free thyroid strategy session is still yours. Rebook in one tap: ${SITE}/book\n\n${MANUAL_OFFER}${SIGN}`,
     };
   if (l.booked) return null; // handled by the 3-step sequence below instead
   return {
     kind: "Nudge",
-    text: `Hi ${first} ☺ This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your free 60-min strategy session → ${SITE}/book\n\n${MANUAL_OFFER}\n\nI take only a few sessions a week, so grab a slot while there's space.${SIGN}`,
+    text: `Hi ${first}! This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your free 60-min strategy session: ${SITE}/book\n\n${MANUAL_OFFER}\n\nI take only a few sessions a week, so grab a slot while there's space.${SIGN}`,
   };
 }
 
@@ -209,19 +210,19 @@ function buildSequence(l: Lead): SeqStep[] {
       key: "msg1",
       label: "① Confirm",
       sent: l.msg1 === "Y",
-      text: `Hi ${first} ☺ Confirming your free thyroid strategy session — ${full}.${meetLine(l)}\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}${SIGN}`,
+      text: `Hi ${first}! Confirming your free thyroid strategy session — ${full}.${meetLine(l)}\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}${SIGN}`,
     },
     {
       key: "msg2",
       label: "② Reports",
       sent: l.msg2 === "Y",
-      text: `Hi ${first}! Looking forward to our session — ${full}.\n\n${REPORTS}\n\nEven a quick photo of your last report helps me prepare properly for you. ✓${SIGN}`,
+      text: `Hi ${first}! Looking forward to our session — ${full}.\n\n${REPORTS}\n\nEven a quick photo of your last report helps me prepare properly for you.${SIGN}`,
     },
     {
       key: "msg3",
       label: "③ Proof",
       sent: l.msg3 === "Y",
-      text: `Hi ${first} ☺ One more thing before we speak →\n\n${proof.line}\n${proof.url}\n\nHer starting point looked a lot like yours. See you ${dayOnly}!${SIGN}`,
+      text: `Hi ${first}! One more thing before we speak:\n\n${proof.line}\n${proof.url}\n\nHer starting point looked a lot like yours. See you ${dayOnly}!${SIGN}`,
     },
   ];
 }
