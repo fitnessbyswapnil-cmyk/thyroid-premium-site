@@ -535,6 +535,9 @@ export default function AdminDashboard() {
   const [loadError, setLoadError] = useState("");
   const [range, setRange] = useState("14");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [calStatus, setCalStatus] = useState<{
+    keySet: boolean; source: string; fetched: number; matched: number; error: string; sample: string[];
+  } | null>(null);
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -553,6 +556,7 @@ export default function AdminDashboard() {
       if (!res.ok) { setLoadError("Could not load data — retrying in 60s"); return; }
       const json = await res.json();
       setLeads(json.leads ?? []);
+      setCalStatus(json.calStatus ?? null);
       setLoadError("");
       setUpdatedAt(new Date());
     } catch {
@@ -718,6 +722,19 @@ export default function AdminDashboard() {
               {updatedAt ? `Live · updated ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : "Loading…"}
               {loadError && <span style={{ color: WARN }}> · ⚠ {loadError}</span>}
             </p>
+            {calStatus && (
+              <p style={{ fontSize: 10.5, color: calStatus.error ? WARN : calStatus.matched > 0 ? GOOD : MUTED }}>
+                Cal links:{" "}
+                {calStatus.error
+                  ? `⚠ ${calStatus.error}`
+                  : calStatus.matched > 0
+                  ? `✓ ${calStatus.matched} matched (${calStatus.source}, ${calStatus.fetched} bookings)`
+                  : `no upcoming bookings found (${calStatus.source})`}
+                {calStatus.error && calStatus.sample.length > 0 && (
+                  <span style={{ color: MUTED }}> · fields: {calStatus.sample.join(", ")}</span>
+                )}
+              </p>
+            )}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             {RANGES.map((r) => (
