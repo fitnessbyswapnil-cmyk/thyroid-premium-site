@@ -209,19 +209,19 @@ function buildSequence(l: Lead): SeqStep[] {
     {
       key: "msg1",
       label: "① Confirm",
-      sent: l.msg1 === "Y",
+      sent: l.msg1 !== "",
       text: `Hi ${first}! Confirming your free thyroid strategy session — ${full}.${meetLine(l)}\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}${SIGN}`,
     },
     {
       key: "msg2",
       label: "② Reports",
-      sent: l.msg2 === "Y",
+      sent: l.msg2 !== "",
       text: `Hi ${first}! Looking forward to our session — ${full}.\n\n${REPORTS}\n\nEven a quick photo of your last report helps me prepare properly for you.${SIGN}`,
     },
     {
       key: "msg3",
       label: "③ Proof",
-      sent: l.msg3 === "Y",
+      sent: l.msg3 !== "",
       text: `Hi ${first}! One more thing before we speak:\n\n${proof.line}\n${proof.url}\n\nHer starting point looked a lot like yours. See you ${dayOnly}!${SIGN}`,
     },
   ];
@@ -846,6 +846,118 @@ export default function AdminDashboard() {
     return { cplSeries, cur, prev, adRows };
   }, [adsData, leads]);
 
+  // ── Operator layer: action queue, speed-to-touch, money, insights ──
+  const ops = useMemo(() => {
+    if (!leads) return null;
+    const now = Date.now();
+
+    type QItem = { lead: Lead; label: string; kind: "Confirm" | "Nudge" | "Reports" | "Proof" | "Rebook" | "Follow-up"; urgent: boolean };
+    const queue: QItem[] = [];
+    for (const l of leads) {
+      if ((l.closedAmt ?? 0) > 0) continue;
+      const ageMin = (now - new Date(l.ts).getTime()) / 60000;
+      const sess = parseSessionDate(l.sessionDate);
+      const hrsToSession = sess ? (sess.getTime() - now) / 3600000 : null;
+
+      if (l.showed === "N") {
+        if (ageMin < 14 * 1440) queue.push({ lead: l, label: "No-show — invite to rebook", kind: "Rebook", urgent: false });
+        continue;
+      }
+      if (l.showed === "Y") {
+        if (sess && now - sess.getTime() > 2 * 86400000 && now - sess.getTime() < 14 * 86400000)
+          queue.push({ lead: l, label: "Showed but not closed — follow up", kind: "Follow-up", urgent: false });
+        continue;
+      }
+      if (!l.msg1 && ageMin < 3 * 1440) {
+        queue.push({
+          lead: l,
+          label: ageMin > 30 ? `Waiting ${ageMin > 120 ? Math.round(ageMin / 60) + " hr" : Math.round(ageMin) + " min"} for first message` : "New lead — send first message",
+          kind: l.booked ? "Confirm" : "Nudge",
+          urgent: ageMin > 30,
+        });
+        continue;
+      }
+      if (l.booked && hrsToSession !== null && hrsToSession > 0 && hrsToSession <= 24) {
+        if (!l.msg2) queue.push({ lead: l, label: "Session in <24h — ask for reports", kind: "Reports", urgent: true });
+        else if (!l.msg3) queue.push({ lead: l, label: "Session in <24h — send proof story", kind: "Proof", urgent: false });
+      }
+    }
+    queue.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0));
+
+    // Speed to first touch — only leads whose msg1 stored a real timestamp
+    const touches = leads
+      .map((l) => {
+        if (!l.msg1 || l.msg1 === "Y") return null;
+        const mins = (new Date(l.msg1).getTime() - new Date(l.ts).getTime()) / 60000;
+        return Number.isFinite(mins) && mins >= 0 && mins < 7 * 1440 ? mins : null;
+      })
+      .filter((v): v is number => v !== null);
+    const avgTouchMin = touches.length ? Math.round(touches.reduce((a, b) => a + b, 0) / touches.length) : null;
+
+    // Money — revenue over the selected range; spend matched to the same days
+    const cutoff = now - days * dayMs;
+    const revenue = inRange.reduce((s, l) => s + (l.closedAmt ?? 0), 0);
+    const spendInRange = (adsData?.daily ?? [])
+      .filter((d) => new Date(d.date + "T00:00:00").getTime() >= cutoff)
+      .reduce((s, d) => s + d.spend, 0);
+    const roas = revenue > 0 && spendInRange > 0 ? revenue / spendInRange : null;
+
+    // Pipeline forecast: upcoming booked calls × close rate × avg ticket
+    const upcoming = leads.filter((l) => {
+      const sess = parseSessionDate(l.sessionDate);
+      return l.booked && l.showed === "" && (l.closedAmt ?? 0) <= 0 && sess !== null && sess.getTime() > now;
+    }).length;
+    const showedAll = leads.filter((l) => l.showed === "Y").length;
+    const closedAll = leads.filter((l) => (l.closedAmt ?? 0) > 0);
+    const closeRate = showedAll >= 3 ? closedAll.length / showedAll : null;
+    const avgTicket = closedAll.length >= 1 ? closedAll.reduce((s, l) => s + (l.closedAmt ?? 0), 0) / closedAll.length : null;
+    const pipeline = closeRate !== null && avgTicket !== null ? Math.round(upcoming * closeRate * avgTicket) : null;
+
+    // Arrivals by weekday (IST) — works from day one
+    const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dowCounts = new Array(7).fill(0);
+    inRange.forEach((l) => {
+      const ist = new Date(new Date(l.ts).getTime() + 5.5 * 3600000);
+      dowCounts[ist.getUTCDay()]++;
+    });
+    const arrivals = DOW.map((label, i) => ({ label, value: dowCounts[i] }));
+
+    // Insights (gated until enough marked outcomes exist to be honest)
+    const outcomes = leads.filter((l) => l.showed === "Y" || l.showed === "N").length;
+    const INSIGHT_MIN = 10;
+    let insights: { label: string; value: number; note?: string }[] | null = null;
+    if (outcomes >= INSIGHT_MIN) {
+      const bands: [string, (s: number) => boolean][] = [
+        ["80+", (s) => s >= 80],
+        ["65-79", (s) => s >= 65 && s < 80],
+        ["50-64", (s) => s >= 50 && s < 65],
+        ["<50", (s) => s < 50],
+      ];
+      insights = bands.map(([label, test]) => {
+        const band = leads.filter((l) => l.score !== null && test(l.score) && (l.showed === "Y" || l.showed === "N"));
+        const showedN = band.filter((l) => l.showed === "Y").length;
+        const closedN = band.filter((l) => (l.closedAmt ?? 0) > 0).length;
+        return {
+          label,
+          value: band.length ? Math.round((showedN / band.length) * 100) : 0,
+          note: `${showedN}/${band.length} showed · ${closedN} closed`,
+        };
+      });
+    }
+
+    return { queue: queue.slice(0, 8), avgTouchMin, revenue, spendInRange, roas, upcoming, pipeline, closeRate, avgTicket, arrivals, outcomes, INSIGHT_MIN, insights };
+  }, [leads, inRange, days, adsData]);
+
+  const queueMessage = (item: { lead: Lead; kind: string }): { text: string; step: "msg1" | "msg2" | "msg3" | null } => {
+    const seq = buildSequence(item.lead);
+    if (item.kind === "Confirm") return { text: seq[0].text, step: "msg1" };
+    if (item.kind === "Reports") return { text: seq[1].text, step: "msg2" };
+    if (item.kind === "Proof") return { text: seq[2].text, step: "msg3" };
+    const msg = buildMessage(item.lead);
+    // Nudge for a not-booked lead is their first touch — record it on msg1.
+    return { text: msg?.text ?? "", step: item.kind === "Nudge" ? "msg1" : null };
+  };
+
   // ── auth gate ──
   if (!key) {
     return (
@@ -930,6 +1042,45 @@ export default function AdminDashboard() {
           <p style={{ color: MUTED, padding: 40, textAlign: "center" }}>Loading your leads…</p>
         ) : (
           <>
+            {/* ── ACTION QUEUE: what needs your hands right now ── */}
+            {ops && ops.queue.length > 0 && (
+              <div style={{ ...card, marginBottom: 12, borderColor: ops.queue.some((q) => q.urgent) ? WARN : GRID }}>
+                <p style={cardTitle}>
+                  Needs Action Now · {ops.queue.length}
+                  {ops.avgTouchMin !== null && (
+                    <span style={{ float: "right", textTransform: "none", letterSpacing: 0, color: ops.avgTouchMin <= 15 ? GOOD : ops.avgTouchMin <= 60 ? WARN : CRIT }}>
+                      avg first touch: {ops.avgTouchMin < 60 ? `${ops.avgTouchMin} min` : `${(ops.avgTouchMin / 60).toFixed(1)} hr`}
+                    </span>
+                  )}
+                </p>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {ops.queue.map((q) => {
+                    const m = queueMessage(q);
+                    return (
+                      <div key={`${q.lead.row}-${q.kind}`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", background: "#0f1012", borderRadius: 10, border: `1px solid ${q.urgent ? WARN : GRID}` }}>
+                        <span style={{ fontWeight: 700, fontSize: 12.5, minWidth: 90 }}>{q.lead.name || "(no name)"}</span>
+                        <span style={{ fontSize: 11.5, color: q.urgent ? WARN : INK2 }}>{q.urgent ? "⚠ " : ""}{q.label}</span>
+                        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 5 }}>
+                          {q.lead.phone && m.text ? (
+                            <a
+                              href={waHref(q.lead.phone, m.text)}
+                              target="_blank" rel="noreferrer"
+                              onClick={() => { if (m.step) mark(q.lead.row, m.step, new Date().toISOString()); }}
+                              style={{ fontSize: 11, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}
+                            >
+                              WA · {q.kind}
+                            </a>
+                          ) : m.text ? (
+                            <CopyBtn text={m.text} />
+                          ) : null}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* stat tiles */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 12 }}>
               {[
@@ -946,6 +1097,41 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* ── money row: revenue, ROAS, pipeline ── */}
+            {ops && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 12 }}>
+                <div style={card}>
+                  <p style={cardTitle}>Revenue</p>
+                  <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, color: ops.revenue > 0 ? GOOD : INK1 }}>
+                    {ops.revenue > 0 ? `₹${ops.revenue.toLocaleString("en-IN")}` : "₹0"}
+                  </p>
+                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>closed wins in range</p>
+                </div>
+                <div style={card}>
+                  <p style={cardTitle}>ROAS</p>
+                  <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>
+                    {ops.roas !== null ? `${ops.roas.toFixed(1)}×` : "–"}
+                  </p>
+                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>
+                    {ops.roas !== null
+                      ? `₹${Math.round(ops.spendInRange).toLocaleString("en-IN")} spend → ₹${ops.revenue.toLocaleString("en-IN")}`
+                      : "unlocks with first closed win + ads data"}
+                  </p>
+                </div>
+                <div style={card}>
+                  <p style={cardTitle}>Pipeline</p>
+                  <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>
+                    {ops.pipeline !== null ? `₹${ops.pipeline.toLocaleString("en-IN")}` : `${ops.upcoming} calls`}
+                  </p>
+                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>
+                    {ops.pipeline !== null
+                      ? `${ops.upcoming} upcoming × ${Math.round((ops.closeRate ?? 0) * 100)}% close × avg ₹${Math.round(ops.avgTicket ?? 0).toLocaleString("en-IN")}`
+                      : "expected value unlocks after 3+ marked calls"}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* today's sessions */}
             {agg.todaySessions.length > 0 && (
@@ -1011,6 +1197,28 @@ export default function AdminDashboard() {
                 <p style={cardTitle}>Top cities</p>
                 {agg.cities.length ? <HBars data={agg.cities} color={PURPLE} /> : <p style={{ fontSize: 12, color: MUTED }}>No city data in range</p>}
               </div>
+              {ops && (
+                <div className="chart-card" style={card}>
+                  <p style={cardTitle}>Lead arrivals by weekday</p>
+                  <HBars data={ops.arrivals} color={PURPLE} />
+                  <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>Feeds ad scheduling — heavy days deserve heavier budget</p>
+                </div>
+              )}
+              {ops && (
+                <div className="chart-card" style={card}>
+                  <p style={cardTitle}>Show-rate by lead score</p>
+                  {ops.insights ? (
+                    <>
+                      <HBars data={ops.insights} color={PURPLE} suffix="%" />
+                      <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>If high scores show more, the scoring is honest — trust the tiers</p>
+                    </>
+                  ) : (
+                    <p style={{ fontSize: 12, color: MUTED }}>
+                      Unlocks at {ops.INSIGHT_MIN} marked calls — {ops.outcomes}/{ops.INSIGHT_MIN} done. Keep tapping Showed / No-show after every session.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* ── Ad Performance: is the money working? ── */}
@@ -1132,7 +1340,7 @@ export default function AdminDashboard() {
                         <td style={{ padding: "8px", minWidth: 190 }}>
                           {l.booked && l.showed !== "Y" && l.showed !== "N" && (l.closedAmt ?? 0) <= 0 ? (
                             <div style={{ display: "grid", gap: 5 }}>
-                              <SequenceButtons lead={l} onSend={(row, step) => mark(row, step, "Y")} />
+                              <SequenceButtons lead={l} onSend={(row, step) => mark(row, step, new Date().toISOString())} />
                               <MeetLinkEditor lead={l} onSave={(row, url) => mark(row, "meetlink", url)} />
                             </div>
                           ) : (
