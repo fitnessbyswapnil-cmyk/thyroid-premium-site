@@ -54,7 +54,16 @@ export async function POST(req: NextRequest) {
   if (!field || !Number.isInteger(row) || row < 2 || row > 100000) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
-  if ((field === "showed" || field === "msg1" || field === "msg2" || field === "msg3") && value !== "Y" && value !== "N") {
+  if (field === "showed" && value !== "Y" && value !== "N") {
+    return NextResponse.json({ error: "bad_value" }, { status: 400 });
+  }
+  // Sequence steps store the SEND TIMESTAMP (ISO) so the dashboard can
+  // compute speed-to-first-touch; legacy "Y" values remain valid.
+  if (
+    (field === "msg1" || field === "msg2" || field === "msg3") &&
+    value !== "Y" &&
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?$/.test(value)
+  ) {
     return NextResponse.json({ error: "bad_value" }, { status: 400 });
   }
   if (field === "closed" && !/^\d{0,8}(\.\d{1,2})?$/.test(value)) {
