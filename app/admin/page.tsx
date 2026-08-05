@@ -422,6 +422,70 @@ function HBars({ data, color, suffix }: { data: { label: string; value: number; 
   );
 }
 
+// Daily series (thin, muted) + 7-day moving average (bold purple) on ONE
+// axis — same unit, so no dual-axis sin. Direct label on the latest average.
+function TrendChart({ data, unit }: { data: { label: string; value: number | null }[]; unit: string }) {
+  const { show, hide, node } = useTooltip();
+  const W = 320, H = 110, PADX = 6, PADY = 10;
+  const vals = data.map((d) => d.value).filter((v): v is number => v !== null && Number.isFinite(v));
+  if (vals.length < 2) return <p style={{ fontSize: 12, color: MUTED }}>Not enough days with data yet</p>;
+  const max = Math.max(...vals) * 1.1 || 1;
+  const x = (i: number) => PADX + (i / Math.max(1, data.length - 1)) * (W - PADX * 2);
+  const y = (v: number) => H - PADY - (v / max) * (H - PADY * 2);
+
+  // 7-day trailing average over non-null values
+  const avg: (number | null)[] = data.map((_, i) => {
+    const win = data.slice(Math.max(0, i - 6), i + 1).map((d) => d.value).filter((v): v is number => v !== null);
+    return win.length ? win.reduce((a, b) => a + b, 0) / win.length : null;
+  });
+  const path = (series: (number | null)[]) => {
+    let d = "", pen = false;
+    series.forEach((v, i) => {
+      if (v === null) { pen = false; return; }
+      d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`;
+      pen = true;
+    });
+    return d;
+  };
+  const lastAvgIdx = avg.map((v, i) => (v !== null ? i : -1)).filter((i) => i >= 0).pop() ?? -1;
+
+  return (
+    <div style={{ position: "relative" }}>
+      {node}
+      <svg viewBox={`0 0 ${W} ${H + 14}`} style={{ width: "100%", display: "block" }}>
+        <line x1={PADX} x2={W - PADX} y1={H - PADY} y2={H - PADY} stroke={GRID} strokeWidth="1" />
+        <path d={path(data.map((d) => d.value))} fill="none" stroke={MUTED} strokeWidth="1" opacity="0.55" />
+        <path d={path(avg)} fill="none" stroke={PURPLE} strokeWidth="2" strokeLinecap="round" />
+        {lastAvgIdx >= 0 && avg[lastAvgIdx] !== null && (
+          <>
+            <circle cx={x(lastAvgIdx)} cy={y(avg[lastAvgIdx] as number)} r="3" fill={PURPLE} />
+            <text
+              x={Math.min(x(lastAvgIdx), W - 4)} y={Math.max(10, y(avg[lastAvgIdx] as number) - 7)}
+              textAnchor="end" fontSize="10.5" fontWeight="700" fill={INK1}
+            >
+              {unit}{Math.round(avg[lastAvgIdx] as number).toLocaleString("en-IN")}
+            </text>
+          </>
+        )}
+        {data.map((d, i) => (
+          <rect
+            key={d.label + i} x={x(i) - 4} y={0} width={8} height={H} fill="transparent"
+            onMouseEnter={(e) =>
+              show(e, `${d.label}: ${d.value === null ? "no spend" : unit + Math.round(d.value).toLocaleString("en-IN")}${avg[i] !== null ? ` (7d avg ${unit}${Math.round(avg[i] as number).toLocaleString("en-IN")})` : ""}`)
+            }
+            onMouseLeave={hide}
+          />
+        ))}
+        <text x={PADX} y={H + 11} fontSize="9" fill={MUTED}>{data[0]?.label}</text>
+        <text x={W - PADX} y={H + 11} textAnchor="end" fontSize="9" fill={MUTED}>{data[data.length - 1]?.label}</text>
+      </svg>
+      <p style={{ fontSize: 9.5, color: MUTED, marginTop: 2 }}>
+        thin line = daily (noisy at low volume) · <span style={{ color: PURPLE, fontWeight: 700 }}>bold = 7-day average, judge this one</span>
+      </p>
+    </div>
+  );
+}
+
 function CopyBtn({ text }: { text: string }) {
   const [done, setDone] = useState(false);
   return (
@@ -538,7 +602,13 @@ export default function AdminDashboard() {
   const [calStatus, setCalStatus] = useState<{
     keySet: boolean; source: string; fetched: number; matched: number; error: string; sample: string[];
   } | null>(null);
+  const [adsData, setAdsData] = useState<{
+    daily: { date: string; spend: number; impressions: number; linkClicks: number; cpm: number; frequency: number }[];
+    ads: { adId: string; adName: string; spend: number; impressions: number; linkClicks: number; cpm: number; frequency: number }[];
+    status: { tokenSet: boolean; tokenSource: string; ok: boolean; error: string };
+  } | null>(null);
   const timer = useRef<number | null>(null);
+  const adsTimer = useRef<number | null>(null);
 
   useEffect(() => {
     try { setKey(sessionStorage.getItem(KEY_STORE)); } catch { setKey(null); }
@@ -570,6 +640,21 @@ export default function AdminDashboard() {
     timer.current = window.setInterval(() => load(key), 60000);
     return () => { if (timer.current) window.clearInterval(timer.current); };
   }, [key, load]);
+
+  // Ads data refreshes every 5 min (Meta insights lag hours anyway — no
+  // point hammering the Marketing API every 60s like the sheet).
+  const loadAds = useCallback(async (k: string) => {
+    try {
+      const res = await fetch("/api/admin/ads", { headers: { "x-admin-key": k } });
+      if (res.ok) setAdsData(await res.json());
+    } catch { /* header line just stays absent */ }
+  }, []);
+  useEffect(() => {
+    if (!key) return;
+    loadAds(key);
+    adsTimer.current = window.setInterval(() => loadAds(key), 300000);
+    return () => { if (adsTimer.current) window.clearInterval(adsTimer.current); };
+  }, [key, loadAds]);
 
   const submitKey = (e: React.FormEvent) => {
     e.preventDefault();
@@ -684,6 +769,83 @@ export default function AdminDashboard() {
     return { total, booked, showed, noshow, closedN: closed.length, revenue, avgScore, perDay, srcCount, buckets, ads, cities, todaySessions };
   }, [inRange, leads, days]);
 
+  // ── Ad Performance: Meta spend joined with the sheet's lead quality ──
+  const adPerf = useMemo(() => {
+    if (!adsData || !adsData.status.ok || !leads) return null;
+    const daily = adsData.daily;
+    const leadsByDate = new Map<string, number>();
+    const bookedByDate = new Map<string, number>();
+    leads.forEach((l) => {
+      const d = l.ts.slice(0, 10);
+      leadsByDate.set(d, (leadsByDate.get(d) ?? 0) + 1);
+      if (l.booked) bookedByDate.set(d, (bookedByDate.get(d) ?? 0) + 1);
+    });
+
+    // CPL per day: spend ÷ leads from OUR sheet (first-party truth, not
+    // Meta's attributed count). null when no spend that day.
+    const cplSeries = daily.map((d) => {
+      const n = leadsByDate.get(d.date) ?? 0;
+      return {
+        label: new Date(d.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+        value: d.spend > 0 ? (n > 0 ? d.spend / n : d.spend) : null, // spend with 0 leads = CPL is "all of it"
+      };
+    });
+
+    const sum = (rows: typeof daily, f: (r: (typeof daily)[number]) => number) => rows.reduce((a, r) => a + f(r), 0);
+    const last7 = daily.slice(-7);
+    const prev7 = daily.slice(-14, -7);
+    const window7 = (rows: typeof daily) => {
+      const spend = sum(rows, (r) => r.spend);
+      const imps = sum(rows, (r) => r.impressions);
+      const clicks = sum(rows, (r) => r.linkClicks);
+      const dates = new Set(rows.map((r) => r.date));
+      let nLeads = 0, nBooked = 0;
+      dates.forEach((dt) => { nLeads += leadsByDate.get(dt) ?? 0; nBooked += bookedByDate.get(dt) ?? 0; });
+      return {
+        spend,
+        cpl: nLeads > 0 ? spend / nLeads : null,
+        cpb: nBooked > 0 ? spend / nBooked : null,
+        ctr: imps > 0 ? (clicks / imps) * 100 : null,
+        cpm: imps > 0 ? (spend / imps) * 1000 : null,
+      };
+    };
+    const cur = window7(last7);
+    const prev = window7(prev7);
+
+    // Per-ad decision table: Meta delivery × sheet lead quality by ad id.
+    const leadsByAd = new Map<string, { n: number; scoreSum: number; scoreN: number; booked: number }>();
+    leads.forEach((l) => {
+      if (!l.adId) return;
+      const e = leadsByAd.get(l.adId) ?? { n: 0, scoreSum: 0, scoreN: 0, booked: 0 };
+      e.n++;
+      if (l.score !== null) { e.scoreSum += l.score; e.scoreN++; }
+      if (l.booked) e.booked++;
+      leadsByAd.set(l.adId, e);
+    });
+    const adRows = adsData.ads.map((a) => {
+      const j = leadsByAd.get(a.adId) ?? { n: 0, scoreSum: 0, scoreN: 0, booked: 0 };
+      const ctr = a.impressions > 0 ? (a.linkClicks / a.impressions) * 100 : 0;
+      const cpl = j.n > 0 ? a.spend / j.n : null;
+      const cpb = j.booked > 0 ? a.spend / j.booked : null;
+      let verdict: { label: string; color: string; why: string };
+      if (a.spend < 500) verdict = { label: "LEARNING", color: MUTED, why: "under Rs500 spent - too early to judge" };
+      else if (j.booked > 0 && cpb !== null && cpb <= 1200) verdict = { label: "SCALE", color: GOOD, why: `booking calls at Rs${Math.round(cpb)} - raise budget 20-30%` };
+      else if (j.booked === 0 && a.spend > 1500) verdict = { label: "KILL", color: CRIT, why: `Rs${Math.round(a.spend)} spent, zero bookings` };
+      else if (ctr < 0.8) verdict = { label: "WATCH", color: WARN, why: `weak CTR ${ctr.toFixed(2)}% - creative not hooking` };
+      else if (a.frequency > 3) verdict = { label: "WATCH", color: WARN, why: `frequency ${a.frequency.toFixed(1)} - fatigue, rotate creative` };
+      else verdict = { label: "WATCH", color: WARN, why: "delivering - needs bookings to earn SCALE" };
+      return {
+        ...a, ctr, cpl, cpb,
+        leads: j.n,
+        avgScore: j.scoreN ? Math.round(j.scoreSum / j.scoreN) : null,
+        booked: j.booked,
+        verdict,
+      };
+    });
+
+    return { cplSeries, cur, prev, adRows };
+  }, [adsData, leads]);
+
   // ── auth gate ──
   if (!key) {
     return (
@@ -733,6 +895,16 @@ export default function AdminDashboard() {
                 {calStatus.error && calStatus.sample.length > 0 && (
                   <span style={{ color: MUTED }}> · fields: {calStatus.sample.join(", ")}</span>
                 )}
+              </p>
+            )}
+            {adsData && (
+              <p style={{ fontSize: 10.5, color: adsData.status.ok ? (adsData.status.error ? WARN : GOOD) : WARN }}>
+                Ads data:{" "}
+                {adsData.status.ok
+                  ? adsData.status.error
+                    ? `⚠ partial — ${adsData.status.error}`
+                    : `✓ live from Meta (${adsData.status.tokenSource})`
+                  : `⚠ ${adsData.status.error}`}
               </p>
             )}
           </div>
@@ -840,6 +1012,87 @@ export default function AdminDashboard() {
                 {agg.cities.length ? <HBars data={agg.cities} color={PURPLE} /> : <p style={{ fontSize: 12, color: MUTED }}>No city data in range</p>}
               </div>
             </div>
+
+            {/* ── Ad Performance: is the money working? ── */}
+            {adPerf && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 12 }}>
+                  {(
+                    [
+                      { label: "Spend · 7d", v: `₹${Math.round(adPerf.cur.spend).toLocaleString("en-IN")}`, cur: adPerf.cur.spend, prev: adPerf.prev.spend, lowerBetter: false, neutral: true },
+                      { label: "Cost / Lead · 7d", v: adPerf.cur.cpl !== null ? `₹${Math.round(adPerf.cur.cpl)}` : "–", cur: adPerf.cur.cpl, prev: adPerf.prev.cpl, lowerBetter: true },
+                      { label: "Cost / Booked · 7d", v: adPerf.cur.cpb !== null ? `₹${Math.round(adPerf.cur.cpb)}` : "–", cur: adPerf.cur.cpb, prev: adPerf.prev.cpb, lowerBetter: true },
+                      { label: "CTR · 7d", v: adPerf.cur.ctr !== null ? `${adPerf.cur.ctr.toFixed(2)}%` : "–", cur: adPerf.cur.ctr, prev: adPerf.prev.ctr, lowerBetter: false },
+                      { label: "CPM · 7d", v: adPerf.cur.cpm !== null ? `₹${Math.round(adPerf.cur.cpm)}` : "–", cur: adPerf.cur.cpm, prev: adPerf.prev.cpm, lowerBetter: true },
+                    ] as { label: string; v: string; cur: number | null; prev: number | null; lowerBetter: boolean; neutral?: boolean }[]
+                  ).map((t) => {
+                    let delta: React.ReactNode = <span style={{ color: MUTED }}>vs prev 7d: –</span>;
+                    if (t.cur !== null && t.prev !== null && t.prev > 0) {
+                      const pct = ((t.cur - t.prev) / t.prev) * 100;
+                      const up = pct >= 0;
+                      const good = t.neutral ? null : t.lowerBetter ? !up : up;
+                      const color = good === null ? MUTED : good ? GOOD : CRIT;
+                      delta = (
+                        <span style={{ color }}>
+                          {up ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}% vs prev 7d
+                        </span>
+                      );
+                    }
+                    return (
+                      <div key={t.label} style={card}>
+                        <p style={cardTitle}>{t.label}</p>
+                        <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{t.v}</p>
+                        <p style={{ fontSize: 10, marginTop: 6 }}>{delta}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 10, marginBottom: 12 }}>
+                  <div className="chart-card" style={card}>
+                    <p style={cardTitle}>Cost per lead — 30-day trend</p>
+                    <TrendChart data={adPerf.cplSeries} unit="₹" />
+                  </div>
+                  <div className="chart-card" style={{ ...card, overflowX: "auto" }}>
+                    <p style={cardTitle}>Per-ad verdict — last 14 days · spend × lead quality</p>
+                    {adPerf.adRows.length === 0 ? (
+                      <p style={{ fontSize: 12, color: MUTED }}>No ads with spend in the last 14 days</p>
+                    ) : (
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, minWidth: 460 }}>
+                        <thead>
+                          <tr style={{ color: MUTED, textAlign: "left" }}>
+                            {["Ad", "Spend", "Leads", "CPL", "Score", "Bkd", "₹/Bkd", "Verdict"].map((h) => (
+                              <th key={h} style={{ padding: "5px 6px", fontWeight: 600, fontSize: 9.5, letterSpacing: "0.06em", textTransform: "uppercase", borderBottom: `1px solid ${GRID}` }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adPerf.adRows.map((a) => (
+                            <tr key={a.adId} style={{ borderBottom: `1px solid ${GRID}` }} title={a.verdict.why}>
+                              <td style={{ padding: "6px", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={`${a.adName} (…${a.adId.slice(-5)}) — ${a.verdict.why}`}>
+                                {a.adName || `…${a.adId.slice(-5)}`}
+                              </td>
+                              <td style={{ padding: "6px", fontVariantNumeric: "tabular-nums" }}>₹{Math.round(a.spend).toLocaleString("en-IN")}</td>
+                              <td style={{ padding: "6px", fontVariantNumeric: "tabular-nums" }}>{a.leads}</td>
+                              <td style={{ padding: "6px", fontVariantNumeric: "tabular-nums" }}>{a.cpl !== null ? `₹${Math.round(a.cpl)}` : "–"}</td>
+                              <td style={{ padding: "6px", fontVariantNumeric: "tabular-nums" }}>{a.avgScore ?? "–"}</td>
+                              <td style={{ padding: "6px", fontVariantNumeric: "tabular-nums" }}>{a.booked}</td>
+                              <td style={{ padding: "6px", fontVariantNumeric: "tabular-nums" }}>{a.cpb !== null ? `₹${Math.round(a.cpb)}` : "–"}</td>
+                              <td style={{ padding: "6px" }}>
+                                <span style={{ color: a.verdict.color, fontWeight: 800, fontSize: 10.5, letterSpacing: "0.06em" }}>{a.verdict.label}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                    <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>
+                      Tap/hover a row for the reason. Judge on ₹/Booked + Score, never CPL alone.
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* lead table */}
             <div style={{ ...card, overflowX: "auto" }}>
