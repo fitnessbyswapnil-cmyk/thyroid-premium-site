@@ -57,7 +57,12 @@ const dayMs = 86400000;
 // their "Biggest Challenge" answer. Sent via wa.me ?text= prefill — the
 // owner always reviews in WhatsApp before hitting send.
 
-const SIGN = "\n\n— *Swapnil Umbarkar*\nACE & INFS Certified Thyroid Fat-Loss Coach 🦋";
+// NOTE: no emoji in message text — WhatsApp Web's compose box has shown
+// mojibake ("�") for emoji delivered via the wa.me ?text= prefill. Emoji stay
+// in the dashboard UI (which renders fine) but never in outbound message text.
+const SIGN = "\n\n— Swapnil Umbarkar\nACE & INFS Certified Thyroid Fat-Loss Coach";
+const MANUAL_OFFER =
+  "If it's easier, just reply with a day and time that works for you — I'll schedule it myself from my end.";
 
 function painLine(l: Lead): string {
   const c = l.challenge.toLowerCase();
@@ -67,7 +72,7 @@ function painLine(l: Lead): string {
       ? " What you tried before wasn't wrong effort — those plans were built for a body without hypothyroidism."
       : "";
   if (c.includes("won't move") || c.includes("weight"))
-    return `You mentioned the weight won't move no matter what — that's exactly what we'll decode on the call. It's not a willpower problem. 💪${effort}`;
+    return `You mentioned the weight won't move no matter what — that's exactly what we'll decode on the call. It's not a willpower problem.${effort}`;
   if (c.includes("hair") || c.includes("skin"))
     return `You mentioned hair thinning and skin issues along with the weight — a classic sign the thyroid side was never properly addressed. We'll cover both.${effort}`;
   if (c.includes("bloat") || c.includes("puffi"))
@@ -89,26 +94,26 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
   if (l.showed === "Y")
     return {
       kind: "Follow-up",
-      text: `Hi ${first}! Great speaking with you today 😊 As promised, your session summary and next steps are on the way. Any question at all — message me right here.\n\n— *Swapnil*`,
+      text: `Hi ${first}! Great speaking with you today. As promised, your session summary and next steps are on the way. Any question at all — message me right here.${SIGN}`,
     };
   if (l.showed === "N")
     return {
       kind: "Rebook",
-      text: `Hi ${first}, missed you at our session — no worries at all, life happens 😊\n\nYour *free thyroid strategy session* is still yours. Rebook in one tap: swapnilumbarkarfitness.in/book\n\n— *Swapnil*`,
+      text: `Hi ${first}, missed you at our session — no worries at all, life happens.\n\nYour free thyroid strategy session is still yours. Rebook in one tap: swapnilumbarkarfitness.in/book\n\n${MANUAL_OFFER}${SIGN}`,
     };
   if (l.booked && isToday(l.sessionDate))
     return {
       kind: "Remind",
-      text: `Hi ${first}! 😊 Reminder — your *free thyroid session is TODAY at ${time || dateNice}.* Your slot is reserved.\n\nJoin link is in your email. If you have your thyroid reports, send them here before we start. See you soon! 🙌\n\n— *Swapnil*`,
+      text: `Hi ${first}! Reminder — your free thyroid session is TODAY at ${time || dateNice}. Your slot is reserved.\n\nJoin link is in your email. If you have your thyroid reports, send them here before we start. See you soon!${SIGN}`,
     };
   if (l.booked)
     return {
       kind: "Confirm",
-      text: `Hi ${first}! 😊 Confirming your *free thyroid strategy session — ${dateNice}.*\n\nPlease reply *YES* to lock your slot.\n\n${painLine(l)}\n\n${REPORTS}${SIGN}`,
+      text: `Hi ${first}! Confirming your free thyroid strategy session — ${dateNice}.\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}\n\n${REPORTS}${SIGN}`,
     };
   return {
     kind: "Nudge",
-    text: `Hi ${first}! 😊 This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your *free 60-min strategy session* — pick your time here: swapnilumbarkarfitness.in/book\n\nI take only a few sessions a week, so grab a slot while there's space. 💛${SIGN}`,
+    text: `Hi ${first}! This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your free 60-min strategy session — pick your time here: swapnilumbarkarfitness.in/book\n\n${MANUAL_OFFER}\n\nI take only a few sessions a week, so grab a slot while there's space.${SIGN}`,
   };
 }
 
