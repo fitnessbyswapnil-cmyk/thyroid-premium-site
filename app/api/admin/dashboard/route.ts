@@ -57,6 +57,10 @@ export async function GET(req: NextRequest) {
       score: col("Lead Score", 52),
       showed: col("Showed", 53),
       closedAmt: col("Closed ₹", 54),
+      meetLink: col("Meet Link", 55),
+      msg1: col("Msg1 Sent", 56),
+      msg2: col("Msg2 Sent", 57),
+      msg3: col("Msg3 Sent", 58),
     };
 
     const cell = (r: string[], i: number) => (r[i] ?? "").toString().trim();
@@ -91,6 +95,10 @@ export async function GET(req: NextRequest) {
         score: num(cell(r, C.score)),
         showed: cell(r, C.showed).toUpperCase(),
         closedAmt: num(cell(r, C.closedAmt)),
+        meetLink: cell(r, C.meetLink),
+        msg1: cell(r, C.msg1).toUpperCase(),
+        msg2: cell(r, C.msg2).toUpperCase(),
+        msg3: cell(r, C.msg3).toUpperCase(),
       });
     }
     // Newest first; cap the payload — charts only need recent history.

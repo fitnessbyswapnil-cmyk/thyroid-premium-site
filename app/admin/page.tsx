@@ -32,6 +32,10 @@ type Lead = {
   score: number | null;
   showed: string;
   closedAmt: number | null;
+  meetLink: string;
+  msg1: string;
+  msg2: string;
+  msg3: string;
 };
 
 // ── palette (validated: 3-slot categorical + purple ordinal, dark surface) ──
@@ -53,16 +57,27 @@ const dayMs = 86400000;
 
 // ── personalized WhatsApp message builder ───────────────────────────────────
 // Deterministic templates in Swapnil's voice, personalized from form answers.
-// The right template is picked from the lead's STATE; the pain line from
-// their "Biggest Challenge" answer. Sent via wa.me ?text= prefill — the
-// owner always reviews in WhatsApp before hitting send.
-
-// NOTE: no emoji in message text — WhatsApp Web's compose box has shown
-// mojibake ("�") for emoji delivered via the wa.me ?text= prefill. Emoji stay
-// in the dashboard UI (which renders fine) but never in outbound message text.
-const SIGN = "\n\n— Swapnil Umbarkar\nACE & INFS Certified Thyroid Fat-Loss Coach";
+// Sent via wa.me ?text= prefill — the owner always reviews in WhatsApp before
+// hitting send.
+//
+// SYMBOL SAFETY: pictographic emoji (😊 💛 🙌 🦋 …) are astral-plane
+// characters (surrogate pairs in UTF-16) and showed up as "�" mojibake when
+// delivered through the wa.me prefill. The symbols below (☺ ✓ → ★) are BMP
+// characters — a single UTF-16 code unit each — which is the class of symbol
+// that does NOT require a surrogate pair, so they don't hit that failure
+// mode. If any of these still render as a box on a real send, stop using
+// symbols entirely and say so — don't wait, the Copy button is always the
+// safe fallback.
+const SITE = "https://www.swapnilumbarkarfitness.in";
+const SIGN = "\n\n— Swapnil Umbarkar ☺\nACE & INFS Certified Thyroid Fat-Loss Coach";
 const MANUAL_OFFER =
   "If it's easier, just reply with a day and time that works for you — I'll schedule it myself from my end.";
+const REPORTS =
+  "If you have recent reports (TSH, T3, T4 + iron/vit D), share them here — I review them personally before the call. No reports? Come anyway.";
+
+function firstName(l: Lead): string {
+  return (l.name.trim().split(/\s+/)[0] || "there").replace(/^./, (c) => c.toUpperCase());
+}
 
 function painLine(l: Lead): string {
   const c = l.challenge.toLowerCase();
@@ -82,39 +97,133 @@ function painLine(l: Lead): string {
   return `I've read your form carefully — on the call we'll get to the root of what's been holding your progress back.${effort}`;
 }
 
-const REPORTS =
-  "If you have recent reports (TSH, T3, T4 + iron/vit D), share them here — I review them personally before the call. No reports? Come anyway.";
+// Session Date arrives from Make as "09 Aug 2026 4:00 PM" — parse it into a
+// real Date so we can print "Sunday, 9 Aug at 4:00 PM" instead of the raw
+// string, and so isToday()/reminders stay in sync with one parser.
+function parseSessionDate(sessionDate: string): Date | null {
+  const m = sessionDate.match(/^(\d{1,2}) (\w{3}) (\d{4}) (\d{1,2}):(\d{2}) ([AP]M)/);
+  if (!m) return null;
+  const [, d, mon, y, h, min, ap] = m;
+  let hour = parseInt(h, 10) % 12;
+  if (ap === "PM") hour += 12;
+  const dt = new Date(`${mon} ${d}, ${y} ${String(hour).padStart(2, "0")}:${min}:00`);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
 
+function fmtFull(sessionDate: string): string {
+  const d = parseSessionDate(sessionDate);
+  if (!d) return sessionDate;
+  const day = d.toLocaleDateString("en-IN", { weekday: "long" });
+  const date = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  // en-IN's am/pm comes back lowercase in some locales — force uppercase to
+  // match the raw "3:00 PM" style already used elsewhere in these messages.
+  const time = d
+    .toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+    .replace(/am|pm/i, (m) => m.toUpperCase());
+  return `${day}, ${date} at ${time}`;
+}
+
+function meetLine(l: Lead): string {
+  return l.meetLink
+    ? `\n\nJoin link: ${l.meetLink}`
+    : "\n\nJoin link will be in your confirmation email — reply here if you don't see it.";
+}
+
+// ── proof matcher — Step 3 sends a REAL client photo picked to match this
+// lead's own "Biggest Challenge" answer, so the belief built is specific to
+// her, not generic. Filenames verified against /public. WhatsApp auto-
+// previews a direct image URL as a thumbnail — no manual attaching needed.
+const PROOF_MAP: { test: (c: string) => boolean; url: string; line: string }[] = [
+  {
+    test: (c) => c.includes("hair") || c.includes("skin"),
+    url: `${SITE}/whatsapp-proof/Pooja-Sharma.jpeg`,
+    line: "Pooja had the same hair-fall worry — her message a few weeks in:",
+  },
+  {
+    test: (c) => c.includes("bloat") || c.includes("puffi"),
+    url: `${SITE}/whatsapp-proof/Sruthi-Reddy.jpeg`,
+    line: "Sruthi had the same bloating — here's what changed for her:",
+  },
+  {
+    test: (c) => c.includes("energy") || c.includes("tired") || c.includes("exhaust"),
+    url: `${SITE}/whatsapp-proof/Ritika-Deshmukh.jpeg`,
+    line: "Ritika had the same exhaustion — her update:",
+  },
+  {
+    test: (c) => c.includes("won't move") || c.includes("weight"),
+    url: `${SITE}/${encodeURI("transformations/Namrata 5.png")}`,
+    line: "Namrata was stuck exactly like this — 16 kg down in 90 days:",
+  },
+];
+const DEFAULT_PROOF = {
+  url: `${SITE}/#transformations-heading`,
+  line: "A few real client transformations — this is what's possible:",
+};
+
+function pickProof(l: Lead) {
+  const c = l.challenge.toLowerCase();
+  return PROOF_MAP.find((p) => p.test(c)) ?? DEFAULT_PROOF;
+}
+
+// ── single-message states (not booked / showed / no-show / already a client) ──
 function buildMessage(l: Lead): { kind: string; text: string } | null {
-  const first = (l.name.trim().split(/\s+/)[0] || "there").replace(/^./, (c) => c.toUpperCase());
-  const time = l.sessionDate.match(/\d{1,2}:\d{2} [AP]M/)?.[0] ?? "";
-  const dateNice = l.sessionDate.replace(/ \d{4}/, "");
-
-  if ((l.closedAmt ?? 0) > 0) return null; // already a client
+  const first = firstName(l);
+  if ((l.closedAmt ?? 0) > 0) return null; // already a client — no automated message
   if (l.showed === "Y")
     return {
       kind: "Follow-up",
-      text: `Hi ${first}! Great speaking with you today. As promised, your session summary and next steps are on the way. Any question at all — message me right here.${SIGN}`,
+      text: `Hi ${first}! Great speaking with you today ☺ As promised, your session summary and next steps are on the way. Any question at all — message me right here.${SIGN}`,
     };
   if (l.showed === "N")
     return {
       kind: "Rebook",
-      text: `Hi ${first}, missed you at our session — no worries at all, life happens.\n\nYour free thyroid strategy session is still yours. Rebook in one tap: swapnilumbarkarfitness.in/book\n\n${MANUAL_OFFER}${SIGN}`,
+      text: `Hi ${first}, missed you at our session — no worries at all, life happens.\n\nYour free thyroid strategy session is still yours. Rebook in one tap → ${SITE}/book\n\n${MANUAL_OFFER}${SIGN}`,
     };
-  if (l.booked && isToday(l.sessionDate))
-    return {
-      kind: "Remind",
-      text: `Hi ${first}! Reminder — your free thyroid session is TODAY at ${time || dateNice}. Your slot is reserved.\n\nJoin link is in your email. If you have your thyroid reports, send them here before we start. See you soon!${SIGN}`,
-    };
-  if (l.booked)
-    return {
-      kind: "Confirm",
-      text: `Hi ${first}! Confirming your free thyroid strategy session — ${dateNice}.\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}\n\n${REPORTS}${SIGN}`,
-    };
+  if (l.booked) return null; // handled by the 3-step sequence below instead
   return {
     kind: "Nudge",
-    text: `Hi ${first}! This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your free 60-min strategy session — pick your time here: swapnilumbarkarfitness.in/book\n\n${MANUAL_OFFER}\n\nI take only a few sessions a week, so grab a slot while there's space.${SIGN}`,
+    text: `Hi ${first} ☺ This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your free 60-min strategy session → ${SITE}/book\n\n${MANUAL_OFFER}\n\nI take only a few sessions a week, so grab a slot while there's space.${SIGN}`,
   };
+}
+
+// Used only on the "Today's Sessions" strip — a short, urgent, same-day nudge.
+function buildTodayReminder(l: Lead): string {
+  const first = firstName(l);
+  const time = l.sessionDate.match(/\d{1,2}:\d{2} [AP]M/)?.[0] ?? fmtFull(l.sessionDate);
+  return `Hi ${first}! Reminder — your free thyroid session is TODAY at ${time}. Your slot is reserved.${meetLine(l)}\n\nIf you have your thyroid reports, send them here before we start. See you soon!${SIGN}`;
+}
+
+// ── the 3-step warm-up sequence — shown for BOOKED leads whose call hasn't
+// happened yet (not showed/no-show/closed). Each step is a separate WhatsApp
+// send with its own job: secure the slot → get her invested → install belief.
+type SeqStep = { key: "msg1" | "msg2" | "msg3"; label: string; text: string; sent: boolean };
+
+function buildSequence(l: Lead): SeqStep[] {
+  const first = firstName(l);
+  const full = fmtFull(l.sessionDate);
+  const dayOnly = full.split(" at ")[0];
+  const proof = pickProof(l);
+
+  return [
+    {
+      key: "msg1",
+      label: "① Confirm",
+      sent: l.msg1 === "Y",
+      text: `Hi ${first} ☺ Confirming your free thyroid strategy session — ${full}.${meetLine(l)}\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}${SIGN}`,
+    },
+    {
+      key: "msg2",
+      label: "② Reports",
+      sent: l.msg2 === "Y",
+      text: `Hi ${first}! Looking forward to our session — ${full}.\n\n${REPORTS}\n\nEven a quick photo of your last report helps me prepare properly for you. ✓${SIGN}`,
+    },
+    {
+      key: "msg3",
+      label: "③ Proof",
+      sent: l.msg3 === "Y",
+      text: `Hi ${first} ☺ One more thing before we speak →\n\n${proof.line}\n${proof.url}\n\nHer starting point looked a lot like yours. See you ${dayOnly}!${SIGN}`,
+    },
+  ];
 }
 
 function waHref(phone: string, text?: string): string {
@@ -331,6 +440,83 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+function MeetLinkEditor({
+  lead,
+  onSave,
+}: {
+  lead: Lead;
+  onSave: (row: number, url: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(lead.meetLink);
+  if (!editing) {
+    return (
+      <button
+        onClick={() => { setVal(lead.meetLink); setEditing(true); }}
+        title={lead.meetLink ? "Edit meet link" : "Paste the Google Meet / Zoom link from Cal.com"}
+        style={{ background: "transparent", border: `1px dashed ${lead.meetLink ? GRID : WARN}`, color: lead.meetLink ? MUTED : WARN, borderRadius: 6, padding: "3px 8px", fontSize: 10.5, cursor: "pointer" }}
+      >
+        {lead.meetLink ? "🔗 link set" : "+ meet link"}
+      </button>
+    );
+  }
+  return (
+    <span style={{ display: "inline-flex", gap: 4 }}>
+      <input
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        placeholder="meet.google.com/xxx-xxxx-xxx"
+        autoFocus
+        style={{ width: 150, fontSize: 10.5, background: "#0f1012", border: `1px solid ${GRID}`, borderRadius: 6, padding: "3px 6px", color: INK1 }}
+      />
+      <button
+        onClick={() => {
+          const clean = val.trim();
+          const withScheme = clean && !/^https?:\/\//.test(clean) ? `https://${clean}` : clean;
+          onSave(lead.row, withScheme);
+          setEditing(false);
+        }}
+        style={{ background: PURPLE, border: "none", color: "#1a0f24", borderRadius: 6, padding: "3px 8px", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}
+      >
+        Save
+      </button>
+    </span>
+  );
+}
+
+function SequenceButtons({
+  lead,
+  onSend,
+}: {
+  lead: Lead;
+  onSend: (row: number, step: "msg1" | "msg2" | "msg3") => void;
+}) {
+  if (!lead.phone) return <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>;
+  const steps = buildSequence(lead);
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      {steps.map((s) => (
+        <a
+          key={s.key}
+          href={waHref(lead.phone, s.text)}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => { if (!s.sent) onSend(lead.row, s.key); }}
+          title={`Opens WhatsApp with the ${s.label} message pre-typed — review, then send`}
+          style={{
+            fontSize: 10.5, fontWeight: 700, textDecoration: "none", borderRadius: 999, padding: "3px 8px",
+            color: s.sent ? GOOD : "#0f1012",
+            background: s.sent ? "transparent" : GOOD,
+            border: `1px solid ${GOOD}`,
+          }}
+        >
+          {s.sent ? `✓ ${s.label}` : s.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 // ── page ─────────────────────────────────────────────────────────────────────
 
 const RANGES = [
@@ -390,18 +576,19 @@ export default function AdminDashboard() {
     setKey(k);
   };
 
-  const mark = async (row: number, field: "showed" | "closed", value: string) => {
+  type MarkField = "showed" | "closed" | "meetlink" | "msg1" | "msg2" | "msg3";
+  const mark = async (row: number, field: MarkField, value: string) => {
     if (!key) return;
     // Optimistic update
     setLeads((prev) =>
       prev
-        ? prev.map((l) =>
-            l.row === row
-              ? field === "showed"
-                ? { ...l, showed: value }
-                : { ...l, closedAmt: parseFloat(value) || 0 }
-              : l,
-          )
+        ? prev.map((l) => {
+            if (l.row !== row) return l;
+            if (field === "showed") return { ...l, showed: value };
+            if (field === "closed") return { ...l, closedAmt: parseFloat(value) || 0 };
+            if (field === "meetlink") return { ...l, meetLink: value };
+            return { ...l, [field]: value }; // msg1 / msg2 / msg3
+          })
         : prev,
     );
     await fetch("/api/admin/mark", {
@@ -586,16 +773,13 @@ export default function AdminDashboard() {
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{l.name || "—"}</span>
                         <span style={{ fontSize: 11, color: MUTED }}>score {l.score ?? "–"}</span>
                         <span style={{ fontSize: 11, color: rc, marginLeft: "auto" }}>{rl}</span>
-                        {l.phone && (() => {
-                          const msg = buildMessage(l);
-                          return (
-                            <a href={waHref(l.phone, msg?.text)} target="_blank" rel="noreferrer"
-                              title={msg ? `Opens WhatsApp with the ${msg.kind} message pre-typed` : undefined}
-                              style={{ fontSize: 11.5, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
-                              WA · {msg?.kind ?? "Chat"}
-                            </a>
-                          );
-                        })()}
+                        {l.phone && (
+                          <a href={waHref(l.phone, buildTodayReminder(l))} target="_blank" rel="noreferrer"
+                            title="Opens WhatsApp with today's reminder pre-typed"
+                            style={{ fontSize: 11.5, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
+                            WA · Remind
+                          </a>
+                        )}
                       </div>
                     );
                   })}
@@ -674,29 +858,37 @@ export default function AdminDashboard() {
                         <td style={{ padding: "8px", whiteSpace: "nowrap", color: l.booked ? INK1 : MUTED }}>
                           {l.booked ? l.sessionDate.replace(/ \d{4}/, "") : "not booked"}
                         </td>
-                        <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
-                          {(() => {
-                            const msg = buildMessage(l);
-                            if (!l.phone)
-                              return msg ? (
-                                <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
+                        <td style={{ padding: "8px", minWidth: 190 }}>
+                          {l.booked && l.showed !== "Y" && l.showed !== "N" && (l.closedAmt ?? 0) <= 0 ? (
+                            <div style={{ display: "grid", gap: 5 }}>
+                              <SequenceButtons lead={l} onSend={(row, step) => mark(row, step, "Y")} />
+                              <MeetLinkEditor lead={l} onSave={(row, url) => mark(row, "meetlink", url)} />
+                            </div>
+                          ) : (
+                            (() => {
+                              const msg = buildMessage(l);
+                              if (!l.phone)
+                                return msg ? (
+                                  <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
+                                    <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
+                                    <CopyBtn text={msg.text} />
+                                  </span>
+                                ) : (
                                   <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
+                                );
+                              if (!msg) return <span style={{ color: MUTED, fontSize: 11 }}>—</span>;
+                              return (
+                                <span style={{ display: "inline-flex", gap: 5, alignItems: "center", whiteSpace: "nowrap" }}>
+                                  <a href={waHref(l.phone, msg.text)} target="_blank" rel="noreferrer"
+                                    title={`Opens WhatsApp with the ${msg.kind} message pre-typed — review, then send`}
+                                    style={{ color: GOOD, fontWeight: 700, textDecoration: "none" }}>
+                                    WA · {msg.kind} ↗
+                                  </a>
                                   <CopyBtn text={msg.text} />
                                 </span>
-                              ) : (
-                                <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
                               );
-                            return (
-                              <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
-                                <a href={waHref(l.phone, msg?.text)} target="_blank" rel="noreferrer"
-                                  title={msg ? `Opens WhatsApp with the ${msg.kind} message pre-typed — review, then send` : "Open chat"}
-                                  style={{ color: GOOD, fontWeight: 700, textDecoration: "none" }}>
-                                  WA · {msg?.kind ?? "Chat"} ↗
-                                </a>
-                                {msg && <CopyBtn text={msg.text} />}
-                              </span>
-                            );
-                          })()}
+                            })()
+                          )}
                         </td>
                         <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
                           {(l.closedAmt ?? 0) > 0 ? (
