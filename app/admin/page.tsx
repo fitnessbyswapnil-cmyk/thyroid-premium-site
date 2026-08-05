@@ -609,6 +609,23 @@ export default function AdminDashboard() {
   } | null>(null);
   const timer = useRef<number | null>(null);
   const adsTimer = useRef<number | null>(null);
+  const [leadFilter, setLeadFilter] = useState("All");
+  // Queue items dismissed via "Done" — per day, survives refresh within the session
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("q_dismissed");
+      if (raw) setDismissed(new Set(JSON.parse(raw) as string[]));
+    } catch { /* ignore */ }
+  }, []);
+  const dismissQueueItem = (k: string) => {
+    setDismissed((prev) => {
+      const next = new Set(prev);
+      next.add(k);
+      try { sessionStorage.setItem("q_dismissed", JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   useEffect(() => {
     try { setKey(sessionStorage.getItem(KEY_STORE)); } catch { setKey(null); }
@@ -851,8 +868,11 @@ export default function AdminDashboard() {
     if (!leads) return null;
     const now = Date.now();
 
-    type QItem = { lead: Lead; label: string; kind: "Confirm" | "Nudge" | "Reports" | "Proof" | "Rebook" | "Follow-up"; urgent: boolean };
+    type QItem = { lead: Lead; label: string; kind: "Confirm" | "Nudge" | "Reports" | "Proof" | "Rebook" | "Follow-up"; urgent: boolean; due?: string };
     const queue: QItem[] = [];
+    const DUE: Record<QItem["kind"], string> = {
+      Confirm: "today", Nudge: "today", Reports: "before the session", Proof: "before the session", Rebook: "today", "Follow-up": "by evening",
+    };
     for (const l of leads) {
       if ((l.closedAmt ?? 0) > 0) continue;
       const ageMin = (now - new Date(l.ts).getTime()) / 60000;
@@ -882,6 +902,7 @@ export default function AdminDashboard() {
         else if (!l.msg3) queue.push({ lead: l, label: "Session in <24h — send proof story", kind: "Proof", urgent: false });
       }
     }
+    queue.forEach((q) => { q.due = q.urgent ? "asap" : DUE[q.kind]; });
     queue.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0));
 
     // Speed to first touch — only leads whose msg1 stored a real timestamp
@@ -945,7 +966,38 @@ export default function AdminDashboard() {
       });
     }
 
-    return { queue: queue.slice(0, 8), avgTouchMin, revenue, spendInRange, roas, upcoming, pipeline, closeRate, avgTicket, arrivals, outcomes, INSIGHT_MIN, insights };
+    // Month-to-date revenue + linear on-pace projection (design port)
+    const istNowD = new Date(now + 5.5 * 3600000);
+    const monthStartIso = `${istNowD.getUTCFullYear()}-${String(istNowD.getUTCMonth() + 1).padStart(2, "0")}`;
+    const monthRevenue = leads
+      .filter((l) => l.ts.startsWith(monthStartIso))
+      .reduce((s, l) => s + (l.closedAmt ?? 0), 0);
+    const daysInMonth = new Date(istNowD.getUTCFullYear(), istNowD.getUTCMonth() + 1, 0).getDate();
+    const onPace = istNowD.getUTCDate() >= 3 && monthRevenue > 0
+      ? Math.round((monthRevenue / istNowD.getUTCDate()) * daysInMonth)
+      : null;
+
+    // Funnel stage-conversion caption (design port)
+    const totalR = inRange.length;
+    const bookedR = inRange.filter((l) => l.booked).length;
+    const showedR = inRange.filter((l) => l.showed === "Y").length;
+    const closedR = inRange.filter((l) => (l.closedAmt ?? 0) > 0).length;
+    const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : null);
+    const stageRates = {
+      lb: pct(bookedR, totalR),
+      bs: pct(showedR, bookedR),
+      sc: pct(closedR, showedR),
+    };
+
+    // Arrivals auto-insight: top-2 weekdays' share (design port)
+    const totalArrivals = arrivals.reduce((s, a) => s + a.value, 0);
+    const top2 = [...arrivals].sort((a, b) => b.value - a.value).slice(0, 2).filter((a) => a.value > 0);
+    const arrivalsInsight =
+      totalArrivals >= 10 && top2.length === 2
+        ? `${top2[0].label} + ${top2[1].label} bring ${Math.round(((top2[0].value + top2[1].value) / totalArrivals) * 100)}% of leads — weight budget toward them`
+        : null;
+
+    return { queue: queue.slice(0, 8), avgTouchMin, revenue, spendInRange, roas, upcoming, pipeline, closeRate, avgTicket, arrivals, arrivalsInsight, outcomes, INSIGHT_MIN, insights, monthRevenue, onPace, stageRates };
   }, [leads, inRange, days, adsData]);
 
   const queueMessage = (item: { lead: Lead; kind: string }): { text: string; step: "msg1" | "msg2" | "msg3" | null } => {
@@ -991,7 +1043,17 @@ export default function AdminDashboard() {
         {/* header */}
         <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800 }}>Lead Dashboard</h1>
+            <p style={{ fontSize: 10.5, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED }}>
+              {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </p>
+            <h1 style={{ fontSize: 24, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif" }}>
+              {(() => { const h = new Date().getHours(); return h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening"; })()}, Swapnil
+              {ops && ops.monthRevenue > 0 && (
+                <span style={{ marginLeft: 12, verticalAlign: "middle", fontSize: 12, fontWeight: 700, fontFamily: "var(--font-body), Inter, sans-serif", color: PURPLE, border: `1px solid ${GRID}`, background: CARD, borderRadius: 999, padding: "5px 12px", whiteSpace: "nowrap" }}>
+                  ● ₹{ops.monthRevenue.toLocaleString("en-IN")} collected this month
+                </span>
+              )}
+            </h1>
             <p style={{ fontSize: 11, color: MUTED }}>
               {updatedAt ? `Live · updated ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : "Loading…"}
               {loadError && <span style={{ color: WARN }}> · ⚠ {loadError}</span>}
@@ -1043,10 +1105,10 @@ export default function AdminDashboard() {
         ) : (
           <>
             {/* ── ACTION QUEUE: what needs your hands right now ── */}
-            {ops && ops.queue.length > 0 && (
-              <div style={{ ...card, marginBottom: 12, borderColor: ops.queue.some((q) => q.urgent) ? WARN : GRID }}>
+            {ops && ops.queue.filter((q) => !dismissed.has(`${q.lead.row}-${q.kind}`)).length > 0 && (
+              <div style={{ ...card, marginBottom: 12, borderColor: ops.queue.some((q) => q.urgent && !dismissed.has(`${q.lead.row}-${q.kind}`)) ? WARN : GRID }}>
                 <p style={cardTitle}>
-                  Needs Action Now · {ops.queue.length}
+                  Needs Action Now · {ops.queue.filter((q) => !dismissed.has(`${q.lead.row}-${q.kind}`)).length}
                   {ops.avgTouchMin !== null && (
                     <span style={{ float: "right", textTransform: "none", letterSpacing: 0, color: ops.avgTouchMin <= 15 ? GOOD : ops.avgTouchMin <= 60 ? WARN : CRIT }}>
                       avg first touch: {ops.avgTouchMin < 60 ? `${ops.avgTouchMin} min` : `${(ops.avgTouchMin / 60).toFixed(1)} hr`}
@@ -1054,12 +1116,17 @@ export default function AdminDashboard() {
                   )}
                 </p>
                 <div style={{ display: "grid", gap: 6 }}>
-                  {ops.queue.map((q) => {
+                  {ops.queue.filter((q) => !dismissed.has(`${q.lead.row}-${q.kind}`)).map((q) => {
                     const m = queueMessage(q);
+                    const dKey = `${q.lead.row}-${q.kind}`;
                     return (
-                      <div key={`${q.lead.row}-${q.kind}`} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", background: "#0f1012", borderRadius: 10, border: `1px solid ${q.urgent ? WARN : GRID}` }}>
-                        <span style={{ fontWeight: 700, fontSize: 12.5, minWidth: 90 }}>{q.lead.name || "(no name)"}</span>
-                        <span style={{ fontSize: 11.5, color: q.urgent ? WARN : INK2 }}>{q.urgent ? "⚠ " : ""}{q.label}</span>
+                      <div key={dKey} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", background: "#0f1012", borderRadius: 10, borderLeft: `3px solid ${q.urgent ? CRIT : q.kind === "Follow-up" || q.kind === "Rebook" ? PURPLE : WARN}`, border: `1px solid ${q.urgent ? WARN : GRID}` }}>
+                        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: q.urgent ? CRIT : MUTED, border: `1px solid ${q.urgent ? CRIT : GRID}`, borderRadius: 5, padding: "2px 6px" }}>
+                          {q.urgent ? "URGENT" : q.kind === "Follow-up" ? "CLOSE IT" : "TO DO"}
+                        </span>
+                        <span style={{ fontSize: 10, color: MUTED }}>{q.due}</span>
+                        <span style={{ fontWeight: 700, fontSize: 12.5 }}>{q.lead.name || "(no name)"}</span>
+                        <span style={{ fontSize: 11.5, color: q.urgent ? WARN : INK2 }}>{q.label}</span>
                         <span style={{ marginLeft: "auto", display: "inline-flex", gap: 5 }}>
                           {q.lead.phone && m.text ? (
                             <a
@@ -1073,6 +1140,13 @@ export default function AdminDashboard() {
                           ) : m.text ? (
                             <CopyBtn text={m.text} />
                           ) : null}
+                          <button
+                            onClick={() => dismissQueueItem(dKey)}
+                            title="Handled outside WhatsApp — clear from queue"
+                            style={{ fontSize: 11, fontWeight: 600, color: MUTED, background: "transparent", border: `1px solid ${GRID}`, borderRadius: 999, padding: "4px 10px", cursor: "pointer" }}
+                          >
+                            Done
+                          </button>
                         </span>
                       </div>
                     );
@@ -1106,7 +1180,9 @@ export default function AdminDashboard() {
                   <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, color: ops.revenue > 0 ? GOOD : INK1 }}>
                     {ops.revenue > 0 ? `₹${ops.revenue.toLocaleString("en-IN")}` : "₹0"}
                   </p>
-                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>closed wins in range</p>
+                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>
+                    {ops.onPace !== null ? `on pace for ₹${ops.onPace.toLocaleString("en-IN")} this month` : "closed wins in range"}
+                  </p>
                 </div>
                 <div style={card}>
                   <p style={cardTitle}>ROAS</p>
@@ -1177,7 +1253,13 @@ export default function AdminDashboard() {
                   { label: "Showed", value: agg.showed },
                   { label: "Closed", value: agg.closedN },
                 ]} />
-                <p style={{ fontSize: 10, color: MUTED, marginTop: 8 }}>Showed/Closed fill as you mark calls below</p>
+                {ops && ops.stageRates.lb !== null ? (
+                  <p style={{ fontSize: 10, color: MUTED, marginTop: 8 }}>
+                    Lead→Booked {ops.stageRates.lb}%{ops.stageRates.bs !== null ? ` · Booked→Showed ${ops.stageRates.bs}%` : ""}{ops.stageRates.sc !== null ? ` · Showed→Closed ${ops.stageRates.sc}%` : ""}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: 10, color: MUTED, marginTop: 8 }}>Showed/Closed fill as you mark calls below</p>
+                )}
               </div>
               <div className="chart-card" style={card}>
                 <p style={cardTitle}>Lead source</p>
@@ -1201,7 +1283,9 @@ export default function AdminDashboard() {
                 <div className="chart-card" style={card}>
                   <p style={cardTitle}>Lead arrivals by weekday</p>
                   <HBars data={ops.arrivals} color={PURPLE} />
-                  <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>Feeds ad scheduling — heavy days deserve heavier budget</p>
+                  <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>
+                    {ops.arrivalsInsight ?? "Feeds ad scheduling — heavy days deserve heavier budget"}
+                  </p>
                 </div>
               )}
               {ops && (
@@ -1305,6 +1389,22 @@ export default function AdminDashboard() {
             {/* lead table */}
             <div style={{ ...card, overflowX: "auto" }}>
               <p style={cardTitle}>Latest leads — tap to act</p>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {["All", "Best 75+", "New", "Booked", "No-show"].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setLeadFilter(f)}
+                    style={{
+                      padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      background: leadFilter === f ? "#a855f7" : "transparent",
+                      color: leadFilter === f ? "#fff" : INK2,
+                      border: `1px solid ${leadFilter === f ? "#a855f7" : GRID}`,
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, minWidth: 640 }}>
                 <thead>
                   <tr style={{ color: MUTED, textAlign: "left" }}>
@@ -1314,7 +1414,16 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {inRange.slice(0, 25).map((l) => {
+                  {inRange
+                    .filter((l) => {
+                      if (leadFilter === "Best 75+") return (l.score ?? 0) >= 75;
+                      if (leadFilter === "New") return !l.booked && l.showed === "" && (l.closedAmt ?? 0) <= 0;
+                      if (leadFilter === "Booked") return l.booked && l.showed === "";
+                      if (leadFilter === "No-show") return l.showed === "N";
+                      return true;
+                    })
+                    .slice(0, 25)
+                    .map((l) => {
                     const d = new Date(l.ts);
                     const sc = l.score ?? 0;
                     const scColor = sc >= 75 ? GOOD : sc >= 60 ? WARN : MUTED;
