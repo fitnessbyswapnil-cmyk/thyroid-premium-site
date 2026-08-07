@@ -11,12 +11,12 @@ const faqs = [
     a: 'Yes. Coaching works alongside your medication — we focus on nutrition, lifestyle, and sustainable fat loss, not replacing your doctor.',
   },
   {
-    q: 'What happens in the free strategy session?',
+    q: 'What happens in the consultation call?',
     a: "I review your intake before the call. In 60 minutes: why fat isn't moving, what your thyroid needs, and your next 3 steps — with a written summary in 24 hours.",
   },
   {
-    q: "Is it really free — what's the catch?",
-    a: "No catch. I take only a few sessions a week — come with your reports, and you'll leave with at least one specific step for your thyroid.",
+    q: 'Why is there a booking amount for the call?',
+    a: "It reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching.",
   },
   {
     q: 'How fast will I see results?',
@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: "I've tried coaching before and it didn't work. How is this different?",
-    a: "Generic programs give thyroid clients the same deficits as everyone else. This is built only around hypothyroid fat-loss physiology — the free session shows you that difference for your case.",
+    a: "Generic programs give thyroid clients the same deficits as everyone else. This is built only around hypothyroid fat-loss physiology — the consultation call shows you that difference for your case.",
   },
   {
     q: 'Will you pitch me on the call?',
@@ -151,7 +151,7 @@ export default function FAQSection() {
         <SectionHeader
           label="FAQs"
           title="Common Questions"
-          lead="Everything to know before your free session."
+          lead="Everything to know before your consultation call."
           titleMaxCh="20ch"
         />
 
@@ -172,16 +172,16 @@ export default function FAQSection() {
             Still have questions?
           </p>
           <p className="mb-5 text-[length:var(--text-xs)] text-[var(--t4)]">
-            Get clarity on your thyroid fat-loss path in a private, free session.
+            Get clarity on your thyroid fat-loss path in a private 1-on-1 consultation call.
           </p>
           <SectionCta
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 280 }}
-            label="Book My Free Thyroid Session"
-            sublabel="60-min private 1-on-1 · Free, no card needed · Limited weekly intake"
+            label="Schedule My Consultation Call"
+            sublabel="60-min private 1-on-1 · One quick step, then pick your time"
             trust="ACE · INFS Certified · 200+ Clients"
-            ariaLabel="Book your free thyroid assessment"
+            ariaLabel="Schedule your private thyroid consultation call"
             location="faq"
           />
         </div>

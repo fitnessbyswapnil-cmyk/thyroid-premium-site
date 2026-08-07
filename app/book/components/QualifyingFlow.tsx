@@ -701,7 +701,7 @@ export default function QualifyingFlow() {
               >
                 Let&apos;s Begin →
               </button>
-              <p className="mt-4 text-[0.72rem] text-white/25">Free session · No payment required</p>
+              <p className="mt-4 text-[0.72rem] text-white/25">Your slot is reserved · 2 minutes, then pick your time</p>
             </div>
           )}
 
@@ -908,7 +908,7 @@ function FinishStep({ name, email, phone, city, leadId }: { name: string; email:
             <h2 className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-white" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
               Pick a time that works for you{name ? `, ${name.split(" ")[0]}` : ""} 👇
             </h2>
-            <p className="mx-auto mt-2.5 max-w-[40ch] text-[0.88rem] text-white/50">Your free 60-minute thyroid strategy session. I review your answers before you meet.</p>
+            <p className="mx-auto mt-2.5 max-w-[40ch] text-[0.88rem] text-white/50">Your private 60-minute thyroid consultation call. I review your answers before you meet.</p>
           </div>
           <CalendarStep name={name} email={email} phone={phone} city={city} leadId={leadId} />
         </motion.div>

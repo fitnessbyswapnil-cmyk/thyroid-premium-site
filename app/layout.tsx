@@ -31,11 +31,11 @@ const caveat = Caveat({
 export const metadata: Metadata = {
     title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
     description:
-          "One private 60-minute session to find your root cause and get your 90-day plan. Thyroid-specific fat-loss coaching for Indian women with hypothyroidism and Hashimoto's. Real Indian food, no starving. Free, no card needed.",
+          "One private 60-minute consultation call to find your root cause and get your 90-day plan. Thyroid-specific fat-loss coaching for Indian women with hypothyroidism and Hashimoto's. Real Indian food, no starving. Limited weekly slots.",
     openGraph: {
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:
-                  "Finally, a thyroid-specific plan: one private 60-minute session to find your root cause and get your 90-day plan. Free · No card needed.",
+                  "Finally, a thyroid-specific plan: one private 60-minute consultation call to find your root cause and get your 90-day plan. Limited weekly slots.",
           url: "https://swapnilumbarkarfitness.in",
           images: [
             {
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
           card: "summary_large_image",
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:
-                  "One private 60-minute session: your root cause found, your 90-day plan mapped. Free · No card needed.",
+                  "One private 60-minute consultation call: your root cause found, your 90-day plan mapped. Limited weekly slots.",
           images: ["https://swapnilumbarkarfitness.in/og-image.jpg"],
     },
 };
