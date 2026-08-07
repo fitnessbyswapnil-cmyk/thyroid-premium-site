@@ -121,7 +121,7 @@ export function PaymentScreen({
           </div>
           <div className="text-right">
             <p className="bg-gradient-to-r from-purple-300 to-violet-500 bg-clip-text text-[1.5rem] font-black text-transparent">
-              ₹199
+              ₹299
             </p>
             <p className="text-[0.65rem] text-white/28 line-through">₹2,999</p>
           </div>
@@ -155,7 +155,7 @@ export function PaymentScreen({
           ) : (
             <>
               <div className="text-[1.05rem] font-extrabold tracking-[-0.02em] text-white">
-                Secure My Private Consultation — ₹199
+                Secure My Private Consultation — ₹299
               </div>
               <div className="mt-1 text-[0.72rem] text-white/65">
                 Tap to pay securely · All UPI & cards accepted

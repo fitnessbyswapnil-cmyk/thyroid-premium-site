@@ -20,16 +20,15 @@ const ScarcityContext = createContext<ScarcityContextValue | null>(null);
 const SCARCITY_LINE = "Only a few sessions open this week";
 const SCARCITY_SHORT = "Limited weekly intake";
 
-// Every CTA on the site routes here. Consultation calls are booked through
-// the Cashfree-hosted form: complete it → slot reserved → call scheduled.
-// (Owner-side: the form's success/return URL should point back to
-// https://www.swapnilumbarkarfitness.in/book so paid clients flow straight
-// into the qualifying questions + Cal.com calendar.)
-export const CONSULTATION_FORM_URL = "https://payments.cashfree.com/forms/thyroid-session";
-
+// Every CTA on the site routes into the Thyroid Score assessment (/assessment)
+// — the qualifying step before the paid 1-on-1 call. The assessment itself
+// generates the visitor's score, then its result screen opens an EMBEDDED
+// Cashfree checkout (in-page modal, no navigation to cashfree.com) and, on
+// success, hands off to /session-booked, which embeds the Cal.com calendar
+// inline. The whole funnel stays on swapnilumbarkarfitness.in end to end.
 export function ScarcityProvider({ children }: { children: ReactNode }) {
   const goToCta = useCallback(() => {
-    window.location.href = CONSULTATION_FORM_URL;
+    window.location.href = "/assessment";
   }, []);
 
   const value: ScarcityContextValue = {

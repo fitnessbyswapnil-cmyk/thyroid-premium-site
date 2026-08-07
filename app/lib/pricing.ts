@@ -9,4 +9,4 @@
  * Cashfree (dynamic) — which is itself driven by this constant — so all Purchase
  * legs stay in agreement.
  */
-export const SESSION_PRICE = 199;
+export const SESSION_PRICE = 299;

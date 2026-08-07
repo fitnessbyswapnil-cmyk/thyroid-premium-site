@@ -15,8 +15,12 @@ const faqs = [
     a: "I review your intake before the call. In 60 minutes: why fat isn't moving, what your thyroid needs, and your next 3 steps — with a written summary in 24 hours.",
   },
   {
+    q: 'Is the Thyroid Score assessment free?',
+    a: "Yes — the 60-second quiz and your score are completely free. Decoding what your score actually means for you happens on the private 1-on-1 call.",
+  },
+  {
     q: 'Why is there a booking amount for the call?',
-    a: "It reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching.",
+    a: "₹299 reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching.",
   },
   {
     q: 'How fast will I see results?',
@@ -172,16 +176,16 @@ export default function FAQSection() {
             Still have questions?
           </p>
           <p className="mb-5 text-[length:var(--text-xs)] text-[var(--t4)]">
-            Get clarity on your thyroid fat-loss path in a private 1-on-1 consultation call.
+            Take the free assessment and get clarity on your thyroid fat-loss path.
           </p>
           <SectionCta
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 280 }}
-            label="Schedule My Consultation Call"
-            sublabel="60-min private 1-on-1 · One quick step, then pick your time"
+            label="Get My Free Thyroid Score"
+            sublabel="60-second quiz · Then decode it live on a private call"
             trust="ACE · INFS Certified · 200+ Clients"
-            ariaLabel="Schedule your private thyroid consultation call"
+            ariaLabel="Take the free thyroid score assessment"
             location="faq"
           />
         </div>

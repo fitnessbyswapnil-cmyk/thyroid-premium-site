@@ -41,7 +41,7 @@ export default function StickyBookingBar() {
     // md:hidden — only renders on mobile/tablet below 768px
     <div
       role="complementary"
-      aria-label="Book thyroid session"
+      aria-label="Get your thyroid score"
       aria-hidden={!visible}
       className="md:hidden fixed inset-x-0 bottom-0 z-50 flex justify-center px-3"
       style={{
@@ -69,10 +69,10 @@ export default function StickyBookingBar() {
         {/* Text */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-[12px] font-semibold leading-tight tracking-[-0.01em] text-[var(--t1)]">
-            Your Consultation Call
+            Your Thyroid Score
           </p>
           <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">
-            60 min · Private 1-on-1 · Few slots left this week
+            60-second quiz · Few slots left this week
           </p>
         </div>
 
@@ -80,10 +80,10 @@ export default function StickyBookingBar() {
         <button
           type="button"
           onClick={() => { trackCtaClick("sticky_bar"); goToCta(); }}
-          aria-label="Schedule your private thyroid consultation call"
+          aria-label="Take the free thyroid score assessment"
           className="btn-sticky shrink-0"
         >
-          Schedule My Call
+          Get My Score
         </button>
       </div>
     </div>
