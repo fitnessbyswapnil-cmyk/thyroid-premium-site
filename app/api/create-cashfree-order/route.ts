@@ -17,9 +17,11 @@ import { PLACEHOLDER_EMAIL } from "@/lib/server-tracking";
 import { SESSION_PRICE } from "@/app/lib/pricing";
 
 // ── TEST MODE ─────────────────────────────────────────────────────────────────
-// Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹199.
-// UI/copy always shows ₹199 — only the actual Cashfree transaction amount changes.
-// Flip back to false before going live.
+// Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
+// UI/copy always shows ₹299 — only the actual Cashfree transaction amount changes.
+// IMPORTANT: this is still true — flip to false ONLY after confirming
+// CASHFREE_APP_ID / CASHFREE_SECRET_KEY in Vercel are the LIVE (not sandbox)
+// keys, since flipping this starts charging real visitors real money.
 const IS_TEST_MODE = true;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;

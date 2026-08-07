@@ -14,12 +14,14 @@
  * 1-on-1 Thyroid Consultation Call, where the score gets fully decoded.
  * "Report"/"generate a report" language is deliberately avoided throughout.
  *
- * PRICING: the paid gate is LIVE. Every booking CTA sends the visitor to the
- * Cashfree-hosted consultation form (CONSULTATION_FORM_URL) — one quick step
- * that reserves their slot, then they pick their call time. The Cashfree
- * form's success/return URL points back to /book so paid clients still flow
- * through QualifyingFlow → Cal.com (Lead/Schedule events + sheet capture
- * stay intact). No "free / no card" claims anywhere.
+ * PRICING: the paid gate is LIVE and fully EMBEDDED — no visitor ever leaves
+ * swapnilumbarkarfitness.in. The score-unlock form (this screen) captures
+ * the lead, then the result screen's CTA opens the Cashfree JS SDK checkout
+ * as an in-page modal (same pattern as app/book/components/BookingFlow.tsx)
+ * for a ₹299 charge. On success, the browser is sent to /session-booked —
+ * still our domain — which embeds the Cal.com calendar inline (via
+ * @calcom/embed-react) so the call gets booked without ever navigating to
+ * cashfree.com or cal.com. No "free / no card" claims anywhere.
  *
  * Lead capture: POSTs to /api/quiz-lead (writes the full answer set to the
  * same Leads sheet the dashboard/WhatsApp sequences read) and mirrors the
@@ -28,10 +30,11 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
-import { pushDL, trackLead } from "@/app/lib/analytics";
+import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
-import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
+import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
+import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
+import { SESSION_PRICE } from "@/app/lib/pricing";
 
 // ── palette (matches the site + admin dashboard system) ─────────────────────
 const BG = "#0f1012";
@@ -295,6 +298,9 @@ export default function QuizFunnel() {
   const [submitting, setSubmitting] = useState(false);
   const [dial, setDial] = useState(0);
   const [barsOn, setBarsOn] = useState(false);
+  const [leadId, setLeadId] = useState<string | null>(null);
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState("");
   const ringBoxRef = useRef<HTMLDivElement>(null);
 
   const timers = useRef<{ [k: string]: ReturnType<typeof setTimeout> | number }>({});
@@ -499,7 +505,9 @@ export default function QuizFunnel() {
     }).catch(() => {});
 
     const sc = computeFrom(ans);
-    const leadId = `quiz_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const newLeadId = `quiz_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    setLeadId(newLeadId);
+    const leadId = newLeadId;
     const opt = (qid: string, i: number | null) => (i == null ? "" : QS.find((x) => x.id === qid)!.opts![i]);
     const optsJoin = (qid: string, idxs: number[]) => idxs.map((i) => QS.find((x) => x.id === qid)!.opts![i]).join(", ");
 
@@ -526,14 +534,98 @@ export default function QuizFunnel() {
       }),
     }).catch(() => {});
 
+    // Bridge payload for /session-booked (embedded Cal.com step after payment) —
+    // same localStorage key + shape BookingFlow.tsx uses, so that page's
+    // hydration/Purchase-firing logic works unchanged for quiz leads too.
+    try {
+      localStorage.setItem(
+        NATIVE_BOOKING_KEY,
+        JSON.stringify({
+          step1: {
+            name: f.name.trim(), phone: phoneDigits, email: f.email.trim(),
+            thyroidCondition: opt("q2", ans.q2 as number | null),
+            thyroidDuration: opt("q4", ans.q4 as number | null),
+            mainGoal: opt("q9", ans.q9 as number | null),
+          },
+          startedAt: new Date().toISOString(),
+          leadId,
+          attribution,
+        }),
+      );
+    } catch { /* non-critical */ }
+
     setSubmitting(false);
     showResult();
   };
 
-  const bookCall = () => {
-    pushDL({ event: "cta_click", location: "assessment_result", button_label: "Schedule My Thyroid Consultation Call" });
-    window.location.href = CONSULTATION_FORM_URL;
-  };
+  // Opens the Cashfree checkout as an in-page modal (cashfree-js SDK,
+  // redirectTarget: "_modal") — the visitor never navigates to
+  // payments.cashfree.com. On success, hands off to /session-booked, which
+  // embeds the Cal.com calendar inline. Same pattern as BookingFlow.handlePayNow.
+  const payNow = useCallback(async () => {
+    if (!leadId) return;
+    setPayLoading(true);
+    setPayError("");
+    pushDL({ event: "cta_click", location: "assessment_result", button_label: "Pay & Decode My Score" });
+    trackInitiateCheckout();
+    pushDL({ event: "quiz_payment_initiated" });
+
+    try {
+      const orderRes = await fetch("/api/create-cashfree-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId,
+          customerPhone: form.phone,
+          customerName: form.name,
+          customerEmail: form.email,
+          visitorId: getVisitorId(),
+          fbc: getFbc(),
+          fbp: getFbp(),
+        }),
+      });
+
+      if (!orderRes.ok) {
+        const err = (await orderRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error || "Failed to create payment order");
+      }
+
+      const { paymentSessionId, orderId, amount } = (await orderRes.json()) as {
+        paymentSessionId: string;
+        orderId: string;
+        amount?: number;
+      };
+
+      try {
+        const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+        const obj = raw ? JSON.parse(raw) : {};
+        localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId, amount }));
+      } catch { /* non-critical */ }
+
+      const { load } = await import("@cashfreepayments/cashfree-js");
+      const cashfree = await load({
+        mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+      });
+      if (!cashfree) throw new Error("Cashfree SDK unavailable");
+
+      const result = await cashfree.checkout({ paymentSessionId, redirectTarget: "_modal" });
+
+      if (result.error) {
+        setPayError("Payment was not completed. Please try again or use UPI.");
+        setPayLoading(false);
+      } else if (result.paymentDetails) {
+        window.location.href = `/session-booked?orderId=${orderId}&leadId=${leadId}`;
+        // loading stays true — page is navigating away
+      } else {
+        setPayError("Payment not completed. Tap the button to try again.");
+        setPayLoading(false);
+      }
+    } catch (err) {
+      console.error("[quiz-payment] error:", err instanceof Error ? err.message : String(err));
+      setPayError("Something went wrong. Please try again.");
+      setPayLoading(false);
+    }
+  }, [leadId, form]);
 
   // ── derived values for render ──
   const parts = computeParts(ans);
@@ -572,7 +664,7 @@ export default function QuizFunnel() {
             11 questions · 90 seconds · watch your Thyroid Score build as you answer
           </p>
           <p style={{ fontSize: 12.5, color: MUTED, marginBottom: 30 }}>
-            Free to take · To have it fully decoded, schedule your private 1-on-1 Thyroid Consultation Call
+            Free to take · Decode it live on a ₹{SESSION_PRICE} private 1-on-1 Thyroid Consultation Call
           </p>
           <button
             onClick={() => { ringTargetRef.current = 0; setScreen("quiz"); setQ(0); window.scrollTo(0, 0); }}
@@ -668,7 +760,7 @@ export default function QuizFunnel() {
       "Your Thyroid Score decoded live — the exact blocker explained",
       "60-min private 1-on-1 with a thyroid-first coach",
       "Your first 30 days mapped, step by step",
-      "One quick booking step reserves your private slot",
+      `Only ₹${SESSION_PRICE} to reserve your slot — fully adjusted against your plan`,
     ];
     return (
       <main style={{ ...shell, padding: "24px 20px 100px" }}>
@@ -713,7 +805,7 @@ export default function QuizFunnel() {
 
           <div style={{ marginTop: 22, borderRadius: 22, border: `1px solid ${GRID}`, background: `linear-gradient(160deg, rgba(168,85,247,0.10), ${CARD2})`, padding: 24 }}>
             <p style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 800, marginBottom: 6 }}>Private 1-on-1 Thyroid Consultation Call</p>
-            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 14 }}>Decode your score on a private call</h3>
+            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 14 }}>Decode your score on a private call &mdash; ₹{SESSION_PRICE}</h3>
             <div style={{ display: "grid", gap: 9, marginBottom: 16 }}>
               {stack.map((t) => (
                 <div key={t} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
@@ -724,12 +816,16 @@ export default function QuizFunnel() {
             </div>
             <p style={{ fontSize: 11.5, color: MUTED, marginBottom: 14 }}>{SCARCITY_LINE}</p>
             <button
-              onClick={bookCall}
-              style={{ width: "100%", padding: "17px 0", borderRadius: 14, background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`, border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", boxShadow: "0 14px 36px rgba(168,85,247,0.32)" }}
+              onClick={payNow}
+              disabled={payLoading}
+              style={{ width: "100%", padding: "17px 0", borderRadius: 14, background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`, border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: payLoading ? "default" : "pointer", boxShadow: "0 14px 36px rgba(168,85,247,0.32)", opacity: payLoading ? 0.75 : 1 }}
             >
-              Schedule My Thyroid Consultation Call
+              {payLoading ? "Opening secure checkout…" : `Pay ₹${SESSION_PRICE} & Decode My Score`}
             </button>
-            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>One quick step, then pick your time. Private &amp; personal.</p>
+            {payError && (
+              <p style={{ fontSize: 12, color: "#f87171", textAlign: "center", marginTop: 10 }}>{payError}</p>
+            )}
+            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>Secure checkout, right here. Then pick your call time.</p>
           </div>
 
           <button onClick={() => { Object.keys(timers.current).forEach(clearT); ringTargetRef.current = 0; setScreen("intro"); setQ(0); setAns(emptyAnswers()); setRingVal(0); setForm({ name: "", phone: "", email: "", city: "" }); window.scrollTo(0, 0); }}
@@ -743,10 +839,10 @@ export default function QuizFunnel() {
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(15,16,18,0.96)", backdropFilter: "blur(10px)", borderTop: `1px solid ${GRID}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12, zIndex: 30 }}>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 12.5, fontWeight: 700 }}>Thyroid Consultation Call</p>
-              <p style={{ fontSize: 10.5, color: MUTED }}>60 min · Private 1-on-1</p>
+              <p style={{ fontSize: 10.5, color: MUTED }}>60 min · Private 1-on-1 · ₹{SESSION_PRICE}</p>
             </div>
-            <button onClick={bookCall} style={{ padding: "11px 18px", borderRadius: 999, background: PURPLE, border: "none", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>
-              Schedule Now
+            <button onClick={payNow} disabled={payLoading} style={{ padding: "11px 18px", borderRadius: 999, background: PURPLE, border: "none", color: "#fff", fontSize: 13, fontWeight: 800, cursor: payLoading ? "default" : "pointer", whiteSpace: "nowrap", opacity: payLoading ? 0.75 : 1 }}>
+              {payLoading ? "Opening…" : "Pay & Decode"}
             </button>
           </div>
         )}
@@ -792,7 +888,7 @@ export default function QuizFunnel() {
             <p style={{ fontSize: 30, fontWeight: 800, color: PURPLE_L, marginBottom: 10 }}>₹{Math.round(insightStat).toLocaleString("en-IN")}</p>
           )}
           <p style={{ fontSize: 13, color: INK2, lineHeight: 1.6 }}>{insightCaption}</p>
-          <p style={{ fontSize: 12, color: PURPLE_L, marginTop: 14, fontWeight: 600 }}>Your Thyroid Consultation Call decodes exactly this — one quick step to schedule yours.</p>
+          <p style={{ fontSize: 12, color: PURPLE_L, marginTop: 14, fontWeight: 600 }}>Your Thyroid Consultation Call decodes exactly this — ₹{SESSION_PRICE}, booked in one quick step.</p>
         </div>
       ) : isScale ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>

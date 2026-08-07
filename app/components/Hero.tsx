@@ -6,8 +6,9 @@ import HeroProofStrip from "./HeroProofStrip";
 
 // VSL hero — mockup layout: eyebrow → serif headline → subhead → credential
 // strip → video frame → social-proof strip → CTA.
-// Every CTA routes to the Cashfree-hosted consultation form (see
-// ScarcityProvider.goToCta) — one quick booking step, then the call time.
+// Every CTA routes into the Thyroid Score assessment (see
+// ScarcityProvider.goToCta) — free to take, then decode it live on a paid
+// 1-on-1 call (embedded checkout, never leaves this site).
 
 export default function Hero() {
   return (
@@ -126,9 +127,9 @@ export default function Hero() {
           <CtaButton
             variant="primary"
             className="relative z-[1] w-full"
-            label="Schedule My Thyroid Consultation Call"
-            sublabel="60-min private 1-on-1 with Swapnil · One quick step, then pick your time · Limited weekly slots"
-            ariaLabel="Schedule your private thyroid consultation call"
+            label="Get My Free Thyroid Score"
+            sublabel="60-second assessment · Then decode it live on a private 1-on-1 call · Limited weekly slots"
+            ariaLabel="Take the free thyroid score assessment"
             location="hero"
             showArrow
           />

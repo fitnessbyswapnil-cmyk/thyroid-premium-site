@@ -562,9 +562,9 @@ export default function WhatsappProofSection() {
             variant="primary"
             className="mx-auto mt-12 max-w-sm"
             buttonClassName="w-full"
-            label="Schedule My Thyroid Consultation Call"
-            sublabel="60-min private 1-on-1 with Swapnil · One quick step, then pick your time"
-            ariaLabel="Schedule your private thyroid consultation call"
+            label="Get My Free Thyroid Score"
+            sublabel="60-second assessment · Then decode it live on a private 1-on-1 call"
+            ariaLabel="Take the free thyroid score assessment"
             location="transformations"
           />
         </div>
