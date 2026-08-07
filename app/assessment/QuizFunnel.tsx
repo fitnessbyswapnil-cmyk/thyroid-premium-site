@@ -14,12 +14,12 @@
  * 1-on-1 Thyroid Consultation Call, where the score gets fully decoded.
  * "Report"/"generate a report" language is deliberately avoided throughout.
  *
- * PRICING: the live site is free end-to-end today (see BookPageClient.tsx —
- * "No payment / Purchase / InitiateCheckout... the form is the qualifier
- * now, not the ₹199 charge"). This funnel matches that: the CTA books a
- * FREE call via the existing /book → QualifyingFlow → Cal.com path. The
- * value-stack/scarcity persuasion structure from the ₹299 design is kept —
- * only the price mechanic is deferred until a real payment gate is built.
+ * PRICING: the paid gate is LIVE. Every booking CTA sends the visitor to the
+ * Cashfree-hosted consultation form (CONSULTATION_FORM_URL) — one quick step
+ * that reserves their slot, then they pick their call time. The Cashfree
+ * form's success/return URL points back to /book so paid clients still flow
+ * through QualifyingFlow → Cal.com (Lead/Schedule events + sheet capture
+ * stay intact). No "free / no card" claims anywhere.
  *
  * Lead capture: POSTs to /api/quiz-lead (writes the full answer set to the
  * same Leads sheet the dashboard/WhatsApp sequences read) and mirrors the
@@ -28,7 +28,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
 import { pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
@@ -259,7 +259,6 @@ function ScoreEnginePanel({
 type Screen = "intro" | "quiz" | "processing" | "unlock" | "result";
 
 export default function QuizFunnel() {
-  const router = useRouter();
   const [vw, setVw] = useState(1200);
   useEffect(() => {
     const onR = () => setVw(window.innerWidth);
@@ -532,8 +531,8 @@ export default function QuizFunnel() {
   };
 
   const bookCall = () => {
-    pushDL({ event: "cta_click", location: "assessment_result", button_label: "Book My Free Thyroid Consultation Call" });
-    router.push("/book");
+    pushDL({ event: "cta_click", location: "assessment_result", button_label: "Schedule My Thyroid Consultation Call" });
+    window.location.href = CONSULTATION_FORM_URL;
   };
 
   // ── derived values for render ──
@@ -573,7 +572,7 @@ export default function QuizFunnel() {
             11 questions · 90 seconds · watch your Thyroid Score build as you answer
           </p>
           <p style={{ fontSize: 12.5, color: MUTED, marginBottom: 30 }}>
-            Assessment free · To have it fully decoded, book your free 1-on-1 Thyroid Consultation Call
+            Free to take · To have it fully decoded, schedule your private 1-on-1 Thyroid Consultation Call
           </p>
           <button
             onClick={() => { ringTargetRef.current = 0; setScreen("quiz"); setQ(0); window.scrollTo(0, 0); }}
@@ -634,7 +633,7 @@ export default function QuizFunnel() {
             <p style={{ fontSize: 34, marginBottom: 6 }}>✓</p>
             <h2 style={{ fontSize: 22, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif" }}>Your Thyroid Score is ready</h2>
             <p style={{ fontSize: 13.5, color: INK2, marginTop: 8, lineHeight: 1.6 }}>
-              Enter your details to reveal your score — then book your free 1-on-1 Thyroid Consultation Call to have it fully decoded.
+              Enter your details to reveal your score — then schedule your private 1-on-1 Thyroid Consultation Call to have it fully decoded.
             </p>
           </div>
           <div style={{ ...card, padding: 22, display: "grid", gap: 12 }}>
@@ -669,7 +668,7 @@ export default function QuizFunnel() {
       "Your Thyroid Score decoded live — the exact blocker explained",
       "60-min private 1-on-1 with a thyroid-first coach",
       "Your first 30 days mapped, step by step",
-      "Completely free — no card, no charge",
+      "One quick booking step reserves your private slot",
     ];
     return (
       <main style={{ ...shell, padding: "24px 20px 100px" }}>
@@ -714,7 +713,7 @@ export default function QuizFunnel() {
 
           <div style={{ marginTop: 22, borderRadius: 22, border: `1px solid ${GRID}`, background: `linear-gradient(160deg, rgba(168,85,247,0.10), ${CARD2})`, padding: 24 }}>
             <p style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 800, marginBottom: 6 }}>Private 1-on-1 Thyroid Consultation Call</p>
-            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 14 }}>Decode your score — completely free</h3>
+            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 14 }}>Decode your score on a private call</h3>
             <div style={{ display: "grid", gap: 9, marginBottom: 16 }}>
               {stack.map((t) => (
                 <div key={t} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
@@ -728,9 +727,9 @@ export default function QuizFunnel() {
               onClick={bookCall}
               style={{ width: "100%", padding: "17px 0", borderRadius: 14, background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`, border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", boxShadow: "0 14px 36px rgba(168,85,247,0.32)" }}
             >
-              Book My Free Thyroid Consultation Call
+              Schedule My Thyroid Consultation Call
             </button>
-            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>No cost. No card needed. Private &amp; personal.</p>
+            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>One quick step, then pick your time. Private &amp; personal.</p>
           </div>
 
           <button onClick={() => { Object.keys(timers.current).forEach(clearT); ringTargetRef.current = 0; setScreen("intro"); setQ(0); setAns(emptyAnswers()); setRingVal(0); setForm({ name: "", phone: "", email: "", city: "" }); window.scrollTo(0, 0); }}
@@ -744,10 +743,10 @@ export default function QuizFunnel() {
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(15,16,18,0.96)", backdropFilter: "blur(10px)", borderTop: `1px solid ${GRID}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 12, zIndex: 30 }}>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 12.5, fontWeight: 700 }}>Thyroid Consultation Call</p>
-              <p style={{ fontSize: 10.5, color: MUTED }}>Free · No card needed</p>
+              <p style={{ fontSize: 10.5, color: MUTED }}>60 min · Private 1-on-1</p>
             </div>
             <button onClick={bookCall} style={{ padding: "11px 18px", borderRadius: 999, background: PURPLE, border: "none", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>
-              Book Now
+              Schedule Now
             </button>
           </div>
         )}
@@ -793,7 +792,7 @@ export default function QuizFunnel() {
             <p style={{ fontSize: 30, fontWeight: 800, color: PURPLE_L, marginBottom: 10 }}>₹{Math.round(insightStat).toLocaleString("en-IN")}</p>
           )}
           <p style={{ fontSize: 13, color: INK2, lineHeight: 1.6 }}>{insightCaption}</p>
-          <p style={{ fontSize: 12, color: PURPLE_L, marginTop: 14, fontWeight: 600 }}>Your Thyroid Consultation Call decodes exactly this — free, no card needed.</p>
+          <p style={{ fontSize: 12, color: PURPLE_L, marginTop: 14, fontWeight: 600 }}>Your Thyroid Consultation Call decodes exactly this — one quick step to schedule yours.</p>
         </div>
       ) : isScale ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>

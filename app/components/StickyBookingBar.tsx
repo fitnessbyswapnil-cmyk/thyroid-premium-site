@@ -69,10 +69,10 @@ export default function StickyBookingBar() {
         {/* Text */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-[12px] font-semibold leading-tight tracking-[-0.01em] text-[var(--t1)]">
-            Book Free Session
+            Your Consultation Call
           </p>
           <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">
-            60 min · Private · Free, no card needed
+            60 min · Private 1-on-1 · Few slots left this week
           </p>
         </div>
 
@@ -80,10 +80,10 @@ export default function StickyBookingBar() {
         <button
           type="button"
           onClick={() => { trackCtaClick("sticky_bar"); goToCta(); }}
-          aria-label="Book your free private thyroid strategy session"
+          aria-label="Schedule your private thyroid consultation call"
           className="btn-sticky shrink-0"
         >
-          Book My Free Thyroid Session
+          Schedule My Call
         </button>
       </div>
     </div>

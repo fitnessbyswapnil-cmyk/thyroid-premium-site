@@ -6,8 +6,8 @@ import HeroProofStrip from "./HeroProofStrip";
 
 // VSL hero — mockup layout: eyebrow → serif headline → subhead → credential
 // strip → video frame → social-proof strip → CTA.
-// Free-session copy matches the sitewide free funnel (every other CTA, FAQ,
-// sticky bar — the paid ₹299 flow no longer exists anywhere on this site).
+// Every CTA routes to the Cashfree-hosted consultation form (see
+// ScarcityProvider.goToCta) — one quick booking step, then the call time.
 
 export default function Hero() {
   return (
@@ -126,9 +126,9 @@ export default function Hero() {
           <CtaButton
             variant="primary"
             className="relative z-[1] w-full"
-            label="Book My Free Thyroid Session"
-            sublabel="60-min private 1-on-1 · Free, no card needed · Limited weekly intake"
-            ariaLabel="Book your free private thyroid session"
+            label="Schedule My Thyroid Consultation Call"
+            sublabel="60-min private 1-on-1 with Swapnil · One quick step, then pick your time · Limited weekly slots"
+            ariaLabel="Schedule your private thyroid consultation call"
             location="hero"
             showArrow
           />
