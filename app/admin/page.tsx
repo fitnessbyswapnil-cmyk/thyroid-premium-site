@@ -67,6 +67,12 @@ const dayMs = 86400000;
 // only. Symbols/emoji are fine in the dashboard's own UI (buttons, badges)
 // — they just never go into a wa.me-prefilled message again.
 const SITE = "https://www.swapnilumbarkarfitness.in";
+// Where an unpaid lead goes to book: the consultation is paid now, so a nudge
+// must send her to the payment form, not the old free booking page.
+const PAY_URL = "https://payments.cashfree.com/forms?code=thyroid-session";
+// Where a lead who has ALREADY PAID goes to (re)pick a slot — she must never be
+// asked to pay twice.
+const REBOOK_URL = `${SITE}/session-booked`;
 const SIGN = "\n\n— Swapnil Umbarkar\nACE & INFS Certified Thyroid Fat-Loss Coach";
 const MANUAL_OFFER =
   "If it's easier, just reply with a day and time that works for you — I'll schedule it myself from my end.";
@@ -178,12 +184,12 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
   if (l.showed === "N")
     return {
       kind: "Rebook",
-      text: `Hi ${first}, missed you at our session — no worries at all, life happens.\n\nYour free thyroid strategy session is still yours. Rebook in one tap: ${SITE}/book\n\n${MANUAL_OFFER}${SIGN}`,
+      text: `Hi ${first}, missed you at our call — no worries at all, life happens.\n\nYour slot is already paid for and still yours. Pick a new time in one tap: ${REBOOK_URL}\n\n${MANUAL_OFFER}${SIGN}`,
     };
   if (l.booked) return null; // handled by the 3-step sequence below instead
   return {
     kind: "Nudge",
-    text: `Hi ${first}! This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your free 60-min strategy session: ${SITE}/book\n\n${MANUAL_OFFER}\n\nI take only a few sessions a week, so grab a slot while there's space.${SIGN}`,
+    text: `Hi ${first}! This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your private 60-min consultation call, where I decode exactly what's blocking you. It's Rs 299 to reserve the slot, and that's adjusted against your plan if you go ahead: ${PAY_URL}\n\n${MANUAL_OFFER}\n\nI take only a few calls a week, so grab a slot while there's space.${SIGN}`,
   };
 }
 
@@ -191,7 +197,7 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
 function buildTodayReminder(l: Lead): string {
   const first = firstName(l);
   const time = l.sessionDate.match(/\d{1,2}:\d{2} [AP]M/)?.[0] ?? fmtFull(l.sessionDate);
-  return `Hi ${first}! Reminder — your free thyroid session is TODAY at ${time}. Your slot is reserved.${meetLine(l)}\n\nIf you have your thyroid reports, send them here before we start. See you soon!${SIGN}`;
+  return `Hi ${first}! Reminder — your thyroid consultation call is TODAY at ${time}. Your slot is reserved.${meetLine(l)}\n\nIf you have your thyroid reports, send them here before we start. See you soon!${SIGN}`;
 }
 
 // ── the 3-step warm-up sequence — shown for BOOKED leads whose call hasn't
@@ -210,7 +216,7 @@ function buildSequence(l: Lead): SeqStep[] {
       key: "msg1",
       label: "① Confirm",
       sent: l.msg1 !== "",
-      text: `Hi ${first}! Confirming your free thyroid strategy session — ${full}.${meetLine(l)}\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}${SIGN}`,
+      text: `Hi ${first}! Confirming your private 1-on-1 thyroid consultation — ${full}.${meetLine(l)}\n\nPlease reply YES to lock your slot.\n\n${painLine(l)}${SIGN}`,
     },
     {
       key: "msg2",

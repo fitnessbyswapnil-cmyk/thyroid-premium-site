@@ -23,16 +23,18 @@ const WHAT_NEXT = [
   },
   {
     num: "04",
-    title: "Your private 60-minute strategy session",
-    body: "A focused call built entirely around your thyroid case. You leave with a clear, personal action plan.",
+    title: "Your private 60-minute consultation",
+    body: "A focused call built entirely around your thyroid case. You leave knowing exactly what's blocking you and what reversing it involves.",
   },
 ];
 
+// Mirrors the assessment offer card: the call DIAGNOSES, the 3-month program
+// TREATS. No bullet may promise a self-implementable plan.
 const CTA_BULLETS = [
-  "Personalized thyroid review",
-  "60-minute private strategy session",
-  "Written action plan included",
-  "Fully refundable if no clarity",
+  "Personalized thyroid review before we speak",
+  "60-minute private 1-on-1 consultation",
+  "Exactly what's blocking you, and what reversing it takes",
+  "Fully refundable if you don't leave with clarity",
 ];
 
 export function PaymentScreen({
