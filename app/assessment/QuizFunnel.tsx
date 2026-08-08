@@ -48,6 +48,7 @@ const MUTED = "#8a8494";
 const PURPLE = "#a855f7";
 const PURPLE_L = "#c793ff";
 const GOOD = "#0ca30c";
+const WARN = "#fab219";
 
 const SCARCITY_LINE = "Only a few sessions open this week";
 
@@ -102,6 +103,21 @@ function liveTotalOf(a: Answers, ins: number): number {
   const p = computeParts(a);
   return Math.min(96, 2.5 * answeredCount(a) + 2 * ins + 0.17 * p.S + 0.21 * p.G + 0.27 * p.R);
 }
+// Counts the blockers that are ACTUALLY true in her answers — never a fabricated
+// number. Paired with the (optimistic) tier label on the result screen so the
+// score carries hope AND urgency: recoverable, but not on its own.
+function activeBlockers(a: Answers): number {
+  const symptoms = ((a.q5 as number[]) || []).length;
+  const tried = ((a.q7 as number[]) || []).filter((i) => i !== 5).length;
+  return [
+    a.q3 === 0,                       // medicated and still stuck
+    symptoms >= 3,                    // systemic symptom load
+    tried >= 2,                       // repeated generic approaches failed
+    (a.q4 as number ?? 0) >= 2,       // fighting it a year or more
+    (a.q8 as number ?? 0) >= 2,       // spent ₹10k+ without the result
+  ].filter(Boolean).length;
+}
+
 function computeFrom(a: Answers) {
   const p = computeParts(a);
   const total = Math.max(35, Math.min(96, Math.round(27.5 + 6 + 0.17 * p.S + 0.21 * p.G + 0.27 * p.R)));
@@ -124,7 +140,8 @@ function computeFrom(a: Answers) {
     [true, "Your answer pattern closely matches the women who respond fastest once the plan finally fits the thyroid."],
   ];
   const insights = rules.filter((r) => r[0]).map((r) => r[1]).slice(0, 3);
-  return { total, symptomLoad: p.S, approachGap: p.G, readiness: p.R, tierLabel, tierLine, insights };
+  const blockers = activeBlockers(a);
+  return { total, symptomLoad: p.S, approachGap: p.G, readiness: p.R, tierLabel, tierLine, insights, blockers };
 }
 function reactionFor(qi: number, ans: Answers): string {
   const id = QS[qi].id;
@@ -584,7 +601,7 @@ export default function QuizFunnel() {
   if (insight === 1) { insightTitle = "The Approach Gap"; insightCaption = parts.tried >= 2 ? `Women who tried ${parts.tried}+ methods and failed shared the same gap — the effort was never the problem.` : "The effort was never the problem — the plan was built for the wrong metabolism."; }
   if (insight === 2) { const fig = insightFig(ans.q8 as number | null).toLocaleString("en-IN"); insightTitle = "It was never the money"; insightCaption = ((ans.q8 as number) || 0) >= 2 ? `Your spend bracket averaged ₹${fig} before a thyroid-first plan — it wasn't the money, it was the map.` : `Women like you spent ₹${fig} on average before the right map. Spending more was never the answer.`; }
 
-  const sc = scores || { total: 0, symptomLoad: 0, approachGap: 0, readiness: 0, tierLabel: "", tierLine: "", insights: [] as string[] };
+  const sc = scores || { total: 0, symptomLoad: 0, approachGap: 0, readiness: 0, tierLabel: "", tierLine: "", insights: [] as string[], blockers: 0 };
   const firstName = form.name.trim().split(/\s+/)[0] || "";
   const stagesDef: [number, number, string][] = [[2, 38, "Analysing your symptom pattern…"], [38, 74, "Comparing with 200+ hypothyroid client profiles…"], [74, 100, "Calculating your Thyroid Score…"]];
 
@@ -697,11 +714,14 @@ export default function QuizFunnel() {
   if (screen === "result") {
     const dialDash = 565.5 * (1 - dial / 100);
     const bars = [["Symptom Load", sc.symptomLoad], ["Approach Gap", sc.approachGap], ["Readiness", sc.readiness]] as [string, number][];
+    // The call DIAGNOSES; the 3-month program TREATS. Nothing in this stack may
+    // promise execution (a mapped-out plan she can self-implement) — that is the
+    // backend's job, and giving it away here is what kills the high-ticket close.
     const stack = [
       "Your Thyroid Score decoded live — the exact blocker explained",
       "60-min private 1-on-1 with a thyroid-first coach",
-      "Your first 30 days mapped, step by step",
-      `Only ₹${SESSION_PRICE} to reserve your slot — fully adjusted against your plan`,
+      "You'll see what your body needs to reverse this — and what it takes to get there",
+      `₹${SESSION_PRICE} reserves your slot — adjusted against your plan if you go ahead`,
     ];
     return (
       <main style={{ ...shell, padding: "24px 20px 100px" }}>
@@ -719,8 +739,23 @@ export default function QuizFunnel() {
             <p style={{ fontSize: 12, color: MUTED, marginBottom: 130 }}>out of 100</p>
           </div>
           <div style={{ textAlign: "center", marginTop: -8 }}>
-            <p style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.08em", color: PURPLE_L }}>{sc.tierLabel}</p>
-            <p style={{ fontSize: 13.5, color: INK2, lineHeight: 1.6, marginTop: 6, maxWidth: 380, marginLeft: "auto", marginRight: "auto" }}>{sc.tierLine}</p>
+            <p style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.08em", color: PURPLE_L }}>
+              {sc.tierLabel}
+              {sc.blockers > 0 && (
+                <span style={{ color: WARN }}> · {sc.blockers} ACTIVE BLOCKER{sc.blockers > 1 ? "S" : ""}</span>
+              )}
+            </p>
+            <p style={{ fontSize: 13.5, color: INK2, lineHeight: 1.6, marginTop: 6, maxWidth: 380, marginLeft: "auto", marginRight: "auto" }}>
+              {sc.tierLine}
+              {sc.blockers > 0 && (
+                <>
+                  {" "}
+                  <span style={{ color: INK1, fontWeight: 600 }}>
+                    But {sc.blockers} {sc.blockers > 1 ? "things are" : "thing is"} actively working against your thyroid right now &mdash; and they compound the longer they run.
+                  </span>
+                </>
+              )}
+            </p>
           </div>
           <p style={{ textAlign: "center", fontSize: 12, color: MUTED, marginTop: 14, maxWidth: 360, marginLeft: "auto", marginRight: "auto", lineHeight: 1.5 }}>
             This is your starting score. The full decode — exactly what&apos;s blocking YOU — happens on your Thyroid Consultation Call.

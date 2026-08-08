@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     q: 'What happens in the consultation call?',
-    a: "I review your intake before the call. In 60 minutes: why fat isn't moving, what your thyroid needs, and your next 3 steps — with a written summary in 24 hours.",
+    a: "I review your intake before we speak. In 60 minutes you'll understand exactly why the fat isn't moving, what your thyroid actually needs, and what reversing it involves — with a written summary in 24 hours.",
   },
   {
     q: 'Is the Thyroid Score assessment free?',
@@ -39,8 +39,12 @@ const faqs = [
     a: "Generic programs give thyroid clients the same deficits as everyone else. This is built only around hypothyroid fat-loss physiology — the consultation call shows you that difference for your case.",
   },
   {
-    q: 'Will you pitch me on the call?',
-    a: "Only if you ask. If coaching looks like a fit, options and pricing come up in the last ten minutes. The session's value stands on its own either way.",
+    q: 'Will you offer me coaching on the call?',
+    a: "Yes — if you're a fit. The first 45 minutes are your diagnosis, and that's yours to keep either way. In the last 15, if I believe my 3-month reversal program is what you need, I'll show you exactly what it involves and what it costs for your case. One conversation, no chasing afterwards.",
+  },
+  {
+    q: 'What does the 3-month program cost?',
+    a: "It depends on what your case actually needs — how far your thyroid has drifted, and how much support and monitoring that requires. I quote it on the call once I've seen your reports and your answers, never before. The ₹299 you pay for the consultation is adjusted against it if you join.",
   },
   {
     q: 'How much time does coaching take each week?',
