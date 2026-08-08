@@ -23,15 +23,27 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    // Carries BOTH leadId and order_id through to /session-booked. The order_id
+    // is what lets that page fire the Meta Purchase (event_id Purchase_<orderId>,
+    // deduped with the Cashfree webhook) — drop it and the sale never reaches
+    // Meta, so ad optimisation goes blind.
     function getDestUrl(): string {
+      const params = new URLSearchParams();
+
       try {
         const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
         if (raw) {
           const stored = JSON.parse(raw) as { leadId?: string };
-          if (stored.leadId) return `/session-booked?leadId=${stored.leadId}`;
+          if (stored.leadId) params.set("leadId", stored.leadId);
         }
       } catch { /* non-critical */ }
-      return "/session-booked";
+
+      const p = new URLSearchParams(window.location.search);
+      const oid = p.get("order_id") || p.get("orderId") || p.get("payment_ref") || "";
+      if (oid) params.set("order_id", oid);
+
+      const qs = params.toString();
+      return qs ? `/session-booked?${qs}` : "/session-booked";
     }
 
     function go() {
@@ -315,17 +327,19 @@ export default function PaymentSuccessPage() {
               onClick={() => {
                 if (!redirectedRef.current) {
                   redirectedRef.current = true;
-                  // Re-read leadId at click time in case it wasn't set yet
+                  // Same leadId + order_id resolution as the automatic redirect,
+                  // re-read at click time in case storage populated late.
+                  const params = new URLSearchParams();
                   try {
                     const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
                     const stored = raw ? JSON.parse(raw) as { leadId?: string } : null;
-                    const dest = stored?.leadId
-                      ? `/session-booked?leadId=${stored.leadId}`
-                      : "/session-booked";
-                    window.location.replace(dest);
-                  } catch {
-                    window.location.replace("/session-booked");
-                  }
+                    if (stored?.leadId) params.set("leadId", stored.leadId);
+                  } catch { /* non-critical */ }
+                  const sp = new URLSearchParams(window.location.search);
+                  const oid = sp.get("order_id") || sp.get("orderId") || sp.get("payment_ref") || "";
+                  if (oid) params.set("order_id", oid);
+                  const qs = params.toString();
+                  window.location.replace(qs ? `/session-booked?${qs}` : "/session-booked");
                 }
               }}
               style={{
