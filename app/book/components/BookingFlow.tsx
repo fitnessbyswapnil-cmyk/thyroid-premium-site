@@ -7,7 +7,7 @@ import { PaymentScreen } from "./PaymentScreen";
 import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
-import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
+import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -242,7 +242,7 @@ export default function BookingFlow({
           setPendingScroll(true);
     }, [onQualificationComplete]);
   
-    const handlePayNow = useCallback(() => {
+    const handlePayNow = useCallback(async () => {
           if (!step1Data || !leadId) return;
           setPaymentLoading(true);
           setPaymentError("");
@@ -265,10 +265,64 @@ export default function BookingFlow({
           trackInitiateCheckout();
           pushDL({ event: "native_payment_initiated", step: 2 });
 
-          // Cashfree-hosted payment form — same link the assessment funnel uses.
-          // The lead payload above is already in localStorage, so /payment-success
-          // resolves back to /session-booked with her details intact.
-          window.location.href = CONSULTATION_FORM_URL;
+          // EMBEDDED checkout — Cashfree SDK modal on this page, details prefilled
+          // from step 1, visitor_id/fbc/fbp riding as order_tags for the webhook's
+          // Purchase CAPI. Falls back to the hosted form if the API/SDK can't start.
+          try {
+                  const orderRes = await fetch("/api/create-cashfree-order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                        leadId,
+                                        customerPhone: step1Data.phone,
+                                        customerName: step1Data.name,
+                                        customerEmail: step1Data.email,
+                                        visitorId: getVisitorId(),
+                                        fbc: getFbc(),
+                                        fbp: getFbp(),
+                            }),
+                  });
+                  if (!orderRes.ok) throw new Error("order_failed");
+
+                  const { paymentSessionId, orderId, amount } = await orderRes.json() as {
+                            paymentSessionId: string;
+                            orderId: string;
+                            amount?: number;
+                  };
+
+                  // Persist orderId + real charged amount so /session-booked fires
+                  // Purchase with event_id Purchase_<orderId> (dedups with webhook).
+                  try {
+                            const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+                            const obj = raw ? JSON.parse(raw) : {};
+                            localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId, amount }));
+                  } catch { /* non-critical */ }
+
+                  const { load } = await import("@cashfreepayments/cashfree-js");
+                  const cashfree = await load({
+                            mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+                  });
+                  if (!cashfree) throw new Error("sdk_unavailable");
+
+                  const result = await cashfree.checkout({
+                            paymentSessionId,
+                            redirectTarget: "_modal",
+                  });
+
+                  if (result.error) {
+                            setPaymentError("Payment was not completed. Please try again or use UPI.");
+                            setPaymentLoading(false);
+                  } else if (result.paymentDetails) {
+                            window.location.href = `/session-booked?orderId=${orderId}&leadId=${leadId}`;
+                            // loading stays true — navigating away
+                  } else {
+                            setPaymentError("Payment not completed. Tap the button to try again.");
+                            setPaymentLoading(false);
+                  }
+          } catch (err) {
+                  console.error("[payment] embedded checkout unavailable, falling back to hosted form:", err instanceof Error ? err.message : String(err));
+                  window.location.href = CONSULTATION_FORM_URL;
+          }
     }, [step1Data, leadId]);
   
     const activeStep = stage === "qualification" ? 1 : 2;
