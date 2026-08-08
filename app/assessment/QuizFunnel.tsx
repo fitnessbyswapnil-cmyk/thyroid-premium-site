@@ -34,7 +34,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
 import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
-import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
+import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
 import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
 import { SESSION_PRICE } from "@/app/lib/pricing";
 
@@ -589,7 +589,6 @@ export default function QuizFunnel() {
   const payNow = useCallback(async () => {
     if (payLoading) return;
     setPayLoading(true);
-    setPayError("");
     pushDL({ event: "cta_click", location: "assessment_result", button_label: "Pay & Decode My Score" });
     trackInitiateCheckout();
     pushDL({ event: "quiz_payment_initiated" });

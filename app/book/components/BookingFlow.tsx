@@ -242,7 +242,7 @@ export default function BookingFlow({
           setPendingScroll(true);
     }, [onQualificationComplete]);
   
-    const handlePayNow = useCallback(async () => {
+    const handlePayNow = useCallback(() => {
           if (!step1Data || !leadId) return;
           setPaymentLoading(true);
           setPaymentError("");
