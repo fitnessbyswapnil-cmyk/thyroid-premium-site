@@ -469,11 +469,14 @@ export default function SessionBooked() {
                   </svg>
                 </div>
                 <p className="text-[0.9rem] font-bold" style={{ color: "#f3f4f7" }}>
-                  Payment received — you&apos;re confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
+                  Payment received — your consultation is confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
                 </p>
               </div>
               <p className="text-[0.78rem]" style={{ color: "#a855f7" }}>
                 Last step: pick your call time below.
+              </p>
+              <p className="mt-1.5 text-[0.72rem]" style={{ color: "rgba(243,244,247,0.55)" }}>
+                After booking, send your latest thyroid reports (TSH, T3, T4) on WhatsApp — Swapnil reviews them personally before your call.
               </p>
             </div>
 

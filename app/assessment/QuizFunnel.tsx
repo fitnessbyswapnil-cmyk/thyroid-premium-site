@@ -14,14 +14,15 @@
  * 1-on-1 Thyroid Consultation Call, where the score gets fully decoded.
  * "Report"/"generate a report" language is deliberately avoided throughout.
  *
- * PRICING: the paid gate is LIVE. The score-unlock form (this screen) captures
- * the lead FIRST — so she is in the sheet, the dashboard and the email
- * sequence whether or not she pays — then the result screen's CTA sends her
- * to the Cashfree-hosted payment form (CONSULTATION_FORM_URL). Cashfree
- * returns her to /payment-success, which resolves to /session-booked and
- * embeds the Cal.com calendar inline. CTA copy shows SESSION_PRICE; the
- * amount actually charged is whatever the Cashfree form is configured for.
- * No "free / no card" claims anywhere.
+ * PRICING: the paid gate is LIVE and EMBEDDED. The score-unlock form (this
+ * screen) captures the lead FIRST — sheet, dashboard, email sequence — then
+ * the result CTA opens the Cashfree JS SDK checkout as an in-page modal
+ * (order created server-side with her quiz details + visitor_id/fbc/fbp as
+ * order_tags for Meta attribution). Success → /session-booked (embedded
+ * Cal.com). If the order API/SDK can't start, payNow falls back to the
+ * hosted form (CONSULTATION_FORM_URL) so the pay button never dies. CTA
+ * copy shows SESSION_PRICE; the ACTUAL charge is IS_TEST_MODE-controlled in
+ * app/api/create-cashfree-order. No "free / no card" claims anywhere.
  *
  * Lead capture: POSTs to /api/quiz-lead (writes the full answer set to the
  * same Leads sheet the dashboard/WhatsApp sequences read) and mirrors the
@@ -33,7 +34,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
 import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
-import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
+import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
 import { SESSION_PRICE } from "@/app/lib/pricing";
 
@@ -317,6 +318,8 @@ export default function QuizFunnel() {
   const [dial, setDial] = useState(0);
   const [barsOn, setBarsOn] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState("");
+  const [leadId, setLeadId] = useState<string | null>(null);
   const ringBoxRef = useRef<HTMLDivElement>(null);
 
   const timers = useRef<{ [k: string]: ReturnType<typeof setTimeout> | number }>({});
@@ -522,6 +525,7 @@ export default function QuizFunnel() {
 
     const sc = computeFrom(ans);
     const leadId = `quiz_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    setLeadId(leadId); // payNow (embedded checkout) needs it after this closure ends
     const opt = (qid: string, i: number | null) => (i == null ? "" : QS.find((x) => x.id === qid)!.opts![i]);
     const optsJoin = (qid: string, idxs: number[]) => idxs.map((i) => QS.find((x) => x.id === qid)!.opts![i]).join(", ");
 
@@ -572,18 +576,77 @@ export default function QuizFunnel() {
     showResult();
   };
 
-  // Sends her to the Cashfree-hosted payment form. Her lead row and the
-  // NATIVE_BOOKING_KEY bridge payload are already written at submit() time, and
-  // localStorage survives the round trip — so when Cashfree returns her to
-  // /payment-success she still resolves to /session-booked with her details
-  // intact for the embedded Cal.com calendar.
-  const payNow = useCallback(() => {
+  // EMBEDDED checkout (owner requirement): the Cashfree JS SDK opens as a
+  // modal ON this page — no navigation to cashfree.com. The order is created
+  // server-side with her quiz details prefilled (no Cashfree form fields to
+  // retype) and carries visitor_id/fbc/fbp as order_tags, so the webhook's
+  // Purchase CAPI attributes the sale back to the exact Meta ad click.
+  // On success → /session-booked (embedded Cal.com) with orderId + leadId.
+  //
+  // FALLBACK: if the order API or SDK cannot start (missing keys, network),
+  // she is sent to the hosted form instead — a paying customer must never
+  // meet a dead button. localStorage bridge survives that round trip too.
+  const payNow = useCallback(async () => {
+    if (payLoading) return;
     setPayLoading(true);
+    setPayError("");
     pushDL({ event: "cta_click", location: "assessment_result", button_label: "Pay & Decode My Score" });
     trackInitiateCheckout();
     pushDL({ event: "quiz_payment_initiated" });
-    window.location.href = CONSULTATION_FORM_URL;
-  }, []);
+
+    try {
+      const orderRes = await fetch("/api/create-cashfree-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId,
+          customerPhone: form.phone,
+          customerName: form.name,
+          customerEmail: form.email,
+          visitorId: getVisitorId(),
+          fbc: getFbc(),
+          fbp: getFbp(),
+        }),
+      });
+      if (!orderRes.ok) throw new Error("order_failed");
+
+      const { paymentSessionId, orderId, amount } = (await orderRes.json()) as {
+        paymentSessionId: string;
+        orderId: string;
+        amount?: number;
+      };
+
+      // orderId + real charged amount → /session-booked fires Purchase with
+      // event_id Purchase_<orderId>, deduped with the webhook CAPI leg.
+      try {
+        const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+        const obj = raw ? JSON.parse(raw) : {};
+        localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId, amount }));
+      } catch { /* non-critical */ }
+
+      const { load } = await import("@cashfreepayments/cashfree-js");
+      const cashfree = await load({
+        mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+      });
+      if (!cashfree) throw new Error("sdk_unavailable");
+
+      const result = await cashfree.checkout({ paymentSessionId, redirectTarget: "_modal" });
+
+      if (result.error) {
+        setPayError("Payment was not completed. Please try again or use UPI.");
+        setPayLoading(false);
+      } else if (result.paymentDetails) {
+        window.location.href = `/session-booked?orderId=${orderId}&leadId=${leadId}`;
+        // loading stays true — navigating away
+      } else {
+        setPayError("Payment not completed. Tap the button to try again.");
+        setPayLoading(false);
+      }
+    } catch (err) {
+      console.error("[quiz-payment] embedded checkout unavailable, falling back to hosted form:", err instanceof Error ? err.message : String(err));
+      window.location.href = CONSULTATION_FORM_URL;
+    }
+  }, [leadId, form, payLoading]);
 
   // ── derived values for render ──
   const parts = computeParts(ans);
@@ -798,7 +861,10 @@ export default function QuizFunnel() {
             >
               {payLoading ? "Opening secure checkout…" : `Pay ₹${SESSION_PRICE} & Decode My Score`}
             </button>
-            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>Secure checkout, right here. Then pick your call time.</p>
+            {payError && (
+              <p style={{ fontSize: 12, color: "#f87171", textAlign: "center", marginTop: 10 }}>{payError}</p>
+            )}
+            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>UPI, cards, net banking — secure checkout opens right here. Then pick your call time.</p>
           </div>
 
           <button onClick={() => { Object.keys(timers.current).forEach(clearT); ringTargetRef.current = 0; setScreen("intro"); setQ(0); setAns(emptyAnswers()); setRingVal(0); setForm({ name: "", phone: "", email: "", city: "" }); window.scrollTo(0, 0); }}
