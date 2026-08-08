@@ -504,9 +504,7 @@ export default function QuizFunnel() {
     }).catch(() => {});
 
     const sc = computeFrom(ans);
-    const newLeadId = `quiz_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    setLeadId(newLeadId);
-    const leadId = newLeadId;
+    const leadId = `quiz_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const opt = (qid: string, i: number | null) => (i == null ? "" : QS.find((x) => x.id === qid)!.opts![i]);
     const optsJoin = (qid: string, idxs: number[]) => idxs.map((i) => QS.find((x) => x.id === qid)!.opts![i]).join(", ");
 
