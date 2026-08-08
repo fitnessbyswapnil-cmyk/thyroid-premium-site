@@ -6,7 +6,8 @@ import { QualificationForm } from "./QualificationForm";
 import { PaymentScreen } from "./PaymentScreen";
 import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
-import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
+import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
+import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -241,7 +242,7 @@ export default function BookingFlow({
           setPendingScroll(true);
     }, [onQualificationComplete]);
   
-    const handlePayNow = useCallback(async () => {
+    const handlePayNow = useCallback(() => {
           if (!step1Data || !leadId) return;
           setPaymentLoading(true);
           setPaymentError("");
@@ -263,78 +264,11 @@ export default function BookingFlow({
       
           trackInitiateCheckout();
           pushDL({ event: "native_payment_initiated", step: 2 });
-      
-          try {
-                  // Step 1: Create order server-side to get a payment session ID.
-                  // Pass visitor_id/fbc/fbp so they ride along as Cashfree order_tags and
-                  // the Purchase webhook can attach external_id + fbc/fbp to Meta CAPI.
-                  const orderRes = await fetch("/api/create-cashfree-order", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                        leadId,
-                                        customerPhone: step1Data.phone,
-                                        customerName: step1Data.name,
-                                        customerEmail: step1Data.email,
-                                        visitorId: getVisitorId(),
-                                        fbc: getFbc(),
-                                        fbp: getFbp(),
-                            }),
-                  });
-            
-                  if (!orderRes.ok) {
-                            const err = await orderRes.json().catch(() => ({})) as { error?: string };
-                            throw new Error(err.error || "Failed to create payment order");
-                  }
-            
-                  const { paymentSessionId, orderId, amount } = await orderRes.json() as {
-                            paymentSessionId: string;
-                            orderId: string;
-                            amount?: number;
-                  };
 
-                  // Persist orderId + the dynamic charged amount so /session-booked can
-                  // fire its Purchase with the SAME id (`Purchase_${orderId}`) the Cashfree
-                  // webhook uses → Meta dedup, and report the REAL amount (not hardcoded).
-                  try {
-                            const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
-                            const obj = raw ? JSON.parse(raw) : {};
-                            localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId, amount }));
-                  } catch { /* non-critical */ }
-            
-                  // Step 2: Load SDK (CDN script injected once per page) and open modal
-                  const { load } = await import("@cashfreepayments/cashfree-js");
-            
-                  const cashfree = await load({
-                            mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
-                  });
-            
-                  if (!cashfree) throw new Error("Cashfree SDK unavailable");
-            
-                  const result = await cashfree.checkout({
-                            paymentSessionId,
-                            redirectTarget: "_modal",
-                  });
-            
-                  if (result.error) {
-                            // Payment explicitly failed or was declined
-                            setPaymentError("Payment was not completed. Please try again or use UPI.");
-                            setPaymentLoading(false);
-                  } else if (result.paymentDetails) {
-                            // Success — go straight to the calendar stage. Purchase fires on
-                            // /session-booked page load (guarded on orderId), NOT here.
-                            window.location.href = `/session-booked?orderId=${orderId}&leadId=${leadId}`;
-                            // Keep loading=true; the page is navigating away
-                  } else {
-                            // Modal dismissed without completing (user closed it)
-                            setPaymentError("Payment not completed. Tap the button to try again.");
-                            setPaymentLoading(false);
-                  }
-          } catch (err) {
-                  console.error("[payment] error:", err instanceof Error ? err.message : String(err));
-                  setPaymentError("Something went wrong. Please try again.");
-                  setPaymentLoading(false);
-          }
+          // Cashfree-hosted payment form — same link the assessment funnel uses.
+          // The lead payload above is already in localStorage, so /payment-success
+          // resolves back to /session-booked with her details intact.
+          window.location.href = CONSULTATION_FORM_URL;
     }, [step1Data, leadId]);
   
     const activeStep = stage === "qualification" ? 1 : 2;
