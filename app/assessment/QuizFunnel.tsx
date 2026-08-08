@@ -320,6 +320,19 @@ export default function QuizFunnel() {
   const [payLoading, setPayLoading] = useState(false);
   const [payError, setPayError] = useState("");
   const [leadId, setLeadId] = useState<string | null>(null);
+
+  // Pre-warm the Cashfree SDK the moment the unlock form appears — browser QA
+  // measured 12-15s of blank modal when the script had to load at click time.
+  // Warming here means the SDK is cached before she ever taps Pay.
+  const cashfreeRef = useRef<Awaited<ReturnType<typeof import("@cashfreepayments/cashfree-js").load>> | null>(null);
+  useEffect(() => {
+    if (screen !== "unlock" && screen !== "result") return;
+    if (cashfreeRef.current) return;
+    import("@cashfreepayments/cashfree-js")
+      .then((m) => m.load({ mode: process.env.NODE_ENV === "production" ? "production" : "sandbox" }))
+      .then((cf) => { cashfreeRef.current = cf; })
+      .catch(() => { /* payNow retries the load itself; fallback covers total failure */ });
+  }, [screen]);
   const ringBoxRef = useRef<HTMLDivElement>(null);
 
   const timers = useRef<{ [k: string]: ReturnType<typeof setTimeout> | number }>({});
@@ -624,10 +637,14 @@ export default function QuizFunnel() {
         localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({ ...obj, orderId, amount }));
       } catch { /* non-critical */ }
 
-      const { load } = await import("@cashfreepayments/cashfree-js");
-      const cashfree = await load({
-        mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
-      });
+      // Usually already warmed by the unlock/result-screen pre-load effect.
+      let cashfree = cashfreeRef.current;
+      if (!cashfree) {
+        const { load } = await import("@cashfreepayments/cashfree-js");
+        cashfree = await load({
+          mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+        });
+      }
       if (!cashfree) throw new Error("sdk_unavailable");
 
       const result = await cashfree.checkout({ paymentSessionId, redirectTarget: "_modal" });
@@ -713,12 +730,19 @@ export default function QuizFunnel() {
       <main style={{ ...shell, display: "grid", placeItems: "center", padding: "24px 20px" }}>
         <style>{KEYFRAMES}</style>
         <div style={{ maxWidth: 380, width: "100%", textAlign: "center" }}>
-          <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: "rotate(-90deg)" }}>
-            <circle cx="90" cy="90" r="74" fill="none" stroke={GRID} strokeWidth="10" />
-            <circle cx="90" cy="90" r="74" fill="none" stroke={PURPLE} strokeWidth="10" strokeLinecap="round" strokeDasharray="465" strokeDashoffset={dash} style={{ transition: "stroke-dashoffset 80ms linear" }} />
-          </svg>
-          <p style={{ marginTop: -110, fontSize: 40, fontWeight: 800 }}>{Math.round(proc)}<span style={{ fontSize: 18, color: MUTED }}>%</span></p>
-          <div style={{ marginTop: 100, display: "grid", gap: 10, textAlign: "left" }}>
+          {/* Number is absolutely centred INSIDE the ring — the old negative-
+              margin hack let it drift outside the circle at some viewport/font
+              scales (caught in browser QA). */}
+          <div style={{ position: "relative", width: 180, height: 180, margin: "0 auto" }}>
+            <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: "rotate(-90deg)", display: "block" }}>
+              <circle cx="90" cy="90" r="74" fill="none" stroke={GRID} strokeWidth="10" />
+              <circle cx="90" cy="90" r="74" fill="none" stroke={PURPLE} strokeWidth="10" strokeLinecap="round" strokeDasharray="465" strokeDashoffset={dash} style={{ transition: "stroke-dashoffset 80ms linear" }} />
+            </svg>
+            <p style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 40, fontWeight: 800, margin: 0 }}>
+              {Math.round(proc)}<span style={{ fontSize: 18, color: MUTED }}>%</span>
+            </p>
+          </div>
+          <div style={{ marginTop: 26, display: "grid", gap: 10, textAlign: "left" }}>
             {stagesDef.map(([a, b, text], i) => {
               const done = proc >= b, active = proc >= a && proc < b;
               return (
@@ -793,15 +817,21 @@ export default function QuizFunnel() {
           <p style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 700, marginBottom: 18 }}>
             {firstName ? `${firstName.toUpperCase()} — YOUR THYROID SCORE` : "YOUR THYROID SCORE"}
           </p>
-          <div style={{ textAlign: "center" }}>
-            <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)" }}>
+          {/* Score dial — number and caption absolutely centred inside the
+              ring (the negative-margin version overflowed the circle). */}
+          <div style={{ position: "relative", width: 220, height: 220, margin: "0 auto" }}>
+            <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)", display: "block" }}>
               <circle cx="110" cy="110" r="90" fill="none" stroke={GRID} strokeWidth="14" />
               <circle cx="110" cy="110" r="90" fill="none" stroke={PURPLE} strokeWidth="14" strokeLinecap="round" strokeDasharray="565.5" strokeDashoffset={dialDash} />
             </svg>
-            <p style={{ marginTop: -140, fontSize: 56, fontWeight: 800 }}>{Math.round(dial)}</p>
-            <p style={{ fontSize: 12, color: MUTED, marginBottom: 130 }}>out of 100</p>
+            <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: 56, fontWeight: 800, lineHeight: 1, margin: 0 }}>{Math.round(dial)}</p>
+                <p style={{ fontSize: 12, color: MUTED, margin: "4px 0 0" }}>out of 100</p>
+              </div>
+            </div>
           </div>
-          <div style={{ textAlign: "center", marginTop: -8 }}>
+          <div style={{ textAlign: "center", marginTop: 14 }}>
             <p style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.08em", color: PURPLE_L }}>
               {sc.tierLabel}
               {sc.blockers > 0 && (
@@ -814,7 +844,7 @@ export default function QuizFunnel() {
                 <>
                   {" "}
                   <span style={{ color: INK1, fontWeight: 600 }}>
-                    But {sc.blockers} {sc.blockers > 1 ? "things are" : "thing is"} actively working against your thyroid right now &mdash; and they compound the longer they run.
+                    {`But ${sc.blockers} ${sc.blockers > 1 ? "things are" : "thing is"} actively working against your thyroid right now`} &mdash; and they compound the longer they run.
                   </span>
                 </>
               )}
