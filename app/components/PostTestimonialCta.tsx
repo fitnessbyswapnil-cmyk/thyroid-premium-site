@@ -83,7 +83,7 @@ export default function PostTestimonialCta() {
           <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
             <button
               type="button"
-              onClick={() => { trackCtaClick("post_testimonial"); goToCta(); }}
+              onClick={() => { trackCtaClick("post_testimonial"); goToCta("post_testimonial"); }}
               aria-label="Book your private thyroid consultation call for 299 rupees"
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}

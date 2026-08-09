@@ -41,7 +41,7 @@ export default function CtaButton({
 
   const handleClick = () => {
     trackCtaClick(location, label);
-    goToCta();
+    goToCta(location);
   };
 
   return (
