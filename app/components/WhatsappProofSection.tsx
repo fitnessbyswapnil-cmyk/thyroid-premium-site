@@ -173,9 +173,8 @@ const REMOVED_FOR_LENGTH: ProofCard[] = [
 // Split the active cards in half across the two desktop marquee rows.
 // Derived from ALL_CARDS.length so the rows stay balanced if the count changes.
 // ROW 1 → marquee moves left (90 s) · ROW 2 → marquee moves right (85 s)
-const ROW1_COUNT = Math.ceil(ALL_CARDS.length / 2)
-const ROW1 = ALL_CARDS.slice(0, ROW1_COUNT)
-const ROW2 = ALL_CARDS.slice(ROW1_COUNT)
+// (Marquee ROW1/ROW2 split removed with the marquee itself — the unified
+// snap gallery below renders ALL_CARDS once, no clones.)
 
 // ── Animation variants ────────────────────────────────────────────────────────
 
@@ -302,21 +301,20 @@ function ProofCard({
         border: `1px solid ${ACCENT_DIM}`,
         background:
           'linear-gradient(160deg, rgba(168,85,247,0.07) 0%, rgba(5,4,4,0.99) 45%, rgba(10,8,4,1) 100%)',
+        // One shadow, not two stacked 60/120px blurs — blur radius is the
+        // single most expensive thing to composite; ~half the paint cost per
+        // card. Hover animates transform ONLY (GPU-cheap), never box-shadow.
         boxShadow:
-          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${ACCENT_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
-        transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          `0 0 0 1px rgba(255,255,255,0.04), 0 26px 54px -14px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)`,
+        transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = 'translateY(-8px) scale(1.012)'
-        el.style.boxShadow =
-          `0 0 0 1px rgba(168,85,247,0.35), 0 2px 4px rgba(168,85,247,0.18), 0 24px 70px rgba(0,0,0,0.92), 0 60px 140px rgba(0,0,0,0.65), 0 0 60px rgba(168,85,247,0.1), inset 0 1px 0 rgba(255,255,255,0.08)`
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = 'translateY(0) scale(1)'
-        el.style.boxShadow =
-          `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${ACCENT_GLOW}, 0 20px 60px rgba(0,0,0,0.9), 0 60px 120px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`
       }}
     >
       {/* ── Header: Tags + Headline ─────────────────────────────────────────── */}
@@ -418,7 +416,7 @@ function ProofCard({
 export default function WhatsappProofSection() {
   return (
     <section
-      className="section-pad relative overflow-hidden"
+      className="cv-auto section-pad relative overflow-hidden"
       style={{ background: 'var(--bg-section)' }}
       aria-labelledby="whatsapp-proof-heading"
     >
@@ -471,94 +469,46 @@ export default function WhatsappProofSection() {
           {RESULTS_VARY}
         </p>
 
-        {/* ── MOBILE: wide snap-scroll (single row, all active cards) ─────── */}
-        <div className="block md:hidden">
-          <div className="relative overflow-hidden">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 z-20 h-full w-12"
-              style={{ background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute right-0 top-0 z-20 h-full w-12"
-              style={{ background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
-            />
-            <div
-              className="flex snap-x snap-mandatory gap-4 overflow-x-auto scrollbar-hide"
-              style={{ padding: '6px 1.25rem 18px' }}
-            >
-              {ALL_CARDS.map((card, i) => (
-                // Alternating micro-tilt — approved design port: reads as real
-                // screenshots casually laid down, not a rendered grid.
-                <div
-                  key={card.id}
-                  className="snap-center flex-shrink-0"
-                  style={{ transform: `rotate(${i % 2 === 0 ? -1.2 : 1}deg)` }}
-                >
-                  <ProofCard card={card} isMobile />
-                </div>
-              ))}
-            </div>
-          </div>
-          <p
-            className="mt-3 text-center text-[0.59rem] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: 'rgba(255,255,255,0.18)' }}
+        {/* ── ALL BREAKPOINTS: one curated snap gallery ─────────────────────
+            Replaces the desktop double-marquee. The marquee animated ~28
+            image cards (originals + seamless-loop clones) with stacked
+            60/120px blur shadows FOREVER — the single biggest source of
+            scroll jank on the page. A draggable snap rail renders each
+            client once, only paints on interaction, and matches the
+            approved design's "screenshots casually laid down" look. */}
+        <div className="relative overflow-hidden">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 z-20 h-full w-12 md:w-24"
+            style={{ background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 z-20 h-full w-12 md:w-24"
+            style={{ background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
+          />
+          <div
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto scrollbar-hide md:gap-6"
+            style={{ padding: '14px 1.25rem 22px' }}
           >
-            Swipe to see more ›
-          </p>
-        </div>
-
-        {/* ── DESKTOP: 2 cinematic marquee rows ───────────────────────────── */}
-        <div className="relative hidden md:block">
-
-          {/* Edge fades */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0 z-20 h-full"
-            style={{
-              width: 'clamp(3rem, 7vw, 7rem)',
-              background: 'linear-gradient(to right, var(--bg-section) 0%, transparent 100%)',
-            }}
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 z-20 h-full"
-            style={{
-              width: 'clamp(3rem, 7vw, 7rem)',
-              background: 'linear-gradient(to left, var(--bg-section) 0%, transparent 100%)',
-            }}
-          />
-
-          <div className="space-y-6 overflow-hidden py-3">
-
-            {/* Row 1 — moves left. Second pass = seamless-loop clones,
-                aria-hidden so SRs hear each client once. */}
-            <div className="marquee-rail overflow-hidden">
-              <div className="marquee-track-l flex gap-5 w-max">
-                {ROW1.map((card) => (
-                  <ProofCard key={`r1-${card.id}`} card={card} />
-                ))}
-                {ROW1.map((card) => (
-                  <ProofCard key={`r1-${card.id}-clone`} card={card} ariaHidden />
-                ))}
+            {ALL_CARDS.map((card, i) => (
+              // Alternating micro-tilt — approved design port.
+              <div
+                key={card.id}
+                className="snap-center flex-shrink-0"
+                style={{ transform: `rotate(${i % 2 === 0 ? -1.2 : 1}deg)` }}
+              >
+                <ProofCard card={card} isMobile />
               </div>
-            </div>
-
-            {/* Row 2 — moves right */}
-            <div className="marquee-rail overflow-hidden">
-              <div className="marquee-track-r flex gap-5 w-max">
-                {ROW2.map((card) => (
-                  <ProofCard key={`r2-${card.id}`} card={card} />
-                ))}
-                {ROW2.map((card) => (
-                  <ProofCard key={`r2-${card.id}-clone`} card={card} ariaHidden />
-                ))}
-              </div>
-            </div>
-
+            ))}
           </div>
         </div>
+        <p
+          className="mt-3 text-center text-[0.59rem] font-semibold uppercase tracking-[0.18em]"
+          style={{ color: 'rgba(255,255,255,0.18)' }}
+        >
+          Swipe to see more ›
+        </p>
 
         {/* THE single stack CTA — the one conversion point after the whole
             proof stack (moved here from the removed More Than Fat Loss
