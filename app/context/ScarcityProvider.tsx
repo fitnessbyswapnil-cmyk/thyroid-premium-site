@@ -4,10 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useState,
   type ReactNode,
 } from "react";
-import BookingModal from "../components/BookingModal";
 
 type ScarcityContextValue = {
   scarcityLine: string;
@@ -49,7 +47,6 @@ export function ScarcityProvider({ children }: { children: ReactNode }) {
   return (
     <ScarcityContext.Provider value={value}>
       {children}
-      <BookingModal open={modalOpen} onClose={() => setModalOpen(false)} location={modalLocation} />
     </ScarcityContext.Provider>
   );
 }
