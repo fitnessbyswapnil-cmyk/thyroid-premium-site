@@ -19,13 +19,12 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // ── TEST MODE ─────────────────────────────────────────────────────────────────
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
 // UI/copy always shows ₹299 — only the actual Cashfree transaction amount changes.
-// 2026-08-09: back to true at the owner's request for another test round.
-// NOTE while true: EVERY visitor (including real ad traffic) pays only ₹1 for
-// the consultation. Keep the test window short and flip back to false to
-// charge the real SESSION_PRICE. The hosted-form fallback
-// (payments.cashfree.com/forms?code=thyroid-session) is also set to ₹1 on the
-// Cashfree dashboard, so both payment paths agree during testing.
-const IS_TEST_MODE = true;
+// 2026-08-09: LIVE. Flipped back to false at the owner's request — testing is
+// finished and the funnel now charges the real SESSION_PRICE (₹299).
+// The hosted-form fallback (payments.cashfree.com/forms?code=thyroid-session)
+// has also been set to ₹299 on the Cashfree dashboard, so both payment paths
+// charge the same amount.
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
@@ -139,7 +138,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       paymentSessionId: order.payment_session_id,
       orderId: order.order_id ?? orderId,
-      amount: ACTUAL_PAYMENT_AMOUNT, // dynamic charged amount (₹1 in test mode, else ₹199)
+      amount: ACTUAL_PAYMENT_AMOUNT, // dynamic charged amount (₹1 in test mode, else SESSION_PRICE)
     });
   } catch (err) {
     console.error("[create-cashfree-order] fetch error:", err instanceof Error ? err.message : String(err));
