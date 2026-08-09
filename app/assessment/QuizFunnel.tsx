@@ -491,7 +491,10 @@ export default function QuizFunnel() {
     const d = f.phone.replace(/\D/g, "");
     if (!(d.length === 10 || (d.length === 12 && d.indexOf("91") === 0))) e.phone = true;
     if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) e.email = true;
-    if (f.city.trim().length < 2) e.city = true;
+    // City is no longer collected at the unlock gate (friction cut: 4 fields
+    // -> 3 at the highest-drop-off moment; IP-based ct matching covers Meta,
+    // and the WhatsApp playbook never used city). The form key stays so the
+    // /api/quiz-lead payload shape is unchanged - it just sends "".
     if (Object.keys(e).length) { setErrs(e); setFormErr("Please check the highlighted fields — we need them to reveal your score."); return; }
     setErrs({}); setFormErr(""); setSubmitting(true);
 
@@ -775,7 +778,7 @@ export default function QuizFunnel() {
           </div>
           <div style={{ ...card, padding: 22, display: "grid", gap: 12 }}>
             {([
-              ["name", "First name", "text"], ["phone", "WhatsApp number", "tel"], ["email", "Email", "email"], ["city", "City", "text"],
+              ["name", "First name", "text"], ["phone", "WhatsApp number", "tel"], ["email", "Email", "email"],
             ] as const).map(([k, ph, type]) => (
               <input
                 key={k} type={type} placeholder={ph} value={form[k]}
