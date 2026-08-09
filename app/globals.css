@@ -363,7 +363,8 @@ a {
 
   padding: 0.78rem 1.1rem;
 
-  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  /* Tactile pill — approved design port: vertical gradient + inset bevel */
+  background: linear-gradient(180deg, #b673fa 0%, #a855f7 40%, #8b2fe0 100%);
 
   color: white;
 
@@ -380,8 +381,10 @@ a {
   gap: 0.14rem;
 
   box-shadow:
-    0 8px 24px rgba(168, 85, 247, 0.18),
-    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 14px 36px -8px rgba(168, 85, 247, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.4);
 
   transition:
     transform 240ms var(--ease-cta),
@@ -391,12 +394,13 @@ a {
 
 .cta-button:hover {
   transform: translateY(-2px);
+  filter: brightness(1.07);
 
   box-shadow:
-    0 16px 36px rgba(168, 85, 247, 0.28),
-    0 1px 0 rgba(255, 255, 255, 0.18) inset;
-
-  background: linear-gradient(135deg, #b466ff 0%, #8b22e0 100%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 20px 48px -8px rgba(168, 85, 247, 0.55),
+    0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
 .cta-button:active {
@@ -1472,4 +1476,21 @@ a {
   .vt-rail > * { flex: 0 0 82vw; scroll-snap-align: center; }
   .vt-rail { scrollbar-width: none; scroll-padding-inline: 1.25rem; }
   .vt-rail::-webkit-scrollbar { display: none; }
+}
+
+/* ── Hero aurora drift — approved Claude Design "final" port ──────────────────
+   Keyframes carry the full transform, so they preserve the -50% x-centering
+   the glow divs get from Tailwind's -translate-x-1/2. */
+@keyframes hero-aurora-1 {
+  from { transform: translate(-60%, -4%) scale(1); }
+  to   { transform: translate(-40%, 10%) scale(1.18); }
+}
+@keyframes hero-aurora-2 {
+  from { transform: translate(-45%, 6%) scale(1.1); }
+  to   { transform: translate(-55%, -8%) scale(0.94); }
+}
+.hero-aurora-1 { animation: hero-aurora-1 26s ease-in-out infinite alternate; }
+.hero-aurora-2 { animation: hero-aurora-2 34s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora-1, .hero-aurora-2 { animation: none; }
 }

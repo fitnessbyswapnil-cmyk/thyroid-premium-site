@@ -488,8 +488,14 @@ export default function WhatsappProofSection() {
               className="flex snap-x snap-mandatory gap-4 overflow-x-auto scrollbar-hide"
               style={{ padding: '6px 1.25rem 18px' }}
             >
-              {ALL_CARDS.map((card) => (
-                <div key={card.id} className="snap-center flex-shrink-0">
+              {ALL_CARDS.map((card, i) => (
+                // Alternating micro-tilt — approved design port: reads as real
+                // screenshots casually laid down, not a rendered grid.
+                <div
+                  key={card.id}
+                  className="snap-center flex-shrink-0"
+                  style={{ transform: `rotate(${i % 2 === 0 ? -1.2 : 1}deg)` }}
+                >
                   <ProofCard card={card} isMobile />
                 </div>
               ))}
@@ -562,9 +568,9 @@ export default function WhatsappProofSection() {
             variant="primary"
             className="mx-auto mt-12 max-w-sm"
             buttonClassName="w-full"
-            label="Get My Free Thyroid Score"
-            sublabel="60-second assessment · Then decode it live on a private 1-on-1 call"
-            ariaLabel="Take the free thyroid score assessment"
+            label="Book My Thyroid Consultation — ₹299"
+            sublabel="60-min private 1-on-1 with Swapnil · Fully adjusted against your plan"
+            ariaLabel="Book your private thyroid consultation call for 299 rupees"
             location="transformations"
           />
         </div>
