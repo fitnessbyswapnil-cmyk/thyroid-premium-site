@@ -20,25 +20,24 @@ const ScarcityContext = createContext<ScarcityContextValue | null>(null);
 const SCARCITY_LINE = "Only a few sessions open this week";
 const SCARCITY_SHORT = "Limited weekly intake";
 
-// Every CTA on the site routes into the Thyroid Score assessment (/assessment)
-// — the qualifying step before the paid 1-on-1 call. The assessment generates
-// the visitor's score, and its result screen sends her to the Cashfree-hosted
-// payment form below.
+// DIRECT-TO-BOOKING funnel (owner instruction): every primary CTA sends the
+// visitor straight to the Cashfree-hosted form to book the Rs 299
+// consultation call — CTA copy states the price up front so the payment page
+// is never a surprise. The free Thyroid Score quiz (/assessment) remains as
+// the SECONDARY path (soft "not sure yet?" links) so hesitant visitors are
+// still captured as leads instead of bouncing.
 //
-// PAYMENT STEP — Cashfree-hosted form (owner's choice; it needs no API keys).
-// The form's own settings decide the amount charged; CTA copy is driven
-// separately by SESSION_PRICE in app/lib/pricing.ts.
+// The form's own dashboard settings decide the amount charged; CTA copy is
+// driven separately by SESSION_PRICE in app/lib/pricing.ts.
 //
-// OWNER-SIDE REQUIREMENT: the form's success/return URL must be set to
-//   https://www.swapnilumbarkarfitness.in/payment-success?order_id={order_id}
-// Without it, a paying visitor is left on Cashfree and never reaches the
-// Cal.com calendar — no booking, and no Meta Purchase/Schedule events.
+// OWNER-SIDE: the form's success/return URL points to /session-booked so a
+// paying visitor lands on the embedded Cal.com calendar.
 export const CONSULTATION_FORM_URL =
   "https://payments.cashfree.com/forms?code=thyroid-session";
 
 export function ScarcityProvider({ children }: { children: ReactNode }) {
   const goToCta = useCallback(() => {
-    window.location.href = "/assessment";
+    window.location.href = CONSULTATION_FORM_URL;
   }, []);
 
   const value: ScarcityContextValue = {
