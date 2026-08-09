@@ -517,9 +517,9 @@ export default function WhatsappProofSection() {
             variant="primary"
             className="mx-auto mt-12 max-w-sm"
             buttonClassName="w-full"
-            label="Book My Thyroid Consultation — ₹299"
-            sublabel="60-min private 1-on-1 with Swapnil · Fully adjusted against your plan"
-            ariaLabel="Book your private thyroid consultation call for 299 rupees"
+            label="Get My Free Thyroid Score"
+            sublabel="60-second assessment · Then decode it live on a private 1-on-1 call"
+            ariaLabel="Take the free thyroid score assessment"
             location="transformations"
           />
         </div>

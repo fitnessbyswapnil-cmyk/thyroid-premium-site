@@ -111,26 +111,20 @@ export default function Hero() {
           <HeroProofStrip />
         </div>
 
-        {/* g) Primary CTA — books the Rs 299 consultation directly. Price is
-            stated up front: the click lands on a payment form, and a surprise
-            price is a burned click. */}
-        <div className="hero-rise mt-[40px] w-full max-w-[430px]" style={{ animationDelay: "620ms" }}>
+        {/* g) Primary CTA — quiz-first (owner decision). Every CTA sends her
+            into the free Thyroid Score assessment; the paid call is offered
+            on the quiz's own result screen once she has a score and reason
+            to book, not blind on first click. */}
+        <div className="hero-rise mt-[40px] w-full max-w-[720px]" style={{ animationDelay: "620ms" }}>
           <CtaButton
             variant="primary"
             className="relative z-[1] w-full"
-            label="Book My Thyroid Consultation — ₹299"
-            sublabel="60-min private 1-on-1 with Swapnil · Fully adjusted against your plan · Limited weekly slots"
-            ariaLabel="Book your private thyroid consultation call for 299 rupees"
+            label="Get My Free Thyroid Score"
+            sublabel="60-second assessment · Then decode it live on a private 1-on-1 call · Limited weekly slots"
+            ariaLabel="Take the free thyroid score assessment"
             location="hero"
             showArrow
           />
-          {/* Soft secondary path — hesitant visitors become leads via the free quiz */}
-          <a
-            href="/assessment"
-            className="mt-4 inline-block text-[12px] font-medium text-[var(--t3)] underline decoration-[rgba(168,85,247,0.4)] underline-offset-4 transition-colors hover:text-[var(--p400)]"
-          >
-            Not sure yet? Get your free Thyroid Score first →
-          </a>
         </div>
 
         {/* Reassurance line removed per audit — the credential chips above

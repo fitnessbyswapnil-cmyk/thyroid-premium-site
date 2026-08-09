@@ -180,17 +180,17 @@ export default function FAQSection() {
             Still have questions?
           </p>
           <p className="mb-5 text-[length:var(--text-xs)] text-[var(--t4)]">
-            Book your private consultation call and get clarity on your thyroid fat-loss path.
+            Take the free assessment and get clarity on your thyroid fat-loss path.
           </p>
           <SectionCta
             variant="primary"
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
-            label="Book My Consultation — ₹299"
-            sublabel="60-min private 1-on-1 · Fully adjusted against your plan"
+            label="Get My Free Thyroid Score"
+            sublabel="60-second quiz · Then decode it live on a private call"
             trust="ACE · INFS Certified · 200+ Clients"
-            ariaLabel="Book your private thyroid consultation call for 299 rupees"
+            ariaLabel="Take the free thyroid score assessment"
             location="faq"
           />
         </div>
