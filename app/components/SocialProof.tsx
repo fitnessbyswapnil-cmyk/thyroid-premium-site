@@ -356,7 +356,7 @@ export default function SocialProof() {
   return (
     <section
       aria-label="Client testimonials"
-      className="relative overflow-hidden border-b border-white/[0.04] bg-[var(--bg-section)] py-[clamp(3.5rem,9vw,5.5rem)]"
+      className="cv-auto relative overflow-hidden border-b border-white/[0.04] bg-[var(--bg-section)] py-[clamp(3.5rem,9vw,5.5rem)]"
     >
       {/* Hero → section edge blend */}
       <div

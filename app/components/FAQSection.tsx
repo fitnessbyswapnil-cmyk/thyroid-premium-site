@@ -154,7 +154,7 @@ export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <section className="section-pad relative bg-[var(--bg-page)] text-white">
+    <section className="cv-auto section-pad relative bg-[var(--bg-page)] text-white">
       <div className="container-narrow relative z-10">
         <SectionHeader
           label="FAQs"
@@ -183,6 +183,7 @@ export default function FAQSection() {
             Book your private consultation call and get clarity on your thyroid fat-loss path.
           </p>
           <SectionCta
+            variant="primary"
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}

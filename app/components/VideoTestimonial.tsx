@@ -450,7 +450,7 @@ export default function VideoTestimonial() {
 
   return (
     <section
-      className="section-pad relative overflow-hidden"
+      className="cv-auto section-pad relative overflow-hidden"
       style={{ background: "var(--bg-section)" }}
       aria-labelledby="testimonial-heading"
     >

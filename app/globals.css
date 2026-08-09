@@ -1357,30 +1357,9 @@ a {
 
 /* MARQUEE — infinite proof rails */
 
-@keyframes marquee-left {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-@keyframes marquee-right {
-  from { transform: translateX(-50%); }
-  to   { transform: translateX(0); }
-}
-
-.marquee-track-l {
-  animation: marquee-left 90s linear infinite;
-  will-change: transform;
-}
-
-.marquee-track-r {
-  animation: marquee-right 85s linear infinite;
-  will-change: transform;
-}
-
-.marquee-rail:hover .marquee-track-l,
-.marquee-rail:hover .marquee-track-r {
-  animation-play-state: paused;
-}
+/* (marquee CSS removed — the WhatsApp proof marquee was replaced by a
+   snap gallery; constant compositing of ~28 shadowed image cards was the
+   page's main scroll-jank source) */
 
 /* REDUCED MOTION */
 
@@ -1493,4 +1472,13 @@ a {
 .hero-aurora-2 { animation: hero-aurora-2 34s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora-1, .hero-aurora-2 { animation: none; }
+}
+
+/* ── Render-on-approach for heavy below-fold sections ─────────────────────────
+   The browser skips layout/paint for the section until it nears the viewport;
+   contain-intrinsic-size reserves scroll height so the scrollbar stays stable.
+   Biggest single smoothness win on image-heavy pages. */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
 }
