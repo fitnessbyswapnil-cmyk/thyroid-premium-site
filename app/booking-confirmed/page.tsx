@@ -9,9 +9,11 @@ import { persistUserIdentity } from "../components/tracking/UserIdentityTracker"
 // Reached after a confirmed Cal.com booking. /session-booked and /book redirect
 // here with ?uid=<cal_booking_uid>&date=…&time=…&name=…
 //
-// This page's job is converting the booking into a COMMITMENT (booked leads
-// were ghosting): confirm-on-WhatsApp, add-to-calendar, prep kit, next steps,
-// social proof. PRICE-NEUTRAL: zero pricing language anywhere on this page.
+// This page's job is converting the booking into a COMMITMENT. She has PAID —
+// so no extra hoops (the old send-YES step and Prep Kit PDF are gone per
+// owner instruction). Just: calendar button, a short before-your-call list
+// (quiet place, pen & paper, stable internet, reports on WhatsApp), a clear
+// no-rescheduling line, social proof. PRICE-NEUTRAL: zero pricing language.
 //
 // PII SCRUB: the query string carries the attendee's real name, so it is read
 // ONCE and stripped via history.replaceState DURING FIRST RENDER — before any
@@ -64,11 +66,10 @@ function captureAndScrubParams(): BookingParams {
 // button falls back to WhatsApp's share picker (wa.me without a number).
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
 
-function whatsappHref(name: string, date: string, time: string): string {
-  const text =
-    date && time
-      ? `YES — confirming my Thyroid Root-Cause Session on ${date} at ${time}.${name ? ` – ${name}` : ""}`
-      : `YES — confirming my Thyroid Root-Cause Session.${name ? ` – ${name}` : ""}`;
+// One-tap "send my reports" link — the strongest pre-call commitment device.
+// Message text is plain ASCII (non-ASCII corrupts in wa.me prefills).
+function reportsHref(name: string, date: string): string {
+  const text = `Hi Swapnil! Sharing my thyroid reports before our call${date ? ` on ${date}` : ""}.${name ? ` - ${name}` : ""}`;
   const base = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : "https://wa.me/";
   return `${base}?text=${encodeURIComponent(text)}`;
 }
@@ -111,10 +112,14 @@ function gcalHref(dateStr: string, timeStr: string): string {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-const NEXT_STEPS = [
-  { n: "1", title: "Send YES on WhatsApp", body: "Locks your slot in 5 seconds." },
-  { n: "2", title: "Read your Prep Kit", body: "10 minutes that transform the call." },
-  { n: "3", title: "Join 5 min early with your reports", body: "Google Meet link is in your email." },
+// Short, practical, zero-hoop checklist (owner instruction): quiet place,
+// pen & paper, stable internet — plus the reports ask, which is the single
+// strongest predictor of a productive (and closeable) call.
+const BEFORE_CALL = [
+  { n: "1", title: "Be in a quiet place, 5 minutes early", body: "Your Google Meet link is in your email." },
+  { n: "2", title: "Keep a pen and paper ready", body: "You'll want to note down what we find." },
+  { n: "3", title: "Stable internet connection", body: "WiFi or strong 4G/5G — video works best." },
+  { n: "4", title: "Send your thyroid reports on WhatsApp", body: "TSH, T3, T4 if you have them. No reports? Come anyway." },
 ] as const;
 
 // Re-homed from the merged consultation section (PR #31) — verbatim.
@@ -250,61 +255,39 @@ function BookingConfirmedInner() {
             )}
           </div>
 
-          {/* ── 2. Lock your slot — the commitment device ── */}
+          {/* ── 2. Calendar + reports — the two actions that matter ── */}
           <div className="rounded-[24px] border border-[#a855f7]/25 bg-[#a855f7]/[0.08] p-6 text-center">
-            <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#c793ff]">
-              Lock your slot
-            </p>
-            <p className="mx-auto mb-5 max-w-[38ch] text-[0.95rem] font-semibold leading-[1.6] text-white/92">
-              One last step — confirm you&apos;re coming. Slots are limited and
-              reserved exclusively for you.
-            </p>
-
-            <a
-              href={whatsappHref(dispName, dispDate, dispTime)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cta-button w-full"
-            >
-              <span className="cta-label">Confirm on WhatsApp — send YES</span>
-            </a>
-
             <a
               href={gcalHref(dispDate, dispTime)}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-ghost mx-auto mt-3 flex w-full items-center justify-center"
+              className="cta-button w-full"
             >
               <span className="cta-label">Add to Google Calendar</span>
             </a>
-          </div>
 
-          {/* ── 3. Prepare for your session ── */}
-          <div className="rounded-[24px] border border-[#a855f7]/10 bg-white/[0.04] p-6 text-center">
-            <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-white/55">
-              Prepare for your session
-            </p>
             <a
-              href="/prep-kit.pdf"
+              href={reportsHref(dispName, dispDate)}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-ghost mx-auto mt-3 flex w-full items-center justify-center"
             >
-              <span className="cta-label">Open My Prep Kit (PDF)</span>
+              <span className="cta-label">Send My Reports on WhatsApp</span>
             </a>
-            <p className="mt-3 text-[0.78rem] leading-relaxed text-white/60">
-              10 minutes of prep = a far better call. Keep your reports handy —
-              no reports? No problem.
+
+            <p className="mx-auto mt-4 max-w-[40ch] text-[0.74rem] leading-relaxed text-white/55">
+              Swapnil personally reviews your reports and answers before the
+              call, so the 60 minutes start on YOUR case — not the basics.
             </p>
           </div>
 
-          {/* ── 4. What happens next ── */}
+          {/* ── 3. Before your call — short and practical ── */}
           <div className="rounded-[24px] border border-[#a855f7]/10 bg-white/[0.04] p-5">
             <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-white/55">
-              What happens next
+              Before your call
             </p>
             <div className="space-y-3">
-              {NEXT_STEPS.map((s) => (
+              {BEFORE_CALL.map((s) => (
                 <div key={s.n} className="flex items-start gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#a855f7]/25 bg-[#a855f7]/10 text-[0.8rem] font-black text-[#c793ff]">
                     {s.n}
@@ -316,6 +299,10 @@ function BookingConfirmedInner() {
                 </div>
               ))}
             </div>
+            <p className="mt-4 rounded-xl border border-[#d5b765]/20 bg-[#d5b765]/[0.06] px-4 py-3 text-center text-[0.74rem] leading-relaxed text-[#d5b765]">
+              This slot is reserved exclusively for you — rescheduling is not
+              possible, so please plan to attend.
+            </p>
           </div>
 
           {/* ── 5. Social proof at the moment of anticipation ── */}
