@@ -491,13 +491,12 @@ export default function WhatsappProofSection() {
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto scrollbar-hide md:gap-6"
             style={{ padding: '14px 1.25rem 22px' }}
           >
-            {ALL_CARDS.map((card, i) => (
-              // Alternating micro-tilt — approved design port.
-              <div
-                key={card.id}
-                className="snap-center flex-shrink-0"
-                style={{ transform: `rotate(${i % 2 === 0 ? -1.2 : 1}deg)` }}
-              >
+            {ALL_CARDS.map((card) => (
+              // Straight, not tilted (owner call): these cards contain real
+              // screenshots of readable chat text, and rotation makes that
+              // text visibly crooked. The tilt suited empty placeholders in
+              // the prototype; it fights legibility with actual content.
+              <div key={card.id} className="snap-center flex-shrink-0">
                 <ProofCard card={card} isMobile />
               </div>
             ))}

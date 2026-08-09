@@ -46,7 +46,7 @@ function Laurel({ flip = false }: { flip?: boolean }) {
 function Avatar({ a }: { a: ProofAvatar }) {
   if (a.img) {
     return (
-      <span className="relative block h-[42px] w-[42px] shrink-0 overflow-hidden rounded-full ring-1 ring-[var(--p-border)]">
+      <span className="relative block h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full ring-1 ring-[var(--p-border)] sm:h-[42px] sm:w-[42px]">
         <Image src={a.img} alt={a.name} fill sizes="42px" className="object-cover" />
       </span>
     );
@@ -54,7 +54,7 @@ function Avatar({ a }: { a: ProofAvatar }) {
   return (
     <span
       aria-hidden="true"
-      className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-[var(--p300)] ring-1 ring-[var(--p-border)]"
+      className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full text-[12px] font-semibold text-[var(--p300)] ring-1 ring-[var(--p-border)] sm:h-[42px] sm:w-[42px] sm:text-[13px]"
       style={{ background: "var(--p-tint)" }}
     >
       {a.initials}
@@ -64,39 +64,42 @@ function Avatar({ a }: { a: ProofAvatar }) {
 
 export default function HeroProofStrip() {
   return (
-    <div className="container-default mt-[44px]">
-      <div
-        role="list"
-        aria-label="Client results"
-        className="flex snap-x snap-mandatory items-center gap-5 overflow-x-auto pb-2 lg:justify-center lg:gap-6 lg:overflow-visible lg:pb-0"
-        style={{ scrollbarWidth: "none" }}
-      >
+    // All five items visible on a 390px screen with NO horizontal scrolling —
+    // the old row overflowed, cutting quotes mid-word ("Lost 4.5 …") unless
+    // she swiped, and most visitors never swipe. Mobile: laurel block on top,
+    // quotes in a compact 2x2 grid (keeps the hero short so the CTA stays
+    // reachable). sm+: the original single centred row.
+    <div className="container-default mt-[36px] sm:mt-[44px]">
+      <div role="list" aria-label="Client results" className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
         {/* 200+ laurel block */}
-        <div role="listitem" className="flex shrink-0 snap-center items-center gap-1.5">
+        <div role="listitem" className="flex shrink-0 items-center gap-1.5">
           <Laurel />
           <div className="text-center">
-            <div className="text-[30px] font-bold leading-none text-[var(--p300)]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
+            <div className="text-[26px] font-bold leading-none text-[var(--p300)] sm:text-[30px]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
               200+
             </div>
-            <div className="mx-auto mt-1 max-w-[11ch] text-[12px] leading-[1.25] text-[var(--t2)]">
+            <div className="mx-auto mt-1 max-w-[11ch] text-[11px] leading-[1.25] text-[var(--t2)] sm:text-[12px]">
               Indian Women Transformed
             </div>
           </div>
           <Laurel flip />
         </div>
 
-        {PROOF.map((a) => (
-          <Fragment key={a.initials}>
-            <span aria-hidden="true" className="h-12 w-px shrink-0 bg-[var(--b-soft)]" />
-            <div role="listitem" className="flex shrink-0 snap-center items-center gap-3">
-              <Avatar a={a} />
-              <div className="max-w-[150px]">
-                <p className="text-[12.5px] leading-[1.4] text-[var(--t1)]">&ldquo;{a.claim}&rdquo;</p>
-                <p className="mt-0.5 text-[11.5px] font-medium text-[var(--p400)]">&ndash; {a.name}</p>
+        {/* Quotes — 2x2 grid on mobile, inline row from sm up */}
+        <div className="grid w-full grid-cols-2 gap-x-3 gap-y-3 sm:flex sm:w-auto sm:items-center sm:gap-6">
+          {PROOF.map((a) => (
+            <Fragment key={a.initials}>
+              <span aria-hidden="true" className="hidden h-12 w-px shrink-0 bg-[var(--b-soft)] sm:block" />
+              <div role="listitem" className="flex min-w-0 items-center gap-2 sm:shrink-0 sm:gap-3">
+                <Avatar a={a} />
+                <div className="min-w-0 sm:max-w-[150px]">
+                  <p className="text-[11px] leading-[1.3] text-[var(--t1)] sm:text-[12.5px] sm:leading-[1.4]">&ldquo;{a.claim}&rdquo;</p>
+                  <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--p400)] sm:text-[11.5px]">&ndash; {a.name}</p>
+                </div>
               </div>
-            </div>
-          </Fragment>
-        ))}
+            </Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );
