@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { trackCtaClick, trackVideoEvent } from "../lib/analytics";
 
 // Hero VSL frame, served from Vercel Blob (single plain MP4 — no HLS, no
@@ -50,6 +50,29 @@ export default function HeroVideo() {
   const firstPlayTracked = useRef(false);
   const milestonesFired = useRef<Set<string>>(new Set());
   const completeFired = useRef(false);
+
+  // The VSL has BURNED-IN subtitles along the bottom of the frame, so a
+  // permanently-visible control bar sits right on top of them. Controls now
+  // fade out ~2.5s into playback and come back on tap/hover or pause.
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const revealControls = useCallback(() => {
+    setControlsVisible(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    if (videoRef.current && !videoRef.current.paused) {
+      hideTimer.current = setTimeout(() => setControlsVisible(false), 2500);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (playing) revealControls();
+    else {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      setControlsVisible(true); // always reachable when paused
+    }
+    return () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
+  }, [playing, revealControls]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -218,10 +241,31 @@ export default function HeroVideo() {
                 </div>
               )}
 
-              {/* Custom control bar */}
+              {/* Tap/hover surface — brings the auto-hidden controls back
+                  without toggling playback. Sits under the control bar. */}
+              {playing && !controlsVisible && (
+                <button
+                  type="button"
+                  aria-label="Show video controls"
+                  onClick={revealControls}
+                  onMouseMove={revealControls}
+                  className="absolute inset-0 z-[1] cursor-default"
+                />
+              )}
+
+              {/* Custom control bar — fades out during playback so it never
+                  covers the video's burned-in subtitles. */}
               <div
-                className="absolute inset-x-0 bottom-0 flex h-[44px] items-center gap-3 border-t border-[var(--b-soft)] px-4"
-                style={{ background: "rgba(15,16,18,0.72)", backdropFilter: "blur(12px)" }}
+                onMouseEnter={revealControls}
+                onMouseMove={revealControls}
+                className="absolute inset-x-0 bottom-0 z-[2] flex h-[44px] items-center gap-3 border-t border-[var(--b-soft)] px-4"
+                style={{
+                  background: "rgba(15,16,18,0.72)",
+                  backdropFilter: "blur(12px)",
+                  opacity: controlsVisible ? 1 : 0,
+                  pointerEvents: controlsVisible ? "auto" : "none",
+                  transition: "opacity 320ms ease",
+                }}
               >
                 <button
                   type="button"
