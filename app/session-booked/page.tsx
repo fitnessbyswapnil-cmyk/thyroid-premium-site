@@ -71,6 +71,15 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
 
 // ── Cal.com Step (Step 3) ────────────────────────────────────────────────────
 
+// Normalise an Indian mobile number to E.164 (+91XXXXXXXXXX). Handles bare
+// 10-digit input, 91-prefixed 12-digit input, and passes anything else
+// through untouched rather than corrupting an unusual format.
+function toIndianE164(p: string): string {
+  const d = p.replace(/\D/g, "");
+  const ten = d.length === 12 && d.startsWith("91") ? d.slice(2) : d;
+  return ten.length === 10 ? `+91${ten}` : p;
+}
+
 function CalcomStep({
   onBooked,
   prefillName = "",
@@ -200,7 +209,9 @@ function CalcomStep({
             ...(prefillName ? { name: prefillName } : {}),
             ...(prefillEmail ? { email: prefillEmail } : {}),
             // Cal.com smsReminderNumber / attendeePhoneNumber prefill (WhatsApp).
-            ...(prefillPhone ? { attendeePhoneNumber: prefillPhone, smsReminderNumber: prefillPhone } : {}),
+            // Explicit +91: a bare 10-digit number makes Cal.com GUESS the
+            // country for its flag selector; E.164 makes India deterministic.
+            ...(prefillPhone ? { attendeePhoneNumber: toIndianE164(prefillPhone), smsReminderNumber: toIndianE164(prefillPhone) } : {}),
             // Additive metadata only — ties the booking (and the BOOKING_CREATED
             // webhook) back to the lead/payment. Does NOT affect the event_id
             // (still schedule_<uid>) or the bookingSuccessful handling.

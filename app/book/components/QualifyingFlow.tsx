@@ -361,6 +361,15 @@ function phoneDigits(v: string) {
   return v.replace(/\D/g, "");
 }
 
+// Normalise an Indian mobile number to E.164 (+91XXXXXXXXXX). Handles bare
+// 10-digit input, 91-prefixed 12-digit input, and passes anything else
+// through untouched rather than corrupting an unusual format.
+function toIndianE164(p: string): string {
+  const d = p.replace(/\D/g, "");
+  const ten = d.length === 12 && d.startsWith("91") ? d.slice(2) : d;
+  return ten.length === 10 ? `+91${ten}` : p;
+}
+
 // ── Cal.com booking step ─────────────────────────────────────────────────────
 // Mirrors /session-booked: dark month_view, prefilled, leadId metadata. On a
 // confirmed booking it redirects to /booking-confirmed, where the (untouched)
@@ -454,7 +463,9 @@ function CalendarStep({
             layout: "month_view",
             ...(name ? { name } : {}),
             ...(email ? { email } : {}),
-            ...(phone ? { attendeePhoneNumber: phone, smsReminderNumber: phone } : {}),
+            // Explicit +91 (E.164) so Cal.com's country selector is
+            // deterministic instead of guessing from a bare 10-digit number.
+            ...(phone ? { attendeePhoneNumber: toIndianE164(phone), smsReminderNumber: toIndianE164(phone) } : {}),
             ...(Object.keys(calMetadata).length ? { metadata: calMetadata } : {}),
           }}
         />
