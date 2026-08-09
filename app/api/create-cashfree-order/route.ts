@@ -19,10 +19,10 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // ── TEST MODE ─────────────────────────────────────────────────────────────────
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
 // UI/copy always shows ₹299 — only the actual Cashfree transaction amount changes.
-// IMPORTANT: this is still true — flip to false ONLY after confirming
-// CASHFREE_APP_ID / CASHFREE_SECRET_KEY in Vercel are the LIVE (not sandbox)
-// keys, since flipping this starts charging real visitors real money.
-const IS_TEST_MODE = true;
+// Flipped to false 2026-08-09 after the owner's successful ₹1 end-to-end test
+// (embedded modal → payment → /session-booked → Cal.com booking confirmed).
+// LIVE: real visitors are now charged the full SESSION_PRICE.
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
