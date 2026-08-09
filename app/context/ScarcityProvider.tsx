@@ -4,13 +4,15 @@ import {
   createContext,
   useCallback,
   useContext,
+  useState,
   type ReactNode,
 } from "react";
+import BookingModal from "../components/BookingModal";
 
 type ScarcityContextValue = {
   scarcityLine: string;
   scarcityShort: string;
-  goToCta: () => void;
+  goToCta: (location?: string) => void;
 };
 
 const ScarcityContext = createContext<ScarcityContextValue | null>(null);
@@ -20,24 +22,26 @@ const ScarcityContext = createContext<ScarcityContextValue | null>(null);
 const SCARCITY_LINE = "Only a few sessions open this week";
 const SCARCITY_SHORT = "Limited weekly intake";
 
-// DIRECT-TO-BOOKING funnel (owner instruction): every primary CTA sends the
-// visitor straight to the Cashfree-hosted form to book the Rs 299
-// consultation call — CTA copy states the price up front so the payment page
-// is never a surprise. The free Thyroid Score quiz (/assessment) remains as
-// the SECONDARY path (soft "not sure yet?" links) so hesitant visitors are
-// still captured as leads instead of bouncing.
+// EMBEDDED-ON-DOMAIN funnel (owner instruction): every primary CTA opens the
+// in-page BookingModal — name + WhatsApp, then the Cashfree JS SDK checkout
+// as an in-page modal. The visitor never leaves swapnilumbarkarfitness.in,
+// and the post-payment redirect is triggered by OUR code (window.location.href
+// in BookingModal), not a Cashfree dashboard setting — that setting proved
+// unreliable across multiple attempts to configure it correctly.
 //
-// The form's own dashboard settings decide the amount charged; CTA copy is
-// driven separately by SESSION_PRICE in app/lib/pricing.ts.
-//
-// OWNER-SIDE: the form's success/return URL points to /session-booked so a
-// paying visitor lands on the embedded Cal.com calendar.
+// CONSULTATION_FORM_URL is kept as the FALLBACK ONLY: if the embedded
+// checkout can't start (order API/SDK failure), BookingModal sends her here
+// instead of leaving a dead button. It is no longer a primary CTA target.
 export const CONSULTATION_FORM_URL =
   "https://payments.cashfree.com/forms?code=thyroid-session";
 
 export function ScarcityProvider({ children }: { children: ReactNode }) {
-  const goToCta = useCallback(() => {
-    window.location.href = CONSULTATION_FORM_URL;
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalLocation, setModalLocation] = useState("unknown");
+
+  const goToCta = useCallback((location?: string) => {
+    setModalLocation(location ?? "unknown");
+    setModalOpen(true);
   }, []);
 
   const value: ScarcityContextValue = {
@@ -49,6 +53,7 @@ export function ScarcityProvider({ children }: { children: ReactNode }) {
   return (
     <ScarcityContext.Provider value={value}>
       {children}
+      <BookingModal open={modalOpen} onClose={() => setModalOpen(false)} location={modalLocation} />
     </ScarcityContext.Provider>
   );
 }

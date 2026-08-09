@@ -79,7 +79,7 @@ export default function StickyBookingBar() {
         {/* CTA button — thumb-friendly, premium */}
         <button
           type="button"
-          onClick={() => { trackCtaClick("sticky_bar"); goToCta(); }}
+          onClick={() => { trackCtaClick("sticky_bar"); goToCta("sticky_bar"); }}
           aria-label="Book your private thyroid consultation call for 299 rupees"
           className="btn-sticky shrink-0"
         >
