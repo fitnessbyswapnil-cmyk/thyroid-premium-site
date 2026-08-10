@@ -19,6 +19,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
+import { sendWelcomeLead } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -161,6 +162,21 @@ export async function POST(req: NextRequest) {
       source: "thyroid_score_quiz",
     }),
   }).catch(() => {});
+
+  // First-touch WhatsApp, fired the instant the quiz is finished.
+  //
+  // This is the fix for the funnel's biggest measured leak: leads were
+  // sitting 2-9 hours waiting for a manual WhatsApp, by which point the pain
+  // that made them fill the form has faded. sendWelcomeLead is a no-op until
+  // WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID exist, so this is inert until
+  // billing is live on the WABA.
+  //
+  // Deliberately not awaited and never allowed to reject: a Meta outage must
+  // not fail a submission the visitor already completed, and the lead is
+  // already safely in the sheet by this point.
+  if (str(payload.phone)) {
+    sendWelcomeLead(str(payload.phone), str(payload.name)).catch(() => {});
+  }
 
   return NextResponse.json({ ok: true });
 }
