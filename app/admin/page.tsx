@@ -21,7 +21,11 @@ type Lead = {
   email: string;
   source: string;
   adId: string;
+  // booked = a call that is still going to happen. cancelled = Cal.com says the
+  // booking was called off and she has not rebooked, so she is a paid lead with
+  // no call on the calendar — the most urgent state in the whole dashboard.
   booked: boolean;
+  cancelled: boolean;
   sessionDate: string;
   tier: string;
   city: string;
@@ -185,6 +189,13 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
     return {
       kind: "Rebook",
       text: `Hi ${first}, missed you at our call — no worries at all, life happens.\n\nYour slot is already paid for and still yours. Pick a new time in one tap: ${REBOOK_URL}\n\n${MANUAL_OFFER}${SIGN}`,
+    };
+  // Cancelled ≠ no-show: she actively called it off, so the message has to
+  // remove any sense that she has lost the money or the slot.
+  if (l.cancelled)
+    return {
+      kind: "Rebook",
+      text: `Hi ${first}, I see your consultation call got cancelled — completely fine, things come up.\n\nYour Rs 299 slot is still paid and still reserved for you, nothing is lost. Just pick whichever new time suits you: ${REBOOK_URL}\n\n${MANUAL_OFFER}${SIGN}`,
     };
   if (l.booked) return null; // handled by the 3-step sequence below instead
   return {
@@ -606,7 +617,7 @@ export default function AdminDashboard() {
   const [range, setRange] = useState("14");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [calStatus, setCalStatus] = useState<{
-    keySet: boolean; source: string; fetched: number; matched: number; error: string; sample: string[];
+    keySet: boolean; source: string; fetched: number; matched: number; cancelled: number; error: string; sample: string[];
   } | null>(null);
   const [adsData, setAdsData] = useState<{
     daily: { date: string; spend: number; impressions: number; linkClicks: number; cpm: number; frequency: number }[];
@@ -721,6 +732,7 @@ export default function AdminDashboard() {
   const agg = useMemo(() => {
     const total = inRange.length;
     const booked = inRange.filter((l) => l.booked).length;
+    const cancelled = inRange.filter((l) => l.cancelled).length;
     const showed = inRange.filter((l) => l.showed === "Y").length;
     const noshow = inRange.filter((l) => l.showed === "N").length;
     const closed = inRange.filter((l) => (l.closedAmt ?? 0) > 0);
@@ -789,7 +801,7 @@ export default function AdminDashboard() {
       .filter((l) => l.booked && l.sessionDate && isToday(l.sessionDate))
       .sort((a, b) => (a.sessionDate < b.sessionDate ? -1 : 1));
 
-    return { total, booked, showed, noshow, closedN: closed.length, revenue, avgScore, perDay, srcCount, buckets, ads, cities, todaySessions };
+    return { total, booked, cancelled, showed, noshow, closedN: closed.length, revenue, avgScore, perDay, srcCount, buckets, ads, cities, todaySessions };
   }, [inRange, leads, days]);
 
   // ── Ad Performance: Meta spend joined with the sheet's lead quality ──
@@ -885,6 +897,13 @@ export default function AdminDashboard() {
       const sess = parseSessionDate(l.sessionDate);
       const hrsToSession = sess ? (sess.getTime() - now) / 3600000 : null;
 
+      // Cancellation outranks every other state: she paid, then took the call
+      // off the calendar. Left alone that is a refund request or a silent
+      // write-off, so it jumps the queue ahead of ordinary new-lead nudges.
+      if (l.cancelled && l.showed === "") {
+        queue.push({ lead: l, label: "Cancelled her call — win the slot back", kind: "Rebook", urgent: true });
+        continue;
+      }
       if (l.showed === "N") {
         if (ageMin < 14 * 1440) queue.push({ lead: l, label: "No-show — invite to rebook", kind: "Rebook", urgent: false });
         continue;
@@ -1066,11 +1085,11 @@ export default function AdminDashboard() {
             </p>
             {calStatus && (
               <p style={{ fontSize: 10.5, color: calStatus.error ? WARN : calStatus.matched > 0 ? GOOD : MUTED }}>
-                Cal links:{" "}
+                Cal sync:{" "}
                 {calStatus.error
                   ? `⚠ ${calStatus.error}`
-                  : calStatus.matched > 0
-                  ? `✓ ${calStatus.matched} matched (${calStatus.source}, ${calStatus.fetched} bookings)`
+                  : calStatus.matched > 0 || calStatus.cancelled > 0
+                  ? `✓ ${calStatus.matched} matched · ${calStatus.cancelled} cancelled (${calStatus.source}, ${calStatus.fetched} bookings)`
                   : `no upcoming bookings found (${calStatus.source})`}
                 {calStatus.error && calStatus.sample.length > 0 && (
                   <span style={{ color: MUTED }}> · fields: {calStatus.sample.join(", ")}</span>
@@ -1165,7 +1184,9 @@ export default function AdminDashboard() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 12 }}>
               {[
                 { label: "Leads", v: String(agg.total), sub: `last ${range === "all" ? "all time" : range + " days"}` },
-                { label: "Booked", v: agg.total ? `${Math.round((agg.booked / agg.total) * 100)}%` : "–", sub: `${agg.booked} of ${agg.total}` },
+                // Cancellations are called out here rather than silently removed:
+                // "6 of 43" hides the fact that 2 of them walked away.
+                { label: "Booked", v: agg.total ? `${Math.round((agg.booked / agg.total) * 100)}%` : "–", sub: agg.cancelled > 0 ? `${agg.booked} live · ${agg.cancelled} cancelled` : `${agg.booked} of ${agg.total}` },
                 { label: "Showed", v: agg.showed + agg.noshow > 0 ? `${Math.round((agg.showed / (agg.showed + agg.noshow)) * 100)}%` : "–", sub: agg.showed + agg.noshow > 0 ? `${agg.showed} showed · ${agg.noshow} no-show` : "mark calls below" },
                 { label: "Closed", v: String(agg.closedN), sub: agg.revenue > 0 ? `₹${agg.revenue.toLocaleString("en-IN")}` : "mark wins below" },
                 { label: "Avg Score", v: agg.avgScore ? String(agg.avgScore) : "–", sub: "lead quality /100" },
@@ -1396,7 +1417,7 @@ export default function AdminDashboard() {
             <div style={{ ...card, overflowX: "auto" }}>
               <p style={cardTitle}>Latest leads — tap to act</p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                {["All", "Best 75+", "New", "Booked", "No-show"].map((f) => (
+                {["All", "Best 75+", "New", "Booked", "Cancelled", "No-show"].map((f) => (
                   <button
                     key={f}
                     onClick={() => setLeadFilter(f)}
@@ -1423,8 +1444,11 @@ export default function AdminDashboard() {
                   {inRange
                     .filter((l) => {
                       if (leadFilter === "Best 75+") return (l.score ?? 0) >= 75;
-                      if (leadFilter === "New") return !l.booked && l.showed === "" && (l.closedAmt ?? 0) <= 0;
+                      // A cancelled lead has booked:false but is emphatically not
+                      // "New" — she is further down the funnel than a fresh lead.
+                      if (leadFilter === "New") return !l.booked && !l.cancelled && l.showed === "" && (l.closedAmt ?? 0) <= 0;
                       if (leadFilter === "Booked") return l.booked && l.showed === "";
+                      if (leadFilter === "Cancelled") return l.cancelled;
                       if (leadFilter === "No-show") return l.showed === "N";
                       return true;
                     })
@@ -1449,8 +1473,24 @@ export default function AdminDashboard() {
                           <span style={{ width: 8, height: 8, borderRadius: 2, display: "inline-block", background: SRC_COLORS[l.source === "fb" || l.source === "ig" ? l.source : "other"], marginRight: 5 }} />
                           {l.source || "—"}
                         </td>
-                        <td style={{ padding: "8px", whiteSpace: "nowrap", color: l.booked ? INK1 : MUTED }}>
-                          {l.booked ? l.sessionDate.replace(/ \d{4}/, "") : "not booked"}
+                        <td style={{ padding: "8px", whiteSpace: "nowrap", color: l.cancelled ? CRIT : l.booked ? INK1 : MUTED }}>
+                          {l.cancelled ? (
+                            <>
+                              <span style={{ fontWeight: 700, fontSize: 10.5, letterSpacing: "0.04em" }}>✕ CANCELLED</span>
+                              {l.sessionDate && (
+                                <>
+                                  <br />
+                                  <span style={{ fontSize: 10.5, color: MUTED, textDecoration: "line-through" }}>
+                                    {l.sessionDate.replace(/ \d{4}/, "")}
+                                  </span>
+                                </>
+                              )}
+                            </>
+                          ) : l.booked ? (
+                            l.sessionDate.replace(/ \d{4}/, "")
+                          ) : (
+                            "not booked"
+                          )}
                         </td>
                         <td style={{ padding: "8px", minWidth: 190 }}>
                           {l.booked && l.showed !== "Y" && l.showed !== "N" && (l.closedAmt ?? 0) <= 0 ? (
