@@ -15,7 +15,7 @@
  * OWNER only.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
+import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME } from "../_lib";
 
 export const dynamic = "force-dynamic";
 
@@ -48,10 +48,15 @@ export async function GET(req: NextRequest) {
 
   try {
     const { sheets, sheetId } = await getSheetsClient();
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A1:BG`,
-    });
+    // Same live Cal.com read the dashboard uses, so the brief never tells the
+    // coach to prepare for a call the attendee already cancelled.
+    const [res, cal] = await Promise.all([
+      sheets.spreadsheets.values.get({
+        spreadsheetId: sheetId,
+        range: `${SHEET_NAME}!A1:BG`,
+      }),
+      fetchCalBookingState(),
+    ]);
     const rows: string[][] = (res.data.values as string[][]) ?? [];
     const hdr = (rows[0] ?? []).map((h) => (h ?? "").trim());
     const col = (name: string, fallback: number) => {
@@ -61,6 +66,7 @@ export async function GET(req: NextRequest) {
     const C = {
       ts: 0,
       name: col("Name", 2),
+      email: col("Email", 4),
       bookingStatus: col("Booking Status", 18),
       sessionDate: col("Session Date", 19),
       commitment: col("Commitment (1-10)", 46),
@@ -75,7 +81,7 @@ export async function GET(req: NextRequest) {
     const today = istDayString(nowIst);
     const yesterday = istDayString(new Date(nowIst.getTime() - 86400000));
 
-    let yLeads = 0, yBooked = 0, unconfirmed = 0;
+    let yLeads = 0, yBooked = 0, unconfirmed = 0, cancelledOpen = 0;
     const todaySessions: { time: string; name: string; risk: string }[] = [];
 
     for (let i = 1; i < rows.length; i++) {
@@ -83,7 +89,12 @@ export async function GET(req: NextRequest) {
       const ts = cell(r, C.ts);
       if (!/^\d{4}-\d{2}-\d{2}T/.test(ts)) continue;
       const leadDayIst = istDayString(new Date(new Date(ts).getTime() + IST_OFFSET_MS));
-      const booked = cell(r, C.bookingStatus) === "Booked";
+      const emailKey = cell(r, C.email).toLowerCase();
+      const calCancelled = !!emailKey && cal.state.cancelled.has(emailKey);
+      const calActive = !!emailKey && cal.state.active.has(emailKey);
+      // Cal.com wins over the sheet, which only ever records "Booked".
+      const booked = calActive || (cell(r, C.bookingStatus) === "Booked" && !calCancelled);
+      if (calCancelled && !calActive && cell(r, C.showed) === "") cancelledOpen++;
       if (leadDayIst === yesterday) {
         yLeads++;
         if (booked) yBooked++;
@@ -123,6 +134,11 @@ export async function GET(req: NextRequest) {
         : `No sessions booked for today.`,
       ``,
       unconfirmed > 0 ? `ACTION: ${unconfirmed} recent lead(s) still waiting for their first WhatsApp.` : `All recent leads contacted.`,
+      // A paid lead with no call on the calendar is the most perishable thing
+      // in the funnel, so it gets its own line rather than hiding in a count.
+      ...(cancelledOpen > 0
+        ? [``, `ACTION: ${cancelledOpen} paid lead(s) cancelled and have NOT rebooked — win the slot back today.`]
+        : []),
       ``,
       `Dashboard: https://www.swapnilumbarkarfitness.in/admin`,
     ];
