@@ -11,7 +11,9 @@
  *
  * ENV VARS (Vercel):
  *   WHATSAPP_TOKEN            — permanent System User token, scopes
- *                               whatsapp_business_messaging + _management
+ *                               whatsapp_business_messaging + _management.
+ *                               WHATSAPP_ACCESS_TOKEN is accepted as an alias
+ *                               so either naming works; whichever is set wins.
  *   WHATSAPP_PHONE_NUMBER_ID  — 1187443147793855 (+91 79784 60386)
  *   WHATSAPP_TEMPLATE_LANG    — optional, defaults to "en". Meta stores some
  *                               templates as "en_US"; if sends fail with
@@ -24,6 +26,12 @@
  */
 
 const GRAPH_VERSION = 'v21.0'
+
+/** The brief specifies WHATSAPP_ACCESS_TOKEN; the first deploy shipped
+ *  WHATSAPP_TOKEN. Accept either so neither naming silently no-ops. */
+function readToken(): string | undefined {
+  return process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN
+}
 
 export type WhatsAppResult = {
   sent: boolean
@@ -48,7 +56,7 @@ export function toWhatsAppNumber(raw: string): string {
 }
 
 export function isWhatsAppConfigured(): boolean {
-  return !!(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID)
+  return !!(readToken() && process.env.WHATSAPP_PHONE_NUMBER_ID)
 }
 
 /**
@@ -67,7 +75,7 @@ export async function sendWhatsAppTemplate(
   templateName: string,
   bodyParams: string[] = [],
 ): Promise<WhatsAppResult> {
-  const token = process.env.WHATSAPP_TOKEN
+  const token = readToken()
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
   if (!token || !phoneNumberId) {
     return { sent: false, skipped: 'whatsapp_not_configured' }
@@ -154,4 +162,18 @@ export async function sendWhatsAppTemplate(
 export async function sendWelcomeLead(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(phone, 'welcome_lead', [firstName])
+}
+
+/**
+ * Sent the moment Cashfree confirms payment.
+ *
+ * This is the recovery path for the funnel's most expensive leak: half of the
+ * women who pay Rs299 never pick a call slot, so the money is spent and no
+ * consultation happens. booking_confirmation is UTILITY category — far cheaper
+ * than marketing and higher deliverability, because it follows an action she
+ * just took. Its button links straight to the Cal.com picker.
+ */
+export async function sendBookingConfirmation(phone: string, fullName: string): Promise<WhatsAppResult> {
+  const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
+  return sendWhatsAppTemplate(phone, 'booking_confirmation', [firstName])
 }

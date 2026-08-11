@@ -29,17 +29,33 @@ import {
   PLACEHOLDER_EMAIL,
 } from '@/lib/server-tracking'
 import crypto from 'crypto'
-import { google } from 'googleapis'
+import { writeLeadRow } from '@/lib/lead-sheet'
+import { sendBookingConfirmation } from '@/lib/whatsapp'
 
 const CASHFREE_SECRET = process.env.CASHFREE_WEBHOOK_SECRET || ''
-const LEADS_SHEET_NAME = 'Leads'
 
 // Best-effort in-memory idempotency guard — prevents double-processing within
 // the same serverless instance. Does not survive cold starts; the payment_status
 // check below is the durable guard for cross-instance duplicates.
 const processedOrders = new Set<string>()
 
-async function appendPaymentToSheet(data: {
+/**
+ * Record the payment ON THE LEAD'S EXISTING ROW.
+ *
+ * This used to append a brand-new row, which meant every paying customer
+ * appeared twice in the Leads sheet — once from the quiz, once from the
+ * webhook — with no link between them. That inflated the lead count, broke the
+ * booked-% denominator, and made "did this lead pay?" unanswerable per row.
+ *
+ * writeLeadRow() already does update-or-append keyed on the pinned Email
+ * column and refuses to touch the reserved Booking columns (17/18) owned by
+ * the Cal.com Make scenario, so payment reuses that proven path rather than
+ * hand-rolling a second writer.
+ *
+ * Status (col Q) is intentionally left alone: it is createOnly because a live
+ * lifecycle scenario filters on it, so payment lands in dedicated Paid columns.
+ */
+async function recordPaymentOnLeadRow(data: {
   orderId: string
   name: string
   phone: string
@@ -48,65 +64,32 @@ async function appendPaymentToSheet(data: {
   currency: string
   tags: Record<string, string>
 }) {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
-  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-  const sheetId = process.env.GOOGLE_SHEETS_ID
+  // The placeholder address is shared by every lead who paid without giving a
+  // real email, so matching on it would stamp one woman's payment onto an
+  // unrelated row. Better an honest orphan row than corrupted data.
+  const matchable = data.email && data.email !== PLACEHOLDER_EMAIL ? data.email : ''
 
-  console.log('[cashfree-webhook] Sheets env check:', {
-    hasEmail: !!email,
-    hasKey: !!key,
-    keyLength: key?.length ?? 0,
-    keyValid: key?.startsWith('-----BEGIN') ?? false,
-    hasSheetId: !!sheetId,
+  const result = await writeLeadRow({
+    email: matchable,
+    name: data.name,
+    phone: data.phone,
+    paid: 'Y',
+    paidAmount: String(data.amount),
+    paidOrderId: data.orderId,
+    // Only meaningful when no existing row matched and we append a fresh one.
+    ...(matchable ? {} : { status: `payment_received_orphan|${data.amount}${data.currency}` }),
+    ...(data.tags['visitor_id'] ? { visitor_id: data.tags['visitor_id'] } : {}),
+    ...(data.tags['utm_source'] ? { utm_source: data.tags['utm_source'] } : {}),
+    ...(data.tags['utm_medium'] ? { utm_medium: data.tags['utm_medium'] } : {}),
+    ...(data.tags['utm_campaign'] ? { utm_campaign: data.tags['utm_campaign'] } : {}),
   })
 
-  if (!email || !key || !sheetId) {
-    console.error('[cashfree-webhook] Missing Google Sheets env vars — cannot write row')
-    return
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: email,
-      private_key: key,
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  })
-
-  const sheets = google.sheets({ version: 'v4', auth })
-
-  // Row matches "Leads" tab column order:
-  // Timestamp | Lead ID | Name | Phone | Email | Age | Thyroid Condition |
-  // Weight Struggles | Energy Level | Biggest Frustration | Main Goal |
-  // UTM Source | UTM Medium | UTM Campaign | FBclid | Visitor ID | Status
-  const row = [
-    new Date().toISOString(),       // Timestamp
-    data.orderId,                   // Lead ID (order_id as proxy)
-    data.name,                      // Name
-    data.phone,                     // Phone
-    data.email,                     // Email
-    '',                             // Age
-    '',                             // Thyroid Condition
-    '',                             // Weight Struggles
-    '',                             // Energy Level
-    '',                             // Biggest Frustration
-    '',                             // Main Goal
-    data.tags['utm_source'] || '',  // UTM Source
-    data.tags['utm_medium'] || '',  // UTM Medium
-    data.tags['utm_campaign'] || '',// UTM Campaign
-    data.tags['fbc'] || '',         // FBclid
-    data.tags['visitor_id'] || '',  // Visitor ID
-    `payment_received|${data.amount}${data.currency}`, // Status
-  ]
-
-  const response = await sheets.spreadsheets.values.append({
-    spreadsheetId: sheetId,
-    range: `${LEADS_SHEET_NAME}!A1`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [row] },
-  })
-
-  console.log('[cashfree-webhook] Sheets append status:', response.status, response.data?.updates)
+  console.log(
+    `[cashfree-webhook] payment recorded order=${data.orderId} action=${result.action}` +
+      (result.rowNumber ? ` row=${result.rowNumber}` : '') +
+      (result.addedHeaders.length ? ` newColumns=${result.addedHeaders.join(',')}` : '') +
+      (matchable ? '' : ' (ORPHAN — no real email to match on)'),
+  )
 }
 
 // Cashfree signature: HMAC-SHA256(timestamp + rawBody), base64-encoded.
@@ -224,7 +207,7 @@ export async function POST(req: NextRequest) {
 
     // Write to Google Sheets — server-to-server, most reliable path
     try {
-      await appendPaymentToSheet({
+      await recordPaymentOnLeadRow({
         orderId: order.order_id,
         name: customer.customer_name,
         phone: customer.customer_phone,
@@ -233,10 +216,27 @@ export async function POST(req: NextRequest) {
         currency: order.order_currency || 'INR',
         tags,
       })
-      console.log('[cashfree-webhook] Sheets row written for order:', order.order_id)
     } catch (sheetsErr) {
       // Log but don't fail the webhook response — Cashfree must get 200
       console.error('[cashfree-webhook] Sheets write failed:', sheetsErr instanceof Error ? sheetsErr.message : String(sheetsErr))
+    }
+
+    // Half of everyone who pays never picks a call slot — the money is spent
+    // and no consultation happens. This template is the recovery path, and it
+    // has to go out while the payment confirmation is still on her screen.
+    //
+    // Deliberately after the CAPI + sheet work and never awaited into the
+    // response path: Cashfree must receive its 200 regardless, and a WhatsApp
+    // outage must never look like a failed payment notification.
+    try {
+      const waResult = await sendBookingConfirmation(customer.customer_phone, customer.customer_name)
+      console.log(
+        `[cashfree-webhook] booking_confirmation order=${order.order_id} sent=${waResult.sent}` +
+          (waResult.skipped ? ` skipped=${waResult.skipped}` : '') +
+          (waResult.error ? ` error=${waResult.error}` : ''),
+      )
+    } catch (waErr) {
+      console.error('[cashfree-webhook] booking_confirmation threw (swallowed):', waErr)
     }
 
     return NextResponse.json({ received: true, capi: result })
