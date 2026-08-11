@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/payment-reminder",
-      "schedule": "20 * * * *"
+      "schedule": "20 5 * * *"
     }
   ]
 }
