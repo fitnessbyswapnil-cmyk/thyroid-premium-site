@@ -68,6 +68,16 @@ export const LEAD_COLUMNS: LeadColumn[] = [
   { key: "leadScore", title: "Lead Score" },
   { key: "leadTier", title: "Lead Tier" },
   { key: "status", title: "Status", pin: PIN.status, createOnly: true },
+  // What she said she can invest, asked last in the quiz. This is the column
+  // follow-up should be sorted by — lead score measures symptom severity, not
+  // ability to buy the Rs20,000 programme.
+  { key: "budget", title: "Budget" },
+  // Payment state, deliberately NOT written into Status (col Q). Status is
+  // createOnly because a live Make lifecycle scenario filters on it being
+  // "lead_captured"; overwriting it would silently stop her email sequence.
+  { key: "paid", title: "Paid" },
+  { key: "paidAmount", title: "Paid Amount" },
+  { key: "paidOrderId", title: "Paid Order ID" },
 ];
 
 export type LeadFields = Record<string, string>;
