@@ -816,80 +816,94 @@ export default function QuizFunnel() {
   if (screen === "result") {
     const dialDash = 565.5 * (1 - dial / 100);
     const bars = [["Symptom Load", sc.symptomLoad], ["Approach Gap", sc.approachGap], ["Time Entrenched", sc.entrenched]] as [string, number][];
-    // The call DIAGNOSES; the 3-month program TREATS. Nothing in this stack may
-    // promise execution (a mapped-out plan she can self-implement) — that is the
-    // backend's job, and giving it away here is what kills the high-ticket close.
+    const lines = sc.blockerLines ?? [];
+    const COUNT_WORD = ["No", "One", "Two", "Three", "Four", "Five"];
+    const headline =
+      lines.length === 0
+        ? "Your answers point to a thyroid that is under-supported, not a body that won't respond."
+        : `${COUNT_WORD[lines.length] ?? lines.length} thing${lines.length > 1 ? "s are" : " is"} actively working against your thyroid right now.`;
+
+    // The call DIAGNOSES; the 12-week programme TREATS. Nothing here may promise
+    // a plan she could self-implement — macros, meal structures, supplement
+    // timing and weekly adjustments are the Rs20,000. Give the sequence away
+    // and there is nothing left to sell on the call.
     const stack = [
-      "Your Thyroid Score decoded live — the exact blocker explained",
-      "60-min private 1-on-1 with a thyroid-first coach",
-      "You'll see what your body needs to reverse this — and what it takes to get there",
-      `₹${SESSION_PRICE} reserves your slot — adjusted against your plan if you go ahead`,
+      `Your ${lines.length > 0 ? `${lines.length} blocker${lines.length > 1 ? "s" : ""}` : "results"} decoded live, in the order they need fixing`,
+      "Your thyroid reports read before we speak, not during",
+      "A written summary sent to your WhatsApp afterwards — yours to keep",
+      `₹${SESSION_PRICE}, credited in full against your plan if you go ahead`,
     ];
+
+    const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
+    const waHref = waNumber
+      ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Send me my ${lines.length || 3} blockers`)}`
+      : "";
+
     return (
       <main style={{ ...shell, padding: "24px 20px 100px" }}>
         <style>{KEYFRAMES}</style>
         <div style={{ maxWidth: 480, margin: "0 auto" }}>
           <p style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 700, marginBottom: 18 }}>
-            {firstName ? `${firstName.toUpperCase()} — YOUR THYROID SCORE` : "YOUR THYROID SCORE"}
+            {firstName ? `${firstName.toUpperCase()} — YOUR THYROID ASSESSMENT` : "YOUR THYROID ASSESSMENT"}
           </p>
-          {/* Score dial — number and caption absolutely centred inside the
-              ring (the negative-margin version overflowed the circle). */}
-          <div style={{ position: "relative", width: 220, height: 220, margin: "0 auto" }}>
-            <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)", display: "block" }}>
+
+          {/* THE BLOCKERS LEAD. The score used to sit here, and a reassuring
+              tier line under it read as "I'm fine" — 69% of leads never tapped
+              pay. What creates urgency is her own answers reflected back as
+              specific, named problems. */}
+          <h1 style={{ fontSize: "clamp(1.45rem,4.6vw,1.85rem)", fontFamily: "var(--font-display), Georgia, serif", fontWeight: 800, lineHeight: 1.25, textAlign: "center", marginBottom: lines.length ? 20 : 10 }}>
+            {headline}
+          </h1>
+
+          {lines.length > 0 && (
+            <div style={{ display: "grid", gap: 14, marginBottom: 24 }}>
+              {lines.map((t, i) => (
+                <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: PURPLE_L, flexShrink: 0, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <p style={{ fontSize: 14, color: INK1, lineHeight: 1.55 }}>{t}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Score demoted to a subtitle — smaller dial, below the problem. */}
+          <div style={{ position: "relative", width: 132, height: 132, margin: "0 auto" }}>
+            <svg width="132" height="132" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)", display: "block", width: "132px", height: "132px" }}>
               <circle cx="110" cy="110" r="90" fill="none" stroke={GRID} strokeWidth="14" />
               <circle cx="110" cy="110" r="90" fill="none" stroke={PURPLE} strokeWidth="14" strokeLinecap="round" strokeDasharray="565.5" strokeDashoffset={dialDash} />
             </svg>
             <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
               <div style={{ textAlign: "center" }}>
-                <p style={{ fontSize: 56, fontWeight: 800, lineHeight: 1, margin: 0 }}>{Math.round(dial)}</p>
-                <p style={{ fontSize: 12, color: MUTED, margin: "4px 0 0" }}>out of 100</p>
+                <p style={{ fontSize: 34, fontWeight: 800, lineHeight: 1, margin: 0 }}>{Math.round(dial)}</p>
+                <p style={{ fontSize: 10, color: MUTED, margin: "2px 0 0" }}>out of 100</p>
               </div>
             </div>
           </div>
-          <div style={{ textAlign: "center", marginTop: 14 }}>
-            <p style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.08em", color: PURPLE_L }}>
-              {sc.tierLabel}
-              {sc.blockers > 0 && (
-                <span style={{ color: WARN }}> · {sc.blockers} ACTIVE BLOCKER{sc.blockers > 1 ? "S" : ""}</span>
-              )}
-            </p>
-            <p style={{ fontSize: 13.5, color: INK2, lineHeight: 1.6, marginTop: 6, maxWidth: 380, marginLeft: "auto", marginRight: "auto" }}>
-              {sc.tierLine}
-              {sc.blockers > 0 && (
-                <>
-                  {" "}
-                  <span style={{ color: INK1, fontWeight: 600 }}>
-                    {`But ${sc.blockers} ${sc.blockers > 1 ? "things are" : "thing is"} actively working against your thyroid right now`} &mdash; and they compound the longer they run.
-                  </span>
-                </>
-              )}
-            </p>
-          </div>
-          <p style={{ textAlign: "center", fontSize: 12, color: MUTED, marginTop: 14, maxWidth: 360, marginLeft: "auto", marginRight: "auto", lineHeight: 1.5 }}>
-            This is your starting score. The full decode — exactly what&apos;s blocking YOU — happens on your Thyroid Consultation Call.
+          {/* The ONLY permitted framing. "Responds fast" / "clearly recoverable"
+              as standalone reassurance is what made her leave. Hope and
+              dependency have to arrive in the same sentence. */}
+          <p style={{ textAlign: "center", fontSize: 13.5, color: INK2, marginTop: 8 }}>
+            Thyroid Score {sc.total} / 100 — <span style={{ color: INK1, fontWeight: 600 }}>recoverable, but not on its own.</span>
           </p>
 
-          <div style={{ ...card, marginTop: 22, padding: 20, opacity: barsOn ? 1 : 0, transition: "opacity 500ms ease" }}>
+          <div style={{ height: 1, background: GRID, margin: "22px 0" }} />
+
+          <p style={{ fontSize: 14, color: INK1, lineHeight: 1.6, textAlign: "center" }}>
+            Each one is fixable. Together they compound — and the order you fix them in decides whether it works.{" "}
+            <span style={{ color: PURPLE_L, fontWeight: 600 }}>That sequence is what we map on your call.</span>
+          </p>
+
+          <div style={{ height: 1, background: GRID, margin: "22px 0" }} />
+
+          <div style={{ ...card, padding: 20, opacity: barsOn ? 1 : 0, transition: "opacity 500ms ease" }}>
             {bars.map(([label, v]) => <MicroBar key={label} label={label} val={v} />)}
           </div>
 
-          {sc.insights.length > 0 && (
-            <div style={{ ...card, marginTop: 14, padding: 20 }}>
-              <p style={{ fontSize: 11, letterSpacing: "0.1em", color: MUTED, textTransform: "uppercase", marginBottom: 12 }}>What Your Answers Reveal</p>
-              <div style={{ display: "grid", gap: 12 }}>
-                {sc.insights.map((t, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: PURPLE_L, flexShrink: 0 }}>{String(i + 1).padStart(2, "0")}</span>
-                    <p style={{ fontSize: 13, color: INK2, lineHeight: 1.55 }}>{t}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div style={{ marginTop: 22, borderRadius: 22, border: `1px solid ${GRID}`, background: `linear-gradient(160deg, rgba(168,85,247,0.10), ${CARD2})`, padding: 24 }}>
-            <p style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 800, marginBottom: 6 }}>Private 1-on-1 Thyroid Consultation Call</p>
-            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 14 }}>Decode your score on a private call &mdash; ₹{SESSION_PRICE}</h3>
+            <p style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 800, marginBottom: 6 }}>The 60-minute thyroid blocker call</p>
+            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 14 }}>₹{SESSION_PRICE}, credited against your plan</h3>
             <div style={{ display: "grid", gap: 9, marginBottom: 16 }}>
               {stack.map((t) => (
                 <div key={t} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
@@ -898,18 +912,39 @@ export default function QuizFunnel() {
                 </div>
               ))}
             </div>
+
+            {/* Risk reversal sits immediately above the button, where the
+                hesitation actually happens. */}
+            <p style={{ fontSize: 12.5, color: INK2, lineHeight: 1.55, fontStyle: "italic", borderLeft: `2px solid ${PURPLE}`, paddingLeft: 12, marginBottom: 16 }}>
+              &ldquo;If you finish the call and still don&apos;t know what&apos;s blocking you, tell me and I&apos;ll refund the ₹{SESSION_PRICE} — and you keep the written summary.&rdquo;
+            </p>
+
             <p style={{ fontSize: 11.5, color: MUTED, marginBottom: 14 }}>{SCARCITY_LINE}</p>
             <button
               onClick={payNow}
               disabled={payLoading}
               style={{ width: "100%", padding: "17px 0", borderRadius: 14, background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`, border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: payLoading ? "default" : "pointer", boxShadow: "0 14px 36px rgba(168,85,247,0.32)", opacity: payLoading ? 0.75 : 1 }}
             >
-              {payLoading ? "Opening secure checkout…" : `Pay ₹${SESSION_PRICE} & Decode My Score`}
+              {payLoading ? "Opening secure checkout…" : `Book My Call · ₹${SESSION_PRICE}`}
             </button>
             {payError && (
               <p style={{ fontSize: 12, color: "#f87171", textAlign: "center", marginTop: 10 }}>{payError}</p>
             )}
             <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>UPI, cards, net banking — secure checkout opens right here. Then pick your call time.</p>
+
+            {/* Quieter escape hatch. Safe to offer now that replies land in the
+                /admin inbox — before that, a tap here went nowhere. */}
+            {waHref && (
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => pushDL({ event: "wa_link_tapped", location: "result_secondary" })}
+                style={{ display: "block", textAlign: "center", marginTop: 14, fontSize: 12.5, color: MUTED, textDecoration: "none" }}
+              >
+                Not ready? Get my {lines.length || 3} blockers on WhatsApp →
+              </a>
+            )}
           </div>
 
           <button onClick={() => { Object.keys(timers.current).forEach(clearT); ringTargetRef.current = 0; setScreen("intro"); setQ(0); setAns(emptyAnswers()); setRingVal(0); setForm({ name: "", phone: "", email: "", city: "" }); window.scrollTo(0, 0); }}
@@ -926,7 +961,7 @@ export default function QuizFunnel() {
               <p style={{ fontSize: 10.5, color: MUTED }}>60 min · Private 1-on-1 · ₹{SESSION_PRICE}</p>
             </div>
             <button onClick={payNow} disabled={payLoading} style={{ padding: "11px 18px", borderRadius: 999, background: PURPLE, border: "none", color: "#fff", fontSize: 13, fontWeight: 800, cursor: payLoading ? "default" : "pointer", whiteSpace: "nowrap", opacity: payLoading ? 0.75 : 1 }}>
-              {payLoading ? "Opening…" : "Pay & Decode"}
+              {payLoading ? "Opening…" : `Book · ₹${SESSION_PRICE}`}
             </button>
           </div>
         )}
@@ -946,7 +981,7 @@ export default function QuizFunnel() {
     <div style={{ maxWidth: desktop ? 520 : 480, width: "100%" }}>
       <button onClick={back} style={{ background: "none", border: "none", color: MUTED, fontSize: 13, cursor: "pointer", marginBottom: 14, padding: 0 }}>← Back</button>
       <p style={{ fontSize: 10.5, letterSpacing: "0.12em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>SECTION {(si < 0 ? 0 : si) + 1} · {sec[2]}</p>
-      <p style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>Q{q + 1} · {11 - q - 1} to go</p>
+      <p style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>Q{q + 1} · {QS.length - q - 1} to go</p>
       <h2 key={q} style={{ fontSize: desktop ? 28 : 23, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", lineHeight: 1.25, marginBottom: 22, animation: "quizSlide 250ms cubic-bezier(.22,.61,.36,1) both" }}>
         {Q.t}
       </h2>
