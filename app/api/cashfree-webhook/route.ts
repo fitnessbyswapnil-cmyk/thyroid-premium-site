@@ -66,6 +66,8 @@ const processedOrders = new Set<string>()
  *
  * Never writes columns 17/18 — those belong to the Cal.com → Sheets scenario.
  */
+type PaymentRecordResult = 'updated' | 'already_paid' | 'orphan_appended' | 'failed'
+
 async function recordPaymentInSheet(data: {
   refId: string
   leadId: string
@@ -75,14 +77,14 @@ async function recordPaymentInSheet(data: {
   amount: number
   currency: string
   tags: Record<string, string>
-}) {
+}): Promise<PaymentRecordResult> {
   const svcEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
   const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
   const sheetId = process.env.GOOGLE_SHEETS_ID
 
   if (!svcEmail || !key || !sheetId) {
     console.error('[cashfree-webhook] Missing Google Sheets env vars — cannot record payment')
-    return
+    return 'failed'
   }
 
   const auth = new google.auth.GoogleAuth({
@@ -143,6 +145,20 @@ async function recordPaymentInSheet(data: {
   }
 
   if (rowNumber) {
+    // Durable duplicate guard: if this lead's row is already stamped Paid, a
+    // second webhook for the same payment (e.g. the gateway AND the link
+    // channel both firing) must not re-send Purchase to Meta.
+    const paidIndex = plan.indexes['Paid']
+    const existing = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: `${LEADS_SHEET_NAME}!${rowNumber}:${rowNumber}`,
+    })
+    const existingRow = (existing.data.values?.[0] ?? []).map((c) => String(c ?? ''))
+    if ((existingRow[paidIndex] ?? '').trim().toUpperCase() === 'Y') {
+      console.log(`[cashfree-webhook] Lead row ${rowNumber} already marked Paid — not re-recording (ref=${data.refId})`)
+      return 'already_paid'
+    }
+
     const cells: { index: number; value: string }[] = [
       { index: STATUS_COLUMN, value: statusValue },
       ...PAID_COLS.map((t) => ({ index: plan.indexes[t], value: paidCells[t] })),
@@ -159,7 +175,7 @@ async function recordPaymentInSheet(data: {
       },
     })
     console.log(`[cashfree-webhook] Payment recorded on existing lead row ${rowNumber} (ref=${data.refId})`)
-    return
+    return 'updated'
   }
 
   // No matching lead — append, clearly marked, so it is visible rather than lost.
@@ -185,6 +201,7 @@ async function recordPaymentInSheet(data: {
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },
   })
+  return 'orphan_appended'
 }
 
 // Cashfree signature: HMAC-SHA256(timestamp + rawBody), base64-encoded.
@@ -238,7 +255,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (!payment) {
-      console.log(`[cashfree-webhook] ${source} event with status "${status || 'n/a'}" — no action`)
+      // Log the FULL body, not a summary. Cashfree's Payment Form payload shape
+      // is still unobserved in production, and a summary line can never reveal
+      // it — which is exactly how it stayed unknown through two registrations.
+      console.log(
+        `[cashfree-webhook] ${source} event, status "${status || 'n/a'}" — no action. Body: ` +
+          JSON.stringify(body).slice(0, 4000),
+      )
       return NextResponse.json({ ok: true, source, status, skipped: true })
     }
 
@@ -292,6 +315,34 @@ export async function POST(req: NextRequest) {
       country: 'in',
     })
 
+    // Record in the sheet FIRST. The in-memory guard above dies on cold start,
+    // and now that the Payment Link and Payment Form channels are registered
+    // alongside the gateway, one payment could arrive twice with two different
+    // reference ids (order_id AND link_id) — which the ref-keyed guard cannot
+    // catch. A lead row already stamped Paid is the durable guard, and it is
+    // the difference between accurate Purchase counts in Meta and inflated ones.
+    let sheetResult: PaymentRecordResult = 'failed'
+    try {
+      sheetResult = await recordPaymentInSheet({
+        refId: payment.refId,
+        leadId,
+        name: payment.name,
+        phone: payment.phone,
+        email: payment.email,
+        amount: payment.amount,
+        currency: payment.currency,
+        tags,
+      })
+    } catch (sheetsErr) {
+      // Fail OPEN: a Sheets outage must never cost us a Purchase event.
+      console.error('[cashfree-webhook] Sheets payment record failed:', sheetsErr instanceof Error ? sheetsErr.message : String(sheetsErr))
+    }
+
+    if (sheetResult === 'already_paid') {
+      console.log(`[cashfree-webhook] ${source} ${payment.refId} — lead already marked paid, skipping Purchase CAPI`)
+      return NextResponse.json({ ok: true, duplicate: true, source, leadId })
+    }
+
     // event_id stays keyed on the reference so the browser Purchase leg
     // deduplicates against it exactly as it does today.
     const eventId = `Purchase_${payment.refId}`
@@ -310,26 +361,9 @@ export async function POST(req: NextRequest) {
       testCode: process.env.META_TEST_EVENT_CODE,
     })
 
-    console.log(`[cashfree-webhook] ${source} Purchase CAPI result:`, result)
+    console.log(`[cashfree-webhook] ${source} Purchase CAPI result:`, result, `sheet=${sheetResult}`)
 
-    // Write to Google Sheets — server-to-server, most reliable path
-    try {
-      await recordPaymentInSheet({
-        refId: payment.refId,
-        leadId,
-        name: payment.name,
-        phone: payment.phone,
-        email: payment.email,
-        amount: payment.amount,
-        currency: payment.currency,
-        tags,
-      })
-    } catch (sheetsErr) {
-      // Log but don't fail the webhook response — Cashfree must get 200
-      console.error('[cashfree-webhook] Sheets payment record failed:', sheetsErr instanceof Error ? sheetsErr.message : String(sheetsErr))
-    }
-
-    return NextResponse.json({ received: true, source, leadId, capi: result })
+    return NextResponse.json({ received: true, source, leadId, sheet: sheetResult, capi: result })
   } catch (err) {
     // Last-resort net. Deliberately 200: a 500 blocks Cashfree registration and
     // triggers retry storms. The log is the alert.
