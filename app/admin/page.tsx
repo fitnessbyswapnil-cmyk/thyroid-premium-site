@@ -33,6 +33,9 @@ type Lead = {
   amountSpent: string;
   triedBefore: string;
   challenge: string;
+  budget: string;
+  paid: boolean;
+  paidAmount: number | null;
   score: number | null;
   showed: string;
   closedAmt: number | null;
@@ -170,6 +173,21 @@ const DEFAULT_PROOF = {
   url: `${SITE}/#transformations-heading`,
   line: "A few real client transformations — this is what's possible:",
 };
+
+// She picks a bracket, not a number, so rank by intent: 3 = can fund the
+// Rs20,000 outright. Lead score measures symptom severity — this is the column
+// follow-up should actually be worked in order of.
+function budgetRank(b: string): number {
+  const t = (b || "").toLowerCase();
+  if (t.includes("20,000 or more") || t.includes("20000 or more")) return 3;
+  if (t.includes("10,000") && t.includes("20,000")) return 2;
+  if (t.includes("under")) return 1;
+  return 0; // "I'd want to see the plan first" — undecided, not unable
+}
+function budgetShort(b: string): string {
+  const r = budgetRank(b);
+  return r === 3 ? "₹20k+" : r === 2 ? "₹10–20k" : r === 1 ? "<₹10k" : "Plan first";
+}
 
 function pickProof(l: Lead) {
   const c = l.challenge.toLowerCase();
@@ -1417,7 +1435,7 @@ export default function AdminDashboard() {
             <div style={{ ...card, overflowX: "auto" }}>
               <p style={cardTitle}>Latest leads — tap to act</p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                {["All", "Best 75+", "New", "Booked", "Cancelled", "No-show"].map((f) => (
+                {["All", "₹20k ready", "Best 75+", "New", "Booked", "Cancelled", "No-show"].map((f) => (
                   <button
                     key={f}
                     onClick={() => setLeadFilter(f)}
@@ -1435,7 +1453,7 @@ export default function AdminDashboard() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, minWidth: 640 }}>
                 <thead>
                   <tr style={{ color: MUTED, textAlign: "left" }}>
-                    {["When", "Name", "Score", "Src", "Session", "Contact", "Outcome"].map((h) => (
+                    {["When", "Name", "Score", "Budget", "Src", "Session", "Contact", "Outcome"].map((h) => (
                       <th key={h} style={{ padding: "6px 8px", fontWeight: 600, fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: `1px solid ${GRID}` }}>{h}</th>
                     ))}
                   </tr>
@@ -1443,6 +1461,9 @@ export default function AdminDashboard() {
                 <tbody>
                   {inRange
                     .filter((l) => {
+                      // Sorting follow-up by who can actually fund the programme
+                      // is the whole point of asking the budget question.
+                      if (leadFilter === "₹20k ready") return budgetRank(l.budget) === 3;
                       if (leadFilter === "Best 75+") return (l.score ?? 0) >= 75;
                       // A cancelled lead has booked:false but is emphatically not
                       // "New" — she is further down the funnel than a fresh lead.
@@ -1468,6 +1489,18 @@ export default function AdminDashboard() {
                         <td style={{ padding: "8px" }}>
                           <span style={{ color: scColor, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{l.score ?? "–"}</span>
                           <span style={{ fontSize: 10, color: MUTED }}> {l.tier}</span>
+                        </td>
+                        <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
+                          {l.budget ? (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: budgetRank(l.budget) === 3 ? GOOD : budgetRank(l.budget) === 2 ? WARN : MUTED }}>
+                              {budgetShort(l.budget)}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: MUTED }}>—</span>
+                          )}
+                          {l.paid && (
+                            <><br /><span style={{ fontSize: 10, fontWeight: 700, color: GOOD }}>PAID{l.paidAmount ? ` ₹${l.paidAmount}` : ""}</span></>
+                          )}
                         </td>
                         <td style={{ padding: "8px" }}>
                           <span style={{ width: 8, height: 8, borderRadius: 2, display: "inline-block", background: SRC_COLORS[l.source === "fb" || l.source === "ig" ? l.source : "other"], marginRight: 5 }} />
