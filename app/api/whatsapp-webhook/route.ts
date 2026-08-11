@@ -17,9 +17,62 @@
  * protect one bad row is a terrible trade.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { appendMessage } from "@/lib/wa-messages";
+import { appendMessage, readMessages } from "@/lib/wa-messages";
+import { sendWhatsAppText } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Her inbound message opens a 24-hour window in which replies need no template,
+ * no Meta approval and cost nothing. Until now that window opened and nobody
+ * was watching it — the message landed in the sheet and waited for a human.
+ *
+ * DORMANT BY DEFAULT. Nothing is auto-sent unless WHATSAPP_AUTOREPLY holds the
+ * text to send, so this deploys with no behaviour change and is switched on by
+ * setting one env var. WHATSAPP_AUTOREPLY_COOLDOWN_HOURS (default 12) stops it
+ * interrupting a conversation you are already having with her.
+ */
+const AUTOREPLY_DEFAULT_COOLDOWN_HOURS = 12;
+
+async function maybeAutoReply(phone: string): Promise<void> {
+  const text = (process.env.WHATSAPP_AUTOREPLY || "").trim();
+  if (!text) return; // feature off — the common case, and the cheap one
+
+  const cooldownHours = Number(process.env.WHATSAPP_AUTOREPLY_COOLDOWN_HOURS) || AUTOREPLY_DEFAULT_COOLDOWN_HOURS;
+  const cutoff = Date.now() - cooldownHours * 3600000;
+
+  // If anything has already gone out to her recently — an auto-reply, or you
+  // typing in the admin inbox — say nothing. A bot talking over a live
+  // conversation is worse than no bot.
+  const history = await readMessages();
+  const digits = phone.replace(/\D/g, "").slice(-10);
+  const repliedRecently = history.some(
+    (m) =>
+      m.direction === "out" &&
+      m.phone.slice(-10) === digits &&
+      (Date.parse(m.ts) || 0) > cutoff,
+  );
+  if (repliedRecently) {
+    console.log(`[wa-webhook] auto-reply skipped for ***${digits.slice(-4)} — already replied within ${cooldownHours}h`);
+    return;
+  }
+
+  const result = await sendWhatsAppText(phone, text);
+  if (!result.sent) {
+    console.error(`[wa-webhook] auto-reply failed for ***${digits.slice(-4)}: ${result.error || result.skipped}`);
+    return;
+  }
+  await appendMessage({
+    ts: new Date().toISOString(),
+    phone: phone.replace(/\D/g, ""),
+    direction: "out",
+    text,
+    messageId: result.messageId ?? "",
+    name: "",
+    read: true,
+  });
+  console.log(`[wa-webhook] auto-replied to ***${digits.slice(-4)}`);
+}
 
 /** Meta's one-time subscription handshake: echo hub.challenge if the token matches. */
 export async function GET(req: NextRequest) {
@@ -92,6 +145,15 @@ export async function POST(req: NextRequest) {
           const text = describe(m);
           await appendMessage({ ts, phone, direction: "in", text, messageId: m.id ?? "", name });
           console.log(`[wa-webhook] inbound from ***${phone.slice(-4)} (${name || "unknown"}): ${text.slice(0, 80)}`);
+
+          // Isolated: storing her message is the job that must not fail. An
+          // auto-reply is a bonus, and a Meta hiccup on the way out must never
+          // cost us the inbound record we just wrote.
+          try {
+            await maybeAutoReply(phone);
+          } catch (replyErr) {
+            console.error("[wa-webhook] auto-reply threw (swallowed):", replyErr instanceof Error ? replyErr.message : String(replyErr));
+          }
         }
       }
     }
