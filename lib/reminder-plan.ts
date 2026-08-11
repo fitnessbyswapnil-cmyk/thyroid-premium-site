@@ -37,6 +37,9 @@ export type ReminderSkips = {
   tooOld: number;
   noPhone: number;
   unparseableTime: number;
+  /** Another row carries the same phone number and was paid, already reminded,
+   *  or already picked in this batch. One woman, one message. */
+  duplicatePhone: number;
   overCap: number;
 };
 
@@ -60,6 +63,17 @@ export const DEFAULT_LIMIT = 25;
 
 const cell = (row: string[], i: number): string =>
   i < 0 ? "" : String(row?.[i] ?? "").trim();
+
+/**
+ * Identity key for a person. The same woman appears as 9876543210,
+ * 919876543210, +91 98765 43210 and "9876543210.0" depending on which part of
+ * the funnel wrote the row, so compare the last ten digits and nothing else.
+ * Returns "" when there aren't ten digits to compare.
+ */
+export function phoneKey(raw: string): string {
+  const d = String(raw ?? "").replace(/\.0$/, "").replace(/\D/g, "");
+  return d.length >= 10 ? d.slice(-10) : "";
+}
 
 /**
  * Sheets is not disciplined about time. The funnel writes an ISO string, but a
@@ -122,8 +136,28 @@ export function planReminders(opts: {
     tooOld: 0,
     noPhone: 0,
     unparseableTime: 0,
+    duplicatePhone: 0,
     overCap: 0,
   };
+
+  // One woman can occupy several rows — she retook the quiz, or the funnel
+  // wrote a partial row first. The sheet's unit is a row; hers is a phone
+  // number. Deduplicating only within this batch is not enough: if she has
+  // three rows and we message and stamp one, the other two stay unstamped and
+  // she gets nudged again on every future run. So a phone that is settled on
+  // ANY row — paid, or already reminded — disqualifies all of her rows.
+  const settledPhones = new Set<string>();
+  for (const r of rows) {
+    const p = phoneKey(cell(r ?? [], cols.phone));
+    if (!p) continue;
+    const isPaid = cell(r ?? [], cols.paid).toUpperCase() === "Y";
+    const isReminded = !!cell(r ?? [], cols.reminderSent);
+    if (isPaid || isReminded) settledPhones.add(p);
+  }
+
+  // Phones picked so far in this run, so three rows for one woman yield one
+  // message rather than three.
+  const claimedPhones = new Set<string>();
 
   const eligible: ReminderCandidate[] = [];
 
@@ -145,6 +179,12 @@ export function planReminders(opts: {
     const phone = cell(row, cols.phone).replace(/\.0$/, "").replace(/\D/g, "");
     if (phone.length < 10) {
       skipped.noPhone++;
+      continue;
+    }
+
+    // She may be settled on a different row than this one.
+    if (settledPhones.has(phoneKey(phone))) {
+      skipped.duplicatePhone++;
       continue;
     }
 
@@ -176,8 +216,21 @@ export function planReminders(opts: {
   // one who still gets reached.
   eligible.sort((a, b) => b.ageMinutes - a.ageMinutes);
 
-  const candidates = eligible.slice(0, limit);
-  skipped.overCap = eligible.length - candidates.length;
+  // Collapse her remaining rows AFTER the sort, so the row we keep is her
+  // oldest one — the closest to falling out of the window.
+  const unique: ReminderCandidate[] = [];
+  for (const c of eligible) {
+    const key = phoneKey(c.phone);
+    if (claimedPhones.has(key)) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+    claimedPhones.add(key);
+    unique.push(c);
+  }
+
+  const candidates = unique.slice(0, limit);
+  skipped.overCap = unique.length - candidates.length;
 
   return { candidates, skipped, scanned: rows.length };
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planReminders, parseSheetTime, firstNameOf, type ReminderColumns } from "./reminder-plan.ts";
+import { planReminders, parseSheetTime, firstNameOf, phoneKey, type ReminderColumns } from "./reminder-plan.ts";
 
 const COLS: ReminderColumns = { timestamp: 0, name: 2, phone: 3, paid: 40, reminderSent: 44 };
 
@@ -84,10 +84,11 @@ test("an unreadable timestamp is counted, not silently dropped", () => {
 // ── the cap ──────────────────────────────────────────────────────────────────
 
 test("the cap bounds a run and reaches the oldest leads first", () => {
+  // Distinct phones — three different women, not one woman on three rows.
   const rows = [
-    row({ ts: agoMin(60), name: "Newest" }),
-    row({ ts: agoMin(600), name: "Oldest" }),
-    row({ ts: agoMin(300), name: "Middle" }),
+    row({ ts: agoMin(60), name: "Newest", phone: "9000000001" }),
+    row({ ts: agoMin(600), name: "Oldest", phone: "9000000002" }),
+    row({ ts: agoMin(300), name: "Middle", phone: "9000000003" }),
   ];
   const plan = planReminders({ rows, cols: COLS, now: NOW, limit: 2 });
   assert.deepEqual(plan.candidates.map((c) => c.name), ["Oldest", "Middle"]);
@@ -113,6 +114,81 @@ test("a missing column index (-1) is treated as empty, not as a crash", () => {
   const cols: ReminderColumns = { ...COLS, reminderSent: -1 };
   const plan = planReminders({ rows: [row({})], cols, now: NOW });
   assert.equal(plan.candidates.length, 1, "no reminder column yet == nobody reminded yet");
+});
+
+// ── one woman, one message ───────────────────────────────────────────────────
+// Observed live: rows 202/203/204 were all Rashmi on ***5199. Without this she
+// receives three identical reminders, and because only the sent row is stamped
+// the other two stay eligible and nudge her again the next day.
+
+test("three rows for the same phone produce ONE message", () => {
+  const rows = [
+    row({ ts: agoMin(475), name: "Rashmi", phone: "9876545199" }),
+    row({ ts: agoMin(473), name: "Rashmi Sahu", phone: "919876545199" }),
+    row({ ts: agoMin(454), name: "Rashmi Sahu", phone: "+91 98765 45199" }),
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates.length, 1);
+  assert.equal(plan.skipped.duplicatePhone, 2);
+});
+
+test("the row kept is her OLDEST — closest to falling out of the window", () => {
+  const rows = [
+    row({ ts: agoMin(200), name: "newer", phone: "9876545199" }),
+    row({ ts: agoMin(853), name: "older", phone: "9876545199" }),
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates[0].name, "older");
+});
+
+test("a phone already PAID on another row disqualifies her other rows", () => {
+  const rows = [
+    row({ ts: agoMin(90), phone: "9876545199", paid: "Y" }),
+    row({ ts: agoMin(90), phone: "9876545199" }),
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates.length, 0, "never ask a payer to pay again");
+  assert.equal(plan.skipped.duplicatePhone, 1);
+});
+
+test("a phone already REMINDED on another row is not reminded again tomorrow", () => {
+  const rows = [
+    row({ ts: agoMin(90), phone: "9876545199", reminded: "Y" }),
+    row({ ts: agoMin(90), phone: "9876545199" }),
+    row({ ts: agoMin(90), phone: "9876545199" }),
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates.length, 0);
+});
+
+test("different women are not collapsed together", () => {
+  const rows = [
+    row({ ts: agoMin(90), name: "Pinky", phone: "9876543203" }),
+    row({ ts: agoMin(90), name: "Rashmi", phone: "9876545199" }),
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates.length, 2);
+  assert.equal(plan.skipped.duplicatePhone, 0);
+});
+
+test("the cap counts people, not rows", () => {
+  const rows = [
+    row({ ts: agoMin(500), name: "A", phone: "9000000001" }),
+    row({ ts: agoMin(499), name: "A dup", phone: "9000000001" }),
+    row({ ts: agoMin(400), name: "B", phone: "9000000002" }),
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW, limit: 2 });
+  assert.deepEqual(plan.candidates.map((c) => c.name), ["A", "B"]);
+  assert.equal(plan.skipped.overCap, 0, "the duplicate must not consume a slot");
+});
+
+test("phoneKey normalises every format the sheet produces", () => {
+  assert.equal(phoneKey("9876545199"), "9876545199");
+  assert.equal(phoneKey("919876545199"), "9876545199");
+  assert.equal(phoneKey("+91 98765 45199"), "9876545199");
+  assert.equal(phoneKey("9876545199.0"), "9876545199");
+  assert.equal(phoneKey("12345"), "");
+  assert.equal(phoneKey(""), "");
 });
 
 // ── time parsing ─────────────────────────────────────────────────────────────
