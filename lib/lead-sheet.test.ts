@@ -4,7 +4,14 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { planLeadWrite, colLetter, type LeadFields } from "./lead-sheet.ts";
+import {
+  planLeadWrite,
+  colLetter,
+  findLeadRowNumber,
+  planPaymentColumns,
+  RESERVED_INDEXES,
+  type LeadFields,
+} from "./lead-sheet.ts";
 
 // A realistic live header: every canonical column present, R/S reserved for
 // booking, a lifecycle "Welcomed" flag at the end.
@@ -161,4 +168,83 @@ test("colLetter maps indexes to A1 letters", () => {
   assert.equal(colLetter(16), "Q");
   assert.equal(colLetter(17), "R");
   assert.equal(colLetter(26), "AA");
+});
+
+// ── Payment → lead row matching ───────────────────────────────────────────────
+// A payment must UPDATE the lead's row. Appending produced two unlinked rows per
+// paying customer and made "who actually paid" unanswerable.
+
+const LEAD_IDS = ["Lead ID", "quiz_1_a", "quiz_2_b", "quiz_3_c"];
+const PHONES = ["Phone", "9876543210.0", "9998887776", ""];
+const EMAILS = ["Email", "meenal@example.com", "noreply@swapnilumbarkarfitness.in", "kavya@example.com"];
+
+test("findLeadRowNumber matches on Lead ID first", () => {
+  const row = findLeadRowNumber({
+    leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS,
+    leadId: "quiz_2_b", phone: "9876543210", email: "meenal@example.com",
+  });
+  // Lead ID must win over the phone/email that point at a different row
+  assert.equal(row, 3);
+});
+
+test("findLeadRowNumber falls back to phone, ignoring sheet float formatting", () => {
+  const row = findLeadRowNumber({
+    leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS,
+    leadId: "", phone: "+91 98765 43210",
+  });
+  assert.equal(row, 2, "9876543210.0 in the sheet must match +91 98765 43210");
+});
+
+test("findLeadRowNumber falls back to email last", () => {
+  const row = findLeadRowNumber({
+    leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS,
+    email: "kavya@example.com",
+  });
+  assert.equal(row, 4);
+});
+
+test("findLeadRowNumber never matches on the placeholder email", () => {
+  const row = findLeadRowNumber({
+    leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS,
+    email: "noreply@swapnilumbarkarfitness.in",
+    placeholderEmail: "noreply@swapnilumbarkarfitness.in",
+  });
+  assert.equal(row, undefined, "the shared placeholder must not attach a payment to a random lead");
+});
+
+test("findLeadRowNumber returns undefined when nothing matches", () => {
+  assert.equal(
+    findLeadRowNumber({ leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS, leadId: "nope", phone: "1112223334" }),
+    undefined,
+  );
+});
+
+test("findLeadRowNumber never matches the header row", () => {
+  assert.equal(findLeadRowNumber({ leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS, leadId: "Lead ID" }), undefined);
+  assert.equal(findLeadRowNumber({ leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS, email: "Email" }), undefined);
+});
+
+test("planPaymentColumns appends missing headers past the reserved booking columns", () => {
+  const header = Array.from({ length: 19 }, (_, i) => `Col${i}`);
+  const plan = planPaymentColumns(header, ["Paid", "Paid Amount"]);
+  assert.equal(plan.indexes["Paid"], 19);
+  assert.equal(plan.indexes["Paid Amount"], 20);
+  assert.equal(plan.newHeaders.length, 2);
+  for (const t of ["Paid", "Paid Amount"]) {
+    assert.ok(!RESERVED_INDEXES.has(plan.indexes[t]), `${t} must never land on 17/18`);
+  }
+});
+
+test("planPaymentColumns reuses an existing column instead of duplicating it", () => {
+  const header = [...Array.from({ length: 19 }, (_, i) => `Col${i}`), "Paid"];
+  const plan = planPaymentColumns(header, ["Paid"]);
+  assert.equal(plan.indexes["Paid"], 19);
+  assert.equal(plan.newHeaders.length, 0);
+});
+
+test("planPaymentColumns re-appends rather than writing a reserved column", () => {
+  const header = Array.from({ length: 19 }, (_, i) => (i === 17 ? "Paid" : `Col${i}`));
+  const plan = planPaymentColumns(header, ["Paid"]);
+  assert.notEqual(plan.indexes["Paid"], 17);
+  assert.ok(!RESERVED_INDEXES.has(plan.indexes["Paid"]));
 });

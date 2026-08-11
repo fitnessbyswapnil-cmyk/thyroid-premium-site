@@ -163,6 +163,94 @@ export function planLeadWrite(opts: {
   return { action: "append", newHeaders, header, appendRow };
 }
 
+// ── Payment → existing lead row matching ────────────────────────────────────────
+// A payment must UPDATE the lead's row, never append a second one. Appending
+// created two unlinked rows per paying customer, inflated the lead count, and
+// left the dashboard with no way to show who had actually paid.
+
+/** Columns the matcher searches, as laid out in the live Leads sheet. */
+export const MATCH_COLUMNS = { leadId: 1, phone: 3, email: 4 } as const;
+
+/** Indian mobiles arrive variously as 9876543210 / 919876543210 / +91 98765 43210
+ *  and the sheet returns them as "9876543210.0". Compare the last 10 digits. */
+function last10(v: string): string {
+  return String(v ?? "").replace(/\.0$/, "").replace(/\D/g, "").slice(-10);
+}
+
+/**
+ * PURE — given the Lead ID / Phone / Email columns (index 0 = header row),
+ * return the 1-based row number of the lead this payment belongs to.
+ *
+ * Match order is strongest-signal-first: an exact Lead ID beats a phone match,
+ * which beats an email match. Email is last because the funnel writes a shared
+ * placeholder address when a real one isn't supplied — matching on it first
+ * would attach payments to whichever lead happened to be earliest.
+ */
+export function findLeadRowNumber(opts: {
+  leadIds?: string[];
+  phones?: string[];
+  emails?: string[];
+  leadId?: string;
+  phone?: string;
+  email?: string;
+  placeholderEmail?: string;
+}): number | undefined {
+  const { leadIds = [], phones = [], emails = [] } = opts;
+
+  const wantLeadId = (opts.leadId ?? "").trim();
+  if (wantLeadId) {
+    for (let i = 1; i < leadIds.length; i++) {
+      if (String(leadIds[i] ?? "").trim() === wantLeadId) return i + 1;
+    }
+  }
+
+  const wantPhone = last10(opts.phone ?? "");
+  if (wantPhone.length === 10) {
+    for (let i = 1; i < phones.length; i++) {
+      if (last10(String(phones[i] ?? "")) === wantPhone) return i + 1;
+    }
+  }
+
+  const wantEmail = norm(opts.email ?? "");
+  const placeholder = norm(opts.placeholderEmail ?? "");
+  if (wantEmail && wantEmail !== placeholder) {
+    for (let i = 1; i < emails.length; i++) {
+      if (norm(String(emails[i] ?? "")) === wantEmail) return i + 1;
+    }
+  }
+
+  return undefined;
+}
+
+/** PURE — resolve (appending if absent) the columns a payment writes.
+ *  Never targets a reserved booking column. */
+export function planPaymentColumns(header: string[], titles: string[]): {
+  header: string[];
+  indexes: Record<string, number>;
+  newHeaders: { index: number; title: string }[];
+} {
+  const out = [...header];
+  const index = new Map<string, number>();
+  out.forEach((h, i) => index.set(norm(String(h ?? "")), i));
+
+  const indexes: Record<string, number> = {};
+  const newHeaders: { index: number; title: string }[] = [];
+
+  for (const title of titles) {
+    const found = index.get(norm(title));
+    if (found != null && !RESERVED_INDEXES.has(found)) {
+      indexes[title] = found;
+    } else {
+      const i = out.length;
+      out.push(title);
+      index.set(norm(title), i);
+      newHeaders.push({ index: i, title });
+      indexes[title] = i;
+    }
+  }
+  return { header: out, indexes, newHeaders };
+}
+
 // ── 0-based column index → A1 letters ───────────────────────────────────────────
 export function colLetter(index: number): string {
   let n = index + 1;

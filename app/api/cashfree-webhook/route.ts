@@ -30,6 +30,13 @@ import {
 } from '@/lib/server-tracking'
 import crypto from 'crypto'
 import { normalize, parseLeadId, type Json } from '@/lib/cashfree-payload'
+import {
+  colLetter,
+  findLeadRowNumber,
+  planPaymentColumns,
+  MATCH_COLUMNS,
+  RESERVED_INDEXES,
+} from '@/lib/lead-sheet'
 import { google } from 'googleapis'
 
 const CASHFREE_SECRET = process.env.CASHFREE_WEBHOOK_SECRET || ''
@@ -38,14 +45,30 @@ const CASHFREE_SECRET = process.env.CASHFREE_WEBHOOK_SECRET || ''
 // to the gateway secret when unset so nothing breaks before the others are added.
 const CASHFREE_LINK_SECRET = process.env.CASHFREE_LINK_WEBHOOK_SECRET || CASHFREE_SECRET
 const LEADS_SHEET_NAME = 'Leads'
+// Status lives at column Q (16) — the lifecycle automations match it by index.
+const STATUS_COLUMN = 16
 
 // Best-effort in-memory idempotency guard — prevents double-processing within
 // the same serverless instance. Does not survive cold starts; the payment_status
 // check below is the durable guard for cross-instance duplicates.
 const processedOrders = new Set<string>()
 
-async function appendPaymentToSheet(data: {
-  orderId: string
+/**
+ * Record a payment against the lead's EXISTING row.
+ *
+ * This used to append a brand-new row, which produced two unlinked rows per
+ * paying customer: the quiz lead, and a payment row keyed by order_id. The
+ * dashboard counted both as leads and had no per-lead way to show who paid.
+ *
+ * Now: locate the lead by Lead ID → phone → email, update Status in place, and
+ * stamp Paid / Paid Amount / Paid At. Only appends when no lead can be matched,
+ * and marks that row as orphaned so it is obvious in the sheet.
+ *
+ * Never writes columns 17/18 — those belong to the Cal.com → Sheets scenario.
+ */
+async function recordPaymentInSheet(data: {
+  refId: string
+  leadId: string
   name: string
   phone: string
   email: string
@@ -53,65 +76,115 @@ async function appendPaymentToSheet(data: {
   currency: string
   tags: Record<string, string>
 }) {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
+  const svcEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
   const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
   const sheetId = process.env.GOOGLE_SHEETS_ID
 
-  console.log('[cashfree-webhook] Sheets env check:', {
-    hasEmail: !!email,
-    hasKey: !!key,
-    keyLength: key?.length ?? 0,
-    keyValid: key?.startsWith('-----BEGIN') ?? false,
-    hasSheetId: !!sheetId,
-  })
-
-  if (!email || !key || !sheetId) {
-    console.error('[cashfree-webhook] Missing Google Sheets env vars — cannot write row')
+  if (!svcEmail || !key || !sheetId) {
+    console.error('[cashfree-webhook] Missing Google Sheets env vars — cannot record payment')
     return
   }
 
   const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: email,
-      private_key: key,
-    },
+    credentials: { client_email: svcEmail, private_key: key },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   })
-
   const sheets = google.sheets({ version: 'v4', auth })
 
-  // Row matches "Leads" tab column order:
-  // Timestamp | Lead ID | Name | Phone | Email | Age | Thyroid Condition |
-  // Weight Struggles | Energy Level | Biggest Frustration | Main Goal |
-  // UTM Source | UTM Medium | UTM Campaign | FBclid | Visitor ID | Status
-  const row = [
-    new Date().toISOString(),       // Timestamp
-    data.orderId,                   // Lead ID (order_id as proxy)
-    data.name,                      // Name
-    data.phone,                     // Phone
-    data.email,                     // Email
-    '',                             // Age
-    '',                             // Thyroid Condition
-    '',                             // Weight Struggles
-    '',                             // Energy Level
-    '',                             // Biggest Frustration
-    '',                             // Main Goal
-    data.tags['utm_source'] || '',  // UTM Source
-    data.tags['utm_medium'] || '',  // UTM Medium
-    data.tags['utm_campaign'] || '',// UTM Campaign
-    data.tags['fbc'] || '',         // FBclid
-    data.tags['visitor_id'] || '',  // Visitor ID
-    `payment_received|${data.amount}${data.currency}`, // Status
-  ]
+  const statusValue = `payment_received|${data.amount}${data.currency}`
+  const paidAt = new Date().toISOString()
 
-  const response = await sheets.spreadsheets.values.append({
+  // Header + the three match columns, in one batched read.
+  const [headerRes, colsRes] = await Promise.all([
+    sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${LEADS_SHEET_NAME}!1:1` }),
+    sheets.spreadsheets.values.batchGet({
+      spreadsheetId: sheetId,
+      majorDimension: 'COLUMNS',
+      ranges: [
+        `${LEADS_SHEET_NAME}!${colLetter(MATCH_COLUMNS.leadId)}:${colLetter(MATCH_COLUMNS.leadId)}`,
+        `${LEADS_SHEET_NAME}!${colLetter(MATCH_COLUMNS.phone)}:${colLetter(MATCH_COLUMNS.phone)}`,
+        `${LEADS_SHEET_NAME}!${colLetter(MATCH_COLUMNS.email)}:${colLetter(MATCH_COLUMNS.email)}`,
+      ],
+    }),
+  ])
+
+  const header = (headerRes.data.values?.[0] ?? []).map((c) => String(c ?? ''))
+  const ranges = colsRes.data.valueRanges ?? []
+  const col = (i: number) => (ranges[i]?.values?.[0] ?? []).map((c) => String(c ?? ''))
+
+  const rowNumber = findLeadRowNumber({
+    leadIds: col(0),
+    phones: col(1),
+    emails: col(2),
+    leadId: data.leadId,
+    phone: data.phone,
+    email: data.email,
+    placeholderEmail: PLACEHOLDER_EMAIL,
+  })
+
+  const PAID_COLS = ['Paid', 'Paid Amount', 'Paid At', 'Payment Ref']
+  const plan = planPaymentColumns(header, PAID_COLS)
+
+  // Write any appended headers first so the data cells land under real titles.
+  if (plan.newHeaders.length > 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${LEADS_SHEET_NAME}!1:1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [plan.header] },
+    })
+  }
+
+  const paidCells: Record<string, string> = {
+    Paid: 'Y',
+    'Paid Amount': String(data.amount),
+    'Paid At': paidAt,
+    'Payment Ref': data.refId,
+  }
+
+  if (rowNumber) {
+    const cells: { index: number; value: string }[] = [
+      { index: STATUS_COLUMN, value: statusValue },
+      ...PAID_COLS.map((t) => ({ index: plan.indexes[t], value: paidCells[t] })),
+    ].filter((c) => !RESERVED_INDEXES.has(c.index))
+
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: {
+        valueInputOption: 'USER_ENTERED',
+        data: cells.map((c) => ({
+          range: `${LEADS_SHEET_NAME}!${colLetter(c.index)}${rowNumber}`,
+          values: [[c.value]],
+        })),
+      },
+    })
+    console.log(`[cashfree-webhook] Payment recorded on existing lead row ${rowNumber} (ref=${data.refId})`)
+    return
+  }
+
+  // No matching lead — append, clearly marked, so it is visible rather than lost.
+  console.warn(`[cashfree-webhook] No lead row matched for ref=${data.refId} leadId=${data.leadId || 'n/a'} — appending orphan row`)
+
+  const width = plan.header.length
+  const row = new Array<string>(width).fill('')
+  row[0] = paidAt
+  row[MATCH_COLUMNS.leadId] = data.leadId || data.refId
+  row[2] = data.name
+  row[MATCH_COLUMNS.phone] = data.phone
+  row[MATCH_COLUMNS.email] = data.email
+  row[STATUS_COLUMN] = `${statusValue}|orphan`
+  for (const t of PAID_COLS) {
+    const i = plan.indexes[t]
+    if (!RESERVED_INDEXES.has(i)) row[i] = paidCells[t]
+  }
+
+  await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
     range: `${LEADS_SHEET_NAME}!A1`,
     valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },
   })
-
-  console.log('[cashfree-webhook] Sheets append status:', response.status, response.data?.updates)
 }
 
 // Cashfree signature: HMAC-SHA256(timestamp + rawBody), base64-encoded.
@@ -241,8 +314,9 @@ export async function POST(req: NextRequest) {
 
     // Write to Google Sheets — server-to-server, most reliable path
     try {
-      await appendPaymentToSheet({
-        orderId: payment.refId,
+      await recordPaymentInSheet({
+        refId: payment.refId,
+        leadId,
         name: payment.name,
         phone: payment.phone,
         email: payment.email,
@@ -250,10 +324,9 @@ export async function POST(req: NextRequest) {
         currency: payment.currency,
         tags,
       })
-      console.log(`[cashfree-webhook] Sheets row written for ${source}:`, payment.refId)
     } catch (sheetsErr) {
       // Log but don't fail the webhook response — Cashfree must get 200
-      console.error('[cashfree-webhook] Sheets write failed:', sheetsErr instanceof Error ? sheetsErr.message : String(sheetsErr))
+      console.error('[cashfree-webhook] Sheets payment record failed:', sheetsErr instanceof Error ? sheetsErr.message : String(sheetsErr))
     }
 
     return NextResponse.json({ received: true, source, leadId, capi: result })
