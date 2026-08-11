@@ -177,3 +177,61 @@ export async function sendBookingConfirmation(phone: string, fullName: string): 
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(phone, 'booking_confirmation', [firstName])
 }
+
+/**
+ * Free-form reply, only valid inside the 24-hour service window a customer
+ * opens by messaging first.
+ *
+ * This is the cheap half of WhatsApp and the reason the inbox matters: once she
+ * writes to you, replies cost NOTHING and need no template or approval. Outside
+ * that window Meta rejects with (#131047) and a template is required instead —
+ * the dashboard surfaces that error rather than silently swallowing it, because
+ * "my reply never arrived" is worse than a visible failure.
+ */
+export async function sendWhatsAppText(to: string, text: string): Promise<WhatsAppResult> {
+  const token = readToken()
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  if (!token || !phoneNumberId) return { sent: false, skipped: 'whatsapp_not_configured' }
+
+  const recipient = toWhatsAppNumber(to)
+  if (recipient.length < 12) return { sent: false, skipped: 'invalid_phone' }
+  const body = (text || '').trim()
+  if (!body) return { sent: false, skipped: 'empty_message' }
+
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+    let res: Response
+    try {
+      res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipient,
+          type: 'text',
+          text: { preview_url: true, body },
+        }),
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
+    const json = (await res.json()) as { messages?: { id?: string }[]; error?: { message?: string; code?: number } }
+    if (!res.ok || json.error) {
+      const code = json.error?.code
+      const err =
+        code === 131047
+          ? 'Her 24-hour reply window has closed — send an approved template instead.'
+          : `${code ?? res.status}: ${json.error?.message ?? 'unknown'}`
+      console.error(`[whatsapp] text send failed to=***${recipient.slice(-4)} ${err}`)
+      return { sent: false, error: err }
+    }
+    return { sent: true, messageId: json.messages?.[0]?.id }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[whatsapp] text send threw', message)
+    return { sent: false, error: message }
+  }
+}
