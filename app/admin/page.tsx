@@ -13,6 +13,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean };
+type Thread = { phone: string; name: string; messages: WaMsg[]; lastTs: string; unread: number; windowMinutesLeft: number };
+
 type Lead = {
   row: number;
   ts: string;
@@ -33,6 +36,9 @@ type Lead = {
   amountSpent: string;
   triedBefore: string;
   challenge: string;
+  budget: string;
+  paid: boolean;
+  paidAmount: number | null;
   score: number | null;
   showed: string;
   closedAmt: number | null;
@@ -170,6 +176,21 @@ const DEFAULT_PROOF = {
   url: `${SITE}/#transformations-heading`,
   line: "A few real client transformations — this is what's possible:",
 };
+
+// She picks a bracket, not a number, so rank by intent: 3 = can fund the
+// Rs20,000 outright. Lead score measures symptom severity — this is the column
+// follow-up should actually be worked in order of.
+function budgetRank(b: string): number {
+  const t = (b || "").toLowerCase();
+  if (t.includes("20,000 or more") || t.includes("20000 or more")) return 3;
+  if (t.includes("10,000") && t.includes("20,000")) return 2;
+  if (t.includes("under")) return 1;
+  return 0; // "I'd want to see the plan first" — undecided, not unable
+}
+function budgetShort(b: string): string {
+  const r = budgetRank(b);
+  return r === 3 ? "₹20k+" : r === 2 ? "₹10–20k" : r === 1 ? "<₹10k" : "Plan first";
+}
 
 function pickProof(l: Lead) {
   const c = l.challenge.toLowerCase();
@@ -627,6 +648,14 @@ export default function AdminDashboard() {
   const timer = useRef<number | null>(null);
   const adsTimer = useRef<number | null>(null);
   const [leadFilter, setLeadFilter] = useState("All");
+  // WhatsApp inbox. Cloud API delivers replies to a webhook and nowhere else,
+  // so without this every answer to our own messages is lost.
+  const [threads, setThreads] = useState<Thread[] | null>(null);
+  const [openThread, setOpenThread] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const msgTimer = useRef<number | null>(null);
   // Queue items dismissed via "Done" — per day, survives refresh within the session
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -689,6 +718,55 @@ export default function AdminDashboard() {
     adsTimer.current = window.setInterval(() => loadAds(key), 300000);
     return () => { if (adsTimer.current) window.clearInterval(adsTimer.current); };
   }, [key, loadAds]);
+
+  // Polled rather than pushed: a 20s cycle is well inside the 24-hour reply
+  // window and avoids standing up a socket for a handful of conversations.
+  const loadMessages = useCallback(async (k: string) => {
+    try {
+      const res = await fetch("/api/admin/messages", { headers: { "x-admin-key": k } });
+      if (res.ok) { const j = await res.json(); setThreads(j.threads ?? []); }
+    } catch { /* inbox just stays as-is until the next poll */ }
+  }, []);
+  useEffect(() => {
+    if (!key) return;
+    loadMessages(key);
+    msgTimer.current = window.setInterval(() => loadMessages(key), 20000);
+    return () => { if (msgTimer.current) window.clearInterval(msgTimer.current); };
+  }, [key, loadMessages]);
+
+  const openConversation = useCallback(async (phone: string) => {
+    setOpenThread(phone); setDraft(""); setSendError("");
+    if (!key) return;
+    // Optimistic: clear the badge immediately, let the server catch up.
+    setThreads((prev) => prev?.map((t) => (t.phone === phone ? { ...t, unread: 0 } : t)) ?? prev);
+    try {
+      await fetch("/api/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": key },
+        body: JSON.stringify({ phone, markRead: true }),
+      });
+    } catch { /* badge will correct itself on the next poll */ }
+  }, [key]);
+
+  const sendReply = useCallback(async () => {
+    if (!key || !openThread || !draft.trim() || sending) return;
+    setSending(true); setSendError("");
+    const text = draft.trim();
+    try {
+      const res = await fetch("/api/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": key },
+        body: JSON.stringify({ phone: openThread, text }),
+      });
+      const j = await res.json();
+      if (!res.ok) { setSendError(j.error || "Could not send"); }
+      else { setDraft(""); await loadMessages(key); }
+    } catch {
+      setSendError("Network error — not sent");
+    } finally {
+      setSending(false);
+    }
+  }, [key, openThread, draft, sending, loadMessages]);
 
   const submitKey = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1413,11 +1491,138 @@ export default function AdminDashboard() {
               </>
             )}
 
+            {/* ── WhatsApp inbox ──────────────────────────────────────────
+                Cloud API has no inbox of its own; replies arrive on a webhook
+                and vanish unless something catches them. Sitting it above the
+                lead table is deliberate — an unanswered message is worth more
+                than any chart on this page. */}
+            {threads && threads.length > 0 && (
+              <div style={{ ...card, marginBottom: 12, padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 16px 10px" }}>
+                  <p style={{ ...cardTitle, marginBottom: 0 }}>WhatsApp inbox</p>
+                  {threads.reduce((n, t) => n + t.unread, 0) > 0 && (
+                    <span style={{ background: CRIT, color: "#fff", fontSize: 10, fontWeight: 800, borderRadius: 999, padding: "2px 8px" }}>
+                      {threads.reduce((n, t) => n + t.unread, 0)} new
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: openThread ? "minmax(0,260px) minmax(0,1fr)" : "1fr", borderTop: `1px solid ${GRID}` }}>
+                  {/* thread list */}
+                  <div style={{ borderRight: openThread ? `1px solid ${GRID}` : "none", maxHeight: 420, overflowY: "auto" }}>
+                    {threads.map((t) => {
+                      const last = t.messages[t.messages.length - 1];
+                      const active = openThread === t.phone;
+                      const lead = leads?.find((l) => l.phone && t.phone.endsWith(l.phone.slice(-10)));
+                      return (
+                        <button
+                          key={t.phone}
+                          onClick={() => openConversation(t.phone)}
+                          style={{
+                            display: "block", width: "100%", textAlign: "left", padding: "11px 14px", cursor: "pointer",
+                            background: active ? "rgba(168,85,247,0.10)" : "transparent",
+                            border: "none", borderBottom: `1px solid ${GRID}`,
+                            borderLeft: `2px solid ${active ? PURPLE : "transparent"}`,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: INK1 }}>
+                              {t.name || lead?.name || `+${t.phone}`}
+                            </span>
+                            {t.unread > 0 && <span style={{ width: 7, height: 7, borderRadius: 999, background: CRIT }} />}
+                            {/* Her budget bracket, right here in the inbox. No
+                                external tool could show this next to her message. */}
+                            {lead?.budget && (
+                              <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, color: budgetRank(lead.budget) === 3 ? GOOD : MUTED }}>
+                                {budgetShort(lead.budget)}
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 11, color: t.unread ? INK2 : MUTED, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {last?.direction === "out" ? "You: " : ""}{last?.text || ""}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* conversation */}
+                  {openThread && (() => {
+                    const t = threads.find((x) => x.phone === openThread);
+                    if (!t) return null;
+                    const lead = leads?.find((l) => l.phone && t.phone.endsWith(l.phone.slice(-10)));
+                    const open = t.windowMinutesLeft > 0;
+                    const hrs = Math.floor(t.windowMinutesLeft / 60);
+                    return (
+                      <div style={{ display: "flex", flexDirection: "column", maxHeight: 420 }}>
+                        <div style={{ padding: "10px 14px", borderBottom: `1px solid ${GRID}`, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{t.name || lead?.name || `+${t.phone}`}</span>
+                          {lead?.score != null && <span style={{ fontSize: 10.5, color: MUTED }}>score {lead.score}</span>}
+                          {lead?.paid && <span style={{ fontSize: 10, fontWeight: 700, color: GOOD }}>PAID</span>}
+                          <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: open ? GOOD : WARN }}>
+                            {open ? `${hrs > 0 ? `${hrs}h` : `${t.windowMinutesLeft}m`} free-reply window` : "window closed"}
+                          </span>
+                          <button onClick={() => setOpenThread(null)} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", fontSize: 15 }}>×</button>
+                        </div>
+
+                        <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "grid", gap: 8 }}>
+                          {t.messages.map((m, i) => (
+                            <div key={i} style={{ justifySelf: m.direction === "out" ? "end" : "start", maxWidth: "78%" }}>
+                              <div style={{
+                                background: m.direction === "out" ? "rgba(168,85,247,0.16)" : CARD,
+                                border: `1px solid ${m.direction === "out" ? "rgba(168,85,247,0.32)" : GRID}`,
+                                borderRadius: 12, padding: "8px 11px", fontSize: 12.5, color: INK1, whiteSpace: "pre-wrap", wordBreak: "break-word",
+                              }}>
+                                {m.text}
+                              </div>
+                              <p style={{ fontSize: 9.5, color: MUTED, marginTop: 3, textAlign: m.direction === "out" ? "right" : "left" }}>
+                                {new Date(m.ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ borderTop: `1px solid ${GRID}`, padding: "10px 12px" }}>
+                          {open ? (
+                            <>
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <textarea
+                                  value={draft}
+                                  onChange={(e) => setDraft(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendReply(); }}
+                                  placeholder="Reply… (⌘/Ctrl + Enter to send)"
+                                  rows={2}
+                                  style={{ flex: 1, resize: "none", background: "#0f1014", border: `1px solid ${GRID}`, borderRadius: 10, color: INK1, fontSize: 12.5, padding: "8px 10px", fontFamily: "inherit" }}
+                                />
+                                <button
+                                  onClick={sendReply}
+                                  disabled={sending || !draft.trim()}
+                                  style={{ alignSelf: "stretch", padding: "0 16px", borderRadius: 10, border: "none", background: draft.trim() ? PURPLE : GRID, color: draft.trim() ? "#fff" : MUTED, fontSize: 12.5, fontWeight: 800, cursor: draft.trim() && !sending ? "pointer" : "default" }}
+                                >
+                                  {sending ? "…" : "Send"}
+                                </button>
+                              </div>
+                              <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>Free-form replies cost nothing inside her 24-hour window.</p>
+                            </>
+                          ) : (
+                            <p style={{ fontSize: 11, color: WARN }}>
+                              Her 24-hour window has closed — a free reply is no longer possible. Send an approved template from WhatsApp Manager, or wait for her to message again.
+                            </p>
+                          )}
+                          {sendError && <p style={{ fontSize: 11, color: CRIT, marginTop: 6 }}>{sendError}</p>}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
             {/* lead table */}
             <div style={{ ...card, overflowX: "auto" }}>
               <p style={cardTitle}>Latest leads — tap to act</p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                {["All", "Best 75+", "New", "Booked", "Cancelled", "No-show"].map((f) => (
+                {["All", "₹20k ready", "Best 75+", "New", "Booked", "Cancelled", "No-show"].map((f) => (
                   <button
                     key={f}
                     onClick={() => setLeadFilter(f)}
@@ -1435,7 +1640,7 @@ export default function AdminDashboard() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, minWidth: 640 }}>
                 <thead>
                   <tr style={{ color: MUTED, textAlign: "left" }}>
-                    {["When", "Name", "Score", "Src", "Session", "Contact", "Outcome"].map((h) => (
+                    {["When", "Name", "Score", "Budget", "Src", "Session", "Contact", "Outcome"].map((h) => (
                       <th key={h} style={{ padding: "6px 8px", fontWeight: 600, fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: `1px solid ${GRID}` }}>{h}</th>
                     ))}
                   </tr>
@@ -1443,6 +1648,9 @@ export default function AdminDashboard() {
                 <tbody>
                   {inRange
                     .filter((l) => {
+                      // Sorting follow-up by who can actually fund the programme
+                      // is the whole point of asking the budget question.
+                      if (leadFilter === "₹20k ready") return budgetRank(l.budget) === 3;
                       if (leadFilter === "Best 75+") return (l.score ?? 0) >= 75;
                       // A cancelled lead has booked:false but is emphatically not
                       // "New" — she is further down the funnel than a fresh lead.
@@ -1468,6 +1676,18 @@ export default function AdminDashboard() {
                         <td style={{ padding: "8px" }}>
                           <span style={{ color: scColor, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{l.score ?? "–"}</span>
                           <span style={{ fontSize: 10, color: MUTED }}> {l.tier}</span>
+                        </td>
+                        <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
+                          {l.budget ? (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: budgetRank(l.budget) === 3 ? GOOD : budgetRank(l.budget) === 2 ? WARN : MUTED }}>
+                              {budgetShort(l.budget)}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: MUTED }}>—</span>
+                          )}
+                          {l.paid && (
+                            <><br /><span style={{ fontSize: 10, fontWeight: 700, color: GOOD }}>PAID{l.paidAmount ? ` ₹${l.paidAmount}` : ""}</span></>
+                          )}
                         </td>
                         <td style={{ padding: "8px" }}>
                           <span style={{ width: 8, height: 8, borderRadius: 2, display: "inline-block", background: SRC_COLORS[l.source === "fb" || l.source === "ig" ? l.source : "other"], marginRight: 5 }} />

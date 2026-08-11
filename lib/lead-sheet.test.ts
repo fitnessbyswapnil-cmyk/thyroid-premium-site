@@ -48,6 +48,7 @@ const FULL_HEADER = [
   "Lead Score", // 29
   "Lead Tier", // 30
   "Welcomed", // 31 lifecycle flag
+  "Budget", // 32 what she said she can invest (quiz question 6)
 ];
 
 function sampleFields(email = "asha@example.com"): LeadFields {

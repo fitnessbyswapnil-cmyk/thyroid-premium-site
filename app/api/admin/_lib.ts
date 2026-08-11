@@ -50,6 +50,9 @@ export type LeadRow = {
   amountSpent: string;
   triedBefore: string;
   challenge: string;
+  budget: string;
+  paid: boolean;
+  paidAmount: number | null;
   score: number | null;
   showed: string; // "Y" | "N" | ""
   closedAmt: number | null;

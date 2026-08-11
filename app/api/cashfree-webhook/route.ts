@@ -30,6 +30,7 @@ import {
 } from '@/lib/server-tracking'
 import crypto from 'crypto'
 import { normalize, parseLeadId, type Json } from '@/lib/cashfree-payload'
+import { sendBookingConfirmation } from '@/lib/whatsapp'
 import {
   colLetter,
   findLeadRowNumber,
@@ -362,6 +363,23 @@ export async function POST(req: NextRequest) {
     })
 
     console.log(`[cashfree-webhook] ${source} Purchase CAPI result:`, result, `sheet=${sheetResult}`)
+
+    // Tell her the payment landed and hand her straight to Cal.com. This is the
+    // fix for the ~50% of payers who previously paid and never booked.
+    // Deliberately last, and fully swallowed: Cashfree must receive its 200
+    // regardless, and a WhatsApp outage must never look like a failed payment.
+    // Guarded by sheetResult so a duplicate webhook can never double-message her
+    // — the 'already_paid' branch above returns before reaching this point.
+    try {
+      const waResult = await sendBookingConfirmation(payment.phone, payment.name)
+      console.log(
+        `[cashfree-webhook] booking_confirmation ${source} ref=${payment.refId} sent=${waResult.sent}` +
+          (waResult.skipped ? ` skipped=${waResult.skipped}` : '') +
+          (waResult.error ? ` error=${waResult.error}` : ''),
+      )
+    } catch (waErr) {
+      console.error('[cashfree-webhook] booking_confirmation threw (swallowed):', waErr)
+    }
 
     return NextResponse.json({ received: true, source, leadId, sheet: sheetResult, capi: result })
   } catch (err) {

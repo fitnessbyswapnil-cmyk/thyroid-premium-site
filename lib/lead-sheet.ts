@@ -68,6 +68,14 @@ export const LEAD_COLUMNS: LeadColumn[] = [
   { key: "leadScore", title: "Lead Score" },
   { key: "leadTier", title: "Lead Tier" },
   { key: "status", title: "Status", pin: PIN.status, createOnly: true },
+  // What she said she can invest, asked last in the quiz. This is the column
+  // follow-up should be sorted by — lead score measures symptom severity, not
+  // ability to buy the Rs20,000 programme.
+  { key: "budget", title: "Budget" },
+  // Payment state is NOT declared here. recordPaymentInSheet (the Cashfree
+  // webhook) owns Paid / Paid Amount / Paid At / Payment Ref via
+  // planPaymentColumns below. Declaring them in both places would have the
+  // lead writer and the payment writer racing over the same cells.
 ];
 
 export type LeadFields = Record<string, string>;

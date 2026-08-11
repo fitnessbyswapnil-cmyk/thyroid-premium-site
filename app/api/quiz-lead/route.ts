@@ -19,6 +19,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
+import { sendWelcomeLead } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ type QuizLeadPayload = {
   goal?: string;
   commitment?: string; // "1".."10"
   timing?: string;
+  budget?: string; // what she said she can invest — sales signal, never scored
   leadScore?: number;
   leadTier?: string;
   attribution?: {
@@ -92,6 +94,28 @@ export async function POST(req: NextRequest) {
       return name in FALLBACK ? FALLBACK[name] : null;
     };
 
+    // "Budget" is a new column. idx() returns null for headers it has never
+    // seen and set() then silently skips the value — so without this the budget
+    // answer would be collected, scored-out, and quietly dropped. Create the
+    // header once, past every existing column, so it can never collide with the
+    // reserved Booking columns (17/18) owned by the Cal.com Make scenario.
+    let budgetIdx = hdr.lastIndexOf("Budget");
+    if (budgetIdx < 0 && str(payload.budget)) {
+      budgetIdx = hdr.length;
+      hdr[budgetIdx] = "Budget";
+      try {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range: `${SHEET_NAME}!1:1`,
+          valueInputOption: "RAW",
+          requestBody: { values: [hdr] },
+        });
+      } catch (hdrErr) {
+        console.error("[quiz-lead] could not add Budget header:", hdrErr instanceof Error ? hdrErr.message : String(hdrErr));
+        budgetIdx = -1; // fall through: lose the budget value, never the lead
+      }
+    }
+
     const cells = new Map<number, string>();
     const set = (name: string, value: string) => {
       if (!value) return;
@@ -127,6 +151,7 @@ export async function POST(req: NextRequest) {
     set("Amount Spent", str(payload.amountSpent));
     set("Commitment (1-10)", str(payload.commitment));
     set("Timing", str(payload.timing));
+    if (budgetIdx >= 0 && str(payload.budget)) cells.set(budgetIdx, str(payload.budget));
     set("UTM Content", str(payload.attribution?.utm_content));
     set("UTM Term", str(payload.attribution?.utm_term));
     if (typeof payload.leadScore === "number") set("Lead Score", String(payload.leadScore));
@@ -161,6 +186,21 @@ export async function POST(req: NextRequest) {
       source: "thyroid_score_quiz",
     }),
   }).catch(() => {});
+
+  // First-touch WhatsApp, fired the instant the quiz is finished.
+  //
+  // This is the fix for the funnel's biggest measured leak: leads were
+  // sitting 2-9 hours waiting for a manual WhatsApp, by which point the pain
+  // that made them fill the form has faded. sendWelcomeLead is a no-op until
+  // WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID exist, so this is inert until
+  // billing is live on the WABA.
+  //
+  // Deliberately not awaited and never allowed to reject: a Meta outage must
+  // not fail a submission the visitor already completed, and the lead is
+  // already safely in the sheet by this point.
+  if (str(payload.phone)) {
+    sendWelcomeLead(str(payload.phone), str(payload.name)).catch(() => {});
+  }
 
   return NextResponse.json({ ok: true });
 }
