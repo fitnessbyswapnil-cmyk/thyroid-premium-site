@@ -160,7 +160,7 @@ export function PaymentScreen({
                 Secure My Private Consultation — ₹299
               </div>
               <div className="mt-1 text-[0.72rem] text-white/65">
-                Tap to pay securely · All UPI & cards accepted
+                Pay with GPay · PhonePe · Paytm · Cards
               </div>
             </>
           )}

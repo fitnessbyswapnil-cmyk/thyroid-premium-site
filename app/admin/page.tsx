@@ -15,6 +15,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean };
 type Thread = { phone: string; name: string; messages: WaMsg[]; lastTs: string; unread: number; windowMinutesLeft: number };
+type WaStatus = {
+  sending: "ok" | "not_configured";
+  receiving: "ok" | "never_received" | "not_configured" | "unknown";
+  autoReply: "on" | "off";
+  webhook: { callbackUrl: string; subscribeTo: string };
+  inbox: { readable: boolean; totalMessages: number; inbound: number; outbound: number; lastInboundAt: string; lastOutboundAt: string };
+  automations: { name: string; count: number; lastAt: string }[];
+  actions: string[];
+};
 
 type Lead = {
   row: number;
@@ -651,6 +660,7 @@ export default function AdminDashboard() {
   // WhatsApp inbox. Cloud API delivers replies to a webhook and nowhere else,
   // so without this every answer to our own messages is lost.
   const [threads, setThreads] = useState<Thread[] | null>(null);
+  const [waStatus, setWaStatus] = useState<WaStatus | null>(null);
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -727,6 +737,17 @@ export default function AdminDashboard() {
       if (res.ok) { const j = await res.json(); setThreads(j.threads ?? []); }
     } catch { /* inbox just stays as-is until the next poll */ }
   }, []);
+
+  // Health of the WhatsApp chain. An empty inbox has two very different
+  // causes — nobody has written to you, or the webhook was never connected and
+  // every reply is being dropped — and they are indistinguishable without this.
+  const loadWaStatus = useCallback(async (k: string) => {
+    try {
+      const res = await fetch("/api/admin/whatsapp-status", { headers: { "x-admin-key": k } });
+      if (res.ok) setWaStatus((await res.json()) as WaStatus);
+    } catch { /* diagnostics are optional — never break the dashboard */ }
+  }, []);
+  useEffect(() => { if (key) loadWaStatus(key); }, [key, loadWaStatus]);
   useEffect(() => {
     if (!key) return;
     loadMessages(key);
@@ -779,6 +800,10 @@ export default function AdminDashboard() {
   };
 
   type MarkField = "showed" | "closed" | "meetlink" | "msg1" | "msg2" | "msg3";
+
+  // Last programme-conversion result, shown as an inline note under the table.
+  const [metaSend, setMetaSend] = useState<{ row: number; status: string; keys: number } | null>(null);
+
   const mark = async (row: number, field: MarkField, value: string) => {
     if (!key) return;
     // Optimistic update
@@ -793,11 +818,22 @@ export default function AdminDashboard() {
           })
         : prev,
     );
-    await fetch("/api/admin/mark", {
+    const res = await fetch("/api/admin/mark", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-key": key },
       body: JSON.stringify({ row, field, value }),
-    }).catch(() => {});
+    }).catch(() => null);
+
+    // Marking a win also reports the sale to Meta. Surface the outcome — a
+    // silently failed conversion is the difference between the ad account
+    // learning who becomes a client and never knowing.
+    if (field === "closed" && res) {
+      const json = (await res.json().catch(() => null)) as
+        | { meta?: { status?: string; detail?: { matchKeys?: string[]; timestampAdjusted?: boolean } } }
+        | null;
+      const m = json?.meta;
+      if (m) setMetaSend({ row, status: m.status ?? "error", keys: m.detail?.matchKeys?.length ?? 0 });
+    }
   };
 
   const days = RANGES.find((r) => r.key === range)?.days ?? 14;
@@ -1496,6 +1532,65 @@ export default function AdminDashboard() {
                 and vanish unless something catches them. Sitting it above the
                 lead table is deliberate — an unanswered message is worth more
                 than any chart on this page. */}
+            {/* Always visible: an empty inbox is ambiguous on its own — nobody
+                wrote, or the webhook was never connected and every reply is
+                being dropped. Say which, show what the automation has actually
+                sent, and give the exact fix when something is broken. */}
+            {waStatus && (
+              <div style={{ ...card, marginBottom: 12 }}>
+                <p style={{ ...cardTitle }}>WhatsApp automation</p>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
+                  <span style={{ fontSize: 12, color: waStatus.sending === "ok" ? GOOD : CRIT }}>
+                    {waStatus.sending === "ok" ? "✓ Sending live" : "✕ Sending not configured"}
+                  </span>
+                  <span style={{ fontSize: 12, color: waStatus.receiving === "ok" ? GOOD : CRIT }}>
+                    {waStatus.receiving === "ok"
+                      ? "✓ Receiving live"
+                      : waStatus.receiving === "never_received"
+                      ? "✕ Receiving — no message has ever arrived"
+                      : waStatus.receiving === "not_configured"
+                      ? "✕ Receiving not configured"
+                      : "? Receiving unknown"}
+                  </span>
+                  <span style={{ fontSize: 12, color: MUTED }}>
+                    {waStatus.inbox.outbound} sent · {waStatus.inbox.inbound} received · auto-reply {waStatus.autoReply}
+                  </span>
+                </div>
+
+                {/* Per-automation activity: which templates fired, how often,
+                    and when the last one went out. */}
+                {waStatus.automations.length > 0 && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                    {waStatus.automations.map((a) => (
+                      <span
+                        key={a.name}
+                        title={a.lastAt ? `last sent ${new Date(a.lastAt).toLocaleString("en-IN")}` : ""}
+                        style={{ fontSize: 11, color: INK2, border: `1px solid ${GRID}`, borderRadius: 999, padding: "4px 10px" }}
+                      >
+                        {a.name} · {a.count}
+                        {a.lastAt ? ` · ${new Date(a.lastAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {waStatus.actions.length > 0 ? (
+                  <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+                    {waStatus.actions.map((a) => (
+                      <li key={a} style={{ fontSize: 12, color: INK2, lineHeight: 1.55 }}>{a}</li>
+                    ))}
+                  </ul>
+                ) : waStatus.inbox.totalMessages === 0 ? (
+                  <p style={{ fontSize: 12, color: MUTED }}>
+                    Everything is connected — no conversations yet. Sends and replies will appear here.
+                  </p>
+                ) : null}
+                <p style={{ fontSize: 11, color: MUTED, marginTop: 10 }}>
+                  Webhook URL: <code>{waStatus.webhook.callbackUrl}</code> · subscribe to <code>{waStatus.webhook.subscribeTo}</code>
+                </p>
+              </div>
+            )}
+
             {threads && threads.length > 0 && (
               <div style={{ ...card, marginBottom: 12, padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 16px 10px" }}>
@@ -1746,7 +1841,37 @@ export default function AdminDashboard() {
                         </td>
                         <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
                           {(l.closedAmt ?? 0) > 0 ? (
-                            <span style={{ color: GOOD, fontWeight: 700 }}>✓ ₹{(l.closedAmt ?? 0).toLocaleString("en-IN")}</span>
+                            <>
+                              <span style={{ color: GOOD, fontWeight: 700 }}>✓ ₹{(l.closedAmt ?? 0).toLocaleString("en-IN")}</span>
+                              {metaSend?.row === l.row && (
+                                <span
+                                  title={
+                                    metaSend.status === "sent"
+                                      ? `Sale sent to Meta with ${metaSend.keys} match signals`
+                                      : metaSend.status === "already_sent"
+                                      ? "Already reported to Meta — not sent twice"
+                                      : "Meta did not accept this conversion — check Vercel logs"
+                                  }
+                                  style={{
+                                    display: "block",
+                                    fontSize: 10,
+                                    marginTop: 2,
+                                    color:
+                                      metaSend.status === "sent"
+                                        ? GOOD
+                                        : metaSend.status === "already_sent"
+                                        ? MUTED
+                                        : CRIT,
+                                  }}
+                                >
+                                  {metaSend.status === "sent"
+                                    ? `→ Meta ✓ (${metaSend.keys} signals)`
+                                    : metaSend.status === "already_sent"
+                                    ? "→ Meta ✓ earlier"
+                                    : "→ Meta failed"}
+                                </span>
+                              )}
+                            </>
                           ) : l.showed === "Y" ? (
                             <>
                               <span style={{ color: GOOD, marginRight: 6 }}>✓ showed</span>

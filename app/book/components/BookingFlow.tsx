@@ -8,6 +8,7 @@ import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
+import { checkoutRedirectTarget } from "@/lib/checkout-target";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -304,9 +305,12 @@ export default function BookingFlow({
                   });
                   if (!cashfree) throw new Error("sdk_unavailable");
 
+                  // Mobile → "_self": full-page Cashfree checkout with native
+                  // GPay/PhonePe/Paytm app-launch buttons (UPI intent doesn't
+                  // fire from the iframe modal). Desktop → "_modal" with QR.
                   const result = await cashfree.checkout({
                             paymentSessionId,
-                            redirectTarget: "_modal",
+                            redirectTarget: checkoutRedirectTarget(),
                   });
 
                   if (result.error) {
@@ -325,6 +329,20 @@ export default function BookingFlow({
           }
     }, [step1Data, leadId]);
   
+    // Mobile pays via full-page redirect ("_self") — if she cancels on the
+    // Cashfree page and comes back, bfcache restores this page with the CTA
+    // stuck on the loading state. Re-arm it so she can retry.
+    useEffect(() => {
+          const onPageShow = (e: PageTransitionEvent) => {
+                  if (e.persisted) {
+                            setPaymentLoading(false);
+                            setPaymentError("");
+                  }
+          };
+          window.addEventListener("pageshow", onPageShow);
+          return () => window.removeEventListener("pageshow", onPageShow);
+    }, []);
+
     const activeStep = stage === "qualification" ? 1 : 2;
   
     return (

@@ -37,6 +37,7 @@ import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTrack
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
 import { SESSION_PRICE } from "@/app/lib/pricing";
+import { checkoutRedirectTarget } from "@/lib/checkout-target";
 
 // ── palette (matches the site + admin dashboard system) ─────────────────────
 const BG = "#0f1012";
@@ -341,6 +342,20 @@ export default function QuizFunnel() {
       .then((cf) => { cashfreeRef.current = cf; })
       .catch(() => { /* payNow retries the load itself; fallback covers total failure */ });
   }, [screen]);
+
+  // Mobile pays via full-page redirect ("_self") — if she cancels on the
+  // Cashfree page and comes back, bfcache restores this page with the CTA
+  // stuck on "Redirecting…". Re-arm it so she can retry.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setPayLoading(false);
+        setPayError("");
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
   const ringBoxRef = useRef<HTMLDivElement>(null);
 
   const timers = useRef<{ [k: string]: ReturnType<typeof setTimeout> | number }>({});
@@ -657,7 +672,11 @@ export default function QuizFunnel() {
       }
       if (!cashfree) throw new Error("sdk_unavailable");
 
-      const result = await cashfree.checkout({ paymentSessionId, redirectTarget: "_modal" });
+      // Mobile → "_self": full-page Cashfree checkout with native GPay/
+      // PhonePe/Paytm app-launch buttons (UPI intent doesn't fire from the
+      // iframe modal). Desktop → "_modal" with QR. On "_self" the browser
+      // leaves this page; Cashfree returns her to /payment-success.
+      const result = await cashfree.checkout({ paymentSessionId, redirectTarget: checkoutRedirectTarget() });
 
       if (result.error) {
         setPayError("Payment was not completed. Please try again or use UPI.");
@@ -930,7 +949,7 @@ export default function QuizFunnel() {
             {payError && (
               <p style={{ fontSize: 12, color: "#f87171", textAlign: "center", marginTop: 10 }}>{payError}</p>
             )}
-            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>UPI, cards, net banking — secure checkout opens right here. Then pick your call time.</p>
+            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>Pay directly with GPay, PhonePe, Paytm or card — secure Cashfree checkout. Then pick your call time.</p>
 
             {/* Quieter escape hatch. Safe to offer now that replies land in the
                 /admin inbox — before that, a tap here went nowhere. */}
