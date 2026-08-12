@@ -43,6 +43,10 @@ export async function GET(req: NextRequest) {
   let lastInboundAt = "";
   let lastOutboundAt = "";
   let inboxError = "";
+  // Per-automation activity: outbound templates are mirrored into the tab as
+  // "[template_name] …", so the label doubles as the classifier. Anything
+  // outbound without that prefix is a human (or auto-) reply typed as text.
+  const byTemplate = new Map<string, { count: number; lastAt: string }>();
 
   try {
     // Note: readMessages() resolves to [] when the Messages tab does not exist
@@ -58,11 +62,20 @@ export async function GET(req: NextRequest) {
       } else {
         outbound++;
         if (m.ts > lastOutboundAt) lastOutboundAt = m.ts;
+        const name = m.text.match(/^\[([a-z0-9_]+)\]/i)?.[1] ?? "free-form reply";
+        const entry = byTemplate.get(name) ?? { count: 0, lastAt: "" };
+        entry.count++;
+        if (m.ts > entry.lastAt) entry.lastAt = m.ts;
+        byTemplate.set(name, entry);
       }
     }
   } catch (err) {
     inboxError = err instanceof Error ? err.message : String(err);
   }
+
+  const automations = [...byTemplate.entries()]
+    .map(([name, v]) => ({ name, count: v.count, lastAt: v.lastAt }))
+    .sort((a, b) => (a.lastAt < b.lastAt ? 1 : -1));
 
   const sending: "ok" | "not_configured" = isWhatsAppConfigured() ? "ok" : "not_configured";
 
@@ -109,6 +122,10 @@ export async function GET(req: NextRequest) {
       lastInboundAt,
       lastOutboundAt,
     },
+    // What the automation has actually sent, per template, newest first.
+    // Counting starts when this deploy went live — earlier sends predate the
+    // inbox mirror and exist only in Vercel logs / the Leads-tab stamp columns.
+    automations,
     actions,
   });
 }

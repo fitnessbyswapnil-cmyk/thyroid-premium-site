@@ -21,6 +21,7 @@ type WaStatus = {
   autoReply: "on" | "off";
   webhook: { callbackUrl: string; subscribeTo: string };
   inbox: { readable: boolean; totalMessages: number; inbound: number; outbound: number; lastInboundAt: string; lastOutboundAt: string };
+  automations: { name: string; count: number; lastAt: string }[];
   actions: string[];
 };
 
@@ -1531,12 +1532,13 @@ export default function AdminDashboard() {
                 and vanish unless something catches them. Sitting it above the
                 lead table is deliberate — an unanswered message is worth more
                 than any chart on this page. */}
-            {/* Empty inbox is ambiguous on its own — nobody wrote, or the
-                webhook was never connected and every reply is being dropped.
-                Say which, and exactly how to fix it. */}
-            {threads && threads.length === 0 && waStatus && (
+            {/* Always visible: an empty inbox is ambiguous on its own — nobody
+                wrote, or the webhook was never connected and every reply is
+                being dropped. Say which, show what the automation has actually
+                sent, and give the exact fix when something is broken. */}
+            {waStatus && (
               <div style={{ ...card, marginBottom: 12 }}>
-                <p style={{ ...cardTitle }}>WhatsApp inbox</p>
+                <p style={{ ...cardTitle }}>WhatsApp automation</p>
                 <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
                   <span style={{ fontSize: 12, color: waStatus.sending === "ok" ? GOOD : CRIT }}>
                     {waStatus.sending === "ok" ? "✓ Sending live" : "✕ Sending not configured"}
@@ -1551,20 +1553,38 @@ export default function AdminDashboard() {
                       : "? Receiving unknown"}
                   </span>
                   <span style={{ fontSize: 12, color: MUTED }}>
-                    {waStatus.inbox.outbound} sent · {waStatus.inbox.inbound} received
+                    {waStatus.inbox.outbound} sent · {waStatus.inbox.inbound} received · auto-reply {waStatus.autoReply}
                   </span>
                 </div>
+
+                {/* Per-automation activity: which templates fired, how often,
+                    and when the last one went out. */}
+                {waStatus.automations.length > 0 && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                    {waStatus.automations.map((a) => (
+                      <span
+                        key={a.name}
+                        title={a.lastAt ? `last sent ${new Date(a.lastAt).toLocaleString("en-IN")}` : ""}
+                        style={{ fontSize: 11, color: INK2, border: `1px solid ${GRID}`, borderRadius: 999, padding: "4px 10px" }}
+                      >
+                        {a.name} · {a.count}
+                        {a.lastAt ? ` · ${new Date(a.lastAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {waStatus.actions.length > 0 ? (
                   <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
                     {waStatus.actions.map((a) => (
                       <li key={a} style={{ fontSize: 12, color: INK2, lineHeight: 1.55 }}>{a}</li>
                     ))}
                   </ul>
-                ) : (
+                ) : waStatus.inbox.totalMessages === 0 ? (
                   <p style={{ fontSize: 12, color: MUTED }}>
-                    Everything is connected — no conversations yet. Replies will appear here.
+                    Everything is connected — no conversations yet. Sends and replies will appear here.
                   </p>
-                )}
+                ) : null}
                 <p style={{ fontSize: 11, color: MUTED, marginTop: 10 }}>
                   Webhook URL: <code>{waStatus.webhook.callbackUrl}</code> · subscribe to <code>{waStatus.webhook.subscribeTo}</code>
                 </p>
