@@ -779,6 +779,10 @@ export default function AdminDashboard() {
   };
 
   type MarkField = "showed" | "closed" | "meetlink" | "msg1" | "msg2" | "msg3";
+
+  // Last programme-conversion result, shown as an inline note under the table.
+  const [metaSend, setMetaSend] = useState<{ row: number; status: string; keys: number } | null>(null);
+
   const mark = async (row: number, field: MarkField, value: string) => {
     if (!key) return;
     // Optimistic update
@@ -793,11 +797,22 @@ export default function AdminDashboard() {
           })
         : prev,
     );
-    await fetch("/api/admin/mark", {
+    const res = await fetch("/api/admin/mark", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-key": key },
       body: JSON.stringify({ row, field, value }),
-    }).catch(() => {});
+    }).catch(() => null);
+
+    // Marking a win also reports the sale to Meta. Surface the outcome — a
+    // silently failed conversion is the difference between the ad account
+    // learning who becomes a client and never knowing.
+    if (field === "closed" && res) {
+      const json = (await res.json().catch(() => null)) as
+        | { meta?: { status?: string; detail?: { matchKeys?: string[]; timestampAdjusted?: boolean } } }
+        | null;
+      const m = json?.meta;
+      if (m) setMetaSend({ row, status: m.status ?? "error", keys: m.detail?.matchKeys?.length ?? 0 });
+    }
   };
 
   const days = RANGES.find((r) => r.key === range)?.days ?? 14;
@@ -1746,7 +1761,37 @@ export default function AdminDashboard() {
                         </td>
                         <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
                           {(l.closedAmt ?? 0) > 0 ? (
-                            <span style={{ color: GOOD, fontWeight: 700 }}>✓ ₹{(l.closedAmt ?? 0).toLocaleString("en-IN")}</span>
+                            <>
+                              <span style={{ color: GOOD, fontWeight: 700 }}>✓ ₹{(l.closedAmt ?? 0).toLocaleString("en-IN")}</span>
+                              {metaSend?.row === l.row && (
+                                <span
+                                  title={
+                                    metaSend.status === "sent"
+                                      ? `Sale sent to Meta with ${metaSend.keys} match signals`
+                                      : metaSend.status === "already_sent"
+                                      ? "Already reported to Meta — not sent twice"
+                                      : "Meta did not accept this conversion — check Vercel logs"
+                                  }
+                                  style={{
+                                    display: "block",
+                                    fontSize: 10,
+                                    marginTop: 2,
+                                    color:
+                                      metaSend.status === "sent"
+                                        ? GOOD
+                                        : metaSend.status === "already_sent"
+                                        ? MUTED
+                                        : CRIT,
+                                  }}
+                                >
+                                  {metaSend.status === "sent"
+                                    ? `→ Meta ✓ (${metaSend.keys} signals)`
+                                    : metaSend.status === "already_sent"
+                                    ? "→ Meta ✓ earlier"
+                                    : "→ Meta failed"}
+                                </span>
+                              )}
+                            </>
                           ) : l.showed === "Y" ? (
                             <>
                               <span style={{ color: GOOD, marginRight: 6 }}>✓ showed</span>

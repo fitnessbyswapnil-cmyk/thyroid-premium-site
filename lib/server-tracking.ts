@@ -56,12 +56,27 @@ export type EventData = {
   [key: string]: unknown
 }
 
+// Where the conversion actually happened. Meta requires this to be truthful:
+// a sale closed on a consultation call is 'phone_call', not 'website'. Sending
+// 'website' for an offline close misreports the channel and can suppress the
+// event's usefulness for optimisation.
+export type ActionSource =
+  | 'website'
+  | 'phone_call'
+  | 'chat'
+  | 'email'
+  | 'physical_store'
+  | 'system_generated'
+  | 'business_messaging'
+  | 'other'
+
 export type CAPIEvent = {
   event_name: string
   event_id: string
   event_time: number      // Unix timestamp
-  event_source_url: string
-  action_source: 'website'
+  // Required for action_source 'website'; omitted for offline sources.
+  event_source_url?: string
+  action_source: ActionSource
   user_data: UserData
   custom_data?: EventData
   opt_out?: boolean
@@ -178,19 +193,25 @@ export async function sendCAPIEvent(
   eventName: string,
   opts: {
     eventId: string
-    sourceUrl: string
+    sourceUrl?: string
     userData: UserData
     customData?: EventData
     testCode?: string
+    // Defaults preserve the original website behaviour for every existing caller.
+    actionSource?: ActionSource
+    // Unix SECONDS. Offline conversions must report when the sale actually
+    // happened, not when this code ran.
+    eventTime?: number
   }
 ): Promise<CAPIResult> {
+  const actionSource = opts.actionSource ?? 'website'
   const event: CAPIEvent = {
     event_name: eventName,
     event_id: opts.eventId,
-    event_time: Math.floor(Date.now() / 1000),
-    event_source_url: opts.sourceUrl,
-    action_source: 'website',
+    event_time: opts.eventTime ?? Math.floor(Date.now() / 1000),
+    action_source: actionSource,
     user_data: opts.userData,
+    ...(opts.sourceUrl ? { event_source_url: opts.sourceUrl } : {}),
     ...(opts.customData ? { custom_data: opts.customData } : {}),
   }
 
