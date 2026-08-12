@@ -12,19 +12,48 @@
  * (/payment-success) → /session-booked, with leadId carried through the
  * NATIVE_BOOKING_KEY localStorage bridge written before checkout opens.
  *
- * Desktop keeps the modal: QR scan is the correct UX there, and staying on
- * the page preserves funnel state.
+ * FAIL TOWARDS "_self". The two mistakes are not equal: sending a desktop
+ * buyer to a full page instead of a modal costs a little polish, while
+ * trapping a phone buyer in the modal costs the sale — she gets a QR she
+ * cannot scan (the code is ON the phone she'd scan with) and a UPI-ID field
+ * she has to type by hand. So "_modal" is used ONLY when every signal agrees
+ * this is a real desktop.
+ *
+ * This also covers a phone with "Desktop site" enabled, which reports a
+ * desktop user-agent and a ~980px viewport: the pointer is still coarse, so
+ * she correctly keeps the app-intent path.
  */
+
+export type PointerEnv = {
+  userAgent: string;
+  coarsePointer: boolean;
+  viewportWidth: number;
+};
+
+/** Pure decision — unit-tested in checkout-target.test.ts. */
+export function pickRedirectTarget(env: PointerEnv): "_self" | "_modal" {
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(env.userAgent || "");
+  const looksDesktop =
+    !mobileUA &&
+    !env.coarsePointer &&
+    // A phone in desktop mode lays out at roughly 980 CSS px; real desktops
+    // are wider. Touch laptops fall to "_self", which still works fine there.
+    env.viewportWidth >= 1024;
+  return looksDesktop ? "_modal" : "_self";
+}
+
 export function checkoutRedirectTarget(): "_self" | "_modal" {
-  if (typeof window === "undefined") return "_modal";
-  const ua = navigator.userAgent || "";
-  const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-  // iPadOS Safari masquerades as Macintosh — coarse pointer catches it.
-  let coarse = false;
+  // SSR has no device signals; "_self" is the safe default under this policy.
+  if (typeof window === "undefined") return "_self";
+  let coarsePointer = false;
   try {
-    coarse = window.matchMedia("(pointer: coarse)").matches;
+    coarsePointer = window.matchMedia("(pointer: coarse)").matches;
   } catch {
-    /* very old browsers — UA check alone decides */
+    /* very old browsers — UA + width decide */
   }
-  return mobileUA || coarse ? "_self" : "_modal";
+  return pickRedirectTarget({
+    userAgent: navigator.userAgent || "",
+    coarsePointer,
+    viewportWidth: window.innerWidth || 0,
+  });
 }
