@@ -25,7 +25,43 @@
  * lose a lead. Callers get a result object and can ignore it.
  */
 
+import { appendMessage } from './wa-messages.ts'
+
 const GRAPH_VERSION = 'v21.0'
+
+/**
+ * Mirror an outbound template into the Messages tab.
+ *
+ * Without this the admin inbox only ever recorded free-form replies, so a
+ * thread showed her answer with nothing above it — you could see "yes please
+ * book me" and have no idea which message prompted it. Templates are what the
+ * funnel actually sends, so they are most of the conversation.
+ *
+ * Fully swallowed and never awaited by the caller's critical path: logging a
+ * message we already delivered must never turn a successful send into a
+ * failure, and a Sheets outage must not slow the funnel.
+ */
+async function logTemplateToInbox(
+  recipient: string,
+  templateName: string,
+  bodyParams: string[],
+  messageId: string | undefined,
+): Promise<void> {
+  try {
+    const label = bodyParams.length ? `[${templateName}] ${bodyParams.join(' · ')}` : `[${templateName}]`
+    await appendMessage({
+      ts: new Date().toISOString(),
+      phone: recipient,
+      direction: 'out',
+      text: label,
+      messageId: messageId ?? '',
+      name: '',
+      read: true,
+    })
+  } catch (err) {
+    console.error('[whatsapp] template sent but inbox logging failed (ignored):', err instanceof Error ? err.message : String(err))
+  }
+}
 
 /** The brief specifies WHATSAPP_ACCESS_TOKEN; the first deploy shipped
  *  WHATSAPP_TOKEN. Accept either so neither naming silently no-ops. */
@@ -143,6 +179,7 @@ export async function sendWhatsAppTemplate(
 
     const messageId = json.messages?.[0]?.id
     console.log(`[whatsapp] sent template=${templateName} to=***${recipient.slice(-4)} id=${messageId ?? '(none)'}`)
+    await logTemplateToInbox(recipient, templateName, bodyParams, messageId)
     return { sent: true, messageId }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
