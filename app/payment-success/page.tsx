@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 
-type Status = "verifying" | "confirmed";
+type Status = "verifying" | "confirmed" | "notpaid";
 
 const COUNTDOWN_S = 3;
 
@@ -78,6 +78,13 @@ export default function PaymentSuccessPage() {
 
     let verifyAttempts = 0;
 
+    // Cashfree order statuses that mean "checkout ended without payment".
+    // ACTIVE = order still open (she cancelled / abandoned the hosted page).
+    // Mobile checkout full-page-redirects to Cashfree ("_self" for UPI app
+    // intent), and Cashfree sends cancels to this same return_url — so an
+    // unpaid terminal status must NOT fall through to the booking page.
+    const UNPAID_FINAL = ["ACTIVE", "EXPIRED", "TERMINATED", "TERMINATION_REQUESTED"];
+
     async function verifyPayment() {
       if (countdownStartedRef.current) return;
 
@@ -89,7 +96,7 @@ export default function PaymentSuccessPage() {
 
       try {
         const res = await fetch(`/api/verify-payment?orderId=${encodeURIComponent(orderId)}`);
-        const data = await res.json() as { paid: boolean };
+        const data = await res.json() as { paid: boolean; status?: string };
 
         if (data.paid) {
           startCountdown();
@@ -97,8 +104,13 @@ export default function PaymentSuccessPage() {
           // Retry — Cashfree may still be processing
           verifyAttempts += 1;
           setTimeout(verifyPayment, 2000);
+        } else if (data.status && UNPAID_FINAL.includes(data.status)) {
+          // Cashfree affirmatively says no payment — offer a retry, don't
+          // fake a confirmation. (A slow UPI that settles later is still
+          // safe: the webhook WhatsApps her the booking link.)
+          setStatus("notpaid");
         } else {
-          // After 4 retries (~8s), proceed anyway — webhook is the reliable path
+          // Status unknown (API hiccup) — proceed, webhook is the reliable path
           startCountdown();
         }
       } catch {
@@ -111,7 +123,10 @@ export default function PaymentSuccessPage() {
 
     // Mobile UPI safety: user returns from UPI app via visibilitychange
     function onVisibilityChange() {
-      if (!document.hidden) verifyPayment();
+      if (!document.hidden) {
+        verifyAttempts = 0; // fresh round — payment may have settled meanwhile
+        verifyPayment();
+      }
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -184,7 +199,111 @@ export default function PaymentSuccessPage() {
           transition: "opacity 0.55s ease, transform 0.55s ease",
         }}
       >
-        {status === "verifying" ? (
+        {status === "notpaid" ? (
+          <>
+            {/* Amber alert circle */}
+            <div style={{ marginBottom: "24px", display: "flex", justifyContent: "center" }}>
+              <div
+                style={{
+                  width: "68px",
+                  height: "68px",
+                  borderRadius: "50%",
+                  background: "rgba(245,158,11,0.10)",
+                  border: "1px solid rgba(245,158,11,0.28)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.6rem",
+                }}
+              >
+                ⚠️
+              </div>
+            </div>
+
+            <h1
+              style={{
+                fontSize: "clamp(1.35rem, 4vw, 1.55rem)",
+                fontWeight: 900,
+                lineHeight: 1.15,
+                letterSpacing: "-0.035em",
+                color: "rgba(255,255,255,0.95)",
+                margin: "0 0 12px",
+              }}
+            >
+              Payment not completed.
+            </h1>
+
+            <p
+              style={{
+                fontSize: "0.88rem",
+                color: "rgba(255,255,255,0.45)",
+                lineHeight: 1.65,
+                margin: "0 0 26px",
+              }}
+            >
+              Your consultation spot is still reserved for a few more minutes.
+              Tap below to try again with GPay, PhonePe, Paytm or card.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) window.history.back();
+                else window.location.href = "/assessment";
+              }}
+              style={{
+                width: "100%",
+                padding: "18px 20px",
+                borderRadius: "16px",
+                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                border: "none",
+                color: "#fff",
+                fontSize: "1.02rem",
+                fontWeight: 800,
+                letterSpacing: "-0.015em",
+                cursor: "pointer",
+                boxShadow: "0 8px 32px rgba(124,58,237,0.38)",
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+              }}
+            >
+              Try Payment Again →
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              style={{
+                width: "100%",
+                marginTop: "10px",
+                padding: "14px 20px",
+                borderRadius: "16px",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                color: "rgba(255,255,255,0.75)",
+                fontSize: "0.88rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+              }}
+            >
+              I already paid — check again
+            </button>
+
+            <p
+              style={{
+                marginTop: "14px",
+                fontSize: "0.66rem",
+                color: "rgba(255,255,255,0.20)",
+                lineHeight: 1.5,
+              }}
+            >
+              If money left your account, don&apos;t worry — your booking link
+              arrives on WhatsApp automatically once the payment settles.
+            </p>
+          </>
+        ) : status === "verifying" ? (
           <>
             {/* Spinner */}
             <div style={{ marginBottom: "24px", display: "flex", justifyContent: "center" }}>
