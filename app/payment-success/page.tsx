@@ -29,6 +29,7 @@ export default function PaymentSuccessPage() {
     // Meta, so ad optimisation goes blind.
     function getDestUrl(): string {
       const params = new URLSearchParams();
+      const p = new URLSearchParams(window.location.search);
 
       try {
         const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
@@ -37,8 +38,10 @@ export default function PaymentSuccessPage() {
           if (stored.leadId) params.set("leadId", stored.leadId);
         }
       } catch { /* non-critical */ }
+      // Cashfree's return_url carries leadId too — fallback when storage is
+      // empty (in-app browsers can drop it across the redirect round trip).
+      if (!params.get("leadId") && p.get("leadId")) params.set("leadId", p.get("leadId")!);
 
-      const p = new URLSearchParams(window.location.search);
       const oid = p.get("order_id") || p.get("orderId") || p.get("payment_ref") || "";
       if (oid) params.set("order_id", oid);
 
@@ -449,12 +452,13 @@ export default function PaymentSuccessPage() {
                   // Same leadId + order_id resolution as the automatic redirect,
                   // re-read at click time in case storage populated late.
                   const params = new URLSearchParams();
+                  const sp = new URLSearchParams(window.location.search);
                   try {
                     const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
                     const stored = raw ? JSON.parse(raw) as { leadId?: string } : null;
                     if (stored?.leadId) params.set("leadId", stored.leadId);
                   } catch { /* non-critical */ }
-                  const sp = new URLSearchParams(window.location.search);
+                  if (!params.get("leadId") && sp.get("leadId")) params.set("leadId", sp.get("leadId")!);
                   const oid = sp.get("order_id") || sp.get("orderId") || sp.get("payment_ref") || "";
                   if (oid) params.set("order_id", oid);
                   const qs = params.toString();
