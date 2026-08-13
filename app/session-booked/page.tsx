@@ -8,6 +8,7 @@ import { SESSION_PRICE } from "../lib/pricing";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
+import { CONSULTATION_FORM_URL } from "../context/ScarcityProvider";
 
 // ── Progress Stepper ──────────────────────────────────────────────────────────
 
@@ -229,6 +230,11 @@ function CalcomStep({
 
 export default function SessionBooked() {
   const [show, setShow] = useState(false);
+  // Entitlement to see the calendar, decided by the server. Anyone could open
+  // this URL and book a free consultation while the embed rendered
+  // unconditionally — the page even claimed "Payment received". "checking"
+  // holds the calendar back until /api/booking-access answers.
+  const [access, setAccess] = useState<"checking" | "granted" | "denied">("checking");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   // leadId + orderId thread into the Cal.com embed as metadata so the
   // BOOKING_CREATED webhook can tie a booking back to the right lead/payment.
@@ -297,6 +303,46 @@ export default function SessionBooked() {
     } catch { /* non-critical */ }
 
     return () => clearTimeout(t);
+  }, []);
+
+  // ── Entitlement check ────────────────────────────────────────────────────────
+  // Runs once on mount against every identifier we hold: the order id from the
+  // URL or the localStorage bridge, and the lead id. The server decides; this
+  // only renders the answer.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const p = new URLSearchParams(window.location.search);
+      let oid = p.get("order_id") || p.get("orderId") || "";
+      let lid = p.get("leadId") || "";
+      try {
+        const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+        if (raw) {
+          const stored = JSON.parse(raw) as { orderId?: string; leadId?: string };
+          if (!oid && stored.orderId) oid = stored.orderId;
+          if (!lid && stored.leadId) lid = stored.leadId;
+        }
+      } catch { /* non-critical */ }
+
+      if (!oid && !lid) {
+        if (!cancelled) setAccess("denied");
+        return;
+      }
+
+      try {
+        const qs = new URLSearchParams();
+        if (oid) qs.set("orderId", oid);
+        if (lid) qs.set("leadId", lid);
+        const res = await fetch(`/api/booking-access?${qs.toString()}`, { cache: "no-store" });
+        const json = (await res.json()) as { allowed?: boolean };
+        if (!cancelled) setAccess(json.allowed ? "granted" : "denied");
+      } catch {
+        // The route itself is unreachable. She holds an order id, so she came
+        // through checkout — never strand a paying customer on a network blip.
+        if (!cancelled) setAccess(oid ? "granted" : "denied");
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // ── Purchase fires HERE, on /session-booked page load ────────────────────────
@@ -457,7 +503,59 @@ export default function SessionBooked() {
       >
         <ProgressStepper activeStep={3} />
 
+        {access === "checking" && (
+          <div className="py-20 text-center">
+            <div
+              className="mx-auto mb-4 h-10 w-10 rounded-full border-2"
+              style={{
+                borderColor: "rgba(255,255,255,0.10)",
+                borderTopColor: "rgba(168,85,247,0.85)",
+                animation: "sb-spin 0.9s linear infinite",
+              }}
+            />
+            <p className="text-[0.9rem]" style={{ color: "rgba(243,244,247,0.55)" }}>
+              Confirming your payment…
+            </p>
+            <style>{`@keyframes sb-spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
+
+        {/* No payment on record — the calendar is never rendered, so the URL
+            alone cannot buy a consultation. She still gets a way forward
+            rather than a dead end. */}
+        {access === "denied" && (
+          <div
+            className="mx-auto max-w-[520px] rounded-2xl border p-7 text-center"
+            style={{ borderColor: "rgba(245,158,11,0.30)", background: "rgba(245,158,11,0.06)" }}
+          >
+            <p className="mb-3 text-[1.6rem]">🔒</p>
+            <h2 className="mb-3 text-[1.15rem] font-bold" style={{ color: "#f3f4f7" }}>
+              Your slot isn&apos;t confirmed yet
+            </h2>
+            <p className="mb-6 text-[0.86rem] leading-relaxed" style={{ color: "rgba(243,244,247,0.6)" }}>
+              Consultation times are held only after the ₹299 is paid — it keeps the
+              calendar honest for the women waiting. Fully refundable if you don&apos;t
+              leave the call with clarity, and credited against your plan.
+            </p>
+            <a
+              href={CONSULTATION_FORM_URL}
+              className="block rounded-2xl px-5 py-4 text-[1rem] font-extrabold text-white no-underline"
+              style={{
+                background: "linear-gradient(135deg, #a855f7, #7e22ce)",
+                boxShadow: "0 12px 36px rgba(168,85,247,0.35)",
+              }}
+            >
+              Pay ₹299 &amp; Pick My Time →
+            </a>
+            <p className="mt-4 text-[0.72rem]" style={{ color: "rgba(243,244,247,0.35)" }}>
+              Already paid? Open the booking link from your WhatsApp confirmation,
+              or reply there and we&apos;ll sort it out immediately.
+            </p>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
+          {access === "granted" && (
           <motion.div
             key="booking"
             initial={{ opacity: 0, y: 16 }}
@@ -500,6 +598,7 @@ export default function SessionBooked() {
               orderId={orderId}
             />
           </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </main>
