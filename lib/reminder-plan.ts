@@ -235,6 +235,141 @@ export function planReminders(opts: {
   return { candidates, skipped, scanned: rows.length };
 }
 
+// ── One-off template broadcast: unpaid, unbooked, recent ─────────────────────
+//
+// For campaign-style sends (e.g. the Rashmi blocker-video message): every lead
+// who has NOT paid and has NO booking, created within the window, once per
+// template ever. The stamp column is per-template, so a new template name is a
+// new campaign with its own once-only guarantee.
+
+export type BroadcastColumns = {
+  timestamp: number;
+  name: number;
+  phone: number;
+  paid: number;
+  bookingStatus: number;
+  sessionDate: number;
+  /** Per-template stamp column; -1 when it doesn't exist yet. */
+  stamp: number;
+};
+
+export type BroadcastSkips = {
+  paid: number;
+  booked: number;
+  alreadySent: number;
+  tooOld: number;
+  noPhone: number;
+  unparseableTime: number;
+  duplicatePhone: number;
+  overCap: number;
+};
+
+export type BroadcastPlan = {
+  candidates: ReminderCandidate[];
+  skipped: BroadcastSkips;
+  scanned: number;
+};
+
+export const BROADCAST_MAX_AGE_DAYS = 7;
+export const BROADCAST_LIMIT = 50;
+
+export function planBroadcast(opts: {
+  rows: string[][];
+  cols: BroadcastColumns;
+  now: number;
+  maxAgeDays?: number;
+  limit?: number;
+}): BroadcastPlan {
+  const { rows, cols, now, maxAgeDays = BROADCAST_MAX_AGE_DAYS, limit = BROADCAST_LIMIT } = opts;
+
+  const skipped: BroadcastSkips = {
+    paid: 0,
+    booked: 0,
+    alreadySent: 0,
+    tooOld: 0,
+    noPhone: 0,
+    unparseableTime: 0,
+    duplicatePhone: 0,
+    overCap: 0,
+  };
+
+  const bookedEvidence = (r: string[]): boolean =>
+    !!cell(r, cols.bookingStatus) || !!cell(r, cols.sessionDate);
+
+  // A phone settled on ANY row — paid, booked, or already sent this template —
+  // disqualifies all of that woman's rows.
+  const settledPhones = new Set<string>();
+  for (const r of rows) {
+    const p = phoneKey(cell(r ?? [], cols.phone));
+    if (!p) continue;
+    const isPaid = cell(r ?? [], cols.paid).toUpperCase() === "Y";
+    if (isPaid || bookedEvidence(r ?? []) || !!cell(r ?? [], cols.stamp)) settledPhones.add(p);
+  }
+
+  const claimedPhones = new Set<string>();
+  const eligible: ReminderCandidate[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] ?? [];
+    const rowNumber = i + 2;
+
+    if (cell(row, cols.paid).toUpperCase() === "Y") {
+      skipped.paid++;
+      continue;
+    }
+    if (bookedEvidence(row)) {
+      skipped.booked++;
+      continue;
+    }
+    if (cell(row, cols.stamp)) {
+      skipped.alreadySent++;
+      continue;
+    }
+
+    const phone = cell(row, cols.phone).replace(/\.0$/, "").replace(/\D/g, "");
+    if (phone.length < 10) {
+      skipped.noPhone++;
+      continue;
+    }
+    if (settledPhones.has(phoneKey(phone))) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+
+    const created = parseSheetTime(cell(row, cols.timestamp));
+    if (created === null) {
+      skipped.unparseableTime++;
+      continue;
+    }
+    const ageMinutes = (now - created) / 60000;
+    if (ageMinutes > maxAgeDays * 24 * 60) {
+      skipped.tooOld++;
+      continue;
+    }
+
+    eligible.push({ rowNumber, name: cell(row, cols.name), phone, ageMinutes: Math.round(ageMinutes) });
+  }
+
+  // Newest first — the freshest lead is the most likely to convert.
+  eligible.sort((a, b) => a.ageMinutes - b.ageMinutes);
+
+  const unique: ReminderCandidate[] = [];
+  for (const c of eligible) {
+    const key = phoneKey(c.phone);
+    if (claimedPhones.has(key)) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+    claimedPhones.add(key);
+    unique.push(c);
+  }
+
+  const candidates = unique.slice(0, limit);
+  skipped.overCap = unique.length - candidates.length;
+
+  return { candidates, skipped, scanned: rows.length };
+}
+
 // ── Booking nudge: paid but never picked a slot ──────────────────────────────
 //
 // The funnel's SECOND leak, downstream of the first: she paid ₹299 and never
