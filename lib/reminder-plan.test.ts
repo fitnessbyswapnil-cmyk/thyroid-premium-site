@@ -207,3 +207,96 @@ test("firstNameOf takes only the first word and never returns empty", () => {
   assert.equal(firstNameOf("  Kavya  "), "Kavya");
   assert.equal(firstNameOf(""), "there");
 });
+
+// ── booking nudge: paid but never booked ─────────────────────────────────────
+
+import { planBookingNudges, type BookingNudgeColumns } from "./reminder-plan.ts";
+
+const NCOLS: BookingNudgeColumns = { name: 2, phone: 3, paid: 40, paidAt: 41, bookingStatus: 17, sessionDate: 18, nudgeSent: 45 };
+const agoHrs = (h: number) => new Date(NOW - h * 3600000).toISOString();
+
+function paidRow(o: {
+  name?: string;
+  phone?: string;
+  paid?: string;
+  paidAt?: string;
+  booking?: string;
+  session?: string;
+  nudged?: string;
+}): string[] {
+  const r = new Array<string>(50).fill("");
+  r[NCOLS.name] = o.name ?? "Priya Sharma";
+  r[NCOLS.phone] = o.phone ?? "9876543210";
+  r[NCOLS.paid] = o.paid ?? "Y";
+  r[NCOLS.paidAt] = o.paidAt ?? agoHrs(24);
+  r[NCOLS.bookingStatus] = o.booking ?? "";
+  r[NCOLS.sessionDate] = o.session ?? "";
+  r[NCOLS.nudgeSent] = o.nudged ?? "";
+  return r;
+}
+
+test("a payer with no booking a day later gets the booking nudge", () => {
+  const plan = planBookingNudges({ rows: [paidRow({})], cols: NCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 1);
+  assert.equal(plan.candidates[0].rowNumber, 2);
+});
+
+test("a booked woman is never nudged to book", () => {
+  const plan = planBookingNudges({ rows: [paidRow({ booking: "Booked" })], cols: NCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.alreadyBooked, 1);
+});
+
+test("a cancelled booking also counts as handled — she needs a rebook, not a slot-picker", () => {
+  const plan = planBookingNudges({ rows: [paidRow({ booking: "Cancelled" })], cols: NCOLS, now: NOW });
+  assert.equal(plan.skipped.alreadyBooked, 1);
+});
+
+test("an unpaid row can never receive a booking nudge", () => {
+  const plan = planBookingNudges({ rows: [paidRow({ paid: "" })], cols: NCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.notPaid, 1);
+});
+
+test("the nudge fires once, ever", () => {
+  const plan = planBookingNudges({ rows: [paidRow({ nudged: "Y" })], cols: NCOLS, now: NOW });
+  assert.equal(plan.skipped.alreadyNudged, 1);
+});
+
+test("too soon after payment is left alone — booking_confirmation just arrived", () => {
+  const plan = planBookingNudges({ rows: [paidRow({ paidAt: agoHrs(3) })], cols: NCOLS, now: NOW });
+  assert.equal(plan.skipped.tooNew, 1);
+});
+
+test("a payment older than a week belongs to personal outreach, not automation", () => {
+  const plan = planBookingNudges({ rows: [paidRow({ paidAt: agoHrs(8 * 24) })], cols: NCOLS, now: NOW });
+  assert.equal(plan.skipped.tooOld, 1);
+});
+
+test("her booking on ANOTHER row settles her paid row too", () => {
+  const rows = [
+    paidRow({ phone: "9078165199" }),
+    paidRow({ phone: "919078165199.0", paid: "", booking: "Booked" }),
+  ];
+  const plan = planBookingNudges({ rows, cols: NCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 0, "same woman, different phone formats, already booked");
+  assert.equal(plan.skipped.duplicatePhone, 1);
+});
+
+test("newest payment is nudged first when the cap bites", () => {
+  const rows = [
+    paidRow({ name: "Old", phone: "9000000001", paidAt: agoHrs(6 * 24) }),
+    paidRow({ name: "Fresh", phone: "9000000002", paidAt: agoHrs(22) }),
+  ];
+  const plan = planBookingNudges({ rows, cols: NCOLS, now: NOW, limit: 1 });
+  assert.deepEqual(plan.candidates.map((c) => c.name), ["Fresh"]);
+  assert.equal(plan.skipped.overCap, 1);
+});
+
+test("a session date alone proves she booked, even when Booking Status was never stamped", () => {
+  // Live data: the Cal.com scenario missed Booking Status on women who had
+  // already sat their calls. Session Date was the surviving evidence.
+  const plan = planBookingNudges({ rows: [paidRow({ session: "12 Aug 2026 11:00 AM" })], cols: NCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.alreadyBooked, 1);
+});
