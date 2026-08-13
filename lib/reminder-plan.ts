@@ -257,6 +257,8 @@ export type BroadcastSkips = {
   paid: number;
   booked: number;
   alreadySent: number;
+  /** Younger than minAgeHours — used to hold back leads messaged very recently. */
+  tooNew: number;
   tooOld: number;
   noPhone: number;
   unparseableTime: number;
@@ -277,15 +279,26 @@ export function planBroadcast(opts: {
   rows: string[][];
   cols: BroadcastColumns;
   now: number;
+  /** Hold back leads younger than this — e.g. 24 to skip anyone messaged today
+   *  by the daily cron, so one woman never gets two templates in one day. */
+  minAgeHours?: number;
   maxAgeDays?: number;
   limit?: number;
 }): BroadcastPlan {
-  const { rows, cols, now, maxAgeDays = BROADCAST_MAX_AGE_DAYS, limit = BROADCAST_LIMIT } = opts;
+  const {
+    rows,
+    cols,
+    now,
+    minAgeHours = 0,
+    maxAgeDays = BROADCAST_MAX_AGE_DAYS,
+    limit = BROADCAST_LIMIT,
+  } = opts;
 
   const skipped: BroadcastSkips = {
     paid: 0,
     booked: 0,
     alreadySent: 0,
+    tooNew: 0,
     tooOld: 0,
     noPhone: 0,
     unparseableTime: 0,
@@ -342,6 +355,10 @@ export function planBroadcast(opts: {
       continue;
     }
     const ageMinutes = (now - created) / 60000;
+    if (ageMinutes < minAgeHours * 60) {
+      skipped.tooNew++;
+      continue;
+    }
     if (ageMinutes > maxAgeDays * 24 * 60) {
       skipped.tooOld++;
       continue;

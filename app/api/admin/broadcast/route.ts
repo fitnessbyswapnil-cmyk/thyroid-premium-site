@@ -70,7 +70,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: { template?: string; dryRun?: boolean; maxAgeDays?: number; limit?: number };
+  let body: {
+    template?: string;
+    dryRun?: boolean;
+    minAgeHours?: number;
+    maxAgeDays?: number;
+    limit?: number;
+  };
   try {
     body = await req.json();
   } catch {
@@ -87,6 +93,10 @@ export async function POST(req: NextRequest) {
     );
   }
   const dryRun = body.dryRun === true;
+  // Hold back very recent leads so the daily cron and a same-day broadcast
+  // can never both hit one woman.
+  const minAgeHours =
+    Number.isFinite(body.minAgeHours) && (body.minAgeHours as number) > 0 ? (body.minAgeHours as number) : 0;
   const maxAgeDays =
     Number.isFinite(body.maxAgeDays) && (body.maxAgeDays as number) > 0
       ? (body.maxAgeDays as number)
@@ -120,12 +130,12 @@ export async function POST(req: NextRequest) {
       stamp: findCol(header, stampTitle),
     };
 
-    const plan = planBroadcast({ rows, cols, now: Date.now(), maxAgeDays, limit });
+    const plan = planBroadcast({ rows, cols, now: Date.now(), minAgeHours, maxAgeDays, limit });
 
     const summary = {
       dryRun,
       template,
-      window: { maxAgeDays, limit },
+      window: { minAgeHours, maxAgeDays, limit },
       scanned: plan.scanned,
       eligible: plan.candidates.length,
       skipped: plan.skipped,

@@ -354,3 +354,21 @@ test("her paid row on another line settles her unpaid duplicate", () => {
   const plan = planBroadcast({ rows, cols: BCOLS, now: NOW });
   assert.equal(plan.candidates.length, 0);
 });
+
+test("minAgeHours holds back leads messaged earlier today", () => {
+  const rows = [
+    bRow({ phone: "9000000010", ts: agoMin(60 * 5) }),   // 5h — got today's cron
+    bRow({ phone: "9000000011", ts: agoMin(60 * 21) }),  // 21h — got today's cron
+    bRow({ phone: "9000000012", ts: agoMin(60 * 27) }),  // 27h — had nothing
+    bRow({ phone: "9000000013", ts: agoMin(60 * 72) }),  // 3d — had nothing
+  ];
+  const plan = planBroadcast({ rows, cols: BCOLS, now: NOW, minAgeHours: 24 });
+  assert.equal(plan.candidates.length, 2, "only leads older than 24h");
+  assert.equal(plan.skipped.tooNew, 2);
+});
+
+test("minAgeHours defaults to 0 so a plain broadcast reaches everyone", () => {
+  const plan = planBroadcast({ rows: [bRow({ ts: agoMin(30) })], cols: BCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 1);
+  assert.equal(plan.skipped.tooNew, 0);
+});
