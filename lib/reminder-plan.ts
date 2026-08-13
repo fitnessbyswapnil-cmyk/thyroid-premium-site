@@ -234,3 +234,178 @@ export function planReminders(opts: {
 
   return { candidates, skipped, scanned: rows.length };
 }
+
+// ── Booking nudge: paid but never picked a slot ──────────────────────────────
+//
+// The funnel's SECOND leak, downstream of the first: she paid ₹299 and never
+// booked her call. booking_confirmation fires once at the moment of payment —
+// if she misses that single message, nothing ever speaks to her again, and the
+// money is spent with no consultation behind it. Two of every three payers were
+// ending here. This planner gives each paid-unbooked woman exactly one more
+// booking_confirmation (UTILITY template, booking button included), the day
+// after she paid.
+//
+// Rules mirror planReminders where the reasons carry over; where they differ:
+//
+//   MIN AGE  measured from Paid At, not lead creation — she got the instant
+//            confirmation at payment; the nudge waits ~20h so it reads as a
+//            courteous follow-up, not a duplicate.
+//   MAX AGE  7 days. Beyond that a template nudge is stale — she belongs to
+//            personal outreach, not automation.
+//   BOOKED   any row of hers with a Booking Status disqualifies all her rows —
+//            the Cal.com → Sheets scenario writes that column on booking.
+
+export type BookingNudgeColumns = {
+  name: number;
+  phone: number;
+  paid: number;
+  /** "Paid At" ISO stamp written by the payment webhook. */
+  paidAt: number;
+  /** Column R — "Booked"/"Cancelled", owned by the Cal.com Make scenario. */
+  bookingStatus: number;
+  /** Column S — "Session Date". The Make scenario sometimes stamps only one of
+   *  the two booking columns, and live data shows booked women with an empty
+   *  Booking Status. EITHER column counts as "she booked" — nudging a woman
+   *  who already sat her consultation is the worst message this job can send. */
+  sessionDate: number;
+  nudgeSent: number;
+};
+
+export type BookingNudgeSkips = {
+  notPaid: number;
+  alreadyBooked: number;
+  alreadyNudged: number;
+  tooNew: number;
+  tooOld: number;
+  noPhone: number;
+  unparseableTime: number;
+  duplicatePhone: number;
+  overCap: number;
+};
+
+export type BookingNudgePlan = {
+  candidates: ReminderCandidate[];
+  skipped: BookingNudgeSkips;
+  scanned: number;
+};
+
+export const BOOKING_NUDGE_MIN_AGE_HOURS = 20;
+export const BOOKING_NUDGE_MAX_AGE_DAYS = 7;
+export const BOOKING_NUDGE_LIMIT = 15;
+
+export function planBookingNudges(opts: {
+  rows: string[][];
+  cols: BookingNudgeColumns;
+  now: number;
+  minAgeHours?: number;
+  maxAgeDays?: number;
+  limit?: number;
+}): BookingNudgePlan {
+  const {
+    rows,
+    cols,
+    now,
+    minAgeHours = BOOKING_NUDGE_MIN_AGE_HOURS,
+    maxAgeDays = BOOKING_NUDGE_MAX_AGE_DAYS,
+    limit = BOOKING_NUDGE_LIMIT,
+  } = opts;
+
+  const skipped: BookingNudgeSkips = {
+    notPaid: 0,
+    alreadyBooked: 0,
+    alreadyNudged: 0,
+    tooNew: 0,
+    tooOld: 0,
+    noPhone: 0,
+    unparseableTime: 0,
+    duplicatePhone: 0,
+    overCap: 0,
+  };
+
+  // Same one-woman-many-rows reality as planReminders: her booking or an
+  // earlier nudge may live on a different row than her payment. A phone that
+  // is booked or nudged ANYWHERE settles every row it appears on.
+  const bookedEvidence = (r: string[]): boolean =>
+    !!cell(r, cols.bookingStatus) || !!cell(r, cols.sessionDate);
+
+  const settledPhones = new Set<string>();
+  for (const r of rows) {
+    const p = phoneKey(cell(r ?? [], cols.phone));
+    if (!p) continue;
+    const nudged = !!cell(r ?? [], cols.nudgeSent);
+    if (bookedEvidence(r ?? []) || nudged) settledPhones.add(p);
+  }
+
+  const claimedPhones = new Set<string>();
+  const eligible: ReminderCandidate[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] ?? [];
+    const rowNumber = i + 2;
+
+    if (cell(row, cols.paid).toUpperCase() !== "Y") {
+      skipped.notPaid++;
+      continue;
+    }
+    // Any booking state — Booked, Cancelled, a session date, rescheduled
+    // prose — means the booking pipeline already owns her; a "pick your slot"
+    // nudge would be wrong for every one of those states.
+    if (bookedEvidence(row)) {
+      skipped.alreadyBooked++;
+      continue;
+    }
+    if (cell(row, cols.nudgeSent)) {
+      skipped.alreadyNudged++;
+      continue;
+    }
+
+    const phone = cell(row, cols.phone).replace(/\.0$/, "").replace(/\D/g, "");
+    if (phone.length < 10) {
+      skipped.noPhone++;
+      continue;
+    }
+    if (settledPhones.has(phoneKey(phone))) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+
+    const paidAt = parseSheetTime(cell(row, cols.paidAt));
+    if (paidAt === null) {
+      skipped.unparseableTime++;
+      continue;
+    }
+
+    const ageMinutes = (now - paidAt) / 60000;
+    if (ageMinutes < minAgeHours * 60) {
+      skipped.tooNew++;
+      continue;
+    }
+    if (ageMinutes > maxAgeDays * 24 * 60) {
+      skipped.tooOld++;
+      continue;
+    }
+
+    eligible.push({ rowNumber, name: cell(row, cols.name), phone, ageMinutes: Math.round(ageMinutes) });
+  }
+
+  // Newest payment first — the opposite of planReminders. A booking nudge
+  // converts best while the payment is still fresh in her mind; the 7-day
+  // max-age already protects the tail.
+  eligible.sort((a, b) => a.ageMinutes - b.ageMinutes);
+
+  const unique: ReminderCandidate[] = [];
+  for (const c of eligible) {
+    const key = phoneKey(c.phone);
+    if (claimedPhones.has(key)) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+    claimedPhones.add(key);
+    unique.push(c);
+  }
+
+  const candidates = unique.slice(0, limit);
+  skipped.overCap = unique.length - candidates.length;
+
+  return { candidates, skipped, scanned: rows.length };
+}
