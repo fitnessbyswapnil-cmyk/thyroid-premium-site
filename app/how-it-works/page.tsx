@@ -39,28 +39,28 @@ const GOOD = "#34d399";
 const STEPS = [
   {
     n: "01",
-    title: "Secure your slot — ₹2,000 call, today ₹299",
-    body: "The consultation's actual price is ₹2,000 — you get it at ₹299, fully refundable if you don't leave with clarity. Credited against your plan if you continue.",
+    title: "Reserve — ₹2,000, today ₹299",
+    body: "Fully refundable. Credited to your plan.",
   },
   {
     n: "02",
-    title: "I read your case before we speak",
-    body: "Your assessment answers and reports reach me first. We don't spend your call collecting history — I arrive already knowing your pattern.",
+    title: "I study your case first",
+    body: "Your reports reach me before we speak.",
   },
   {
     n: "03",
     title: "Pick your time",
-    body: "Your booking link arrives on WhatsApp the moment payment lands. Choose any private slot; the Google Meet link comes instantly.",
+    body: "Booking link on WhatsApp, instantly.",
   },
   {
     n: "04",
-    title: "The 60-minute call — we find your blocker",
-    body: "Diet, workouts, fasting — if the weight still won't move, something specific is blocking your metabolism. We locate it, in order of what to fix first.",
+    title: "60 minutes — we find your blocker",
+    body: "Named, in the order to fix.",
   },
   {
     n: "05",
-    title: "Your written summary, yours to keep",
-    body: "After the call you get the full breakdown on WhatsApp — your blockers, the sequence to fix them, and exactly what reversing them involves.",
+    title: "Written summary on WhatsApp",
+    body: "Yours to keep, either way.",
   },
 ] as const;
 
@@ -205,8 +205,12 @@ export default function HowItWorks() {
         >
           Find My Blocker — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
         </a>
-        <p style={{ textAlign: "center", fontSize: 11, color: MUTED, marginBottom: 36 }}>
-          Actual call price {ACTUAL_PRICE} · today {OFFER_PRICE} · fully refundable if no clarity
+        <p style={{ textAlign: "center", fontSize: 12, color: INK2, lineHeight: 1.6, marginBottom: 36 }}>
+          I&apos;m not selling you a call — I&apos;m finding your blocker.
+          <br />
+          <span style={{ color: MUTED, fontSize: 11 }}>
+            The {OFFER_PRICE} just keeps my calendar serious. Refunded if you leave without clarity.
+          </span>
         </p>
 
         {/* ── The Three Locks — FOMO diagram ─────────────────────────────────
@@ -429,7 +433,7 @@ export default function HowItWorks() {
             marginBottom: 12,
           }}
         >
-          Book My Consultation — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
+          Okay — Find My Blocker — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
         </a>
         <p style={{ textAlign: "center", fontSize: 11.5, color: MUTED, lineHeight: 1.6 }}>
           <span style={{ color: GOOD }}>✓</span> GPay · PhonePe · Paytm · Cards &nbsp;·&nbsp;
