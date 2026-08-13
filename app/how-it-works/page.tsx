@@ -12,7 +12,13 @@
 import type { Metadata } from "next";
 
 const VIDEO_URL = "https://youtu.be/Iad2NE9w7eg";
+// YouTube's own thumbnail CDN — hqdefault exists for every video. Loaded by
+// the visitor's browser, so it works regardless of where this page is served.
+const VIDEO_THUMB = "https://i.ytimg.com/vi/Iad2NE9w7eg/hqdefault.jpg";
 const PAY_URL = "https://payments.cashfree.com/forms?code=thyroid-session";
+// Price anchor: the call's actual price vs what she pays today.
+const ACTUAL_PRICE = "₹2,000";
+const OFFER_PRICE = "₹299";
 
 export const metadata: Metadata = {
   title: "How Your Thyroid Consultation Works · Swapnil Umbarkar",
@@ -33,8 +39,8 @@ const GOOD = "#34d399";
 const STEPS = [
   {
     n: "01",
-    title: "Secure your slot — ₹299",
-    body: "One payment, fully refundable if you don't leave the call with clarity. It also gets credited against your plan if you continue.",
+    title: "Secure your slot — ₹2,000 call, today ₹299",
+    body: "The consultation's actual price is ₹2,000 — you get it at ₹299, fully refundable if you don't leave with clarity. Credited against your plan if you continue.",
   },
   {
     n: "02",
@@ -102,7 +108,7 @@ export default function HowItWorks() {
           <span style={{ color: INK1, fontWeight: 600 }}>This call finds it.</span>
         </p>
 
-        {/* Rashmi proof video */}
+        {/* Rashmi proof video — thumbnail-led so it reads as a video, not a link */}
         <a
           href={VIDEO_URL}
           target="_blank"
@@ -111,37 +117,97 @@ export default function HowItWorks() {
             display: "block",
             textDecoration: "none",
             borderRadius: 20,
+            overflow: "hidden",
             border: `1px solid rgba(168,85,247,0.35)`,
             background: `linear-gradient(160deg, rgba(168,85,247,0.14), ${CARD})`,
-            padding: 22,
-            marginBottom: 36,
+            marginBottom: 14,
           }}
         >
-          <p style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 800, marginBottom: 8 }}>
-            ▶ Watch: a real consultation, step by step
-          </p>
-          <p style={{ fontSize: 15.5, color: INK1, fontWeight: 700, lineHeight: 1.45, marginBottom: 8 }}>
-            Rashmi — a doctor from Odisha — was doing diet, workouts and intermittent
-            fasting. Still stuck.
-          </p>
-          <p style={{ fontSize: 13.5, color: INK2, lineHeight: 1.6, marginBottom: 12 }}>
-            On her call we found the exact blocker she didn&apos;t know existed. She recorded
-            how it worked so you can see it before your own.
-          </p>
-          <span
-            style={{
-              display: "inline-block",
-              fontSize: 13,
-              fontWeight: 800,
-              color: "#fff",
-              background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`,
-              borderRadius: 999,
-              padding: "10px 18px",
-            }}
-          >
-            Watch Rashmi&apos;s video →
-          </span>
+          <div style={{ position: "relative" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- remote CDN thumb, next/image would need domain config for zero gain here */}
+            <img
+              src={VIDEO_THUMB}
+              alt="Rashmi's 1-on-1 thyroid consultation — screen recording"
+              style={{ display: "block", width: "100%", aspectRatio: "16/9", objectFit: "cover" }}
+            />
+            {/* play button overlay */}
+            <span
+              aria-hidden
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "grid",
+                placeItems: "center",
+                background: "rgba(7,6,15,0.25)",
+              }}
+            >
+              <span
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "rgba(168,85,247,0.92)",
+                  boxShadow: "0 8px 40px rgba(0,0,0,0.55)",
+                  color: "#fff",
+                  fontSize: 24,
+                  paddingLeft: 5,
+                }}
+              >
+                ▶
+              </span>
+            </span>
+            <span
+              style={{
+                position: "absolute",
+                left: 10,
+                top: 10,
+                fontSize: 10,
+                letterSpacing: "0.12em",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                color: "#fff",
+                background: "rgba(7,6,15,0.72)",
+                borderRadius: 999,
+                padding: "5px 10px",
+              }}
+            >
+              ▶ Real consultation · 1:47
+            </span>
+          </div>
+          <div style={{ padding: "16px 18px 18px" }}>
+            <p style={{ fontSize: 15, color: INK1, fontWeight: 700, lineHeight: 1.45, marginBottom: 4 }}>
+              Rashmi — a doctor from Odisha — was doing diet, workouts and fasting. Still stuck.
+            </p>
+            <p style={{ fontSize: 13, color: INK2, lineHeight: 1.6 }}>
+              On her call we found the exact blocker she didn&apos;t know existed. Watch how, step by step.
+            </p>
+          </div>
         </a>
+
+        {/* CTA immediately after the proof */}
+        <a
+          href={PAY_URL}
+          style={{
+            display: "block",
+            textAlign: "center",
+            textDecoration: "none",
+            padding: "16px 20px",
+            borderRadius: 16,
+            background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`,
+            color: "#fff",
+            fontSize: 15.5,
+            fontWeight: 800,
+            boxShadow: "0 14px 40px rgba(168,85,247,0.35)",
+            marginBottom: 6,
+          }}
+        >
+          Find My Blocker — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
+        </a>
+        <p style={{ textAlign: "center", fontSize: 11, color: MUTED, marginBottom: 36 }}>
+          Actual call price {ACTUAL_PRICE} · today {OFFER_PRICE} · fully refundable if no clarity
+        </p>
 
         {/* ── The Three Locks — FOMO diagram ─────────────────────────────────
             Mirrors the deck used on real consultations (Rashmi's video shows
@@ -363,7 +429,7 @@ export default function HowItWorks() {
             marginBottom: 12,
           }}
         >
-          Book My Consultation · ₹299
+          Book My Consultation — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
         </a>
         <p style={{ textAlign: "center", fontSize: 11.5, color: MUTED, lineHeight: 1.6 }}>
           <span style={{ color: GOOD }}>✓</span> GPay · PhonePe · Paytm · Cards &nbsp;·&nbsp;
