@@ -49,6 +49,53 @@ const HEADERS = {
 type Field = keyof typeof COLS;
 const FIELDS = Object.keys(COLS) as Field[];
 
+// ── Header-resolved data corrections ─────────────────────────────────────────
+// The webhook-500 era left real payers with no Paid stamp (the planner then
+// treats them as unpaid and would send a "complete your payment" nudge to a
+// woman who already sat her consultation), and test rows pollute reminder
+// batches. These two fields let the coach correct a row from the dashboard or
+// curl instead of hand-editing the spreadsheet. Only "Y" is accepted — a row
+// can be settled via this route, never unsettled; unwinding a wrong Y is rare
+// enough to stay a manual sheet edit.
+const DATA_FIELDS: Record<string, string> = {
+  paid: "Paid",
+  remindersent: "Reminder Sent",
+};
+
+/** Resolve a header title to its column index, appending it if absent.
+ *  Refuses reserved columns R/S — those belong to the Cal.com scenario. */
+const RESERVED = new Set([17, 18]);
+async function resolveOrAppendColumn(
+  sheets: Awaited<ReturnType<typeof getSheetsClient>>["sheets"],
+  sheetId: string,
+  title: string,
+): Promise<number | null> {
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1` });
+  const header = ((res.data.values?.[0] ?? []) as string[]).map((h) => String(h ?? "").trim().toLowerCase());
+  const i = header.lastIndexOf(title.toLowerCase());
+  if (i >= 0) return RESERVED.has(i) ? null : i;
+  const at = header.length;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${SHEET_NAME}!${numToCol(at)}1`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[title]] },
+  });
+  return at;
+}
+
+/** 0-based index → A1 letters (AA past Z). */
+function numToCol(index: number): string {
+  let n = index + 1;
+  let s = "";
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
 // Audit column for the programme conversion. Its presence is the durable
 // "already sent" guard — re-marking the same win (a typo fix, a double click)
 // must not send Meta a second sale.
@@ -137,10 +184,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "bad_json" }, { status: 400 });
   }
   const row = Number(body.row);
-  const field = FIELDS.includes(body.field as Field) ? (body.field as Field) : null;
   const value = (body.value ?? "").toString().slice(0, 300);
   // Row 1 is headers — never writable. Sanity-cap the range.
-  if (!field || !Number.isInteger(row) || row < 2 || row > 100000) {
+  if (!Number.isInteger(row) || row < 2 || row > 100000) {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+
+  // Data-correction fields: header-resolved, Y-only, settle-only.
+  const dataTitle = DATA_FIELDS[String(body.field ?? "").toLowerCase()];
+  if (dataTitle) {
+    if (value !== "Y") {
+      return NextResponse.json({ error: "bad_value", hint: "only Y is accepted" }, { status: 400 });
+    }
+    try {
+      const { sheets, sheetId } = await getSheetsClient();
+      const col = await resolveOrAppendColumn(sheets, sheetId, dataTitle);
+      if (col === null) {
+        return NextResponse.json({ error: "reserved_column" }, { status: 400 });
+      }
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `${SHEET_NAME}!${numToCol(col)}${row}`,
+        valueInputOption: "RAW",
+        requestBody: { values: [["Y"]] },
+      });
+      return NextResponse.json({ ok: true, field: dataTitle, row, column: numToCol(col) });
+    } catch (err) {
+      console.error("[admin/mark] data correction failed:", err);
+      return NextResponse.json({ error: "sheet_write_failed" }, { status: 500 });
+    }
+  }
+
+  const field = FIELDS.includes(body.field as Field) ? (body.field as Field) : null;
+  if (!field) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
   if (field === "showed" && value !== "Y" && value !== "N") {
