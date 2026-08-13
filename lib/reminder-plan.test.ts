@@ -300,3 +300,57 @@ test("a session date alone proves she booked, even when Booking Status was never
   assert.equal(plan.candidates.length, 0);
   assert.equal(plan.skipped.alreadyBooked, 1);
 });
+
+// ── broadcast: unpaid + unbooked + recent, once per template ─────────────────
+
+import { planBroadcast, type BroadcastColumns } from "./reminder-plan.ts";
+
+const BCOLS: BroadcastColumns = { timestamp: 0, name: 2, phone: 3, paid: 40, bookingStatus: 17, sessionDate: 18, stamp: 46 };
+
+function bRow(o: { ts?: string; phone?: string; paid?: string; booking?: string; session?: string; stamp?: string }): string[] {
+  const r = new Array<string>(50).fill("");
+  r[BCOLS.timestamp] = o.ts ?? agoMin(60 * 20);
+  r[2] = "Priya Sharma";
+  r[BCOLS.phone] = o.phone ?? "9876543210";
+  r[BCOLS.paid] = o.paid ?? "";
+  r[BCOLS.bookingStatus] = o.booking ?? "";
+  r[BCOLS.sessionDate] = o.session ?? "";
+  r[BCOLS.stamp] = o.stamp ?? "";
+  return r;
+}
+
+test("an unpaid unbooked recent lead is broadcast to", () => {
+  const plan = planBroadcast({ rows: [bRow({})], cols: BCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 1);
+});
+
+test("paid, booked and already-sent leads are all excluded", () => {
+  const rows = [
+    bRow({ phone: "9000000001", paid: "Y" }),
+    bRow({ phone: "9000000002", booking: "Booked" }),
+    bRow({ phone: "9000000003", session: "12 Aug 4 PM" }),
+    bRow({ phone: "9000000004", stamp: "2026-08-13T00:00:00Z" }),
+  ];
+  const plan = planBroadcast({ rows, cols: BCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.paid, 1);
+  assert.equal(plan.skipped.booked, 2);
+  assert.equal(plan.skipped.alreadySent, 1);
+});
+
+test("a lead older than the window is left out", () => {
+  const plan = planBroadcast({ rows: [bRow({ ts: agoMin(60 * 24 * 9) })], cols: BCOLS, now: NOW });
+  assert.equal(plan.skipped.tooOld, 1);
+});
+
+test("a missing stamp column (-1) means nobody is 'already sent'", () => {
+  const cols = { ...BCOLS, stamp: -1 };
+  const plan = planBroadcast({ rows: [bRow({})], cols, now: NOW });
+  assert.equal(plan.candidates.length, 1);
+});
+
+test("her paid row on another line settles her unpaid duplicate", () => {
+  const rows = [bRow({ phone: "9078165199" }), bRow({ phone: "919078165199.0", paid: "Y" })];
+  const plan = planBroadcast({ rows, cols: BCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 0);
+});
