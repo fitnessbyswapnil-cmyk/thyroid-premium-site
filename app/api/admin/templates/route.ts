@@ -52,14 +52,19 @@ export async function GET(req: NextRequest) {
   const t = token();
   if (!t) return NextResponse.json({ error: "whatsapp_token_missing" }, { status: 500 });
 
-  const wabaId = new URL(req.url).searchParams.get("wabaId") || DEFAULT_WABA;
+  const url = new URL(req.url);
+  const wabaId = url.searchParams.get("wabaId") || DEFAULT_WABA;
+  // ?full=1 also returns each template's components — the body text and any
+  // buttons. Needed to answer "what does this message actually say to her",
+  // e.g. whether a template hands out a booking link before payment.
+  const full = url.searchParams.get("full") === "1";
   try {
     const res = await fetch(
-      `${GRAPH}/${encodeURIComponent(wabaId)}/message_templates?fields=name,language,status,category&limit=100`,
+      `${GRAPH}/${encodeURIComponent(wabaId)}/message_templates?fields=name,language,status,category,components&limit=100`,
       { headers: { Authorization: `Bearer ${t}` }, cache: "no-store" },
     );
     const json = (await res.json()) as {
-      data?: { name: string; language: string; status: string; category: string }[];
+      data?: { name: string; language: string; status: string; category: string; components?: unknown }[];
       error?: { message?: string };
     };
     if (!res.ok || json.error) {
@@ -70,6 +75,7 @@ export async function GET(req: NextRequest) {
       language: d.language,
       status: d.status,
       category: d.category,
+      ...(full ? { components: d.components } : {}),
     }));
     return NextResponse.json({ wabaId, count: templates.length, templates });
   } catch (err) {
