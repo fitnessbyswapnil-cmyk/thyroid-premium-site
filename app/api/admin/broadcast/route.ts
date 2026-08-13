@@ -24,7 +24,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { checkAdminKey } from "../_lib";
-import { colLetter, RESERVED_INDEXES } from "@/lib/lead-sheet";
+import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
 import { sendWhatsAppTemplate, isWhatsAppConfigured } from "@/lib/whatsapp";
 import {
   planBroadcast,
@@ -164,6 +164,9 @@ export async function POST(req: NextRequest) {
     let stampCol = cols.stamp;
     if (stampCol < 0 || RESERVED_INDEXES.has(stampCol)) {
       stampCol = header.length;
+      // The Leads grid is a fixed width and is currently full — widen it or
+      // the header write fails with "exceeds grid limits" and nothing sends.
+      await ensureGridColumns(sheets, spreadsheetId, LEADS_SHEET, stampCol);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range: `${LEADS_SHEET}!${colLetter(stampCol)}1`,

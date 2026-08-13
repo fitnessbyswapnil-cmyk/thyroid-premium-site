@@ -27,17 +27,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { sendProgramConversion, type ProgramConversionResult } from "@/lib/meta-conversion";
+import { ensureGridColumns } from "@/lib/lead-sheet";
 
 export const dynamic = "force-dynamic";
 
-const COLS = {
-  showed: "BB",
-  closed: "BC",
-  meetlink: "BD",
-  msg1: "BE",
-  msg2: "BF",
-  msg3: "BG",
-} as const;
+/**
+ * Outcome columns, resolved BY HEADER NAME — never by fixed letters.
+ *
+ * These used to be hardcoded (showed→BB, closed→BC, …) on the assumption that
+ * lead data ended at BA. The payment webhook and the reminder cron then
+ * appended their own columns into exactly that range, so BB became "Paid",
+ * BC became "Paid Amount" and BD became "Budget". Every later click of
+ * "Showed" or "+ Closed ₹" wrote into a payment column and overwrote its
+ * header. Resolving by name (appending the column when absent) makes these
+ * writes correct regardless of how the sheet has grown.
+ */
 const HEADERS = {
   showed: "Showed",
   closed: "Closed ₹",
@@ -46,8 +50,8 @@ const HEADERS = {
   msg2: "Msg2 Sent",
   msg3: "Msg3 Sent",
 } as const;
-type Field = keyof typeof COLS;
-const FIELDS = Object.keys(COLS) as Field[];
+type Field = keyof typeof HEADERS;
+const FIELDS = Object.keys(HEADERS) as Field[];
 
 // ── Header-resolved data corrections ─────────────────────────────────────────
 // The webhook-500 era left real payers with no Paid stamp (the planner then
@@ -75,6 +79,8 @@ async function resolveOrAppendColumn(
   const i = header.lastIndexOf(title.toLowerCase());
   if (i >= 0) return RESERVED.has(i) ? null : i;
   const at = header.length;
+  // The grid has a fixed width; widen it before writing past the last column.
+  await ensureGridColumns(sheets, sheetId, SHEET_NAME, at);
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
     range: `${SHEET_NAME}!${numToCol(at)}1`,
@@ -98,8 +104,8 @@ function numToCol(index: number): string {
 
 // Audit column for the programme conversion. Its presence is the durable
 // "already sent" guard — re-marking the same win (a typo fix, a double click)
-// must not send Meta a second sale.
-const META_COL = "BH";
+// must not send Meta a second sale. Resolved by header name like every other
+// column here; "BH" is now "Paid At" and writing there would destroy it.
 const META_HEADER = "Meta Sent";
 
 /** Sheet header name → 0-based column index, preferring the rightmost match
@@ -156,14 +162,17 @@ async function sendWinToMeta(
 
   // Stamp the audit column only after Meta accepted the event, so a failure
   // leaves the win re-sendable rather than silently swallowed.
+  const stampCol = await resolveOrAppendColumn(sheets, sheetId, META_HEADER);
+  if (stampCol === null) return { status: "sent_unstamped", detail };
+  const stampLetter = numToCol(stampCol);
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: sheetId,
     requestBody: {
       valueInputOption: "RAW",
       data: [
-        { range: `${SHEET_NAME}!${META_COL}1`, values: [[META_HEADER]] },
+        { range: `${SHEET_NAME}!${stampLetter}1`, values: [[META_HEADER]] },
         {
-          range: `${SHEET_NAME}!${META_COL}${row}`,
+          range: `${SHEET_NAME}!${stampLetter}${row}`,
           values: [[`${new Date().toISOString()}|${detail.eventName}|${amount}|${detail.eventId}`]],
         },
       ],
@@ -239,7 +248,13 @@ export async function POST(req: NextRequest) {
   }
   try {
     const { sheets, sheetId } = await getSheetsClient();
-    const colLetter = COLS[field];
+    // Resolved by header name — see the HEADERS comment for why fixed letters
+    // silently corrupted payment columns.
+    const colIndex = await resolveOrAppendColumn(sheets, sheetId, HEADERS[field]);
+    if (colIndex === null) {
+      return NextResponse.json({ error: "reserved_column" }, { status: 400 });
+    }
+    const colLetter = numToCol(colIndex);
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: sheetId,
       requestBody: {

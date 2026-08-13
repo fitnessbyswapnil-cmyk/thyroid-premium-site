@@ -287,6 +287,44 @@ function getSheets() {
   return { sheets: google.sheets({ version: "v4", auth }), spreadsheetId };
 }
 
+/**
+ * Google Sheets refuses any write past the grid's declared width — the Leads
+ * tab filled up at 63 columns (A..BK) and the next appended bookkeeping column
+ * failed with "Range (Leads!BL1) exceeds grid limits". Every writer that can
+ * append a column must widen the grid first.
+ *
+ * Adds headroom rather than exactly one column, so a run that appends several
+ * columns needs one API call, not several. No-ops when the grid is wide enough.
+ */
+export async function ensureGridColumns(
+  sheets: ReturnType<typeof google.sheets>,
+  spreadsheetId: string,
+  sheetName: string,
+  neededIndex: number,
+): Promise<void> {
+  const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: "sheets.properties" });
+  const target = (meta.data.sheets ?? []).find((s) => s.properties?.title === sheetName);
+  const sheetId = target?.properties?.sheetId;
+  const width = target?.properties?.gridProperties?.columnCount ?? 0;
+  if (sheetId == null || width > neededIndex) return;
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          appendDimension: {
+            sheetId,
+            dimension: "COLUMNS",
+            length: neededIndex - width + 10,
+          },
+        },
+      ],
+    },
+  });
+  console.log(`[lead-sheet] widened ${sheetName} from ${width} to ${neededIndex + 10} columns`);
+}
+
 export type LeadWriteResult = { action: "append" | "update"; rowNumber?: number; addedHeaders: string[] };
 
 /** Read header + existing email rows, plan, then write. Throws on failure so the

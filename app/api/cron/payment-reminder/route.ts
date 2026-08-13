@@ -31,7 +31,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { checkAdminKey } from "../../admin/_lib";
-import { colLetter, RESERVED_INDEXES } from "@/lib/lead-sheet";
+import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
 import { sendWhatsAppTemplate, isWhatsAppConfigured } from "@/lib/whatsapp";
 import {
   planReminders,
@@ -202,6 +202,8 @@ export async function GET(req: NextRequest) {
       nudgeSentCol = claim(nudgeSentCol, NUDGE_SENT_TITLE);
       nudgeAtCol = claim(nudgeAtCol, NUDGE_AT_TITLE);
       if (next.length > header.length) {
+        // Widen the fixed-width grid before writing past its last column.
+        await ensureGridColumns(sheets, spreadsheetId, LEADS_SHEET, next.length - 1);
         await sheets.spreadsheets.values.update({
           spreadsheetId,
           range: `${LEADS_SHEET}!1:1`,
