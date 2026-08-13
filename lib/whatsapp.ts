@@ -110,6 +110,15 @@ export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
   bodyParams: string[] = [],
+  /**
+   * Language code to send with. Meta matches a template by name AND language,
+   * and rejects a mismatch with (#132001) "Template name does not exist in the
+   * translation" — the same error as a missing template, which makes the real
+   * cause hard to spot. WhatsApp Manager shows a language LABEL, not its code,
+   * so "English" may be stored as en, en_US or en_GB. This override exists to
+   * find the right one against the live API without a redeploy per guess.
+   */
+  languageOverride?: string,
 ): Promise<WhatsAppResult> {
   const token = readToken()
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
@@ -124,7 +133,7 @@ export async function sendWhatsAppTemplate(
     return { sent: false, skipped: 'invalid_phone' }
   }
 
-  const language = process.env.WHATSAPP_TEMPLATE_LANG || 'en'
+  const language = languageOverride || process.env.WHATSAPP_TEMPLATE_LANG || 'en'
 
   const body = {
     messaging_product: 'whatsapp',

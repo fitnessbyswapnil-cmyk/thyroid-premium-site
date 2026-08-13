@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
     minAgeHours?: number;
     maxAgeDays?: number;
     limit?: number;
+    language?: string;
   };
   try {
     body = await req.json();
@@ -93,6 +94,13 @@ export async function POST(req: NextRequest) {
     );
   }
   const dryRun = body.dryRun === true;
+  // Optional language override — see sendWhatsAppTemplate. Meta reports a
+  // language mismatch as "template does not exist", so being able to try a
+  // code per request is the fastest way to identify the stored one.
+  const language =
+    typeof body.language === "string" && /^[a-z]{2}(_[A-Z]{2})?$/.test(body.language)
+      ? body.language
+      : undefined;
   // Hold back very recent leads so the daily cron and a same-day broadcast
   // can never both hit one woman.
   const minAgeHours =
@@ -136,6 +144,7 @@ export async function POST(req: NextRequest) {
       dryRun,
       template,
       window: { minAgeHours, maxAgeDays, limit },
+      language: language ?? process.env.WHATSAPP_TEMPLATE_LANG ?? "en",
       scanned: plan.scanned,
       eligible: plan.candidates.length,
       skipped: plan.skipped,
@@ -181,7 +190,7 @@ export async function POST(req: NextRequest) {
 
     // Sequential — Meta rate-limits per number, and a trickle lands better.
     for (const c of plan.candidates) {
-      const r = await sendWhatsAppTemplate(c.phone, template, [firstNameOf(c.name)]);
+      const r = await sendWhatsAppTemplate(c.phone, template, [firstNameOf(c.name)], language);
       results.push({ row: c.rowNumber, phone: `***${c.phone.slice(-4)}`, sent: r.sent, detail: r.error || r.skipped });
       // Only delivered sends are stamped; failures stay eligible for a retry run.
       if (r.sent) {
