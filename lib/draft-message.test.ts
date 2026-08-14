@@ -76,9 +76,22 @@ test("a row with no quiz answers still produces a sendable message", () => {
 });
 
 test("wa link normalises a 10-digit Indian number and encodes the body", () => {
-  const link = draftWaLink("9820652734", "Hi Kantimati 👋");
+  const link = draftWaLink("9820652734", "Hi Kantimati — quick one");
   assert.match(link, /^https:\/\/wa\.me\/919820652734\?text=/);
-  assert.ok(link.includes("%F0%9F%91%8B"));
+  assert.ok(link.includes(encodeURIComponent("—")));
+});
+
+test("the message body is emoji-free — the wa.me pipeline corrupts symbols", () => {
+  const msg = draftMessage({
+    name: "Divya",
+    diagnosis: "hypothyroidism",
+    medication: "on medication but still struggling",
+    challenge: "Hair fall",
+    duration: "1 to 3 years",
+    tried: "Dieting",
+  });
+  // Everything outside ASCII must be the em-dash, the one symbol proven safe.
+  assert.equal(msg.replace(/—/g, "").split("").every((ch) => ch.charCodeAt(0) < 128), true);
 });
 
 test("an unusable phone yields no link rather than a broken one", () => {

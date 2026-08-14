@@ -163,7 +163,10 @@ export function draftMessage(lead: DraftLead): string {
   const tried = triedPhrase(lead.tried);
   const when = durationPhrase(lead.duration);
 
-  const opener = `Hi ${name} 👋 Swapnil here.`;
+  // ASCII + em-dash only: two rounds of real-send testing (see
+  // app/admin/page.tsx) showed emoji — pictographic AND plain BMP symbols —
+  // arriving corrupted through the wa.me ?text= pipeline.
+  const opener = `Hi ${name}, Swapnil here.`;
 
   // Line two must contain something only her form could have told us —
   // symptoms first, then what she has already tried. Without at least one of
