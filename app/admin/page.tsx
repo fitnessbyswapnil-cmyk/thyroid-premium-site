@@ -1099,9 +1099,24 @@ export default function AdminDashboard() {
     // reported — programme money only — quietly wrote off every Rs 299
     // collected, understating return on a real day of spend.
     const cutoff = now - days * dayMs;
-    const feedSpend = (adsData?.daily ?? [])
-      .filter((d) => new Date(d.date + "T00:00:00").getTime() >= cutoff)
-      .reduce((s, d) => s + d.spend, 0);
+    const spendDays = (adsData?.daily ?? [])
+      .filter((d) => new Date(d.date + "T00:00:00").getTime() >= cutoff && d.spend > 0)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const feedSpend = spendDays.reduce((s, d) => s + d.spend, 0);
+
+    // ALIGN THE TWO WINDOWS OR THE RATIO IS A LIE. The range picker selects
+    // days of LEADS, but the ads only started on 4 Aug — so a 14-day view was
+    // dividing two weeks of revenue by eleven days of spend and calling the
+    // result return on ad spend. Revenue is therefore counted from the first
+    // day money was actually spent, never earlier, so both halves of the
+    // fraction describe the same days.
+    const moneyFrom = spendDays.length
+      ? Math.max(cutoff, new Date(spendDays[0].date + "T00:00:00").getTime())
+      : cutoff;
+    const moneyRows = inRange.filter((l) => new Date(l.ts).getTime() >= moneyFrom);
+    const moneyWindowLabel = spendDays.length
+      ? `${new Date(spendDays[0].date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – today`
+      : range === "all" ? "all time" : `last ${range} days`;
     // A hand-entered figure only stands in when Meta returns nothing; the live
     // feed always wins, so a fixed token silently corrects a stale number.
     const spendIsManual = feedSpend <= 0 && (manualSpend ?? 0) > 0;
@@ -1116,10 +1131,10 @@ export default function AdminDashboard() {
     // ABOVE Rs 299 that has not been marked yet gets its own line instead of
     // silently joining either. Nothing is counted twice and nothing is hidden.
     const CONSULT_PRICE = 299;
-    const paidLeads = inRange.filter((l) => l.paid || (l.paidAmount ?? 0) > 0);
+    const paidLeads = moneyRows.filter((l) => l.paid || (l.paidAmount ?? 0) > 0);
     const consultRevenue = paidLeads.length * CONSULT_PRICE;
 
-    const clients = inRange
+    const clients = moneyRows
       .filter((l) => (l.closedAmt ?? 0) > 0)
       .map((l) => ({ name: l.name || "(no name)", amount: l.closedAmt ?? 0 }))
       .sort((a, b) => b.amount - a.amount);
@@ -1127,7 +1142,7 @@ export default function AdminDashboard() {
 
     // Money the gateway took beyond the consultation fee on rows with no
     // recorded win — real income, and a standing prompt to go mark it.
-    const unmarkedExtra = inRange
+    const unmarkedExtra = moneyRows
       .filter((l) => (l.closedAmt ?? 0) <= 0)
       .reduce((s, l) => s + Math.max(0, (l.paidAmount ?? 0) - CONSULT_PRICE), 0);
 
@@ -1220,7 +1235,7 @@ export default function AdminDashboard() {
       monthRevenue, onPace, stageRates,
       consultRevenue, programRevenue, unmarkedExtra, netProfit, costPerConsult, costPerClient,
       avgClientValue, consultCount: paidLeads.length, clients, clientCount: clients.length,
-      campaignsLive, CONSULT_PRICE, spendIsManual,
+      campaignsLive, CONSULT_PRICE, spendIsManual, moneyWindowLabel,
     };
   }, [leads, inRange, days, adsData, manualSpend]);
 
@@ -1442,7 +1457,7 @@ export default function AdminDashboard() {
             {ops && (
               <div style={{ ...card, marginBottom: 12 }}>
                 <p style={cardTitle}>
-                  Return on ad spend — {range === "all" ? "all time" : `last ${range} days`}
+                  Return on ad spend — {ops.moneyWindowLabel}
                   {ops.campaignsLive > 0 && (
                     <span style={{ color: MUTED, fontWeight: 500 }}>
                       {"  ·  "}{ops.campaignsLive} campaign{ops.campaignsLive === 1 ? "" : "s"} with spend
