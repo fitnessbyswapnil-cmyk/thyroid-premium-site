@@ -57,6 +57,15 @@ export type LeadRow = {
   showed: string; // "Y" | "N" | ""
   closedAmt: number | null;
   meetLink: string;
+  /**
+   * First follow-up message, composed from her own quiz answers. Present only
+   * for women who have not paid — a paid lead needs a booking nudge, not a
+   * first touch. Deliberately carries no price and no link: see
+   * lib/draft-message.ts.
+   */
+  draftMessage: string;
+  /** wa.me link that opens the draft, prefilled, in WhatsApp. */
+  draftWa: string;
   msg1: string; // "Y" | ""
   msg2: string; // "Y" | ""
   msg3: string; // "Y" | ""

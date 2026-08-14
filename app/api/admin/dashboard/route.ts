@@ -20,6 +20,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME, type LeadRow } from "../_lib";
+import { draftMessage, draftWaLink } from "@/lib/draft-message";
 
 export type { CalStatus } from "../_lib";
 
@@ -67,6 +68,11 @@ export async function GET(req: NextRequest) {
       city: col("City", 37),
       challenge: col("Biggest Challenge", 39),
       triedBefore: col("Tried Before", 44),
+      // Quiz answers the draft message is built from. -1 when the sheet
+      // predates the column, which draftMessage degrades around.
+      diagnosis: col("Diagnosis", -1),
+      medication: col("On Medication", -1),
+      duration: col("Struggle Duration", -1),
       amountSpent: col("Amount Spent", 45),
       commitment: col("Commitment (1-10)", 46),
       budget: col("Budget", -1),
@@ -82,6 +88,30 @@ export async function GET(req: NextRequest) {
     };
 
     const cell = (r: string[], i: number) => (r[i] ?? "").toString().trim();
+
+    /**
+     * Compose her first follow-up, but only for women who have not paid.
+     * Drafting one for a payer would put a "why hasn't anything worked" opener
+     * in front of someone who already said yes.
+     */
+    const draftFor = (
+      r: string[],
+      cols: typeof C,
+      phone: string,
+    ): { draftMessage: string; draftWa: string } => {
+      const alreadyPaid = cols.paid >= 0 && cell(r, cols.paid).toUpperCase() === "Y";
+      if (alreadyPaid) return { draftMessage: "", draftWa: "" };
+      const message = draftMessage({
+        name: cell(r, cols.name),
+        challenge: cell(r, cols.challenge),
+        diagnosis: cols.diagnosis >= 0 ? cell(r, cols.diagnosis) : "",
+        medication: cols.medication >= 0 ? cell(r, cols.medication) : "",
+        duration: cols.duration >= 0 ? cell(r, cols.duration) : "",
+        tried: cell(r, cols.triedBefore),
+        budget: cols.budget >= 0 ? cell(r, cols.budget) : "",
+      });
+      return { draftMessage: message, draftWa: draftWaLink(phone, message) };
+    };
     // Phones arrive as "9987199173.0" from sheet number formatting.
     const cleanPhone = (v: string) => {
       const digits = v.replace(/\.0$/, "").replace(/\D/g, "");
@@ -132,7 +162,8 @@ export async function GET(req: NextRequest) {
         // Manual sheet value always wins; Cal.com only fills an empty slot.
         // A cancelled call has no live room to join, so no link is offered.
         meetLink: calCancelled && !calActive ? "" : sheetMeetLink || calMeetLinks.get(emailKey) || "",
-        msg1: cell(r, C.msg1).toUpperCase(),
+        ...draftFor(r, C, cleanPhone(cell(r, C.phone))),
+      msg1: cell(r, C.msg1).toUpperCase(),
         msg2: cell(r, C.msg2).toUpperCase(),
         msg3: cell(r, C.msg3).toUpperCase(),
       });
