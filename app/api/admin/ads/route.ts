@@ -6,6 +6,9 @@
  *   - daily account-level insights, last 30 days (spend, impressions,
  *     link clicks, CPM, frequency)
  *   - per-ad insights, last 14 days (the kill/scale decision window)
+ *   - per-campaign spend, last 30 days — what the ROAS panel divides by, and
+ *     the only place the dashboard can answer "how many campaigns am I paying
+ *     for" without opening Ads Manager
  *
  * Token: META_ADS_TOKEN if set, else the existing META_CAPI_TOKEN (system
  * user tokens often carry ads_read for the assigned ad account). Every
@@ -38,6 +41,12 @@ type DailyRow = {
   frequency: number;
 };
 
+type CampaignRow = {
+  campaignId: string;
+  campaignName: string;
+  spend: number;
+};
+
 type AdRow = {
   adId: string;
   adName: string;
@@ -52,6 +61,8 @@ type MetaInsightRow = {
   date_start?: string;
   ad_id?: string;
   ad_name?: string;
+  campaign_id?: string;
+  campaign_name?: string;
   spend?: string;
   impressions?: string;
   inline_link_clicks?: string;
@@ -100,10 +111,10 @@ export async function GET(req: NextRequest) {
   };
   if (!token) {
     status.error = "No Meta token found (set META_ADS_TOKEN in Vercel, then redeploy)";
-    return NextResponse.json({ daily: [], ads: [], status });
+    return NextResponse.json({ daily: [], ads: [], campaigns: [], status });
   }
 
-  const [dailyRes, adsRes] = await Promise.all([
+  const [dailyRes, adsRes, campRes] = await Promise.all([
     insights(
       token,
       "date_preset=last_30d&time_increment=1&fields=spend,impressions,inline_link_clicks,cpm,frequency",
@@ -112,6 +123,10 @@ export async function GET(req: NextRequest) {
       token,
       "date_preset=last_14d&level=ad&fields=ad_id,ad_name,spend,impressions,inline_link_clicks,cpm,frequency&limit=50",
     ),
+    insights(
+      token,
+      "date_preset=last_30d&level=campaign&fields=campaign_id,campaign_name,spend&limit=100",
+    ),
   ]);
 
   if (dailyRes.error && adsRes.error) {
@@ -119,7 +134,7 @@ export async function GET(req: NextRequest) {
     status.error = dailyRes.error.includes("permission") || dailyRes.error.includes("ads_read")
       ? `Token can't read ads (${status.tokenSource}). Create a token with ads_read as META_ADS_TOKEN in Vercel.`
       : dailyRes.error;
-    return NextResponse.json({ daily: [], ads: [], status });
+    return NextResponse.json({ daily: [], ads: [], campaigns: [], status });
   }
 
   const daily: DailyRow[] = (dailyRes.rows ?? []).map((r) => ({
@@ -144,9 +159,22 @@ export async function GET(req: NextRequest) {
     .filter((a) => a.spend > 0)
     .sort((a, b) => b.spend - a.spend);
 
+  // Only campaigns that actually took money — a paused campaign with zero
+  // spend is not something the owner is "running", and counting it would
+  // overstate how much of the account is live.
+  const campaigns: CampaignRow[] = (campRes.rows ?? [])
+    .map((r) => ({
+      campaignId: r.campaign_id ?? "",
+      campaignName: r.campaign_name ?? "",
+      spend: f(r.spend),
+    }))
+    .filter((c) => c.spend > 0)
+    .sort((a, b) => b.spend - a.spend);
+
   status.ok = true;
   if (dailyRes.error) status.error = `daily series unavailable: ${dailyRes.error}`;
   else if (adsRes.error) status.error = `per-ad breakdown unavailable: ${adsRes.error}`;
+  else if (campRes.error) status.error = `campaign breakdown unavailable: ${campRes.error}`;
 
-  return NextResponse.json({ daily, ads, status });
+  return NextResponse.json({ daily, ads, campaigns, status });
 }
