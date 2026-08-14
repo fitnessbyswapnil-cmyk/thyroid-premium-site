@@ -219,6 +219,19 @@ function pickProof(l: Lead) {
 function buildMessage(l: Lead): { kind: string; text: string } | null {
   const first = firstName(l);
   if ((l.closedAmt ?? 0) > 0) return null; // already a client — no automated message
+
+  // AN UNPAID WOMAN ALWAYS GETS THE FIRST-TOUCH DRAFT, whatever her booking
+  // history says. Every branch below assumes money already changed hands:
+  // "your slot is already paid for", "your Rs 299 slot is still reserved",
+  // "great speaking with you today". Sent to someone who booked through the
+  // old ungated page and never paid — or who no-showed a call she never paid
+  // for — they promise a slot that does not exist and skip straight past the
+  // reason she never bought. The draft restarts the conversation from her own
+  // form instead, which is the only ground she has actually given us.
+  if (!l.paid && l.draftMessage) {
+    return { kind: "Nudge", text: l.draftMessage };
+  }
+
   if (l.showed === "Y")
     return {
       kind: "Follow-up",
@@ -237,17 +250,8 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
       text: `Hi ${first}, I see your consultation call got cancelled — completely fine, things come up.\n\nYour Rs 299 slot is still paid and still reserved for you, nothing is lost. Just pick whichever new time suits you: ${REBOOK_URL}\n\n${MANUAL_OFFER}${SIGN}`,
     };
   if (l.booked) return null; // handled by the 3-step sequence below instead
-  // First touch to an unpaid lead: the server draft, which deliberately has NO
-  // payment link and NO price. Its only job is a reply — a reply opens the
-  // 24-hour window, and the ₹299 ask comes in the conversation that follows
-  // (voice note → then offer). The payment-link message below survives only as
-  // a fallback for rows the server could not draft for.
-  // No signature block: the draft already opens with "Swapnil here" and closes
-  // on the question that earns the reply. A credentials footer after it pushes
-  // the ask up the screen and makes a personal message look like a mailshot.
-  if (l.draftMessage) {
-    return { kind: "Nudge", text: l.draftMessage };
-  }
+  // Fallback only, for rows the server could not draft for — a lead whose quiz
+  // columns are empty, so there is nothing personal to open with.
   return {
     kind: "Nudge",
     text: `Hi ${first}! This is Swapnil — I received your thyroid form and read your answers personally.\n\n${painLine(l)}\n\nThe next step is your private 60-min consultation call, where I decode exactly what's blocking you. It's Rs 299 to reserve the slot, and that's adjusted against your plan if you go ahead: ${PAY_URL}\n\n${MANUAL_OFFER}\n\nI take only a few calls a week, so grab a slot while there's space.${SIGN}`,
