@@ -242,8 +242,11 @@ function buildMessage(l: Lead): { kind: string; text: string } | null {
   // 24-hour window, and the ₹299 ask comes in the conversation that follows
   // (voice note → then offer). The payment-link message below survives only as
   // a fallback for rows the server could not draft for.
+  // No signature block: the draft already opens with "Swapnil here" and closes
+  // on the question that earns the reply. A credentials footer after it pushes
+  // the ask up the screen and makes a personal message look like a mailshot.
   if (l.draftMessage) {
-    return { kind: "Nudge", text: `${l.draftMessage}${SIGN}` };
+    return { kind: "Nudge", text: l.draftMessage };
   }
   return {
     kind: "Nudge",
