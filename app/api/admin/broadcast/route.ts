@@ -48,6 +48,38 @@ function findCol(header: string[], title: string): number {
   return header.findIndex((h) => String(h ?? "").trim().toLowerCase() === want);
 }
 
+/**
+ * What the "booked" skip count is actually made of: the resolved columns, and
+ * the distinct values found in them. A healthy sheet shows only real booking
+ * states here; a placeholder repeated dozens of times means the broadcast is
+ * excluding women who never booked anything.
+ */
+function sampleBooked(rows: string[][], cols: BroadcastColumns, header: string[]) {
+  const at = (r: string[], i: number) => String(r?.[i] ?? "").trim();
+  const values = new Map<string, number>();
+  const examples: { row: number; name: string; bookingStatus: string; sessionDate: string }[] = [];
+
+  rows.forEach((row, i) => {
+    const status = at(row, cols.bookingStatus);
+    const date = at(row, cols.sessionDate);
+    if (!status && !date) return;
+    const key = `status=${status || "(blank)"} | date=${date ? "(set)" : "(blank)"}`;
+    values.set(key, (values.get(key) ?? 0) + 1);
+    if (examples.length < 8) {
+      examples.push({ row: i + 2, name: at(row, cols.name), bookingStatus: status, sessionDate: date });
+    }
+  });
+
+  return {
+    resolved: {
+      bookingStatus: { index: cols.bookingStatus, headerText: header[cols.bookingStatus] ?? "(none)" },
+      sessionDate: { index: cols.sessionDate, headerText: header[cols.sessionDate] ?? "(none)" },
+    },
+    valueCounts: Object.fromEntries([...values].sort((a, b) => b[1] - a[1])),
+    examples,
+  };
+}
+
 function getSheets() {
   const client_email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const private_key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -73,6 +105,7 @@ export async function POST(req: NextRequest) {
   let body: {
     template?: string;
     dryRun?: boolean;
+    debug?: boolean;
     minAgeHours?: number;
     maxAgeDays?: number;
     limit?: number;
@@ -94,6 +127,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const dryRun = body.dryRun === true;
+  const debug = body.debug === true;
   // Optional language override — see sendWhatsAppTemplate. Meta reports a
   // language mismatch as "template does not exist", so being able to try a
   // code per request is the fastest way to identify the stored one.
@@ -154,6 +188,11 @@ export async function POST(req: NextRequest) {
     if (dryRun) {
       return NextResponse.json({
         ...summary,
+        // "booked" is the largest exclusion by far, and it is inferred rather
+        // than stated: ANY value in Booking Status or Session Date counts. If
+        // either column carries a placeholder ("Not Booked", a stray date) the
+        // audience silently shrinks, so ?debug shows the evidence behind it.
+        ...(debug ? { bookedSample: sampleBooked(rows, cols, header) } : {}),
         wouldSend: plan.candidates.map((c) => ({
           row: c.rowNumber,
           name: c.name,

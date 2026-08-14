@@ -108,6 +108,13 @@ type WaWebhook = {
           button?: { text?: string };
           interactive?: { button_reply?: { title?: string }; list_reply?: { title?: string } };
         }[];
+        statuses?: {
+          id?: string;
+          status?: string;
+          timestamp?: string;
+          recipient_id?: string;
+          errors?: { code?: number; title?: string; message?: string; error_data?: { details?: string } }[];
+        }[];
       };
     }[];
   }[];
@@ -134,8 +141,44 @@ export async function POST(req: NextRequest) {
     for (const entry of body.entry ?? []) {
       for (const change of entry.changes ?? []) {
         const value = change.value;
+
+        // Delivery outcomes. The send API returning ok/messageId only means
+        // Meta ACCEPTED the message — it says nothing about whether the phone
+        // ever received it. A template that is accepted and then silently
+        // dropped (recipient not on WhatsApp, marketing opt-out, per-user
+        // marketing cap) is indistinguishable from a delivered one unless the
+        // failure is recorded here. Failures are written into the inbox so a
+        // dropped message is visible next to the thread it belongs to.
+        for (const s of value?.statuses ?? []) {
+          const phone = (s.recipient_id ?? "").replace(/\D/g, "");
+          const state = s.status ?? "unknown";
+          if (state !== "failed") {
+            console.log(`[wa-webhook] status ${state} → ***${phone.slice(-4)} id=${s.id ?? "(none)"}`);
+            continue;
+          }
+          const e = s.errors?.[0];
+          const reason = [e?.code ? `(#${e.code})` : "", e?.title, e?.error_data?.details || e?.message]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+          console.error(`[wa-webhook] DELIVERY FAILED → ***${phone.slice(-4)}: ${reason || "no reason given"}`);
+          if (!phone) continue;
+          try {
+            await appendMessage({
+              ts: s.timestamp ? new Date(Number(s.timestamp) * 1000).toISOString() : new Date().toISOString(),
+              phone,
+              direction: "out",
+              text: `[delivery failed] ${reason || "no reason given"}`,
+              messageId: s.id ?? "",
+              name: "",
+            });
+          } catch (logErr) {
+            console.error("[wa-webhook] could not record failure:", logErr instanceof Error ? logErr.message : String(logErr));
+          }
+        }
+
         const messages = value?.messages ?? [];
-        if (!messages.length) continue; // status callbacks (delivered/read) — ignore
+        if (!messages.length) continue;
 
         const name = value?.contacts?.[0]?.profile?.name ?? "";
         for (const m of messages) {
