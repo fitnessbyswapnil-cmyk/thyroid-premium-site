@@ -22,16 +22,26 @@
  * API can send free-form messages at all. One reply converts a dead contact
  * into a reachable one.
  *
- * SHAPE — three short blocks, then one question:
- *   1. name her situation using her own answers, so it cannot read as a blast
- *   2. one clinical observation that reframes why nothing has worked
- *   3. one question that is easy to answer and moves her into diagnosis
+ * SHAPE — five short blocks, read in under ten seconds on a phone:
+ *   1. who is writing
+ *   2. one detail only her form could have told us, so it cannot read as a blast
+ *   3. an open loop — a reason the weight will not move, stated but not resolved
+ *   4. the guide that closes the loop
+ *   5. one question that is easier to answer than to ignore
  *
- * The question is almost always about her last TSH reading. It is specific,
- * takes ten seconds to answer, positions him as someone who reads reports
- * rather than sells plans, and whatever she replies is the opening line of
- * the consultation he is trying to sell.
+ * Curiosity carries this message, not persuasion. Block 3 names a reason and
+ * deliberately stops short of explaining it; the guide is the only place the
+ * explanation exists. Block 5 asks which of the three is hers, which means
+ * answering requires opening the guide first — the click and the reply are
+ * the same action.
  */
+
+/**
+ * The free guide. Every draft ends here, so it lives in one place: swapping
+ * the asset must never mean editing four message variants.
+ */
+export const GUIDE_URL =
+  "https://drive.google.com/file/d/1kCbCKxmvEC3kHQGKwUyZjsAxUdfn-HbD/view";
 
 export type DraftLead = {
   name?: string;
@@ -122,69 +132,52 @@ function durationPhrase(duration: string | undefined): string {
 }
 
 /**
- * The reframe. Each segment gets the one sentence that explains why her
- * effort has not worked — stated as a mechanism, not as a promise.
+ * The open loop. Each segment gets the one sentence that makes her want the
+ * answer — a reason stated flatly, with the mechanism withheld. Resolving it
+ * here would remove any reason to open the guide.
  */
-function observationFor(segment: Segment): string {
+function hookFor(segment: Segment): string {
   switch (segment) {
     case "medicated_stuck":
-      return "When the medication is doing its job on paper and the weight still will not move, something else is holding your metabolism down. That part is not treated by the tablet.";
+      return "The tablet does its job on paper. It does not touch the thing that is actually holding your weight.";
     case "normal_labs":
-      return "A TSH inside the normal range only tells us one number is acceptable. It does not tell us your metabolism is working — which is why you can be told you are fine while your body says otherwise.";
+      return "A normal report does not mean a normal body. There is a specific reason for that.";
     case "undiagnosed":
-      return "The symptoms usually show up long before a report goes abnormal. Most women are told to wait until it gets worse, when that is exactly the stage where it is easiest to correct.";
+      return "The symptoms show up long before a report ever goes abnormal. That gap is where most women get stuck.";
     case "hashimotos":
-      return "With Hashimoto's, the usual advice makes it worse — harder dieting and more cardio raise the stress load on an already inflamed thyroid. That is why every plan seems to backfire.";
+      return "With Hashimoto's the usual advice quietly makes it worse. There is a reason every plan backfires.";
     default:
-      return "When effort has been high and the scale still has not moved, the problem is almost never willpower. Something specific is blocking it, and it is findable.";
-  }
-}
-
-/** The ask. Low friction, ten seconds to answer, and useful to him either way. */
-function questionFor(segment: Segment): string {
-  switch (segment) {
-    case "undiagnosed":
-      return "Quick question — have you had a TSH test done at any point, even an old one?";
-    case "hashimotos":
-      return "Quick question — do you know your last TPO antibody reading?";
-    default:
-      return "Quick question — what was your last TSH reading?";
+      return "When the effort is this high and nothing moves, something specific is blocking it.";
   }
 }
 
 /**
- * The full first-touch message. Plain text, WhatsApp-shaped, no link and no
- * price anywhere in it.
+ * The full first-touch message. Plain text, WhatsApp-shaped, and carrying no
+ * price and no payment link — the only URL is the free guide.
  */
 export function draftMessage(lead: DraftLead): string {
   const name = firstName(lead.name);
-  const segment = segmentOf(lead);
   const symptoms = symptomPhrase(lead.challenge);
   const tried = triedPhrase(lead.tried);
   const when = durationPhrase(lead.duration);
 
+  // One detail, not three. A long recap reads like a file being quoted back
+  // at her; a single specific noun reads like someone actually looked.
+  let detail = "";
+  if (symptoms) detail = `the ${symptoms}`;
+  else if (tried) detail = `that you have already tried ${tried}`;
+  else if (when) detail = `that this has been going on ${when}`;
+
   // ASCII + em-dash only: two rounds of real-send testing (see
   // app/admin/page.tsx) showed emoji — pictographic AND plain BMP symbols —
   // arriving corrupted through the wa.me ?text= pipeline.
-  const opener = `Hi ${name}, Swapnil here.`;
-
-  // Line two must contain something only her form could have told us —
-  // symptoms first, then what she has already tried. Without at least one of
-  // them the message is generic, and a generic message is worse than none.
-  const details: string[] = [];
-  if (symptoms) details.push(`the ${symptoms}`);
-  if (tried) details.push(`that you have already tried ${tried}`);
-
-  let context: string;
-  if (details.length === 2) {
-    context = `I read through your Thyroid Assessment properly. What stood out was ${details[0]} — and ${details[1]}${when ? `, ${when}` : ""}.`;
-  } else if (details.length === 1) {
-    context = `I read through your Thyroid Assessment properly, and ${details[0]} stood out${when ? `, especially ${when}` : ""}.`;
-  } else {
-    context = `I read through your Thyroid Assessment properly${when ? `, and you have been dealing with this ${when}` : ""}.`;
-  }
-
-  return [opener, context, observationFor(segment), questionFor(segment)].join("\n\n");
+  return [
+    `Hi ${name}, Swapnil here.`,
+    detail ? `I read your thyroid form — ${detail} stood out.` : `I read your thyroid form properly.`,
+    hookFor(segmentOf(lead)),
+    `There are 3 reasons the weight will not move on a thyroid body. Most women are doing at least one without knowing.\n\nI put all 3 on one short page for you:\n${GUIDE_URL}`,
+    `Which one sounds like you?`,
+  ].join("\n\n");
 }
 
 /** Tap-to-send link for the business phone, so sending is one click. */
