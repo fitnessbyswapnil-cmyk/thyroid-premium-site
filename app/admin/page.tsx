@@ -81,6 +81,11 @@ const WARN = "#fab219";
 const CRIT = "#d03b3b";
 
 const KEY_STORE = "admin_dash_key";
+/** Manually entered ad spend, used while the Meta ads token cannot read the
+ *  account. Without it the whole ROAS panel is dark on the exact days the
+ *  owner most needs it — a broken token should cost him a live number, not
+ *  the ability to compute one at all. */
+const SPEND_STORE = "admin_manual_ad_spend";
 const dayMs = 86400000;
 
 // ── personalized WhatsApp message builder ───────────────────────────────────
@@ -669,6 +674,7 @@ export default function AdminDashboard() {
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [range, setRange] = useState("14");
+  const [manualSpend, setManualSpend] = useState<number | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [calStatus, setCalStatus] = useState<{
     keySet: boolean; source: string; fetched: number; matched: number; cancelled: number; error: string; sample: string[];
@@ -710,6 +716,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     try { setKey(sessionStorage.getItem(KEY_STORE)); } catch { setKey(null); }
+    try {
+      const v = parseFloat(localStorage.getItem(SPEND_STORE) ?? "");
+      if (Number.isFinite(v) && v > 0) setManualSpend(v);
+    } catch { /* ignore */ }
   }, []);
 
   const load = useCallback(async (k: string) => {
@@ -1089,18 +1099,39 @@ export default function AdminDashboard() {
     // reported — programme money only — quietly wrote off every Rs 299
     // collected, understating return on a real day of spend.
     const cutoff = now - days * dayMs;
-    const spendInRange = (adsData?.daily ?? [])
+    const feedSpend = (adsData?.daily ?? [])
       .filter((d) => new Date(d.date + "T00:00:00").getTime() >= cutoff)
       .reduce((s, d) => s + d.spend, 0);
+    // A hand-entered figure only stands in when Meta returns nothing; the live
+    // feed always wins, so a fixed token silently corrects a stale number.
+    const spendIsManual = feedSpend <= 0 && (manualSpend ?? 0) > 0;
+    const spendInRange = feedSpend > 0 ? feedSpend : manualSpend ?? 0;
 
-    const paidLeads = inRange.filter((l) => l.paid || (l.paidAmount ?? 0) > 0);
-    // A row with Paid = Y but no amount is a real consultation whose figure was
-    // never written back; counting it at zero would flatter cost-per-booking.
+    // THREE LINES THAT NEVER OVERLAP. Cashfree's "Paid Amount" and the coach's
+    // "Closed" column can describe the SAME rupee — Nisha's Rs 2,000 lock went
+    // through Cashfree and is also a programme win — so summing both columns
+    // double-counts every online programme payment. The consultation line is
+    // therefore priced at the fee itself (Rs 299 x bookings), the programme
+    // line is whatever was marked closed, and anything Cashfree collected
+    // ABOVE Rs 299 that has not been marked yet gets its own line instead of
+    // silently joining either. Nothing is counted twice and nothing is hidden.
     const CONSULT_PRICE = 299;
-    const consultRevenue = paidLeads.reduce((s, l) => s + ((l.paidAmount ?? 0) || CONSULT_PRICE), 0);
-    const clients = inRange.filter((l) => (l.closedAmt ?? 0) > 0);
-    const programRevenue = clients.reduce((s, l) => s + (l.closedAmt ?? 0), 0);
-    const revenue = consultRevenue + programRevenue;
+    const paidLeads = inRange.filter((l) => l.paid || (l.paidAmount ?? 0) > 0);
+    const consultRevenue = paidLeads.length * CONSULT_PRICE;
+
+    const clients = inRange
+      .filter((l) => (l.closedAmt ?? 0) > 0)
+      .map((l) => ({ name: l.name || "(no name)", amount: l.closedAmt ?? 0 }))
+      .sort((a, b) => b.amount - a.amount);
+    const programRevenue = clients.reduce((s, c) => s + c.amount, 0);
+
+    // Money the gateway took beyond the consultation fee on rows with no
+    // recorded win — real income, and a standing prompt to go mark it.
+    const unmarkedExtra = inRange
+      .filter((l) => (l.closedAmt ?? 0) <= 0)
+      .reduce((s, l) => s + Math.max(0, (l.paidAmount ?? 0) - CONSULT_PRICE), 0);
+
+    const revenue = consultRevenue + programRevenue + unmarkedExtra;
 
     const roas = spendInRange > 0 ? revenue / spendInRange : null;
     const netProfit = revenue - spendInRange;
@@ -1108,9 +1139,6 @@ export default function AdminDashboard() {
     const costPerClient = clients.length > 0 && spendInRange > 0 ? spendInRange / clients.length : null;
     const avgClientValue = clients.length > 0 ? programRevenue / clients.length : null;
     const campaignsLive = (adsData?.campaigns ?? []).length;
-    // Breakeven as a fraction of spend — drives the meter fill, capped at 1 so
-    // an over-100% bar never renders outside its own track.
-    const breakevenPct = spendInRange > 0 ? Math.min(revenue / spendInRange, 1) : 0;
 
     // Pipeline forecast: upcoming booked calls × close rate × avg ticket
     const upcoming = leads.filter((l) => {
@@ -1190,10 +1218,11 @@ export default function AdminDashboard() {
       queue: queue.slice(0, 8), avgTouchMin, revenue, spendInRange, roas, upcoming, pipeline,
       closeRate, avgTicket, arrivals, arrivalsInsight, outcomes, INSIGHT_MIN, insights,
       monthRevenue, onPace, stageRates,
-      consultRevenue, programRevenue, netProfit, costPerConsult, costPerClient, avgClientValue,
-      consultCount: paidLeads.length, clientCount: clients.length, campaignsLive, breakevenPct,
+      consultRevenue, programRevenue, unmarkedExtra, netProfit, costPerConsult, costPerClient,
+      avgClientValue, consultCount: paidLeads.length, clients, clientCount: clients.length,
+      campaignsLive, CONSULT_PRICE, spendIsManual,
     };
-  }, [leads, inRange, days, adsData]);
+  }, [leads, inRange, days, adsData, manualSpend]);
 
   const queueMessage = (item: { lead: Lead; kind: string }): { text: string; step: "msg1" | "msg2" | "msg3" | null } => {
     const seq = buildSequence(item.lead);
@@ -1407,12 +1436,10 @@ export default function AdminDashboard() {
             )}
 
             {/* ── Return on ad spend ───────────────────────────────────────
-                Two revenue lines, never one: the Rs 299 consultation trickle
-                and the programme money behave nothing alike, and a single
-                "revenue" figure hides which half is carrying the account.
-                Money out and money in share one scale so the gap between them
-                IS the answer — no mental arithmetic between two axes. */}
-            {ops && ops.spendInRange > 0 && (
+                Written as a ledger, not a headline. Every rupee is traceable
+                to a line and a count, because a single "revenue" number is
+                exactly what stopped this being trustworthy before. */}
+            {ops && (
               <div style={{ ...card, marginBottom: 12 }}>
                 <p style={cardTitle}>
                   Return on ad spend — {range === "all" ? "all time" : `last ${range} days`}
@@ -1423,96 +1450,153 @@ export default function AdminDashboard() {
                   )}
                 </p>
 
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(160px, 210px) 1fr", gap: 22, alignItems: "center", marginBottom: 16 }}>
-                  {/* hero figure — the one number this panel exists to show */}
-                  <div>
-                    <p style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em", color: ops.roas === null ? INK2 : ops.roas >= 1 ? GOOD : ops.roas >= 0.5 ? WARN : CRIT }}>
-                      {ops.roas !== null ? `${ops.roas.toFixed(2)}×` : "–"}
-                    </p>
-                    <p style={{ fontSize: 11.5, color: INK2, marginTop: 8, lineHeight: 1.45 }}>
-                      {ops.roas !== null
-                        ? <>every <b style={{ color: INK1 }}>₹1</b> of ads returned <b style={{ color: INK1 }}>₹{ops.roas.toFixed(2)}</b></>
-                        : "needs ad spend in this range"}
-                    </p>
-                    <p style={{ fontSize: 10.5, color: ops.netProfit >= 0 ? GOOD : CRIT, marginTop: 6, fontWeight: 700 }}>
-                      {ops.netProfit >= 0 ? "▲ " : "▼ "}
-                      {ops.netProfit >= 0 ? "profit" : "loss"} ₹{Math.abs(Math.round(ops.netProfit)).toLocaleString("en-IN")}
-                    </p>
-                  </div>
+                {/* ── the calculation, spelled out ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", rowGap: 7, columnGap: 16, fontSize: 12.5, marginBottom: 14 }}>
+                  <span style={{ color: INK2 }}>
+                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#e0c6ff", marginRight: 7, verticalAlign: -1 }} />
+                    ₹299 consultations · <b style={{ color: INK1 }}>{ops.consultCount}</b> booked
+                    <span style={{ color: MUTED }}> {" "}({ops.consultCount} × ₹{ops.CONSULT_PRICE})</span>
+                  </span>
+                  <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                    ₹{ops.consultRevenue.toLocaleString("en-IN")}
+                  </span>
 
-                  {/* money out vs money in, on one shared scale */}
-                  {(() => {
-                    const barMax = Math.max(ops.spendInRange, ops.revenue) || 1;
-                    const pct = (v: number) => `${Math.max((v / barMax) * 100, v > 0 ? 1.5 : 0)}%`;
-                    const BAR_H = 30;
-                    return (
-                      <div>
-                        <div style={{ marginBottom: 12 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: MUTED, marginBottom: 5 }}>
+                  <span style={{ color: INK2 }}>
+                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#a855f7", marginRight: 7, verticalAlign: -1 }} />
+                    Programme payments · <b style={{ color: INK1 }}>{ops.clientCount}</b> client{ops.clientCount === 1 ? "" : "s"}
+                  </span>
+                  <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                    ₹{ops.programRevenue.toLocaleString("en-IN")}
+                  </span>
+
+                  {/* every client named — no bucketing, no guessing at "lock vs full" */}
+                  {ops.clients.length > 0 && (
+                    <>
+                      <span style={{ gridColumn: "1 / -1", paddingLeft: 16, fontSize: 11, color: MUTED, lineHeight: 1.7 }}>
+                        {ops.clients.map((c: { name: string; amount: number }, i: number) => (
+                          <span key={c.name + i}>
+                            {i > 0 && <span style={{ color: GRID }}>{"  ·  "}</span>}
+                            {c.name} <b style={{ color: INK2 }}>₹{c.amount.toLocaleString("en-IN")}</b>
+                          </span>
+                        ))}
+                      </span>
+                    </>
+                  )}
+
+                  {ops.unmarkedExtra > 0 && (
+                    <>
+                      <span style={{ color: WARN }}>
+                        <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: WARN, marginRight: 7, verticalAlign: -1 }} />
+                        Collected above ₹299, not marked as a win yet
+                      </span>
+                      <span style={{ color: WARN, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                        ₹{Math.round(ops.unmarkedExtra).toLocaleString("en-IN")}
+                      </span>
+                    </>
+                  )}
+
+                  <span style={{ gridColumn: "1 / -1", borderTop: `1px solid ${GRID}`, marginTop: 3 }} />
+
+                  <span style={{ color: INK1, fontWeight: 700 }}>Total collected</span>
+                  <span style={{ color: GOOD, fontWeight: 800, fontVariantNumeric: "tabular-nums", textAlign: "right", fontSize: 14 }}>
+                    ₹{Math.round(ops.revenue).toLocaleString("en-IN")}
+                  </span>
+
+                  <span style={{ color: INK2 }}>
+                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#6b6379", marginRight: 7, verticalAlign: -1 }} />
+                    Ad spend {ops.spendIsManual && <span style={{ color: WARN }}>(entered by hand)</span>}
+                  </span>
+                  <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                    {ops.spendInRange > 0 ? `− ₹${Math.round(ops.spendInRange).toLocaleString("en-IN")}` : "—"}
+                  </span>
+
+                  <span style={{ gridColumn: "1 / -1", borderTop: `1px solid ${GRID}`, marginTop: 3 }} />
+
+                  <span style={{ color: INK1, fontWeight: 800 }}>{ops.netProfit >= 0 ? "Profit" : "Loss"}</span>
+                  <span style={{ fontWeight: 800, fontVariantNumeric: "tabular-nums", textAlign: "right", fontSize: 15, color: ops.spendInRange <= 0 ? MUTED : ops.netProfit >= 0 ? GOOD : CRIT }}>
+                    {ops.spendInRange > 0 ? `₹${Math.abs(Math.round(ops.netProfit)).toLocaleString("en-IN")}` : "—"}
+                  </span>
+                </div>
+
+                {/* ── hero + bars ── */}
+                {ops.spendInRange > 0 ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(150px, 200px) 1fr", gap: 22, alignItems: "center" }}>
+                    <div>
+                      <p style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em", color: ops.roas === null ? INK2 : ops.roas >= 1 ? GOOD : ops.roas >= 0.5 ? WARN : CRIT }}>
+                        {ops.roas !== null ? `${ops.roas.toFixed(2)}×` : "–"}
+                      </p>
+                      <p style={{ fontSize: 11, color: MUTED, marginTop: 7, lineHeight: 1.5, fontVariantNumeric: "tabular-nums" }}>
+                        ₹{Math.round(ops.revenue).toLocaleString("en-IN")} ÷ ₹{Math.round(ops.spendInRange).toLocaleString("en-IN")}
+                        <br />every ₹1 of ads returned <b style={{ color: INK1 }}>₹{(ops.roas ?? 0).toFixed(2)}</b>
+                      </p>
+                    </div>
+                    {(() => {
+                      const barMax = Math.max(ops.spendInRange, ops.revenue) || 1;
+                      const pct = (v: number) => `${Math.max((v / barMax) * 100, v > 0 ? 1.5 : 0)}%`;
+                      const H = 28;
+                      return (
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: MUTED, marginBottom: 4 }}>
                             <span>MONEY OUT · ads</span>
-                            <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                              ₹{Math.round(ops.spendInRange).toLocaleString("en-IN")}
-                            </span>
+                            <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>₹{Math.round(ops.spendInRange).toLocaleString("en-IN")}</span>
                           </div>
-                          <div style={{ height: BAR_H, background: GRID, borderRadius: 4, overflow: "hidden" }}>
+                          <div style={{ height: H, background: GRID, borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
                             <div style={{ width: pct(ops.spendInRange), height: "100%", background: "#6b6379", borderRadius: 4 }} />
                           </div>
-                        </div>
-
-                        <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: MUTED, marginBottom: 5 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: MUTED, marginBottom: 4 }}>
                             <span>MONEY IN · collected</span>
-                            <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                              ₹{Math.round(ops.revenue).toLocaleString("en-IN")}
-                            </span>
+                            <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>₹{Math.round(ops.revenue).toLocaleString("en-IN")}</span>
                           </div>
-                          {/* 2px surface gap between segments — never a hairline border */}
-                          <div style={{ height: BAR_H, background: GRID, borderRadius: 4, display: "flex", gap: 2, overflow: "hidden" }}>
-                            {ops.consultRevenue > 0 && (
-                              <div style={{ width: pct(ops.consultRevenue), height: "100%", background: "#e0c6ff", borderRadius: "4px 0 0 4px", display: "flex", alignItems: "center", paddingLeft: 7, boxSizing: "border-box", overflow: "hidden" }}>
-                                <span style={{ fontSize: 9.5, fontWeight: 800, color: "#2a1a45", whiteSpace: "nowrap" }}>
-                                  ₹{Math.round(ops.consultRevenue).toLocaleString("en-IN")}
-                                </span>
-                              </div>
-                            )}
-                            {ops.programRevenue > 0 && (
-                              <div style={{ width: pct(ops.programRevenue), height: "100%", background: "#a855f7", borderRadius: 4, display: "flex", alignItems: "center", paddingLeft: 7, boxSizing: "border-box", overflow: "hidden" }}>
-                                <span style={{ fontSize: 9.5, fontWeight: 800, color: "#160b26", whiteSpace: "nowrap" }}>
-                                  ₹{Math.round(ops.programRevenue).toLocaleString("en-IN")}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: 10.5, color: MUTED, flexWrap: "wrap" }}>
-                            <span><span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#e0c6ff", marginRight: 5, verticalAlign: -1 }} />₹299 consultations · {ops.consultCount}</span>
-                            <span><span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#a855f7", marginRight: 5, verticalAlign: -1 }} />Programmes · {ops.clientCount}</span>
+                          <div style={{ height: H, background: GRID, borderRadius: 4, display: "flex", gap: 2, overflow: "hidden" }}>
+                            {ops.consultRevenue > 0 && <div style={{ width: pct(ops.consultRevenue), height: "100%", background: "#e0c6ff", borderRadius: "4px 0 0 4px" }} />}
+                            {ops.programRevenue > 0 && <div style={{ width: pct(ops.programRevenue), height: "100%", background: "#a855f7", borderRadius: 4 }} />}
+                            {ops.unmarkedExtra > 0 && <div style={{ width: pct(ops.unmarkedExtra), height: "100%", background: WARN, borderRadius: 4 }} />}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* what each outcome actually cost */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(132px, 1fr))", gap: 8, borderTop: `1px solid ${GRID}`, paddingTop: 12 }}>
-                  {[
-                    { label: "Cost per ₹299 booking", v: ops.costPerConsult !== null ? `₹${Math.round(ops.costPerConsult).toLocaleString("en-IN")}` : "–", sub: `${ops.consultCount} booked` },
-                    { label: "Cost per client", v: ops.costPerClient !== null ? `₹${Math.round(ops.costPerClient).toLocaleString("en-IN")}` : "–", sub: `${ops.clientCount} closed` },
-                    { label: "Avg client value", v: ops.avgClientValue !== null ? `₹${Math.round(ops.avgClientValue).toLocaleString("en-IN")}` : "–", sub: "programme fee" },
-                    { label: "Breakeven at", v: ops.avgClientValue ? `${Math.max(1, Math.ceil(ops.spendInRange / ops.avgClientValue))} clients` : "–", sub: "for this spend" },
-                  ].map((t) => (
-                    <div key={t.label}>
-                      <p style={{ fontSize: 10, color: MUTED, marginBottom: 3 }}>{t.label}</p>
-                      <p style={{ fontSize: 16, fontWeight: 800, color: INK1, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>{t.v}</p>
-                      <p style={{ fontSize: 9.5, color: MUTED, marginTop: 2 }}>{t.sub}</p>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div style={{ background: "#1f1b12", border: `1px solid ${WARN}`, borderRadius: 8, padding: 12 }}>
+                    <p style={{ fontSize: 12, color: WARN, fontWeight: 700, marginBottom: 4 }}>Ad spend unavailable — ROAS cannot be computed</p>
+                    <p style={{ fontSize: 11, color: INK2, marginBottom: 9, lineHeight: 1.5 }}>
+                      The Meta token cannot read this ad account. Fix it properly by setting <b>META_ADS_TOKEN</b> (with <b>ads_read</b>) in Vercel — or type the spend from Ads Manager to see ROAS right now.
+                    </p>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <input
+                        type="number"
+                        placeholder="Ad spend in this range (₹)"
+                        defaultValue={manualSpend ?? ""}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter") return;
+                          const v = parseFloat((e.target as HTMLInputElement).value);
+                          if (!Number.isFinite(v) || v <= 0) return;
+                          setManualSpend(v);
+                          try { localStorage.setItem(SPEND_STORE, String(v)); } catch { /* ignore */ }
+                        }}
+                        style={{ background: CARD, border: `1px solid ${GRID}`, color: INK1, borderRadius: 6, padding: "7px 10px", fontSize: 12, width: 210 }}
+                      />
+                      <span style={{ fontSize: 10.5, color: MUTED }}>press Enter · saved in this browser only</span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
 
-                {ops.clientCount === 0 && (
-                  <p style={{ fontSize: 10.5, color: WARN, marginTop: 10 }}>
-                    No programme wins marked in this range — mark ✓ Showed then + Closed ₹ on each client, or this panel only ever sees the ₹299s.
-                  </p>
+                {/* ── what each outcome cost ── */}
+                {ops.spendInRange > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))", gap: 8, borderTop: `1px solid ${GRID}`, paddingTop: 12, marginTop: 14 }}>
+                    {[
+                      { label: "Cost per ₹299 booking", v: ops.costPerConsult !== null ? `₹${Math.round(ops.costPerConsult).toLocaleString("en-IN")}` : "–", sub: `${ops.consultCount} booked` },
+                      { label: "Cost per client", v: ops.costPerClient !== null ? `₹${Math.round(ops.costPerClient).toLocaleString("en-IN")}` : "–", sub: `${ops.clientCount} closed` },
+                      { label: "Avg client value", v: ops.avgClientValue !== null ? `₹${Math.round(ops.avgClientValue).toLocaleString("en-IN")}` : "–", sub: "programme fee" },
+                      { label: "Breakeven at", v: ops.avgClientValue ? `${Math.max(1, Math.ceil(ops.spendInRange / ops.avgClientValue))} clients` : "–", sub: "for this spend" },
+                    ].map((t) => (
+                      <div key={t.label}>
+                        <p style={{ fontSize: 10, color: MUTED, marginBottom: 3 }}>{t.label}</p>
+                        <p style={{ fontSize: 16, fontWeight: 800, color: INK1, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>{t.v}</p>
+                        <p style={{ fontSize: 9.5, color: MUTED, marginTop: 2 }}>{t.sub}</p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
