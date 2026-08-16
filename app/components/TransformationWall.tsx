@@ -17,29 +17,44 @@ import { useInView } from "../lib/useInView";
 //
 // Names + stats below are transcribed from the numbers burned into each
 // composite — NOT invented. Don't edit one without the other.
+//
+// `story`/`quote` are composed ONLY from facts already published elsewhere
+// on this site: Vaidehi's composite text ("balanced her thyroid naturally"),
+// Surekha's and Heenal's featured cards in the WhatsApp-proof section
+// (their real quotes), Namrata's fatigue result from her proof card. No
+// per-client details are invented — quotes appear only where a real quote
+// exists in the site's own data.
 const WALL = [
   {
     src: "/transformations/Vaidehi 1.png",
     name: "Vaidehi",
     stat: "−12 kg · 90 days",
+    story: "Balanced her thyroid naturally — down from 72 kg to 60 kg.",
+    quote: "",
     alt: "Vaidehi, before and after — lost 12 kg in 90 days",
   },
   {
     src: "/transformations/Surekha 3.png",
     name: "Surekha",
     stat: "−12 kg · 90 days",
+    story: "Bloating and afternoon fatigue — gone.",
+    quote: "My clothes fit again. I finally feel like myself.",
     alt: "Surekha, before and after — lost 12 kg in 90 days",
   },
   {
     src: "/transformations/Namrata 5.png",
     name: "Namrata",
     stat: "−16 kg · 90 days",
+    story: "16 kg down — and the all-day tiredness went with it.",
+    quote: "",
     alt: "Namrata, before and after — lost 16 kg in 90 days",
   },
   {
     src: "/transformations/Heenal 7.png",
     name: "Heenal",
     stat: "−15 kg · 90 days",
+    story: "IT professional, Bengaluru.",
+    quote: "Finally lost the weight thyroid stole from me for 4 years.",
     alt: "Heenal, before and after — lost 15 kg in 90 days",
   },
 ] as const;
@@ -69,13 +84,27 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
           fetchPriority={index < 2 ? "high" : "auto"}
         />
       </div>
-      {/* Caption anatomy: name + stat chip. Stats mirror the numbers burned
-          into the composite above — keep them in sync. */}
-      <figcaption className="mt-2.5 flex items-center justify-between gap-2 px-1">
-        <span className="text-[13px] font-semibold text-[var(--t2)]">{entry.name}</span>
-        <span className="rounded-full border border-[var(--p-border)] bg-[var(--p-tint)] px-2.5 py-[3px] text-[10.5px] font-bold tracking-[0.04em] text-[var(--p300)]">
-          {entry.stat}
-        </span>
+      {/* Caption anatomy: name + stat chip, then the story line — her
+          highlighted result in coral, her own words (where a real quote
+          exists) as a small teal serif quote. */}
+      <figcaption className="mt-2.5 px-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-semibold text-[var(--t2)]">{entry.name}</span>
+          <span className="rounded-full border border-[var(--p-border)] bg-[var(--p-tint)] px-2.5 py-[3px] text-[10.5px] font-bold tracking-[0.04em] text-[var(--p300)]">
+            {entry.stat}
+          </span>
+        </div>
+        <p className="mt-1.5 text-[12.5px] font-semibold leading-[1.5] text-[var(--coral)]">
+          {entry.story}
+        </p>
+        {entry.quote ? (
+          <p
+            className="mt-1 text-[13px] italic leading-[1.55] text-[var(--p300)]"
+            style={{ fontFamily: "var(--font-display), Georgia, serif" }}
+          >
+            &ldquo;{entry.quote}&rdquo;
+          </p>
+        ) : null}
       </figcaption>
     </figure>
   );
