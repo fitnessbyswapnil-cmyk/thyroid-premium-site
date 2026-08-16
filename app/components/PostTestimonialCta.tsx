@@ -23,7 +23,7 @@ export default function PostTestimonialCta() {
           style={{
             width: "min(60vw, 280px)",
             height: "min(60vw, 280px)",
-            background: "radial-gradient(ellipse, rgba(139,92,246,0.07) 0%, transparent 70%)",
+            background: "radial-gradient(ellipse, rgba(11,143,128,0.06) 0%, transparent 70%)",
             filter: "blur(40px)",
           }}
         />
@@ -38,13 +38,11 @@ export default function PostTestimonialCta() {
             transition: "opacity 0.65s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.65s cubic-bezier(0.25,0.46,0.45,0.94)",
             position: "relative",
             borderRadius: 20,
-            border: "1px solid rgba(139,92,246,0.2)",
-            background: "linear-gradient(135deg, rgba(139,92,246,0.055) 0%, rgba(255,255,255,0.012) 100%)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
+            border: "1px solid #e7dfd2",
+            background: "#ffffff",
             padding: "clamp(1.75rem, 5.5vw, 2.5rem) clamp(1.25rem, 5vw, 2rem)",
             textAlign: "center",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 28px rgba(139,92,246,0.07)",
+            boxShadow: "0 1px 2px rgba(43,38,32,0.04), 0 10px 32px rgba(43,38,32,0.07)",
             overflow: "hidden",
           }}
         >
@@ -58,7 +56,7 @@ export default function PostTestimonialCta() {
               transform: "translateX(-50%)",
               width: "55%",
               height: 1,
-              background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.45), transparent)",
+              background: "linear-gradient(90deg, transparent, rgba(11,143,128,0.5), transparent)",
             }}
           />
 
@@ -67,7 +65,7 @@ export default function PostTestimonialCta() {
             style={{
               fontSize: "clamp(1.15rem, 3.5vw, 1.5rem)",
               fontWeight: 600,
-              color: "rgba(255,255,255,0.90)",
+              color: "var(--t1)",
               margin: "0 0 10px",
               lineHeight: 1.3,
               letterSpacing: "-0.02em",
@@ -99,7 +97,7 @@ export default function PostTestimonialCta() {
               marginTop: 14,
               fontSize: 11,
               fontWeight: 500,
-              color: "rgba(255,255,255,0.24)",
+              color: "var(--t4)",
               letterSpacing: "0.035em",
             }}
           >

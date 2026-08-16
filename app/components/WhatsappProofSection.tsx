@@ -194,11 +194,11 @@ const stagger = {
 
 // ── Violet brand accent constants ─────────────────────────────────────────────
 // Reuses the shared design tokens (--p400/--p500/--p600) so this section matches
-// the rest of the page's purple system.
+// the rest of the page's teal system.
 const ACCENT = 'var(--p500)'
-const ACCENT_LIGHT = 'var(--p400)'
-const ACCENT_DIM = 'rgba(168,85,247,0.22)'
-const ACCENT_GLOW = 'rgba(168,85,247,0.12)'
+const ACCENT_LIGHT = 'var(--p300)'
+const ACCENT_DIM = 'rgba(11,143,128,0.28)'
+const ACCENT_GLOW = 'rgba(11,143,128,0.1)'
 
 // ── FeaturedStoryCard ─────────────────────────────────────────────────────────
 
@@ -214,13 +214,12 @@ function FeaturedStoryCard({
       className="overflow-hidden rounded-[28px]"
       style={{
         border: featured
-          ? '1px solid rgba(168,85,247,0.35)'
-          : `1px solid ${ACCENT_DIM}`,
-        background:
-          'linear-gradient(160deg, rgba(168,85,247,0.07) 0%, rgba(5,4,4,0.99) 45%, rgba(10,8,4,1) 100%)',
+          ? '1px solid rgba(11,143,128,0.4)'
+          : '1px solid #e7dfd2',
+        background: '#ffffff',
         boxShadow: featured
-          ? '0 0 0 1px rgba(168,85,247,0.12), 0 20px 60px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.06)'
-          : `0 0 0 1px rgba(255,255,255,0.04), 0 2px 4px ${ACCENT_GLOW}, 0 20px 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05)`,
+          ? '0 0 0 1px rgba(11,143,128,0.08), 0 20px 50px rgba(43,38,32,0.12)'
+          : '0 1px 2px rgba(43,38,32,0.04), 0 20px 50px rgba(43,38,32,0.08)',
       }}
     >
       <div className="grid sm:grid-cols-[180px_1fr]">
@@ -238,7 +237,7 @@ function FeaturedStoryCard({
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'linear-gradient(to top, rgba(5,4,4,0.7) 0%, transparent 40%)',
+                'linear-gradient(to top, rgba(43,38,32,0.3) 0%, transparent 40%)',
             }}
           />
         </div>
@@ -248,8 +247,8 @@ function FeaturedStoryCard({
             <span
               className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-[5px] text-[0.6rem] font-extrabold uppercase tracking-[0.18em]"
               style={{
-                background: 'rgba(168,85,247,0.09)',
-                border: '1px solid rgba(168,85,247,0.28)',
+                background: 'var(--p-subtle)',
+                border: '1px solid var(--p-border)',
                 color: ACCENT_LIGHT,
               }}
             >
@@ -257,16 +256,16 @@ function FeaturedStoryCard({
             </span>
           )}
 
-          <p className="mb-1 text-[0.95rem] font-bold tracking-[-0.01em] text-white/95">
+          <p className="mb-1 text-[0.95rem] font-bold tracking-[-0.01em] text-[var(--t1)]">
             {story.name}{' '}
-            <span className="font-medium text-white/40">· {story.meta}</span>
+            <span className="font-medium text-[var(--t3)]">· {story.meta}</span>
           </p>
 
           <p className="mb-3 text-[0.85rem] font-semibold leading-[1.5]" style={{ color: ACCENT_LIGHT }}>
             {story.result}
           </p>
 
-          <p className="text-[0.85rem] italic leading-[1.65] text-white/55">
+          <p className="text-[0.85rem] italic leading-[1.65] text-[var(--t2)]">
             &ldquo;{story.quote}&rdquo;
           </p>
         </div>
@@ -298,14 +297,13 @@ function ProofCard({
         width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
         flexShrink: 0,
         borderRadius: '28px',
-        border: `1px solid ${ACCENT_DIM}`,
-        background:
-          'linear-gradient(160deg, rgba(168,85,247,0.07) 0%, rgba(5,4,4,0.99) 45%, rgba(10,8,4,1) 100%)',
+        border: '1px solid #e7dfd2',
+        background: '#ffffff',
         // One shadow, not two stacked 60/120px blurs — blur radius is the
         // single most expensive thing to composite; ~half the paint cost per
         // card. Hover animates transform ONLY (GPU-cheap), never box-shadow.
         boxShadow:
-          `0 0 0 1px rgba(255,255,255,0.04), 0 26px 54px -14px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)`,
+          '0 1px 2px rgba(43,38,32,0.04), 0 26px 54px -14px rgba(43,38,32,0.12)',
         transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
       onMouseEnter={(e) => {
@@ -326,8 +324,8 @@ function ProofCard({
               key={tag}
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px]"
               style={{
-                background: 'rgba(168,85,247,0.09)',
-                border: `1px solid rgba(168,85,247,0.28)`,
+                background: 'var(--p-subtle)',
+                border: '1px solid var(--p-border)',
               }}
             >
               <span
@@ -356,21 +354,12 @@ function ProofCard({
         style={{
           aspectRatio: '9 / 15',
           borderRadius: '18px',
-          background: '#050404',
-          border: `1px solid rgba(168,85,247,0.10)`,
+          background: '#f4eee1',
+          border: '1px solid #e7dfd2',
           boxShadow:
-            'inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.6)',
+            'inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 20px rgba(43,38,32,0.08)',
         }}
       >
-        {/* Subtle top glow inside image frame */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8"
-          style={{
-            background:
-              'linear-gradient(to bottom, rgba(168,85,247,0.05) 0%, transparent 100%)',
-          }}
-        />
         <Image
           src={card.image}
           alt={`WhatsApp screenshot — ${card.headline} (${card.client})`}
@@ -386,13 +375,13 @@ function ProofCard({
       <div className="px-5 py-4 mt-auto">
         <div
           className="flex items-center gap-2.5 pt-3"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+          style={{ borderTop: '1px solid #efe8db' }}
         >
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black"
             style={{
-              background: `linear-gradient(135deg, ${ACCENT} 0%, var(--p600) 100%)`,
-              boxShadow: `0 0 0 2px rgba(168,85,247,0.2), 0 2px 8px rgba(168,85,247,0.3)`,
+              background: 'var(--p400)',
+              boxShadow: '0 0 0 2px rgba(11,143,128,0.18), 0 2px 8px rgba(11,143,128,0.25)',
               color: '#fff',
             }}
             aria-hidden="true"
@@ -401,7 +390,7 @@ function ProofCard({
           </div>
           <p
             className="text-[0.66rem] font-semibold tracking-[0.08em]"
-            style={{ color: 'rgba(255,255,255,0.32)' }}
+            style={{ color: 'var(--t3)' }}
           >
             {card.client}
           </p>
@@ -425,21 +414,21 @@ export default function WhatsappProofSection() {
         <div
           className="absolute left-1/2 top-[-6%] h-[min(70vw,420px)] w-[min(70vw,420px)] -translate-x-1/2 rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(168,85,247,0.09) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(11,143,128,0.05) 0%, transparent 70%)`,
             filter: 'blur(100px)',
           }}
         />
         <div
           className="absolute left-[8%] top-[30%] h-[260px] w-[260px] rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(194,69,58,0.04) 0%, transparent 70%)`,
             filter: 'blur(80px)',
           }}
         />
         <div
           className="absolute right-[6%] bottom-[14%] h-[240px] w-[240px] rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(168,85,247,0.05) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(11,143,128,0.04) 0%, transparent 70%)`,
             filter: 'blur(70px)',
           }}
         />
@@ -465,7 +454,7 @@ export default function WhatsappProofSection() {
           </motion.h2>
         </motion.div>
 
-        <p className="container-default mb-10 text-center text-[0.7rem] leading-relaxed" style={{ color: 'rgba(255,255,255,0.28)' }}>
+        <p className="container-default mb-10 text-center text-[0.7rem] leading-relaxed" style={{ color: 'var(--t4)' }}>
           {RESULTS_VARY}
         </p>
 
@@ -504,7 +493,7 @@ export default function WhatsappProofSection() {
         </div>
         <p
           className="mt-3 text-center text-[0.59rem] font-semibold uppercase tracking-[0.18em]"
-          style={{ color: 'rgba(255,255,255,0.18)' }}
+          style={{ color: 'var(--t5)' }}
         >
           Swipe to see more ›
         </p>

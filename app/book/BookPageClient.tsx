@@ -61,7 +61,7 @@ export default function BookPageClient() {
 
   return (
     <main
-      className="relative flex min-h-screen flex-col items-center justify-start overflow-hidden px-3 pb-16 pt-[clamp(2.5rem,18vh,9rem)]"
+      className="theme-dark relative flex min-h-screen flex-col items-center justify-start overflow-hidden px-3 pb-16 pt-[clamp(2.5rem,18vh,9rem)]"
       style={{
         // Plum radial glow at top center, layered over the dark base for depth.
         background:

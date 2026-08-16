@@ -169,19 +169,19 @@ export default function HeroVideo() {
   };
 
   return (
-    <div className="relative mx-auto mt-[38px] w-full max-w-[860px]">
+    <div className="relative mx-auto w-full max-w-[860px]">
       <div
         className="relative overflow-hidden rounded-[var(--r-xl)] border border-[var(--p-border)]"
         style={{
-          background: "var(--bg-elevated)",
+          background: "#111114",
           boxShadow:
-            "0 0 0 1px rgba(168,85,247,0.10), 0 24px 70px -20px rgba(168,85,247,0.32)",
+            "0 0 0 1px rgba(43,38,32,0.05), 0 24px 70px -20px rgba(43,38,32,0.28)",
         }}
       >
         <div className="relative aspect-video">
           {missing ? (
             <div className="flex h-full w-full items-center justify-center">
-              <p className="text-[15px] font-medium text-[var(--t4)]">Video coming soon</p>
+              <p className="text-[15px] font-medium text-white/60">Video coming soon</p>
             </div>
           ) : (
             <>
@@ -204,8 +204,8 @@ export default function HeroVideo() {
                   aria-label="Play the video"
                   className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full outline-offset-4 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p400)]"
                   style={{
-                    background: "linear-gradient(135deg,#a855f7,#7e22ce)",
-                    boxShadow: "0 10px 30px rgba(168,85,247,0.4)",
+                    background: "var(--p400)",
+                    boxShadow: "0 10px 30px rgba(10,107,96,0.45)",
                     transition: "transform 240ms var(--ease-cta)",
                   }}
                 >
@@ -229,13 +229,13 @@ export default function HeroVideo() {
                     stroke="currentColor"
                     strokeWidth="1.6"
                     strokeLinecap="round"
-                    className="text-[var(--t2)]"
+                    className="text-white/85"
                     style={{ transform: "translateY(-12px)" }}
                   >
                     <path d="M2 22 C 14 20, 26 12, 32 3" />
                     <polyline points="26,3 32,3 31,9" strokeLinejoin="round" fill="none" />
                   </svg>
-                  <span className="font-hand text-[20px] leading-none text-[var(--t2)]">
+                  <span className="font-hand text-[20px] leading-none text-white/85">
                     Watch the Video
                   </span>
                 </div>
@@ -258,7 +258,7 @@ export default function HeroVideo() {
               <div
                 onMouseEnter={revealControls}
                 onMouseMove={revealControls}
-                className="absolute inset-x-0 bottom-0 z-[2] flex h-[44px] items-center gap-3 border-t border-[var(--b-soft)] px-4"
+                className="absolute inset-x-0 bottom-0 z-[2] flex h-[44px] items-center gap-3 border-t border-white/10 px-4"
                 style={{
                   background: "rgba(15,16,18,0.72)",
                   backdropFilter: "blur(12px)",
@@ -271,7 +271,7 @@ export default function HeroVideo() {
                   type="button"
                   onClick={toggle}
                   aria-label={playing ? "Pause video" : "Play video"}
-                  className="shrink-0 text-[var(--t2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p400)]"
+                  className="shrink-0 text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
                 >
                   {playing ? (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
@@ -292,7 +292,7 @@ export default function HeroVideo() {
                 />
 
                 <span
-                  className="shrink-0 text-[11.5px] text-[var(--t4)]"
+                  className="shrink-0 text-[11.5px] text-white/55"
                   style={{ fontFamily: "var(--font-geist-mono, monospace)" }}
                 >
                   {fmt(time)} / {fmt(duration)}
@@ -302,7 +302,7 @@ export default function HeroVideo() {
                   type="button"
                   onClick={() => setMuted((m) => !m)}
                   aria-label={muted ? "Unmute video" : "Mute video"}
-                  className="shrink-0 text-[var(--t3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p400)]"
+                  className="shrink-0 text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
                 >
                   {muted ? (
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5zM22 9l-6 6M16 9l6 6" /></svg>
@@ -315,7 +315,7 @@ export default function HeroVideo() {
                   type="button"
                   onClick={() => videoRef.current?.requestFullscreen?.()}
                   aria-label="Enter fullscreen"
-                  className="shrink-0 text-[var(--t3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p400)]"
+                  className="shrink-0 text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" /></svg>
                 </button>

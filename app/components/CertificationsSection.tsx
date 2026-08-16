@@ -10,7 +10,7 @@ import { CERTIFICATIONS } from "../lib/authority";
 export default function CertificationsSection() {
   return (
     <section
-      className="section-pad relative bg-[var(--bg-section)] text-white"
+      className="section-pad relative bg-[var(--bg-section)]"
       aria-labelledby="certifications-heading"
     >
       <div aria-hidden="true" className="section-glow">

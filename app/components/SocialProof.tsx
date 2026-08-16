@@ -74,7 +74,7 @@ function QuoteIcon() {
     >
       <path
         d="M0 24V14.4C0 10.4 0.933333 7.06667 2.8 4.4C4.8 1.6 7.86667 0 12 0V4C9.6 4 7.86667 4.93333 6.8 6.8C6 8.26667 5.6 10 5.6 12H10.4V24H0ZM18 24V14.4C18 10.4 18.9333 7.06667 20.8 4.4C22.8 1.6 25.8667 0 30 0V4C27.6 4 25.8667 4.93333 24.8 6.8C24 8.26667 23.6 10 23.6 12H28.4V24H18Z"
-        fill="rgba(139,92,246,0.12)"
+        fill="rgba(11,143,128,0.14)"
       />
     </svg>
   );
@@ -104,16 +104,14 @@ function TestimonialCard({
         borderRadius: "var(--r-xl, 18px)",
         position: "relative",
         overflow: "hidden",
-        // Featured card: more visible glass + violet left accent
-        background: t.featured
-          ? "linear-gradient(135deg, rgba(139,92,246,0.07) 0%, rgba(255,255,255,0.02) 100%)"
-          : "rgba(255,255,255,0.024)",
+        // Featured card: white with teal accent border
+        background: "#ffffff",
         border: t.featured
-          ? "1px solid rgba(139,92,246,0.22)"
-          : "1px solid rgba(255,255,255,0.062)",
+          ? "1px solid rgba(11,143,128,0.32)"
+          : "1px solid #e7dfd2",
         boxShadow: t.featured
-          ? "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(139,92,246,0.1)"
-          : "inset 0 1px 0 rgba(255,255,255,0.048), 0 2px 12px rgba(0,0,0,0.18)",
+          ? "0 1px 2px rgba(43,38,32,0.04), 0 8px 28px rgba(11,143,128,0.1)"
+          : "0 1px 2px rgba(43,38,32,0.04), 0 4px 16px rgba(43,38,32,0.06)",
         padding: "20px",
       }}
     >
@@ -128,7 +126,7 @@ function TestimonialCard({
             bottom: 0,
             width: 3,
             background:
-              "linear-gradient(to bottom, rgba(139,92,246,0.7), rgba(52,211,153,0.4))",
+              "linear-gradient(to bottom, rgba(11,143,128,0.75), rgba(52,211,153,0.4))",
             borderRadius: "0 0 0 0",
           }}
         />
@@ -173,7 +171,7 @@ function TestimonialCard({
               fontWeight: 600,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
-              color: "rgba(139,92,246,0.75)",
+              color: "var(--p300)",
               lineHeight: 1,
             }}
           >
@@ -192,9 +190,9 @@ function TestimonialCard({
               fontWeight: 600,
               letterSpacing: "0.09em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.3)",
-              background: "rgba(255,255,255,0.028)",
-              border: "1px solid rgba(255,255,255,0.065)",
+              color: "var(--t3)",
+              background: "rgba(43,38,32,0.03)",
+              border: "1px solid #e7dfd2",
             }}
           >
             <svg
@@ -219,8 +217,8 @@ function TestimonialCard({
             fontWeight: 400,
             lineHeight: 1.8,
             color: t.featured
-              ? "rgba(255,255,255,0.85)"
-              : "rgba(255,255,255,0.65)",
+              ? "var(--t1)"
+              : "var(--t2)",
             letterSpacing: "0.005em",
           }}
         >
@@ -252,13 +250,13 @@ function TestimonialCard({
                 fontSize: 10.5,
                 fontWeight: 700,
                 letterSpacing: "0.04em",
-                color: "rgba(168,85,247,0.9)",
+                color: "var(--p300)",
                 background: t.featured
-                  ? "rgba(139,92,246,0.18)"
-                  : "rgba(168,85,247,0.11)",
+                  ? "rgba(11,143,128,0.16)"
+                  : "rgba(11,143,128,0.1)",
                 border: t.featured
-                  ? "1px solid rgba(139,92,246,0.35)"
-                  : "1px solid rgba(168,85,247,0.2)",
+                  ? "1px solid rgba(11,143,128,0.4)"
+                  : "1px solid rgba(11,143,128,0.25)",
               }}
             >
               {t.initials}
@@ -268,7 +266,7 @@ function TestimonialCard({
                 style={{
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "rgba(255,255,255,0.88)",
+                  color: "var(--t1)",
                   margin: 0,
                 }}
               >
@@ -278,7 +276,7 @@ function TestimonialCard({
                 style={{
                   fontSize: 10,
                   fontWeight: 500,
-                  color: "rgba(255,255,255,0.28)",
+                  color: "var(--t4)",
                   margin: "4px 0 0",
                 }}
               >
@@ -297,14 +295,14 @@ function TestimonialCard({
               fontWeight: 600,
               lineHeight: 1,
               color: t.result === "Strategy session"
-                ? "rgba(52,211,153,0.85)"
-                : "rgba(168,85,247,0.9)",
+                ? "#047857"
+                : "var(--p300)",
               background: t.result === "Strategy session"
-                ? "rgba(52,211,153,0.07)"
-                : "rgba(168,85,247,0.055)",
+                ? "rgba(16,185,129,0.08)"
+                : "rgba(11,143,128,0.07)",
               border: t.result === "Strategy session"
-                ? "1px solid rgba(52,211,153,0.18)"
-                : "1px solid rgba(168,85,247,0.11)",
+                ? "1px solid rgba(16,185,129,0.28)"
+                : "1px solid rgba(11,143,128,0.22)",
             }}
           >
             {t.result}
@@ -333,7 +331,7 @@ function TrustLine() {
         style={{
           fontSize: 11,
           fontWeight: 500,
-          color: "rgba(255,255,255,0.25)",
+          color: "var(--t4)",
           textAlign: "center",
           lineHeight: 1.55,
           margin: 0,
@@ -356,7 +354,7 @@ export default function SocialProof() {
   return (
     <section
       aria-label="Client testimonials"
-      className="cv-auto relative overflow-hidden border-b border-white/[0.04] bg-[var(--bg-section)] py-[clamp(3.5rem,9vw,5.5rem)]"
+      className="cv-auto relative overflow-hidden border-b border-[#eee7d9] bg-[var(--bg-section)] py-[clamp(3.5rem,9vw,5.5rem)]"
     >
       {/* Hero → section edge blend */}
       <div
