@@ -7,7 +7,7 @@ const PILLARS = [
     n: "1",
     name: "Fix the Root",
     body:
-      "Diets failed because the root — thyroid and hormones — was never addressed. That's pressing the accelerator with the handbrake on. We reset the metabolism first.",
+      "Diets failed because the root cause, thyroid and hormones, was never addressed. That's pressing the accelerator with the handbrake on. We reset the metabolism first.",
   },
   {
     n: "2",
@@ -37,7 +37,7 @@ export default function PillarsSection() {
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "24ch" }}
           >
-            Why nothing worked before &mdash; and what will.
+            Why nothing worked before. And what will.
           </h2>
         </header>
 
