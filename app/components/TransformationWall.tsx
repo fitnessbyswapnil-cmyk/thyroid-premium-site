@@ -53,7 +53,7 @@ const WALL = [
     src: "/transformations/Heenal 7.png",
     name: "Heenal",
     stat: "−15 kg · 90 days",
-    story: "IT professional, Bengaluru.",
+    story: "IT professional, Bengaluru. Her blocker was in Pillar 1 — the root, not her diet.",
     quote: "Finally lost the weight thyroid stole from me for 4 years.",
     alt: "Heenal, before and after — lost 15 kg in 90 days",
   },

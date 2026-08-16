@@ -1,11 +1,14 @@
 import { ScrollDepthTracker } from "@/app/components/tracking/ScrollDepthTracker";
 import Hero from "@/app/components/Hero";
+import SymptomChips from "@/app/components/SymptomChips";
 import CertificationsSection from "@/app/components/CertificationsSection";
+import PillarsSection from "@/app/components/PillarsSection";
 import TransformationWall from "@/app/components/TransformationWall";
 import VideoTestimonial from "@/app/components/VideoTestimonial";
 import WhatsappProofSection from "@/app/components/WhatsappProofSection";
 import SocialProof from "@/app/components/SocialProof";
 import PostTestimonialCta from "@/app/components/PostTestimonialCta";
+import FitFilter from "@/app/components/FitFilter";
 import FAQSection from "@/app/components/FAQSection";
 import StickyBookingBar from "@/app/components/StickyBookingBar";
 
@@ -26,13 +29,16 @@ export default function Home() {
         fetchPriority="high"
       />
       <ScrollDepthTracker />
-      <Hero />                     {/* hero + VSL, one block, per mockup */}
+      <Hero />                     {/* hero + VSL: blocked-not-stuck, medicated hyperniche */}
+      <SymptomChips />             {/* "still ticking these even on your tablet?" */}
       <CertificationsSection />
-      <TransformationWall />       {/* wordless photo wall */}
+      <PillarsSection />           {/* the method revealed; the diagnosis withheld */}
+      <TransformationWall />       {/* photo wall + verified story lines */}
       <VideoTestimonial />         {/* video proof */}
       <WhatsappProofSection />     {/* WhatsApp proof + the stack CTA */}
       <SocialProof />              {/* named written testimonials */}
       <PostTestimonialCta />
+      <FitFilter />                {/* for you / not for you + seriousness line */}
       <FAQSection />
       <StickyBookingBar />
     </main>

@@ -20,7 +20,11 @@ const faqs = [
   },
   {
     q: 'Why is there a booking amount for the call?',
-    a: "₹299 reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching.",
+    a: "₹299 reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching — and if you leave the call without clarity about your blocker, it's refunded.",
+  },
+  {
+    q: "I'm already taking thyroid medicine. Why would I still need this?",
+    a: "The tablet manages your hormone level — it doesn't rebuild the metabolism, energy, and fat-loss response around it. That's why your TSH can be 'in range' while the weight won't move. Coaching works alongside your medication and your doctor, never instead of them.",
   },
   {
     q: 'How fast will I see results?',
@@ -188,8 +192,8 @@ export default function FAQSection() {
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
             label="Get My Free Thyroid Score"
-            sublabel="60-second quiz · Then decode it live on a private call"
-            trust="ACE · INFS Certified · 200+ Clients"
+            sublabel="Free 60-second quiz · then a private ₹299 consultation"
+            trust="I personally review every quiz result before the call. Know your blocker — or your ₹299 back."
             ariaLabel="Take the free thyroid score assessment"
             location="faq"
           />

@@ -507,7 +507,8 @@ export default function WhatsappProofSection() {
             className="mx-auto mt-12 max-w-sm"
             buttonClassName="w-full"
             label="Get My Free Thyroid Score"
-            sublabel="60-second assessment · Then decode it live on a private 1-on-1 call"
+            sublabel="Free 60-second quiz · then a private ₹299 consultation"
+            trust="Leave the call knowing your exact blocker — or your ₹299 back."
             ariaLabel="Take the free thyroid score assessment"
             location="transformations"
           />
