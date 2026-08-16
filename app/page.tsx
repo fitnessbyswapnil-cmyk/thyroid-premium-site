@@ -3,6 +3,7 @@ import Hero from "@/app/components/Hero";
 import SymptomChips from "@/app/components/SymptomChips";
 import CertificationsSection from "@/app/components/CertificationsSection";
 import PillarsSection from "@/app/components/PillarsSection";
+import ResultsGrid from "@/app/components/ResultsGrid";
 import TransformationWall from "@/app/components/TransformationWall";
 import VideoTestimonial from "@/app/components/VideoTestimonial";
 import WhatsappProofSection from "@/app/components/WhatsappProofSection";
@@ -33,6 +34,7 @@ export default function Home() {
       <SymptomChips />             {/* "still ticking these even on your tablet?" */}
       <CertificationsSection />
       <PillarsSection />           {/* the method revealed; the diagnosis withheld */}
+      <ResultsGrid />              {/* the receipt for "one pillar is broken" */}
       <TransformationWall />       {/* photo wall + verified story lines */}
       <VideoTestimonial />         {/* video proof */}
       <WhatsappProofSection />     {/* WhatsApp proof + the stack CTA */}
