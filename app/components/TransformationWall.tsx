@@ -121,9 +121,8 @@ export default function TransformationWall() {
       </div>
 
       <div className="container-default relative z-10">
-        {/* Specific beats generic: the headline is one verified client
-            sentence (Heenal's numbers are burned into her composite below),
-            not a category label. The eyebrow keeps the section's name. */}
+        {/* Direct claim as the title; every number is verified by the
+            composites below it. */}
         <header className="section-header">
           <p className="section-label">Real Clients · Real Results</p>
           <h2
@@ -131,7 +130,7 @@ export default function TransformationWall() {
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "22ch" }}
           >
-            Heenal lost 15 kg in 90 days &mdash; with a thyroid problem.
+            Real women. 12&ndash;16 kg down in 90 days.
           </h2>
         </header>
 

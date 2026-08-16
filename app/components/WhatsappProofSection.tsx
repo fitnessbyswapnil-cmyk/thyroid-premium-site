@@ -444,13 +444,16 @@ export default function WhatsappProofSection() {
           viewport={{ once: true, margin: '-80px' }}
           variants={stagger}
         >
-          {/* Real H2 (was an eyebrow-only <p>) — SEO + screen-reader landmark */}
+          <motion.p variants={fadeUp} className="section-label">
+            Unedited Screenshots
+          </motion.p>
           <motion.h2
             id="whatsapp-proof-heading"
             variants={fadeUp}
-            className="section-label"
+            className="section-title mx-auto text-balance"
+            style={{ maxWidth: "20ch" }}
           >
-            Unedited Messages
+            Straight from their WhatsApp.
           </motion.h2>
         </motion.div>
 
