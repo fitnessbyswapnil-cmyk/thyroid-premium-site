@@ -252,20 +252,20 @@ function ProgressBar({ pct }: { pct: number }) {
   return (
     <div className="mb-6 w-full">
       {/* Sticky trust chips near the progress bar */}
-      <div className="mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-white/30">
+      <div className="mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#857c6d]">
         <span>Personalised</span>
-        <span aria-hidden className="text-white/15">·</span>
+        <span aria-hidden className="text-[#9c9384]">·</span>
         <span>Thyroid-specific</span>
-        <span aria-hidden className="text-white/15">·</span>
+        <span aria-hidden className="text-[#9c9384]">·</span>
         <span>Coach-reviewed</span>
       </div>
-      <div className="mb-2 flex justify-between text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-white/30">
+      <div className="mb-2 flex justify-between text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[#857c6d]">
         <span>{label}</span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e7dfd2]">
         <motion.div
           className="h-full rounded-full"
-          style={{ background: "linear-gradient(90deg, #a855f7, #c5a24d)" }}
+          style={{ background: "linear-gradient(90deg, #0a6b60, #a07c33)" }}
           initial={false}
           animate={{ width: `${fill}%` }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -293,25 +293,25 @@ function OptionCard({
       className="group flex w-full items-center gap-3 rounded-[18px] border px-5 text-left transition-all duration-200"
       style={{
         minHeight: 76,
-        borderColor: selected ? "rgba(168,85,247,0.7)" : "rgba(255,255,255,0.10)",
-        background: selected ? "rgba(168,85,247,0.14)" : "rgba(255,255,255,0.035)",
-        boxShadow: selected ? "0 0 24px rgba(168,85,247,0.22)" : "none",
+        borderColor: selected ? "rgba(11,143,128,0.7)" : "#e0d7c6",
+        background: selected ? "rgba(11,143,128,0.14)" : "#ffffff",
+        boxShadow: selected ? "0 0 24px rgba(11,143,128,0.22)" : "none",
       }}
     >
       <span
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[0.7rem] font-bold transition-colors"
         style={{
-          background: selected ? "rgba(168,85,247,0.3)" : "rgba(255,255,255,0.06)",
-          color: selected ? "#e9d5ff" : "rgba(255,255,255,0.4)",
+          background: selected ? "rgba(11,143,128,0.3)" : "#f4eee1",
+          color: selected ? "#085e54" : "#857c6d",
         }}
         aria-hidden
       >
         {option.emoji ?? index + 1}
       </span>
-      <span className="text-[0.98rem] font-semibold leading-snug text-white/90">{option.label}</span>
+      <span className="text-[0.98rem] font-semibold leading-snug text-[#2b2620]">{option.label}</span>
       {selected && (
         <svg className="ml-auto shrink-0" width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden>
-          <path d="M2 7l3 3 7-7" stroke="#c5a24d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M2 7l3 3 7-7" stroke="#a07c33" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
     </button>
@@ -346,8 +346,8 @@ function TextField({
         onKeyDown={(e) => {
           if (e.key === "Enter") onEnter();
         }}
-        className="w-full rounded-2xl border bg-white/[0.04] px-5 py-4 text-[1.05rem] text-white outline-none transition-colors placeholder:text-white/25"
-        style={{ borderColor: error ? "rgba(248,113,113,0.6)" : "rgba(168,85,247,0.35)" }}
+        className="w-full rounded-2xl border bg-white px-5 py-4 text-[1.05rem] text-white outline-none transition-colors placeholder:text-[#857c6d]"
+        style={{ borderColor: error ? "rgba(194,69,58,0.6)" : "rgba(11,143,128,0.35)" }}
       />
       <div className="mt-2 min-h-[1.1rem] text-[0.78rem] text-rose-300/80">{error || ""}</div>
     </div>
@@ -412,10 +412,10 @@ function CalendarStep({
       const cal = await getCalApi({ namespace: "60min" });
       if (cancelled) return;
       cal("ui", {
-        theme: "dark",
+        theme: "light",
         layout: "month_view",
         hideEventTypeDetails: false,
-        cssVarsPerTheme: { light: { "cal-brand": "#a855f7" }, dark: { "cal-brand": "#a855f7" } },
+        cssVarsPerTheme: { light: { "cal-brand": "#0a6b60" }, dark: { "cal-brand": "#0a6b60" } },
       });
       cal("on", {
         action: "bookingSuccessful",
@@ -453,7 +453,7 @@ function CalendarStep({
     <div className="mx-auto w-full">
       <div
         className="overflow-hidden rounded-[24px] p-2 sm:p-3"
-        style={{ background: "var(--bg-elevated)", boxShadow: "0 24px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(168,85,247,0.22)" }}
+        style={{ background: "var(--bg-elevated)", boxShadow: "0 24px 70px rgba(43,38,32,0.14), inset 0 0 0 1px rgba(11,143,128,0.22)" }}
       >
         <Cal
           namespace="60min"
@@ -689,44 +689,44 @@ export default function QualifyingFlow() {
           {step.type === "intro" && (
             <div className="py-6 text-center">
               {/* Eyebrow — value proposition label */}
-              <p className="mb-4 text-[0.66rem] font-bold uppercase tracking-[0.22em] text-[#c5a24d]/80">
+              <p className="mb-4 text-[0.66rem] font-bold uppercase tracking-[0.22em] text-[#a07c33]/80">
                 Personalised Thyroid Assessment
               </p>
               {/* Emotional trigger — motivation above the headline */}
-              <p className="mx-auto mb-5 max-w-[40ch] text-[0.92rem] leading-relaxed text-white/55">
+              <p className="mx-auto mb-5 max-w-[40ch] text-[0.92rem] leading-relaxed text-[#6d6558]">
                 Most women with thyroid issues struggle because they&apos;re following generic advice.
                 Let&apos;s personalise yours.
               </p>
               <h1
-                className="mx-auto max-w-[16ch] text-[length:clamp(2rem,1.4rem+3vw,3.25rem)] font-black leading-[1.05] tracking-[-0.03em] text-white"
+                className="mx-auto max-w-[16ch] text-[length:clamp(2rem,1.4rem+3vw,3.25rem)] font-black leading-[1.05] tracking-[-0.03em] text-[#2b2620]"
                 style={{ fontFamily: "var(--font-display), Georgia, serif" }}
               >
                 {step.question}
               </h1>
-              <p className="mx-auto mt-5 max-w-[42ch] text-[1rem] leading-relaxed text-white/55">{step.sub}</p>
+              <p className="mx-auto mt-5 max-w-[42ch] text-[1rem] leading-relaxed text-[#6d6558]">{step.sub}</p>
               <button
                 type="button"
                 onClick={goNext}
                 className="mt-9 inline-flex items-center gap-2 rounded-full px-8 py-4 text-[1rem] font-bold text-white transition-transform hover:scale-[1.02]"
-                style={{ background: "linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)", boxShadow: "0 12px 36px rgba(168,85,247,0.35)" }}
+                style={{ background: "linear-gradient(135deg, #0a6b60 0%, #085e54 100%)", boxShadow: "0 12px 36px rgba(11,143,128,0.35)" }}
               >
                 Let&apos;s Begin →
               </button>
-              <p className="mt-4 text-[0.72rem] text-white/25">Your slot is reserved · 2 minutes, then pick your time</p>
+              <p className="mt-4 text-[0.72rem] text-[#857c6d]">Your slot is reserved · 2 minutes, then pick your time</p>
             </div>
           )}
 
           {/* QUESTION HEADER (shared) */}
           {step.type !== "intro" && step.type !== "finish" && (
             <h2
-              className="text-[length:clamp(1.6rem,1.2rem+1.8vw,2.4rem)] font-bold leading-[1.12] tracking-[-0.02em] text-white"
+              className="text-[length:clamp(1.6rem,1.2rem+1.8vw,2.4rem)] font-bold leading-[1.12] tracking-[-0.02em] text-[#2b2620]"
               style={{ fontFamily: "var(--font-display), Georgia, serif" }}
             >
               {personalize(step.question)}
             </h2>
           )}
           {step.sub && step.type !== "intro" && step.type !== "finish" && (
-            <p className="mt-2.5 text-[0.92rem] text-white/45">{step.sub}</p>
+            <p className="mt-2.5 text-[0.92rem] text-[#6d6558]">{step.sub}</p>
           )}
 
           {/* SINGLE */}
@@ -778,9 +778,9 @@ export default function QualifyingFlow() {
                       onClick={() => setAnswers((a) => ({ ...a, [step.id]: n }))}
                       className="flex h-14 items-center justify-center rounded-xl border text-[1rem] font-bold transition-all duration-150"
                       style={{
-                        borderColor: sel ? "rgba(168,85,247,0.7)" : "rgba(255,255,255,0.1)",
-                        background: sel ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.035)",
-                        color: sel ? "#e9d5ff" : "rgba(255,255,255,0.7)",
+                        borderColor: sel ? "rgba(11,143,128,0.7)" : "rgba(255,255,255,0.1)",
+                        background: sel ? "rgba(11,143,128,0.2)" : "#ffffff",
+                        color: sel ? "#085e54" : "#4a443b",
                       }}
                     >
                       {n}
@@ -788,7 +788,7 @@ export default function QualifyingFlow() {
                   );
                 })}
               </div>
-              <div className="mt-2 flex justify-between text-[0.72rem] text-white/30">
+              <div className="mt-2 flex justify-between text-[0.72rem] text-[#857c6d]">
                 <span>Just curious</span>
                 <span>Fully committed</span>
               </div>
@@ -799,7 +799,7 @@ export default function QualifyingFlow() {
           {/* INFO / VALUE MOMENT */}
           {step.type === "info" && (
             <div className="mt-4">
-              <p className="text-[1.05rem] leading-[1.7] text-white/75">{personalize(step.body?.(answers))}</p>
+              <p className="text-[1.05rem] leading-[1.7] text-[#4a443b]">{personalize(step.body?.(answers))}</p>
               <ContinueButton onClick={goNext} label="Continue →" />
             </div>
           )}
@@ -816,7 +816,7 @@ export default function QualifyingFlow() {
                 error={error}
               />
               {step.id === "name" && (
-                <p className="-mt-1 text-[0.74rem] leading-relaxed text-white/35">
+                <p className="-mt-1 text-[0.74rem] leading-relaxed text-[#857c6d]">
                   🔒 Your information stays private. No spam, no sales calls.
                 </p>
               )}
@@ -842,7 +842,7 @@ export default function QualifyingFlow() {
         <button
           type="button"
           onClick={goBack}
-          className="mt-6 text-[0.78rem] font-medium text-white/30 transition-colors hover:text-white/60"
+          className="mt-6 text-[0.78rem] font-medium text-[#857c6d] transition-colors hover:text-[#6d6558]"
         >
           ← Back
         </button>
@@ -850,7 +850,7 @@ export default function QualifyingFlow() {
 
       {/* Keyboard hint — subtle, bottom-right; only where Enter advances */}
       {enterAdvances && (
-        <p className="pointer-events-none fixed bottom-4 right-4 z-20 hidden text-[0.68rem] text-white/25 sm:block">
+        <p className="pointer-events-none fixed bottom-4 right-4 z-20 hidden text-[0.68rem] text-[#857c6d] sm:block">
           Press Enter ↵
         </p>
       )}
@@ -864,7 +864,7 @@ function ContinueButton({ onClick, label = "Continue →" }: { onClick: () => vo
       type="button"
       onClick={onClick}
       className="mt-7 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[0.95rem] font-bold text-white transition-transform hover:scale-[1.02]"
-      style={{ background: "linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)", boxShadow: "0 10px 30px rgba(168,85,247,0.3)" }}
+      style={{ background: "linear-gradient(135deg, #0a6b60 0%, #085e54 100%)", boxShadow: "0 10px 30px rgba(11,143,128,0.3)" }}
     >
       {label}
     </button>
@@ -893,12 +893,12 @@ function FinishStep({ name, email, phone, city, leadId }: { name: string; email:
                 initial={{ opacity: 0, x: -10 }}
                 animate={i < shown ? { opacity: 1, x: 0 } : {}}
                 transition={{ duration: 0.3 }}
-                className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left"
+                className="flex items-center gap-3 rounded-xl border border-[#e0d7c6] bg-white px-4 py-3 text-left"
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full" style={{ background: "rgba(168,85,247,0.2)" }}>
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5 5.5-5.5" stroke="#c5a24d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full" style={{ background: "rgba(11,143,128,0.2)" }}>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5 5.5-5.5" stroke="#a07c33" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </span>
-                <span className="text-[0.9rem] font-semibold text-white/85">{c}</span>
+                <span className="text-[0.9rem] font-semibold text-[#2b2620]">{c}</span>
               </motion.div>
             ))}
           </div>
@@ -907,7 +907,7 @@ function FinishStep({ name, email, phone, city, leadId }: { name: string; email:
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
-              className="mt-6 text-[0.95rem] font-semibold text-white/70"
+              className="mt-6 text-[0.95rem] font-semibold text-[#4a443b]"
             >
               Building your personalised result…
             </motion.p>
@@ -916,10 +916,10 @@ function FinishStep({ name, email, phone, city, leadId }: { name: string; email:
       ) : (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <div className="mb-5 text-center">
-            <h2 className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-white" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
+            <h2 className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-[#2b2620]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
               Pick a time that works for you{name ? `, ${name.split(" ")[0]}` : ""} 👇
             </h2>
-            <p className="mx-auto mt-2.5 max-w-[40ch] text-[0.88rem] text-white/50">Your private 60-minute thyroid consultation call. I review your answers before you meet.</p>
+            <p className="mx-auto mt-2.5 max-w-[40ch] text-[0.88rem] text-[#6d6558]">Your private 60-minute thyroid consultation call. I review your answers before you meet.</p>
           </div>
           <CalendarStep name={name} email={email} phone={phone} city={city} leadId={leadId} />
         </motion.div>

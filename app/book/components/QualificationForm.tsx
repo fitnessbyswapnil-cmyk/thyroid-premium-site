@@ -48,11 +48,11 @@ function QuestionShell({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-[0.82rem] font-bold tracking-[-0.01em] text-white/90">
+      <p className="mb-1.5 text-[0.82rem] font-bold tracking-[-0.01em] text-[#2b2620]">
         {label}
       </p>
       {hint && (
-        <p className="mb-4 text-[0.74rem] leading-relaxed text-white/40">
+        <p className="mb-4 text-[0.74rem] leading-relaxed text-[#857c6d]">
           {hint}
         </p>
       )}
@@ -82,7 +82,7 @@ function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       autoComplete={autoComplete}
-      className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-[0.95rem] text-white placeholder-white/25 outline-none transition-all duration-200 focus:border-purple-500/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(168,85,247,0.15)]"
+      className="w-full rounded-2xl border border-[#e0d7c6] bg-white px-5 py-4 text-[0.95rem] text-white placeholder-[#9c9384] outline-none transition-all duration-200 focus:border-[#0b8f80] focus:bg-white focus:shadow-[0_0_0_3px_rgba(11,143,128,0.15)]"
       style={{ WebkitTapHighlightColor: "transparent" }}
     />
   );
@@ -105,8 +105,8 @@ function SelectCard({
       onClick={onToggle}
       className={`relative w-full rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.98] ${
         selected
-          ? "border-purple-400/60 bg-purple-500/15 shadow-[0_0_20px_rgba(168,85,247,0.15)]"
-          : "border-white/8 bg-white/[0.03] hover:border-white/15 hover:bg-white/[0.05]"
+          ? "border-[#0b8f80] bg-[#0b8f80]/12 shadow-[0_0_20px_rgba(11,143,128,0.15)]"
+          : "border-[#e0d7c6] bg-white hover:border-[#c9c0af] hover:bg-[#faf6ef]"
       }`}
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
@@ -114,7 +114,7 @@ function SelectCard({
         {emoji && <span className="text-lg leading-none">{emoji}</span>}
         <span
           className={`flex-1 text-[0.87rem] font-medium leading-snug ${
-            selected ? "text-white/95" : "text-white/65"
+            selected ? "text-[#2b2620]" : "text-[#4a443b]"
           }`}
         >
           {label}
@@ -122,12 +122,12 @@ function SelectCard({
         <div
           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${
             selected
-              ? "border-purple-400 bg-purple-500/30"
-              : "border-white/15"
+              ? "border-[#0b8f80] bg-[#0b8f80]"
+              : "border-[#e0d7c6]"
           }`}
         >
           {selected && (
-            <div className="h-2 w-2 rounded-full bg-purple-300" />
+            <div className="h-2 w-2 rounded-full bg-[#0a6b60]" />
           )}
         </div>
       </div>
@@ -169,7 +169,7 @@ function PhoneQuestion({
       hint="I&apos;ll send your session confirmation here."
     >
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[0.95rem] text-white/35 select-none">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[0.95rem] text-[#857c6d] select-none">
           +91
         </span>
         <input
@@ -178,7 +178,7 @@ function PhoneQuestion({
           onChange={(e) => onChange(e.target.value)}
           placeholder="98765 43210"
           autoComplete="tel"
-          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-4 pl-14 pr-5 text-[0.95rem] text-white placeholder-white/25 outline-none transition-all duration-200 focus:border-purple-500/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(168,85,247,0.15)]"
+          className="w-full rounded-2xl border border-[#e0d7c6] bg-white py-4 pl-14 pr-5 text-[0.95rem] text-white placeholder-[#9c9384] outline-none transition-all duration-200 focus:border-[#0b8f80] focus:bg-white focus:shadow-[0_0_0_3px_rgba(11,143,128,0.15)]"
           style={{ WebkitTapHighlightColor: "transparent" }}
         />
       </div>
@@ -266,8 +266,8 @@ function ThyroidDurationQuestion({
             onClick={() => onChange(r.val)}
             className={`rounded-full border px-5 py-2.5 text-[0.85rem] font-semibold transition-all duration-200 active:scale-[0.96] ${
               value === r.val
-                ? "border-purple-400/60 bg-purple-500/20 text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.2)]"
-                : "border-white/10 bg-white/[0.04] text-white/55 hover:border-white/20"
+                ? "border-[#0b8f80] bg-[#0b8f80]/15 text-[#085e54] shadow-[0_0_14px_rgba(11,143,128,0.2)]"
+                : "border-[#e0d7c6] bg-white text-[#6d6558] hover:border-[#c9c0af]"
             }`}
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
@@ -366,20 +366,20 @@ export function QualificationForm({
   const isLast = qIndex === QUESTION_ORDER.length - 1;
 
   return (
-    <div className="rounded-[28px] border border-white/8 bg-white/[0.025] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:p-8">
+    <div className="rounded-[28px] border border-[#e0d7c6] bg-white p-6 shadow-[0_24px_80px_rgba(43,38,32,0.14)] backdrop-blur-2xl sm:p-8">
       {/* Progress */}
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/25">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#857c6d]">
             Question {qIndex + 1} of {QUESTION_ORDER.length}
           </span>
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-purple-400/60">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#0a6b60]">
             {Math.round(progress)}% complete
           </span>
         </div>
-        <div className="h-1 overflow-hidden rounded-full bg-white/5">
+        <div className="h-1 overflow-hidden rounded-full bg-[#e7dfd2]">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-purple-500 to-violet-600"
+            className="h-full rounded-full bg-gradient-to-r from-[#0a6b60] to-[#085e54]"
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           />
@@ -430,7 +430,7 @@ export function QualificationForm({
 
       {/* Auto-advance hint for card questions */}
       {(currentQuestion === "thyroidCondition" || currentQuestion === "mainGoal") && isCurrentValid() && (
-        <p className="mb-3 text-center text-[0.65rem] text-purple-400/50">
+        <p className="mb-3 text-center text-[0.65rem] text-[#0a6b60]/50">
           Tap Continue to proceed
         </p>
       )}
@@ -441,7 +441,7 @@ export function QualificationForm({
           <button
             type="button"
             onClick={handleBack}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/40 transition-all duration-200 hover:border-white/20 hover:text-white/70 active:scale-95"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#e0d7c6] bg-white text-[#857c6d] transition-all duration-200 hover:border-[#c9c0af] hover:text-[#4a443b] active:scale-95"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -456,8 +456,8 @@ export function QualificationForm({
           disabled={!isCurrentValid()}
           className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 text-[0.95rem] font-bold tracking-[-0.015em] transition-all duration-300 ${
             isCurrentValid()
-              ? "bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-[0_8px_32px_rgba(124,58,237,0.35)] hover:scale-[1.01] active:scale-[0.99]"
-              : "cursor-not-allowed bg-white/5 text-white/20"
+              ? "bg-gradient-to-r from-[#0a6b60] to-[#085e54] text-white shadow-[0_8px_32px_rgba(10,107,96,0.35)] hover:scale-[1.01] active:scale-[0.99]"
+              : "cursor-not-allowed bg-[#e7dfd2] text-[#9c9384]"
           }`}
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
@@ -470,7 +470,7 @@ export function QualificationForm({
         </button>
       </div>
 
-      <p className="mt-4 text-center text-[0.65rem] text-white/18">
+      <p className="mt-4 text-center text-[0.65rem] text-[#9c9384]">
         Private & confidential · Never shared
       </p>
     </div>

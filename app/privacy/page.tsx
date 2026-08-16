@@ -13,16 +13,16 @@ export const metadata: Metadata = {
 // global layout, so it loads instantly and never interferes with the funnel.
 
 const SECTION = "mx-auto max-w-2xl px-6";
-const H2 = "mt-10 mb-3 text-xl font-semibold text-white";
-const P = "mb-4 leading-relaxed text-slate-300";
-const LI = "mb-2 leading-relaxed text-slate-300";
+const H2 = "mt-10 mb-3 text-xl font-semibold text-[#2b2620]";
+const P = "mb-4 leading-relaxed text-[#4a443b]";
+const LI = "mb-2 leading-relaxed text-[#4a443b]";
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="min-h-screen bg-slate-950 py-16 text-slate-300">
+    <main className="min-h-screen bg-[#faf6ef] py-16 text-[#4a443b]">
       <div className={SECTION}>
-        <h1 className="mb-2 text-3xl font-bold text-white">Privacy Policy</h1>
-        <p className="mb-8 text-sm text-slate-400">Last updated: 12 August 2026</p>
+        <h1 className="mb-2 text-3xl font-bold text-[#2b2620]">Privacy Policy</h1>
+        <p className="mb-8 text-sm text-[#857c6d]">Last updated: 12 August 2026</p>
 
         <p className={P}>
           This website (swapnilumbarkarfitness.in) is operated by Swapnil
@@ -35,23 +35,23 @@ export default function PrivacyPolicyPage() {
         <h2 className={H2}>Information we collect</h2>
         <ul className="list-disc pl-5">
           <li className={LI}>
-            <strong className="text-slate-200">Contact details</strong> you
+            <strong className="text-[#2b2620]">Contact details</strong> you
             submit with the assessment: name, WhatsApp number and email
             address.
           </li>
           <li className={LI}>
-            <strong className="text-slate-200">Assessment answers</strong>:
+            <strong className="text-[#2b2620]">Assessment answers</strong>:
             your responses about thyroid diagnosis, medication, symptoms and
             related lifestyle questions, and the score computed from them.
           </li>
           <li className={LI}>
-            <strong className="text-slate-200">Payment confirmation</strong>:
+            <strong className="text-[#2b2620]">Payment confirmation</strong>:
             when you pay for a consultation, our payment provider tells us the
             amount, status and a payment reference. We never see or store your
             card number, UPI PIN or banking credentials.
           </li>
           <li className={LI}>
-            <strong className="text-slate-200">Usage data</strong>: standard
+            <strong className="text-[#2b2620]">Usage data</strong>: standard
             analytics and advertising measurement data (pages viewed, ad
             interactions) collected via cookies and similar technologies.
           </li>

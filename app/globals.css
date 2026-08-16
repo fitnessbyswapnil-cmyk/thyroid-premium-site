@@ -86,43 +86,6 @@
   --ease-cta: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* ── DARK SCOPE ───────────────────────────────────────────────────────────
-   The booking/payment funnel pages (/book, /payment, /booking-confirmed,
-   /session-booked) were built on the original dark tokens with hardcoded
-   white-alpha text on top. They convert live traffic, so they keep the old
-   palette verbatim under this class until they get their own deliberate
-   light pass. Scoped redefinition only — no visual change on those pages. */
-.theme-dark {
-  --bg-page: #0f1012;
-  --bg-section: #141518;
-  --bg-elevated: #181a1f;
-
-  --s1: rgba(255,255,255,0.03);
-  --s2: rgba(255,255,255,0.045);
-  --s3: rgba(255,255,255,0.065);
-
-  --b-soft: rgba(255,255,255,0.07);
-  --b-mid: rgba(255,255,255,0.1);
-
-  --t1: #f3f4f7;
-  --t2: #c6c8d0;
-  --t3: #9496a3;
-  --t4: #676a76;
-  --t5: #4c4f58;
-
-  --p300: #e0c6ff;
-  --p400: #c793ff;
-  --p500: #a855f7;
-  --p600: #9333ea;
-
-  --p-subtle: rgba(168,85,247,0.07);
-  --p-tint: rgba(168,85,247,0.12);
-  --p-border: rgba(168,85,247,0.18);
-
-  background: var(--bg-page);
-  color: var(--t1);
-}
-
 /* RESET */
 
 *,

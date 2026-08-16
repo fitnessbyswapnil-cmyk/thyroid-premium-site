@@ -108,26 +108,26 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
                                                           <div
                                                                             className={`relative flex h-7 w-7 items-center justify-center rounded-full border text-[0.6rem] font-bold transition-all duration-500 ${
                                                                                                 done
-                                                                                                  ? "border-purple-400/60 bg-purple-500/20 text-purple-300"
+                                                                                                  ? "border-[#0b8f80] bg-[#0b8f80]/15 text-[#085e54]"
                                                                                                   : active
-                                                                                                  ? "border-purple-400/80 bg-purple-500/25 text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.4)]"
-                                                                                                  : "border-white/10 bg-white/[0.03] text-white/20"
+                                                                                                  ? "border-[#0b8f80] bg-[#0b8f80]/15 text-[#085e54] shadow-[0_0_14px_rgba(11,143,128,0.4)]"
+                                                                                                  : "border-[#e0d7c6] bg-white text-[#9c9384]"
                                                                             }`}
                                                                           >
                                                             {done ? (
                                                                                               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                                                                                                                  <path d="M2 5l2.5 2.5 3.5-4" stroke="#c084fc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                                                                  <path d="M2 5l2.5 2.5 3.5-4" stroke="#0b8f80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                                                                 </svg>
                                                                                             ) : (
                                                                                               <span>{step.id}</span>
                                                                           )}
                                                             {active && (
-                                                                                              <span className="absolute inset-0 animate-ping rounded-full bg-purple-500/20" />
+                                                                                              <span className="absolute inset-0 animate-ping rounded-full bg-[#0b8f80]/15" />
                                                                                             )}
                                                           </div>
                                                           <span
                                                                             className={`mt-1.5 hidden text-[0.56rem] font-semibold uppercase tracking-[0.12em] sm:block ${
-                                                                                                done ? "text-purple-400/60" : active ? "text-purple-300/80" : "text-white/15"
+                                                                                                done ? "text-[#0a6b60]" : active ? "text-[#0a6b60]" : "text-[#9c9384]"
                                                                             }`}
                                                                           >
                                                             {step.label}
@@ -136,7 +136,7 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
                                   {i < FLOW_STEPS.length - 1 && (
                                                 <div
                                                                   className={`mx-2 h-px w-8 sm:w-12 transition-all duration-700 ${
-                                                                                      step.id < activeStep ? "bg-purple-500/40" : "bg-white/8"
+                                                                                      step.id < activeStep ? "bg-[#0b8f80]/40" : "bg-[#e0d7c6]"
                                                                   }`}
                                                                 />
                                               )}
