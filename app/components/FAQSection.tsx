@@ -191,10 +191,10 @@ export default function FAQSection() {
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
-            label="Get My Free Thyroid Score"
-            sublabel="Free 60-second quiz · then a private ₹299 consultation"
+            label="Find My Thyroid Blocker"
+            sublabel="60-second quiz · then your private ₹299 consultation"
             trust="I personally review every quiz result before the call. Know your blocker, or your ₹299 back."
-            ariaLabel="Take the free thyroid score assessment"
+            ariaLabel="Find my thyroid blocker with the free 60-second quiz"
             location="faq"
           />
         </div>
