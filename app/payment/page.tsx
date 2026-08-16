@@ -63,7 +63,7 @@ function GoldTick() {
 
 export default function PaymentPage() {
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-white antialiased">
+    <div className="theme-dark min-h-screen bg-[var(--bg-page)] text-white antialiased">
       {/* Header */}
       <header className="border-b border-white/[0.06] px-6 py-5 text-center">
         <p className="font-black tracking-[-0.02em]">Swapnil Umbarkar</p>

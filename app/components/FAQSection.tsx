@@ -103,7 +103,7 @@ function AccordionItem({
     <div
       className="border-b border-[var(--b-soft)] last:border-b-0"
       style={{
-        background: isOpen ? 'rgba(168,85,247,0.04)' : 'transparent',
+        background: isOpen ? 'rgba(11,143,128,0.05)' : 'transparent',
         transition: 'background 200ms ease',
       }}
     >
@@ -154,7 +154,7 @@ export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <section className="cv-auto section-pad relative bg-[var(--bg-page)] text-white">
+    <section className="cv-auto section-pad relative bg-[var(--bg-page)]">
       <div className="container-narrow relative z-10">
         <SectionHeader
           label="FAQs"

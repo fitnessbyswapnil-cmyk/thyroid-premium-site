@@ -1,19 +1,26 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #0f1012;
-  --color-foreground: #ececf1;
+  --color-background: #faf6ef;
+  --color-foreground: #2b2620;
   --font-sans: var(--font-body);
   --font-display: var(--font-display), Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* ── WARM-LIGHT THEME ─────────────────────────────────────────────────────
+   Evidence-based ground for the 30+ female reader: positive polarity (dark
+   text on warm cream — Piepenbrock et al. 2013, advantage grows with age),
+   cream instead of pure white to cut glare, deep teal as the single
+   trust/action hue, terracotta-coral as the single emotional accent.
+   Body sizes raised for presbyopic eyes (18px floor on base text). */
+
 :root {
-  /* Typography */
-  --text-xs: clamp(0.74rem, 0.72rem + 0.18vw, 0.82rem);
-  --text-sm: clamp(0.86rem, 0.82rem + 0.22vw, 0.96rem);
-  --text-base: clamp(0.98rem, 0.94rem + 0.2vw, 1.08rem);
-  --text-lg: clamp(1.15rem, 1.02rem + 0.7vw, 1.5rem);
+  /* Typography — floors raised for 40+ eyes (base ≈18px) */
+  --text-xs: clamp(0.78rem, 0.76rem + 0.18vw, 0.86rem);
+  --text-sm: clamp(0.94rem, 0.9rem + 0.22vw, 1.02rem);
+  --text-base: clamp(1.08rem, 1.03rem + 0.25vw, 1.17rem);
+  --text-lg: clamp(1.2rem, 1.06rem + 0.7vw, 1.55rem);
   --text-xl: clamp(1.8rem, 1.2rem + 2vw, 3rem);
   --text-hero: clamp(2.6rem, 1.9rem + 3vw, 4.8rem);
 
@@ -30,35 +37,42 @@
   --space-16: 4rem;
   --space-20: 5rem;
 
-  /* Background hierarchy */
-  --bg-page: #0f1012;
-  --bg-section: #141518;
-  --bg-elevated: #181a1f;
+  /* Background hierarchy — warm cream ground, sand sections, white cards */
+  --bg-page: #faf6ef;
+  --bg-section: #f4eee1;
+  --bg-elevated: #ffffff;
 
-  /* Surface system */
-  --s1: rgba(255,255,255,0.03);
-  --s2: rgba(255,255,255,0.045);
-  --s3: rgba(255,255,255,0.065);
+  /* Surface system — warm dark-alpha on light ground */
+  --s1: rgba(43,38,32,0.035);
+  --s2: rgba(43,38,32,0.05);
+  --s3: rgba(43,38,32,0.07);
 
-  --b-soft: rgba(255,255,255,0.07);
-  --b-mid: rgba(255,255,255,0.1);
+  --b-soft: rgba(43,38,32,0.1);
+  --b-mid: rgba(43,38,32,0.16);
 
-  /* Text */
-  --t1: #f3f4f7;
-  --t2: #c6c8d0;
-  --t3: #9496a3;
-  --t4: #676a76;
-  --t5: #4c4f58;
+  /* Text — warm charcoal ramp (t1 on cream ≈ 13:1, AAA) */
+  --t1: #2b2620;
+  --t2: #4a443b;
+  --t3: #6d6558;
+  --t4: #857c6d;
+  --t5: #9c9384;
 
-  /* Accent */
-  --p300: #e0c6ff;
-  --p400: #c793ff;
-  --p500: #a855f7;
-  --p600: #9333ea;
+  /* Accent — deep teal: the single trust/action hue.
+     p300 = accent TEXT on light ground (darkest, 6.9:1 on cream),
+     p400/p500 = fills and marks, p600 = pressed/deep. */
+  --p300: #085e54;
+  --p400: #0a6b60;
+  --p500: #0b8f80;
+  --p600: #075247;
 
-  --p-subtle: rgba(168,85,247,0.07);
-  --p-tint: rgba(168,85,247,0.12);
-  --p-border: rgba(168,85,247,0.18);
+  --p-subtle: rgba(11,143,128,0.07);
+  --p-tint: rgba(11,143,128,0.12);
+  --p-border: rgba(11,143,128,0.28);
+
+  /* Emotional accent — terracotta coral, text-safe on cream (4.9:1) */
+  --coral: #c2453a;
+  --coral-tint: rgba(194,69,58,0.1);
+  --coral-border: rgba(194,69,58,0.3);
 
   /* Radius */
   --r-sm: 0.5rem;
@@ -70,6 +84,43 @@
 
   --ease: cubic-bezier(0.16,1,0.3,1);
   --ease-cta: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── DARK SCOPE ───────────────────────────────────────────────────────────
+   The booking/payment funnel pages (/book, /payment, /booking-confirmed,
+   /session-booked) were built on the original dark tokens with hardcoded
+   white-alpha text on top. They convert live traffic, so they keep the old
+   palette verbatim under this class until they get their own deliberate
+   light pass. Scoped redefinition only — no visual change on those pages. */
+.theme-dark {
+  --bg-page: #0f1012;
+  --bg-section: #141518;
+  --bg-elevated: #181a1f;
+
+  --s1: rgba(255,255,255,0.03);
+  --s2: rgba(255,255,255,0.045);
+  --s3: rgba(255,255,255,0.065);
+
+  --b-soft: rgba(255,255,255,0.07);
+  --b-mid: rgba(255,255,255,0.1);
+
+  --t1: #f3f4f7;
+  --t2: #c6c8d0;
+  --t3: #9496a3;
+  --t4: #676a76;
+  --t5: #4c4f58;
+
+  --p300: #e0c6ff;
+  --p400: #c793ff;
+  --p500: #a855f7;
+  --p600: #9333ea;
+
+  --p-subtle: rgba(168,85,247,0.07);
+  --p-tint: rgba(168,85,247,0.12);
+  --p-border: rgba(168,85,247,0.18);
+
+  background: var(--bg-page);
+  color: var(--t1);
 }
 
 /* RESET */
@@ -156,11 +207,11 @@ a {
 /* SECTION LABEL */
 
 .section-label {
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--p400);
+  color: var(--coral);
   margin-bottom: 0.7rem;
 }
 
@@ -213,7 +264,7 @@ a {
   height: min(72vw, 280px);
   transform: translateX(-50%);
   border-radius: 50%;
-  background: rgba(168, 85, 247, 0.06);
+  background: rgba(194, 69, 58, 0.05);
   filter: blur(80px);
 }
 
@@ -230,9 +281,9 @@ a {
 .text-gradient {
   background: linear-gradient(
     135deg,
-    #ffffff 0%,
-    #d8b4fe 45%,
-    #a855f7 100%
+    #2b2620 0%,
+    #0a6b60 55%,
+    #0b8f80 100%
   );
 
   -webkit-background-clip: text;
@@ -242,37 +293,25 @@ a {
 /* GLASS CARDS */
 
 .glass-card {
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.045) 0%,
-    rgba(255,255,255,0.028) 100%
-  );
+  background: #ffffff;
 
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid #e7dfd2;
 
   border-radius: 1.5rem;
 
-  backdrop-filter: blur(18px);
-
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.04) inset,
-    0 10px 30px rgba(0,0,0,0.28);
+    0 1px 2px rgba(43,38,32,0.04),
+    0 10px 30px rgba(43,38,32,0.07);
 }
 
 .glass-card-sm {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.04) 0%,
-    rgba(255, 255, 255, 0.025) 100%
-  );
+  background: #ffffff;
 
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid #e7dfd2;
 
   border-radius: var(--r-xl);
 
-  backdrop-filter: blur(14px);
-
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  box-shadow: 0 1px 2px rgba(43,38,32,0.04), 0 6px 18px rgba(43,38,32,0.05);
 }
 
 /* BADGES */
@@ -288,9 +327,9 @@ a {
 
   border-radius: 999px;
 
-  border: 1px solid rgba(168,85,247,0.18);
+  border: 1px solid var(--p-border);
 
-  background: rgba(168,85,247,0.08);
+  background: var(--p-subtle);
 
   color: var(--p300);
 
@@ -298,8 +337,6 @@ a {
   font-weight: 700;
 
   letter-spacing: 0.02em;
-
-  backdrop-filter: blur(10px);
 }
 
 .badge-dot {
@@ -308,7 +345,7 @@ a {
 
   border-radius: 999px;
 
-  background: #c084fc;
+  background: var(--p500);
 }
 
 /* PRIMARY CTA */
@@ -318,60 +355,32 @@ a {
   width: 100%;
 }
 
-/* LOW glow — hero CTA */
-.cta-wrap::before {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: -0.35rem 0.75rem auto;
-  height: 3.5rem;
-  border-radius: 2rem;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(168, 85, 247, 0.14) 0%,
-    transparent 72%
-  );
-}
-
-/* MEDIUM glow — mid-page CTAs */
-.cta-wrap.cta-glow-mid::before {
-  background: radial-gradient(
-    ellipse at center,
-    rgba(168, 85, 247, 0.24) 0%,
-    transparent 70%
-  );
-  height: 4rem;
-  inset: -0.45rem 0.5rem auto;
-}
-
-/* STRONG glow — final CTA */
+/* Glow halos retired with the dark theme — flat buttons isolate by being the
+   only saturated teal block on a cream page (von Restorff), not by glowing.
+   The hooks stay so call sites don't break. */
+.cta-wrap::before,
+.cta-wrap.cta-glow-mid::before,
 .cta-wrap.cta-glow-strong::before {
-  background: radial-gradient(
-    ellipse at center,
-    rgba(168, 85, 247, 0.36) 0%,
-    transparent 68%
-  );
-  height: 5rem;
-  inset: -0.6rem 0.25rem auto;
+  content: none;
 }
 
 .cta-button {
   width: 100%;
-  min-height: 52px;
+  min-height: 56px;
 
   border-radius: 999px;
 
-  padding: 0.78rem 1.1rem;
+  padding: 0.82rem 1.1rem;
 
-  /* Tactile pill — approved design port: vertical gradient + inset bevel */
-  background: linear-gradient(180deg, #b673fa 0%, #a855f7 40%, #8b2fe0 100%);
+  /* Flat deep teal — the page's single action color */
+  background: var(--p400);
 
-  color: white;
+  color: #ffffff;
 
   font-weight: 800;
-  font-size: clamp(0.88rem, 2.4vw, 0.95rem);
+  font-size: clamp(0.95rem, 2.5vw, 1.02rem);
 
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 
   display: flex;
   flex-direction: column;
@@ -381,10 +390,8 @@ a {
   gap: 0.14rem;
 
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-    0 14px 36px -8px rgba(168, 85, 247, 0.45),
-    0 4px 14px rgba(0, 0, 0, 0.4);
+    0 2px 6px rgba(10, 107, 96, 0.18),
+    0 10px 26px -8px rgba(10, 107, 96, 0.35);
 
   transition:
     transform 240ms var(--ease-cta),
@@ -394,27 +401,24 @@ a {
 
 .cta-button:hover {
   transform: translateY(-2px);
-  filter: brightness(1.07);
+  background: var(--p300);
 
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-    0 20px 48px -8px rgba(168, 85, 247, 0.55),
-    0 4px 14px rgba(0, 0, 0, 0.4);
+    0 3px 8px rgba(10, 107, 96, 0.2),
+    0 16px 34px -8px rgba(10, 107, 96, 0.4);
 }
 
 .cta-button:active {
   transform: translateY(0) scale(0.99);
+  background: var(--p600);
 
-  box-shadow:
-    0 6px 18px rgba(168, 85, 247, 0.16),
-    0 1px 0 rgba(255, 255, 255, 0.1) inset;
+  box-shadow: 0 2px 8px rgba(10, 107, 96, 0.2);
 }
 
 .cta-sub {
-  font-size: 0.71rem;
+  font-size: 0.76rem;
   font-weight: 500;
-  opacity: 0.85;
+  opacity: 0.92;
 }
 
 /* SECONDARY BUTTON */
@@ -426,12 +430,12 @@ a {
 
   border-radius: 999px;
 
-  background: linear-gradient(180deg, #f7f5fa 0%, #ece8f2 100%);
-  color: #141518;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  color: var(--t1);
+  border: 1px solid #e0d7c6;
 
   font-weight: 800;
-  font-size: clamp(0.9rem, 2.5vw, 0.96rem);
+  font-size: clamp(0.95rem, 2.5vw, 1rem);
 
   padding: 0.9rem 1.25rem;
 
@@ -442,17 +446,18 @@ a {
   gap: 0.12rem;
 
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.55) inset,
-    0 6px 20px rgba(0, 0, 0, 0.2);
+    0 1px 2px rgba(43, 38, 32, 0.05),
+    0 6px 20px rgba(43, 38, 32, 0.08);
 
   transition: all 220ms var(--ease);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
+  border-color: var(--p-border);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
-    0 10px 24px rgba(0, 0, 0, 0.24);
+    0 2px 4px rgba(43, 38, 32, 0.06),
+    0 10px 24px rgba(43, 38, 32, 0.1);
 }
 
 .btn-primary:active {
@@ -460,7 +465,7 @@ a {
 }
 
 .btn-primary .cta-sub {
-  color: #5c5f6a;
+  color: var(--t3);
   opacity: 1;
 }
 
@@ -473,12 +478,12 @@ a {
 
   padding: 0.85rem 1.2rem;
 
-  background: rgba(168, 85, 247, 0.08);
+  background: var(--p-subtle);
   border: 1px solid var(--p-border);
   color: var(--p300);
 
   font-weight: 700;
-  font-size: clamp(0.88rem, 2.4vw, 0.94rem);
+  font-size: clamp(0.93rem, 2.5vw, 0.99rem);
 
   display: flex;
   flex-direction: column;
@@ -494,10 +499,10 @@ a {
 }
 
 .btn-ghost:hover {
-  background: rgba(168, 85, 247, 0.13);
-  border-color: rgba(168, 85, 247, 0.32);
+  background: var(--p-tint);
+  border-color: rgba(11, 143, 128, 0.45);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.12);
+  box-shadow: 0 8px 24px rgba(10, 107, 96, 0.12);
 }
 
 .btn-ghost:active {
@@ -505,9 +510,9 @@ a {
 }
 
 .btn-ghost .cta-sub {
-  color: var(--t4);
+  color: var(--t3);
   opacity: 1;
-  font-size: 0.7rem;
+  font-size: 0.74rem;
 }
 
 .btn-sticky {
@@ -515,16 +520,16 @@ a {
   border-radius: 999px;
   padding: 0.55rem 1.1rem;
 
-  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  background: var(--p400);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: none;
 
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.01em;
   white-space: nowrap;
 
-  box-shadow: 0 6px 18px rgba(168, 85, 247, 0.22);
+  box-shadow: 0 6px 18px rgba(10, 107, 96, 0.25);
 
   transition:
     transform 200ms var(--ease-cta),
@@ -533,7 +538,7 @@ a {
 
 .btn-sticky:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 10px 24px rgba(10, 107, 96, 0.32);
 }
 
 .btn-sticky:active {
@@ -548,7 +553,7 @@ a {
   height: min(92vw, 480px);
   transform: translateX(-50%);
   border-radius: 999px;
-  background: rgba(168, 85, 247, 0.09);
+  background: rgba(194, 69, 58, 0.05);
   filter: blur(100px);
 }
 
@@ -587,9 +592,9 @@ a {
   gap: 0.35rem;
   border-radius: var(--r-full);
   border: 1px solid var(--p-border);
-  background: rgba(13, 13, 15, 0.65);
+  background: rgba(255, 255, 255, 0.85);
   padding: 0.28rem 0.65rem;
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -606,21 +611,16 @@ a {
 }
 
 .result-card {
-  background: linear-gradient(
-    160deg,
-    rgba(255,255,255,0.042) 0%,
-    rgba(255,255,255,0.018) 60%,
-    rgba(168,85,247,0.012) 100%
-  );
-  border: 1px solid rgba(255,255,255,0.068);
+  background: #ffffff;
+  border: 1px solid #e7dfd2;
   border-radius: var(--r-2xl);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.032) inset,
-    0 8px 28px rgba(0,0,0,0.24);
+    0 1px 2px rgba(43,38,32,0.04),
+    0 8px 28px rgba(43,38,32,0.07);
   transition:
     border-color 260ms var(--ease),
     transform 260ms var(--ease),
@@ -628,12 +628,11 @@ a {
 }
 
 .result-card:hover {
-  border-color: rgba(168,85,247,0.24);
+  border-color: var(--p-border);
   transform: translateY(-5px) scale(1.006);
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.048) inset,
-    0 28px 60px rgba(0,0,0,0.38),
-    0 0 0 1px rgba(168,85,247,0.12);
+    0 2px 4px rgba(43,38,32,0.05),
+    0 28px 60px rgba(43,38,32,0.12);
 }
 
 /* Portrait aspect ratio — consistent across all breakpoints */
@@ -653,7 +652,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.58);
+  color: rgba(255,255,255,0.72);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -664,13 +663,13 @@ a {
   gap: 0.28rem;
   padding: 0.2rem 0.52rem;
   border-radius: 999px;
-  background: rgba(168,85,247,0.28);
-  border: 1px solid rgba(168,85,247,0.48);
+  background: rgba(11,143,128,0.85);
+  border: 1px solid rgba(255,255,255,0.35);
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--p300);
+  color: #ffffff;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -679,7 +678,7 @@ a {
   width: 0.3rem;
   height: 0.3rem;
   border-radius: 50%;
-  background: var(--p400);
+  background: #ffffff;
   flex-shrink: 0;
 }
 
@@ -727,6 +726,11 @@ a {
   color: var(--p300);
   line-height: 1;
   letter-spacing: -0.03em;
+}
+
+.stat-row,
+.trust-bar {
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .stat-label {
@@ -854,7 +858,7 @@ a {
   border-radius: 1.75rem;
   background: radial-gradient(
     ellipse at center,
-    rgba(168, 85, 247, 0.14) 0%,
+    rgba(11, 143, 128, 0.14) 0%,
     transparent 72%
   );
 }
@@ -877,10 +881,10 @@ a {
   width: min(38vw, 148px);
   scroll-snap-align: start;
   border-radius: var(--r-lg);
-  border: 1px solid var(--b-soft);
-  background: var(--s1);
+  border: 1px solid #e7dfd2;
+  background: #ffffff;
   overflow: hidden;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  box-shadow: 0 2px 8px rgba(43, 38, 32, 0.05);
 }
 
 @media (min-width: 768px) {
@@ -900,7 +904,7 @@ a {
 .cert-card-image {
   position: relative;
   aspect-ratio: 4 / 3;
-  background: rgba(255, 255, 255, 0.04);
+  background: #fdfbf7;
 }
 
 .cert-card-label {
@@ -963,9 +967,9 @@ a {
   border-radius: 50%;
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgba(168, 85, 247, 0.3) 0%,
-    rgba(168, 85, 247, 0.12) 40%,
-    rgba(168, 85, 247, 0.03) 65%,
+    rgba(11, 143, 128, 0.3) 0%,
+    rgba(11, 143, 128, 0.12) 40%,
+    rgba(11, 143, 128, 0.03) 65%,
     transparent 78%
   );
   z-index: 0;
@@ -980,16 +984,16 @@ a {
   padding: 2px;
   background: linear-gradient(
     145deg,
-    rgba(192, 110, 255, 0.72) 0%,
-    rgba(168, 85, 247, 0.28) 30%,
+    rgba(11, 143, 128, 0.72) 0%,
+    rgba(11, 143, 128, 0.28) 30%,
     rgba(255, 255, 255, 0.06) 58%,
-    rgba(168, 85, 247, 0.45) 100%
+    rgba(11, 143, 128, 0.45) 100%
   );
   box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.7),
     0 20px 48px rgba(0, 0, 0, 0.45),
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 0 80px rgba(168, 85, 247, 0.14);
+    0 0 80px rgba(11, 143, 128, 0.14);
 }
 
 /* Inner card — dark bg + overflow clip for rounded image */
@@ -1008,7 +1012,7 @@ a {
     rgba(14, 15, 18, 0.96) 0%,
     rgba(10, 11, 14, 0.99) 100%
   );
-  border-top: 1px solid rgba(168, 85, 247, 0.2);
+  border-top: 1px solid rgba(11, 143, 128, 0.2);
   padding: 1rem 1.1rem 1.15rem;
   text-align: center;
   display: flex;
@@ -1025,8 +1029,8 @@ a {
   margin-top: 0.5rem;
   padding: 0.22rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid rgba(168, 85, 247, 0.25);
-  background: rgba(168, 85, 247, 0.09);
+  border: 1px solid rgba(11, 143, 128, 0.25);
+  background: rgba(11, 143, 128, 0.09);
   font-size: 0.59rem;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -1040,8 +1044,8 @@ a {
   align-items: center;
   padding: 0.22rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid rgba(168, 85, 247, 0.18);
-  background: rgba(168, 85, 247, 0.06);
+  border: 1px solid rgba(11, 143, 128, 0.18);
+  background: rgba(11, 143, 128, 0.06);
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--p300);
@@ -1139,7 +1143,7 @@ a {
   background: var(--p400);
   flex-shrink: 0;
   margin-top: 0.5rem;
-  box-shadow: 0 0 6px rgba(168, 85, 247, 0.55);
+  box-shadow: 0 0 6px rgba(11, 143, 128, 0.55);
 }
 
 /* ── Certification grid ───────────────────────────────────── */
@@ -1209,7 +1213,7 @@ a {
   transform: translateY(-3px);
   box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(168, 85, 247, 0.1);
+    0 0 0 1px rgba(11, 143, 128, 0.1);
 }
 
 /* Image container — 4:3 ratio */
@@ -1225,13 +1229,13 @@ a {
 .authority-cert-img-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(168, 85, 247, 0);
+  background: rgba(11, 143, 128, 0);
   transition: background 240ms var(--ease);
   pointer-events: none;
 }
 
 .authority-cert-card:hover .authority-cert-img-overlay {
-  background: rgba(168, 85, 247, 0.04);
+  background: rgba(11, 143, 128, 0.04);
 }
 
 /* Cert card label */
@@ -1294,14 +1298,14 @@ a {
 
   border-radius: 1.25rem;
 
-  background: rgba(18,18,22,0.92);
+  background: rgba(255,255,255,0.94);
 
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid #e7dfd2;
 
   backdrop-filter: blur(18px);
 
   box-shadow:
-    0 12px 40px rgba(0,0,0,0.42);
+    0 12px 40px rgba(43,38,32,0.16);
 }
 
 /* SCROLLBAR */
@@ -1409,11 +1413,12 @@ a {
 /* Handwritten annotation (hero video note) */
 .font-hand { font-family: var(--font-hand), cursive; }
 
-/* Hero VSL seek slider — styled range input, keyboard-accessible */
+/* Hero VSL seek slider — lives on the DARK control bar over the video, so
+   the track stays a light alpha regardless of page theme */
 .vsl-seek {
   -webkit-appearance: none;
   appearance: none;
-  background: var(--s3);
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   cursor: pointer;
   accent-color: var(--p500);

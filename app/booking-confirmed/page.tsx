@@ -185,7 +185,7 @@ function BookingConfirmedInner() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden"
+      className="theme-dark relative min-h-screen overflow-hidden"
       style={{ background: "var(--bg-page)", color: "#f3f4f7" }}
     >
       {/* Ambient brand tints — champagne gold on confirm */}

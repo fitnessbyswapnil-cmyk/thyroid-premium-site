@@ -193,15 +193,13 @@ function VideoCard({
       whileHover={{ y: -4, transition: { duration: 0.3, ease: "easeOut" } }}
       className="group relative flex flex-col overflow-hidden rounded-[28px]"
       style={{
-        background: story.featured
-          ? "linear-gradient(155deg, rgba(168,85,247,0.1) 0%, rgba(255,255,255,0.03) 55%, rgba(255,255,255,0.015) 100%)"
-          : "linear-gradient(155deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)",
+        background: "#ffffff",
         border: story.featured
-          ? "1px solid rgba(168,85,247,0.30)"
-          : "1px solid rgba(255,255,255,0.08)",
+          ? "1px solid rgba(11,143,128,0.4)"
+          : "1px solid #e7dfd2",
         boxShadow: story.featured
-          ? "0 0 0 1px rgba(168,85,247,0.10), 0 0 60px rgba(168,85,247,0.14), 0 24px 80px rgba(0,0,0,0.65)"
-          : "0 0 0 1px rgba(255,255,255,0.04), 0 16px 60px rgba(0,0,0,0.55)",
+          ? "0 0 0 1px rgba(11,143,128,0.08), 0 24px 60px rgba(43,38,32,0.12)"
+          : "0 1px 2px rgba(43,38,32,0.04), 0 16px 48px rgba(43,38,32,0.09)",
       }}
     >
       {/* Featured badge */}
@@ -209,16 +207,16 @@ function VideoCard({
         <div
           className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5"
           style={{
-            background: "rgba(0,0,0,0.65)",
-            border: "1px solid rgba(168,85,247,0.30)",
+            background: "rgba(0,0,0,0.6)",
+            border: "1px solid rgba(11,143,128,0.5)",
             backdropFilter: "blur(12px)",
           }}
         >
           <span
-            className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-300"
-            style={{ boxShadow: "0 0 6px rgba(196,181,253,0.85)" }}
+            className="h-1.5 w-1.5 animate-pulse rounded-full"
+            style={{ background: "#5fd0c2", boxShadow: "0 0 6px rgba(95,208,194,0.85)" }}
           />
-          <span className="text-[0.56rem] font-bold uppercase tracking-[0.2em] text-purple-200/90">
+          <span className="text-[0.56rem] font-bold uppercase tracking-[0.2em] text-white/90">
             Featured Story
           </span>
         </div>
@@ -281,9 +279,9 @@ function VideoCard({
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex h-[68px] w-[68px] items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 active:scale-95"
               style={{
-                background: "rgba(168,85,247,0.20)",
-                border: "1.5px solid rgba(168,85,247,0.52)",
-                boxShadow: "0 0 48px rgba(168,85,247,0.32), inset 0 1px 0 rgba(255,255,255,0.12)",
+                background: "rgba(11,143,128,0.35)",
+                border: "1.5px solid rgba(255,255,255,0.55)",
+                boxShadow: "0 0 48px rgba(11,143,128,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
                 backdropFilter: "blur(12px)",
               }}
             >
@@ -310,7 +308,7 @@ function VideoCard({
             className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 active:scale-95"
             style={{
               background: "rgba(0,0,0,0.55)",
-              border: "1px solid rgba(168,85,247,0.30)",
+              border: "1px solid rgba(255,255,255,0.3)",
               backdropFilter: "blur(8px)",
             }}
           >
@@ -351,8 +349,8 @@ function VideoCard({
             <div
               className="h-10 w-10 rounded-full border-2"
               style={{
-                borderColor: "rgba(255,255,255,0.08)",
-                borderTopColor: "rgba(168,85,247,0.7)",
+                borderColor: "rgba(255,255,255,0.15)",
+                borderTopColor: "rgba(11,143,128,0.85)",
                 animation: "vt-spin 0.8s linear infinite",
               }}
             />
@@ -382,7 +380,7 @@ function VideoCard({
       {/* ── Stats bar ── */}
       <div
         className="flex"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ borderBottom: "1px solid #efe8db" }}
       >
         {story.stats.map((s, i) => (
           <div
@@ -390,20 +388,16 @@ function VideoCard({
             className="flex flex-1 flex-col items-center py-3.5"
             style={{
               borderRight:
-                i < story.stats.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                i < story.stats.length - 1 ? "1px solid #efe8db" : "none",
             }}
           >
             <span
               className="text-[0.8rem] font-extrabold leading-none"
-              style={{
-                background: "linear-gradient(135deg, #e0c6ff, #a855f7)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
+              style={{ color: "var(--p300)" }}
             >
               {s.num}
             </span>
-            <span className="mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.15em] text-white/32">
+            <span className="mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.15em] text-[var(--t4)]">
               {s.label}
             </span>
           </div>
@@ -419,17 +413,17 @@ function VideoCard({
           <div
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[0.72rem] font-bold text-white"
             style={{
-              background: "linear-gradient(135deg, var(--p400), #7c3aed)",
-              boxShadow: "0 0 12px rgba(168,85,247,0.25)",
+              background: "var(--p400)",
+              boxShadow: "0 0 12px rgba(11,143,128,0.25)",
             }}
           >
             {story.name.charAt(0)}
           </div>
           <div>
-            <p className="text-[0.8rem] font-semibold leading-tight text-white/88">
+            <p className="text-[0.8rem] font-semibold leading-tight text-[var(--t1)]">
               {story.name}
             </p>
-            <p className="mt-0.5 text-[0.65rem] text-white/38">{story.role}</p>
+            <p className="mt-0.5 text-[0.65rem] text-[var(--t3)]">{story.role}</p>
           </div>
         </div>
       </div>
@@ -454,11 +448,11 @@ export default function VideoTestimonial() {
       style={{ background: "var(--bg-section)" }}
       aria-labelledby="testimonial-heading"
     >
-      {/* Ambient background glows */}
+      {/* Ambient background glows — warm tints on sand */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute left-1/2 top-0 h-[560px] w-[900px] -translate-x-1/2 rounded-full bg-purple-700/[0.06] blur-[150px]" />
-        <div className="absolute bottom-0 left-[-5%] h-[380px] w-[440px] rounded-full bg-violet-900/[0.05] blur-[110px]" />
-        <div className="absolute bottom-0 right-[-5%] h-[380px] w-[440px] rounded-full bg-purple-900/[0.05] blur-[110px]" />
+        <div className="absolute left-1/2 top-0 h-[560px] w-[900px] -translate-x-1/2 rounded-full bg-[#0b8f80]/[0.04] blur-[150px]" />
+        <div className="absolute bottom-0 left-[-5%] h-[380px] w-[440px] rounded-full bg-[#c2453a]/[0.04] blur-[110px]" />
+        <div className="absolute bottom-0 right-[-5%] h-[380px] w-[440px] rounded-full bg-[#0b8f80]/[0.03] blur-[110px]" />
       </div>
 
       <div className="container-default relative z-10">

@@ -58,12 +58,12 @@ export default function StickyBookingBar() {
       <div
         className="flex w-full max-w-[420px] items-center gap-3 rounded-[1.5rem] px-4 py-3"
         style={{
-          background: "rgba(14,15,18,0.94)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.96)",
+          border: "1px solid #e0d7c6",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
           boxShadow:
-            "0 -1px 0 rgba(255,255,255,0.04), 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.07)",
+            "0 12px 40px rgba(43,38,32,0.18), 0 0 0 1px rgba(11,143,128,0.06)",
         }}
       >
         {/* Text */}
