@@ -39,7 +39,7 @@ export default function Hero() {
 
         {/* a) Eyebrow — gold diamond marker (approved design port) */}
         <div className="hero-rise flex w-full items-center justify-center gap-2" style={{ animationDelay: "0ms" }}>
-          <span aria-hidden="true" style={{ color: "var(--coral)", fontSize: 7, lineHeight: 1 }}>◆</span>
+          <span aria-hidden="true" style={{ color: "#b8934a", fontSize: 7, lineHeight: 1 }}>◆</span>
           <p className="max-w-[34ch] text-[11px] font-semibold uppercase leading-[1.5] tracking-[0.2em] text-[var(--t3)] sm:max-w-none sm:text-[11.5px] sm:tracking-[0.22em]">
             For working women 28+ with hypothyroidism
           </p>
@@ -81,7 +81,7 @@ export default function Hero() {
         >
           {["ACE & INFS Certified", "Thyroid-Only", "By Private Intake"].map((c) => (
             <span key={c} className="inline-flex items-center gap-[7px]">
-              <span aria-hidden="true" style={{ color: "var(--coral)", fontSize: 6, lineHeight: 1 }}>◆</span>
+              <span aria-hidden="true" style={{ color: "#b8934a", fontSize: 6, lineHeight: 1 }}>◆</span>
               <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--t3)]">
                 {c}
               </span>

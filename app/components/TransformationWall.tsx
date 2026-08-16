@@ -92,10 +92,19 @@ export default function TransformationWall() {
       </div>
 
       <div className="container-default relative z-10">
-        {/* Real H2 (was an eyebrow-only <p>) — SEO + screen-reader landmark */}
-        <h2 id="transformations-heading" className="section-label text-center">
-          Real Clients · Real Results
-        </h2>
+        {/* Specific beats generic: the headline is one verified client
+            sentence (Heenal's numbers are burned into her composite below),
+            not a category label. The eyebrow keeps the section's name. */}
+        <header className="section-header">
+          <p className="section-label">Real Clients · Real Results</p>
+          <h2
+            id="transformations-heading"
+            className="section-title mx-auto text-balance"
+            style={{ maxWidth: "22ch" }}
+          >
+            Heenal lost 15 kg in 90 days &mdash; with a thyroid problem.
+          </h2>
+        </header>
 
         {/* Mobile: scroll-snap rail · sm+: grid */}
         <div

@@ -213,13 +213,19 @@ function TestimonialCard({
         <blockquote
           style={{
             margin: "16px 0 0",
-            fontSize: t.featured ? 15.5 : 14.5,
+            // Featured quote renders as a serif pull-quote — editorial-luxury
+            // treatment for the most emotional sentence on the page.
+            fontSize: t.featured ? 20 : 14.5,
             fontWeight: 400,
-            lineHeight: 1.8,
+            fontFamily: t.featured
+              ? "var(--font-display), Georgia, serif"
+              : undefined,
+            fontStyle: t.featured ? "italic" : undefined,
+            lineHeight: t.featured ? 1.6 : 1.8,
             color: t.featured
               ? "var(--t1)"
               : "var(--t2)",
-            letterSpacing: "0.005em",
+            letterSpacing: t.featured ? "0" : "0.005em",
           }}
         >
           &ldquo;{t.quote}&rdquo;
