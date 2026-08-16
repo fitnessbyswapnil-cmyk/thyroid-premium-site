@@ -25,14 +25,14 @@ const FEATURED = [
     image: '/MoreThanFatLossSection/heenal.png',
     name: 'Heenal S.',
     meta: 'IT professional, Bengaluru',
-    result: '15 kg over her 90-day program — energy and hormone markers stabilized',
+    result: '15 kg over her 90-day program, energy and hormone markers stabilized',
     quote: 'Finally lost the weight thyroid stole from me for 4 years.',
   },
   {
     image: '/MoreThanFatLossSection/surekha.png',
     name: 'Surekha M.',
     meta: 'Hypothyroid client',
-    result: 'Bloating gone — no more afternoon fatigue',
+    result: 'Bloating gone, no more afternoon fatigue',
     quote: 'My clothes fit again. I finally feel like myself.',
   },
 ] as const
@@ -226,7 +226,7 @@ function FeaturedStoryCard({
         <div className="relative min-h-[220px] sm:min-h-[240px] overflow-hidden">
           <Image
             src={story.image}
-            alt={`${story.name} transformation`}
+            alt={`${story.name} before and after`}
             fill
             sizes="(max-width: 640px) 90vw, 180px"
             className="object-cover object-top"
@@ -362,7 +362,7 @@ function ProofCard({
       >
         <Image
           src={card.image}
-          alt={`WhatsApp screenshot — ${card.headline} (${card.client})`}
+          alt={`WhatsApp screenshot, ${card.headline} (${card.client})`}
           fill
           sizes="(max-width: 767px) 90vw, 350px"
           className="object-contain z-0"
@@ -511,7 +511,7 @@ export default function WhatsappProofSection() {
             buttonClassName="w-full"
             label="Get My Free Thyroid Score"
             sublabel="Free 60-second quiz · then a private ₹299 consultation"
-            trust="Leave the call knowing your exact blocker — or your ₹299 back."
+            trust="Leave the call knowing your exact blocker, or your ₹299 back."
             ariaLabel="Take the free thyroid score assessment"
             location="transformations"
           />
