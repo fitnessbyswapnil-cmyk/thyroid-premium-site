@@ -135,9 +135,9 @@ export default function Hero() {
           <CtaButton
             variant="primary"
             className="relative z-[1] w-full"
-            label="Get My Free Thyroid Score"
-            sublabel="Free 60-second quiz · then a private ₹299 consultation · limited weekly slots"
-            ariaLabel="Take the free thyroid score assessment"
+            label="Find My Thyroid Blocker"
+            sublabel="60-second quiz · then your private ₹299 consultation · limited weekly slots"
+            ariaLabel="Find my thyroid blocker with the free 60-second quiz"
             location="hero"
             showArrow
           />

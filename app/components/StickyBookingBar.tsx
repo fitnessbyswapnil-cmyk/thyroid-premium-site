@@ -80,10 +80,10 @@ export default function StickyBookingBar() {
         <button
           type="button"
           onClick={() => { trackCtaClick("sticky_bar"); goToCta("sticky_bar"); }}
-          aria-label="Take the free thyroid score assessment"
+          aria-label="Find my thyroid blocker with the free 60-second quiz"
           className="btn-sticky shrink-0"
         >
-          Get My Score
+          Find My Blocker
         </button>
       </div>
     </div>

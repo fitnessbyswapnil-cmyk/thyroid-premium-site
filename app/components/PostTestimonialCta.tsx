@@ -82,11 +82,11 @@ export default function PostTestimonialCta() {
             <button
               type="button"
               onClick={() => { trackCtaClick("post_testimonial"); goToCta("post_testimonial"); }}
-              aria-label="Take the free thyroid score assessment"
+              aria-label="Find my thyroid blocker with the free 60-second quiz"
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
-              <span className="cta-label">This Sounds Like Me. Get My Score</span>
+              <span className="cta-label">This Sounds Like Me. Find My Blocker</span>
               <span className="cta-sub">Free 60-second assessment · Then decode it live on a call</span>
             </button>
           </div>
