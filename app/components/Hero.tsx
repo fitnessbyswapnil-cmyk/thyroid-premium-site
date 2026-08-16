@@ -37,40 +37,76 @@ export default function Hero() {
 
       <div className="container-default relative z-10 mx-auto flex flex-col items-center pb-[clamp(4rem,11vw,6rem)] pt-[clamp(3.25rem,8vw,5rem)] text-center">
 
-        {/* a) Eyebrow — gold diamond marker (approved design port) */}
+        {/* a) Eyebrow — hyperniche filter: the medicated-but-stuck woman */}
         <div className="hero-rise flex w-full items-center justify-center gap-2" style={{ animationDelay: "0ms" }}>
           <span aria-hidden="true" style={{ color: "#b8934a", fontSize: 7, lineHeight: 1 }}>◆</span>
-          <p className="max-w-[34ch] text-[11px] font-semibold uppercase leading-[1.5] tracking-[0.2em] text-[var(--t3)] sm:max-w-none sm:text-[11.5px] sm:tracking-[0.22em]">
-            For working women 28+ with hypothyroidism
+          <p className="max-w-[36ch] text-[11px] font-semibold uppercase leading-[1.5] tracking-[0.2em] text-[var(--t3)] sm:max-w-none sm:text-[11.5px] sm:tracking-[0.22em]">
+            For busy professional women 30+ on thyroid medication
           </p>
         </div>
 
-        {/* b) Headline */}
+        {/* b) Headline — the one concept carried from ads to quiz to call */}
         <h1
           id="hero-heading"
-          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-bold leading-[1.14] tracking-[-0.01em] sm:max-w-[24ch]"
+          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-bold leading-[1.14] tracking-[-0.01em]"
           style={{
             animationDelay: "100ms",
-            fontSize: "clamp(2.05rem, 1.5rem + 2.6vw, 3.9rem)",
+            fontSize: "clamp(2.2rem, 1.6rem + 2.8vw, 4rem)",
             fontFamily: "var(--font-display), Georgia, serif",
           }}
         >
-          Finally &mdash; a Thyroid-Specific Plan
-          <br className="hidden sm:block" />{" "}
-          to{" "}
-          <span className="text-gradient italic">
-            Lose Weight &amp; Get Your Energy Back.
-          </span>
+          Your weight isn&rsquo;t stuck.{" "}
+          <span className="text-gradient italic">It&rsquo;s blocked.</span>
         </h1>
 
-        {/* c) Subhead */}
+        {/* c) Recognition line — the detail only she knows */}
         <p
-          className="hero-rise mt-[22px] max-w-[46ch] text-pretty leading-[1.6] text-[var(--t2)]"
+          className="hero-rise mt-[20px] max-w-[52ch] text-pretty italic leading-[1.6] text-[var(--t2)]"
+          style={{
+            animationDelay: "160ms",
+            fontSize: "clamp(1rem, 0.95rem + 0.35vw, 1.15rem)",
+            fontFamily: "var(--font-display), Georgia, serif",
+          }}
+        >
+          You take your tablet on an empty stomach, wait 30 minutes before your
+          tea &mdash; and the weight still doesn&rsquo;t move. Your TSH is
+          &ldquo;controlled&rdquo;. Nobody explains why the fat isn&rsquo;t.
+        </p>
+
+        {/* d) Subhead — the ladder in order: quiz → ₹299 call → plan */}
+        <p
+          className="hero-rise mt-[18px] max-w-[50ch] text-pretty leading-[1.6] text-[var(--t2)]"
           style={{ animationDelay: "200ms", fontSize: "clamp(0.98rem, 0.94rem + 0.35vw, 1.1rem)" }}
         >
-          One private 60-minute session to find your root cause and get your
-          90-day plan.
-          <span className="mt-1 block">Real Indian food. No starving.</span>
+          The tablet fixed your TSH &mdash; it never fixed your metabolism. That
+          gap is your <strong className="font-semibold text-[var(--t1)]">blocker</strong>.
+          Take the free 60-second quiz, then decode your result with me on a
+          private 1-on-1 call and leave with your 90-day plan.
+          <span className="mt-1 block">
+            Real Indian food. No starving. Works alongside your doctor and your
+            medication.
+          </span>
+        </p>
+
+        {/* e) Evidence line — the 10–15 kg promise as verifiable fact, never a
+            naked claim (each number is a named client shown further down) */}
+        <p
+          className="hero-rise mt-[16px] max-w-[52ch] text-pretty text-[13px] font-semibold leading-[1.6] text-[var(--p300)] sm:text-[14px]"
+          style={{ animationDelay: "240ms" }}
+        >
+          The T.H.Y.R.O.I.D. Lean Method &mdash; built for 10&ndash;15 kg down in
+          90 days, the way Heenal (&minus;15 kg), Namrata (&minus;16 kg) and
+          Vaidehi (&minus;12 kg) did it.
+          <span className="ml-1 font-normal text-[var(--t4)]">Individual results vary.</span>
+        </p>
+
+        {/* f) Second door — the normal-report woman stays included */}
+        <p
+          className="hero-rise mt-[10px] max-w-[48ch] text-[12.5px] leading-[1.55] text-[var(--t3)]"
+          style={{ animationDelay: "260ms" }}
+        >
+          No tablet &mdash; but reports &ldquo;normal&rdquo; while your body
+          disagrees? Same quiz. Same answer.
         </p>
 
         {/* d) Credential strip — gold diamonds before each chip (design port) */}
@@ -122,11 +158,16 @@ export default function Hero() {
             variant="primary"
             className="relative z-[1] w-full"
             label="Get My Free Thyroid Score"
-            sublabel="60-second assessment · Then decode it live on a private 1-on-1 call · Limited weekly slots"
+            sublabel="Free 60-second quiz · then a private ₹299 consultation · limited weekly slots"
             ariaLabel="Take the free thyroid score assessment"
             location="hero"
             showArrow
           />
+          {/* Risk reversal at the decision point — the page's strongest line */}
+          <p className="mt-3 text-center text-[12.5px] font-medium leading-[1.5] text-[var(--t3)]">
+            Leave the call knowing your exact blocker &mdash;{" "}
+            <span className="font-semibold text-[var(--p300)]">or your ₹299 back.</span>
+          </p>
         </div>
 
         {/* Reassurance line removed per audit — the credential chips above

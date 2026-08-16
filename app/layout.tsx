@@ -38,7 +38,7 @@ const caveat = Caveat({
 export const metadata: Metadata = {
     title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
     description:
-          "One private 60-minute consultation call to find your root cause and get your 90-day plan. Thyroid-specific fat-loss coaching for Indian women with hypothyroidism and Hashimoto's. Real Indian food, no starving. Limited weekly slots.",
+          "On thyroid medication but the weight won't move? Your weight isn't stuck — it's blocked. Free 60-second quiz, then a private 1-on-1 consultation to find your blocker and get your 90-day plan. Real Indian food, no starving. Works alongside your doctor.",
     openGraph: {
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:

@@ -125,7 +125,7 @@ export function PaymentScreen({
             <p className="bg-gradient-to-r from-[#0a6b60] to-[#0b8f80] bg-clip-text text-[1.5rem] font-black text-transparent">
               ₹299
             </p>
-            <p className="text-[0.65rem] text-[#857c6d] line-through">₹2,999</p>
+            <p className="text-[0.65rem] text-[#857c6d] line-through">₹2,000</p>
           </div>
         </div>
 

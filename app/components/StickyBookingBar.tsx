@@ -72,7 +72,7 @@ export default function StickyBookingBar() {
             Your Thyroid Score
           </p>
           <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">
-            60-second quiz · Few slots left this week
+            60-second quiz · Personally reviewed by Swapnil
           </p>
         </div>
 
