@@ -85,12 +85,10 @@ export default function FitFilter() {
         </div>
 
         {/* Seriousness signal — filters on commitment without naming a price */}
-        <p className="mx-auto mt-8 max-w-[52ch] text-center text-pretty text-[0.9rem] leading-[1.7] text-[var(--t3)]">
-          One more thing, said plainly: if we find your blocker and you want my
-          help fixing it, my 3-month programs are a{" "}
-          <strong className="font-semibold text-[var(--t2)]">serious investment</strong>{" "}
-          &mdash; quoted on the call, only after I&rsquo;ve seen your case. No
-          pressure either way: the diagnosis is yours to keep.
+        <p className="mx-auto mt-8 max-w-[42ch] text-center text-pretty text-[0.9rem] leading-[1.7] text-[var(--t3)]">
+          My 3-month programs are a{" "}
+          <strong className="font-semibold text-[var(--t2)]">serious investment</strong>,
+          quoted only on the call. Either way, the diagnosis is yours to keep.
         </p>
       </div>
     </section>
