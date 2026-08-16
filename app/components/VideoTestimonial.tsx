@@ -465,9 +465,6 @@ export default function VideoTestimonial() {
           variants={stagger}
           className="mb-12 text-center sm:mb-14"
         >
-          {/* Specific beats generic: the headline states the featured story's
-              verified facts (Kshama, age 55, partial thyroidectomy — from her
-              own video data below). The eyebrow keeps the section's name. */}
           <motion.p variants={fadeUp} className="section-label">
             In Their Own Words
           </motion.p>
@@ -475,9 +472,9 @@ export default function VideoTestimonial() {
             id="testimonial-heading"
             variants={fadeUp}
             className="section-title mx-auto text-balance"
-            style={{ maxWidth: "24ch" }}
+            style={{ maxWidth: "22ch" }}
           >
-            Half her thyroid was removed. Results came in 2 weeks.
+            Watch their progress, on camera.
           </motion.h2>
         </motion.div>
 

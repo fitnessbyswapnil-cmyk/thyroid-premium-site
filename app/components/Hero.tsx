@@ -45,50 +45,39 @@ export default function Hero() {
           </p>
         </div>
 
-        {/* b) Headline — the one concept carried from ads to quiz to call */}
+        {/* b) Headline — the claim, direct, with the audience right above it */}
         <h1
           id="hero-heading"
           className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-bold leading-[1.14] tracking-[-0.01em]"
           style={{
             animationDelay: "100ms",
-            fontSize: "clamp(2.2rem, 1.6rem + 2.8vw, 4rem)",
+            fontSize: "clamp(2.1rem, 1.55rem + 2.7vw, 3.9rem)",
             fontFamily: "var(--font-display), Georgia, serif",
           }}
         >
-          Your weight isn&rsquo;t stuck.{" "}
-          <span className="text-gradient italic">It&rsquo;s blocked.</span>
+          Lose{" "}
+          <span className="text-gradient italic">10&ndash;15 kg in 90 days</span>{" "}
+          &mdash; even with a thyroid problem.
         </h1>
 
-        {/* c) Recognition line — the detail only she knows, one breath */}
+        {/* c) Subhead — mechanism + path, three short sentences */}
         <p
-          className="hero-rise mt-[18px] max-w-[40ch] text-pretty italic leading-[1.55] text-[var(--t2)]"
-          style={{
-            animationDelay: "160ms",
-            fontSize: "clamp(1rem, 0.95rem + 0.35vw, 1.15rem)",
-            fontFamily: "var(--font-display), Georgia, serif",
-          }}
-        >
-          Empty stomach, 30-minute wait, tablet every morning &mdash; and the
-          weight still doesn&rsquo;t move.
-        </p>
-
-        {/* d) Subhead — the gap + the ladder, nothing else */}
-        <p
-          className="hero-rise mt-[16px] max-w-[44ch] text-pretty leading-[1.6] text-[var(--t2)]"
+          className="hero-rise mt-[18px] max-w-[44ch] text-pretty leading-[1.6] text-[var(--t2)]"
           style={{ animationDelay: "200ms", fontSize: "clamp(0.98rem, 0.94rem + 0.35vw, 1.1rem)" }}
         >
-          The tablet fixed your TSH &mdash; not your metabolism. That gap is
-          your <strong className="font-semibold text-[var(--t1)]">blocker</strong>.
-          Find yours: 60-second quiz, then one private call.
+          Your weight isn&rsquo;t stuck &mdash; it&rsquo;s{" "}
+          <strong className="font-semibold text-[var(--t1)]">blocked</strong>. The
+          tablet fixed your TSH, not your metabolism. Find your blocker:
+          60-second quiz, then one private call.
         </p>
 
-        {/* e) Evidence + promises, compressed to chips-of-text */}
+        {/* d) Proof microline — the claim's receipts, right below it */}
         <p
-          className="hero-rise mt-[14px] max-w-[46ch] text-pretty text-[13px] font-semibold leading-[1.6] text-[var(--p300)] sm:text-[14px]"
+          className="hero-rise mt-[14px] text-pretty text-[13px] font-semibold leading-[1.6] text-[var(--p300)] sm:text-[14px]"
           style={{ animationDelay: "240ms" }}
         >
-          10&ndash;15 kg in 90 days &mdash; like Heenal (&minus;15), Namrata
-          (&minus;16), Vaidehi (&minus;12).
+          Heenal &minus;15 kg &middot; Namrata &minus;16 kg &middot; Vaidehi
+          &minus;12 kg &mdash; in 90 days.
           <span className="ml-1 font-normal text-[var(--t4)]">Results vary.</span>
         </p>
         <p
