@@ -48,7 +48,7 @@ export default function Hero() {
         {/* b) Headline */}
         <h1
           id="hero-heading"
-          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-bold leading-[1.06] tracking-[-0.02em] sm:max-w-[24ch]"
+          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-bold leading-[1.14] tracking-[-0.01em] sm:max-w-[24ch]"
           style={{
             animationDelay: "100ms",
             fontSize: "clamp(2.05rem, 1.5rem + 2.6vw, 3.9rem)",

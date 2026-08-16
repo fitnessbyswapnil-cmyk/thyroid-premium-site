@@ -147,17 +147,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Headlines render in Fraunces (display); body/UI stays on Inter. */
+/* Headlines render in Lora (display); body/UI is Source Sans 3. Lora has
+   no optical-size axis — the old Fraunces "opsz 144" display cut is gone
+   on purpose: hairline display strokes are what made headlines hard to
+   read on a 40-year-old's phone. */
 h1, h2, h3,
 .section-title {
   font-family: var(--font-display), Georgia, serif;
-}
-
-/* Large display headings get Fraunces' true display cut. */
-h1,
-.section-title {
-  font-optical-sizing: auto;
-  font-variation-settings: "opsz" 144;
 }
 
 section {
@@ -219,10 +215,10 @@ a {
 
 .section-title {
   font-size: var(--text-xl);
-  line-height: 1.05;
-  font-weight: 800;
+  line-height: 1.12;
+  font-weight: 700;
   color: var(--t1);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.015em;
 }
 
 .section-header {
