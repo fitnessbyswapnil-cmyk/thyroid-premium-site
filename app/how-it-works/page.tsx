@@ -26,15 +26,15 @@ export const metadata: Metadata = {
     "Step by step: what happens on your 60-minute private thyroid consultation, and how we find the exact blocker keeping your weight stuck.",
 };
 
-const BG = "#07060f";
-const CARD = "rgba(255,255,255,0.03)";
-const GRID = "rgba(255,255,255,0.09)";
-const INK1 = "rgba(255,255,255,0.92)";
-const INK2 = "rgba(255,255,255,0.60)";
-const MUTED = "rgba(255,255,255,0.38)";
-const PURPLE = "#a855f7";
-const PURPLE_L = "#c084fc";
-const GOOD = "#34d399";
+const BG = "#faf6ef";
+const CARD = "#ffffff";
+const GRID = "#e7dfd2";
+const INK1 = "#2b2620";
+const INK2 = "#4a443b";
+const MUTED = "#857c6d";
+const PURPLE = "#0a6b60";
+const PURPLE_L = "#0b8f80";
+const GOOD = "#047857";
 
 const STEPS = [
   {
@@ -118,8 +118,8 @@ export default function HowItWorks() {
             textDecoration: "none",
             borderRadius: 20,
             overflow: "hidden",
-            border: `1px solid rgba(168,85,247,0.35)`,
-            background: `linear-gradient(160deg, rgba(168,85,247,0.14), ${CARD})`,
+            border: `1px solid rgba(11,143,128,0.35)`,
+            background: `linear-gradient(160deg, rgba(11,143,128,0.14), ${CARD})`,
             marginBottom: 14,
           }}
         >
@@ -138,7 +138,7 @@ export default function HowItWorks() {
                 inset: 0,
                 display: "grid",
                 placeItems: "center",
-                background: "rgba(7,6,15,0.25)",
+                background: "rgba(43,38,32,0.15)",
               }}
             >
               <span
@@ -148,8 +148,8 @@ export default function HowItWorks() {
                   borderRadius: "50%",
                   display: "grid",
                   placeItems: "center",
-                  background: "rgba(168,85,247,0.92)",
-                  boxShadow: "0 8px 40px rgba(0,0,0,0.55)",
+                  background: "rgba(11,143,128,0.92)",
+                  boxShadow: "0 8px 40px rgba(43,38,32,0.25)",
                   color: "#fff",
                   fontSize: 24,
                   paddingLeft: 5,
@@ -168,7 +168,7 @@ export default function HowItWorks() {
                 fontWeight: 800,
                 textTransform: "uppercase",
                 color: "#fff",
-                background: "rgba(7,6,15,0.72)",
+                background: "rgba(43,38,32,0.65)",
                 borderRadius: 999,
                 padding: "5px 10px",
               }}
@@ -195,11 +195,11 @@ export default function HowItWorks() {
             textDecoration: "none",
             padding: "16px 20px",
             borderRadius: 16,
-            background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`,
+            background: `linear-gradient(135deg, ${PURPLE}, #085e54)`,
             color: "#fff",
             fontSize: 15.5,
             fontWeight: 800,
-            boxShadow: "0 14px 40px rgba(168,85,247,0.35)",
+            boxShadow: "0 14px 40px rgba(11,143,128,0.35)",
             marginBottom: 6,
           }}
         >
@@ -282,8 +282,8 @@ export default function HowItWorks() {
               width: "fit-content",
               borderRadius: 14,
               background: "#000",
-              border: "1px solid rgba(248,113,113,0.45)",
-              boxShadow: "0 0 30px rgba(248,113,113,0.12)",
+              border: "1px solid rgba(194,69,58,0.45)",
+              boxShadow: "0 0 30px rgba(194,69,58,0.12)",
               padding: "12px 28px",
               textAlign: "center",
             }}
@@ -311,7 +311,7 @@ export default function HowItWorks() {
                 key={l.n}
                 style={{
                   borderRadius: 14,
-                  border: `1px solid rgba(168,85,247,0.30)`,
+                  border: `1px solid rgba(11,143,128,0.30)`,
                   background: CARD,
                   padding: "14px 10px",
                   textAlign: "center",
@@ -359,7 +359,7 @@ export default function HowItWorks() {
               top: 24,
               bottom: 24,
               width: 2,
-              background: `linear-gradient(${PURPLE}, rgba(168,85,247,0.05))`,
+              background: `linear-gradient(${PURPLE}, rgba(11,143,128,0.05))`,
             }}
           />
           <div style={{ display: "grid", gap: 14 }}>
@@ -377,8 +377,8 @@ export default function HowItWorks() {
                     fontWeight: 800,
                     color: PURPLE_L,
                     background: BG,
-                    border: `1.5px solid rgba(168,85,247,0.5)`,
-                    boxShadow: "0 0 18px rgba(168,85,247,0.25)",
+                    border: `1.5px solid rgba(11,143,128,0.5)`,
+                    boxShadow: "0 0 18px rgba(11,143,128,0.25)",
                   }}
                 >
                   {s.n}
@@ -425,11 +425,11 @@ export default function HowItWorks() {
             textDecoration: "none",
             padding: "18px 20px",
             borderRadius: 16,
-            background: `linear-gradient(135deg, ${PURPLE}, #7e22ce)`,
+            background: `linear-gradient(135deg, ${PURPLE}, #085e54)`,
             color: "#fff",
             fontSize: 16,
             fontWeight: 800,
-            boxShadow: "0 14px 40px rgba(168,85,247,0.35)",
+            boxShadow: "0 14px 40px rgba(11,143,128,0.35)",
             marginBottom: 12,
           }}
         >

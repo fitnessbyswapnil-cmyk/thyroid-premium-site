@@ -31,26 +31,26 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
               <div
                 className={`relative flex h-7 w-7 items-center justify-center rounded-full border text-[0.6rem] font-bold transition-all duration-500 ${
                   done
-                    ? "border-[#a855f7]/60 bg-[#a855f7]/20 text-[#a855f7]"
+                    ? "border-[#0a6b60]/60 bg-[#0a6b60]/20 text-[#0a6b60]"
                     : active
-                    ? "border-[#a855f7]/80 bg-[#a855f7]/25 text-[#a855f7] shadow-[0_0_14px_rgba(168,85,247,0.4)]"
-                    : "border-[#a855f7]/10 bg-white/[0.04] text-white/20"
+                    ? "border-[#0a6b60]/80 bg-[#0a6b60]/25 text-[#0a6b60] shadow-[0_0_14px_rgba(11,143,128,0.4)]"
+                    : "border-[#0a6b60]/10 bg-white text-[#9c9384]"
                 }`}
               >
                 {done ? (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2.5 2.5 3.5-4" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M2 5l2.5 2.5 3.5-4" stroke="#0a6b60" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : (
                   <span>{step.id}</span>
                 )}
                 {active && (
-                  <span className="absolute inset-0 animate-ping rounded-full bg-[#a855f7]/20" />
+                  <span className="absolute inset-0 animate-ping rounded-full bg-[#0a6b60]/20" />
                 )}
               </div>
               <span
                 className={`mt-1.5 hidden text-[0.56rem] font-semibold uppercase tracking-[0.12em] sm:block ${
-                  done ? "text-[#a855f7]/60" : active ? "text-[#a855f7]/80" : "text-white/15"
+                  done ? "text-[#0a6b60]/60" : active ? "text-[#0a6b60]/80" : "text-[#c9c0af]"
                 }`}
               >
                 {step.label}
@@ -59,7 +59,7 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
             {i < STEPS.length - 1 && (
               <div
                 className={`mx-2 h-px w-8 sm:w-12 transition-all duration-700 ${
-                  step.id < activeStep ? "bg-[#a855f7]/40" : "bg-[#a855f7]/30"
+                  step.id < activeStep ? "bg-[#0a6b60]/40" : "bg-[#0a6b60]/30"
                 }`}
               />
             )}
@@ -110,12 +110,12 @@ function CalcomStep({
       // time slots side-by-side (the wide container gives it room). cal-brand
       // (plum-rose) drives the selected day + chosen slot highlight.
       cal("ui", {
-        theme: "dark",
+        theme: "light",
         layout: "month_view",
         hideEventTypeDetails: false,
         cssVarsPerTheme: {
-          light: { "cal-brand": "#a855f7" },
-          dark: { "cal-brand": "#a855f7" },
+          light: { "cal-brand": "#0a6b60" },
+          dark: { "cal-brand": "#0a6b60" },
         },
       });
 
@@ -182,12 +182,12 @@ function CalcomStep({
       {/* Heading — Fraunces display (site --font-display), Inter subline */}
       <div className="mb-5 text-center">
         <h2
-          className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-[1.12] tracking-[-0.01em] text-white"
+          className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-[1.12] tracking-[-0.01em] text-[#2b2620]"
           style={{ fontFamily: "var(--font-display), Georgia, serif", fontWeight: 600 }}
         >
           Choose a time that works for you
         </h2>
-        <p className="mx-auto mt-2.5 max-w-[42ch] text-[0.85rem] leading-relaxed text-white/55">
+        <p className="mx-auto mt-2.5 max-w-[42ch] text-[0.85rem] leading-relaxed text-[#6d6558]">
           Swapnil personally reviews your intake before the call. Pick any open slot below.
         </p>
       </div>
@@ -198,7 +198,7 @@ function CalcomStep({
         style={{
           background: "var(--bg-elevated)",
           boxShadow:
-            "0 24px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(168,85,247,0.22)",
+            "0 24px 70px rgba(43,38,32,0.14), inset 0 0 0 1px rgba(11,143,128,0.09)",
         }}
       >
         <Cal
@@ -481,17 +481,17 @@ export default function SessionBooked() {
 
   return (
     <main
-      className="theme-dark relative min-h-screen overflow-hidden"
-      style={{ background: "var(--bg-page)", color: "#f3f4f7" }}
+      className="relative min-h-screen overflow-hidden"
+      style={{ background: "var(--bg-page)", color: "var(--t1)" }}
     >
       {/* Ambient brand tints (plum-rose) */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
         <div
           className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full blur-[120px]"
-          style={{ background: "radial-gradient(ellipse, rgba(168,85,247,0.10) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(ellipse, rgba(11,143,128,0.10) 0%, transparent 70%)" }}
         />
-        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(168,85,247,0.22)" }} />
-        <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(213,183,101,0.12)" }} />
+        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(11,143,128,0.09)" }} />
+        <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(184,147,74,0.08)" }} />
       </div>
 
       <div
@@ -508,12 +508,12 @@ export default function SessionBooked() {
             <div
               className="mx-auto mb-4 h-10 w-10 rounded-full border-2"
               style={{
-                borderColor: "rgba(255,255,255,0.10)",
-                borderTopColor: "rgba(168,85,247,0.85)",
+                borderColor: "#e0d7c6",
+                borderTopColor: "rgba(11,143,128,0.85)",
                 animation: "sb-spin 0.9s linear infinite",
               }}
             />
-            <p className="text-[0.9rem]" style={{ color: "rgba(243,244,247,0.55)" }}>
+            <p className="text-[0.9rem]" style={{ color: "#6d6558" }}>
               Confirming your payment…
             </p>
             <style>{`@keyframes sb-spin { to { transform: rotate(360deg); } }`}</style>
@@ -529,25 +529,26 @@ export default function SessionBooked() {
             style={{ borderColor: "rgba(245,158,11,0.30)", background: "rgba(245,158,11,0.06)" }}
           >
             <p className="mb-3 text-[1.6rem]">🔒</p>
-            <h2 className="mb-3 text-[1.15rem] font-bold" style={{ color: "#f3f4f7" }}>
+            <h2 className="mb-3 text-[1.15rem] font-bold" style={{ color: "var(--t1)" }}>
               Your slot isn&apos;t confirmed yet
             </h2>
-            <p className="mb-6 text-[0.86rem] leading-relaxed" style={{ color: "rgba(243,244,247,0.6)" }}>
+            <p className="mb-6 text-[0.86rem] leading-relaxed" style={{ color: "#4a443b" }}>
               Consultation times are held only after the ₹299 is paid — it keeps the
               calendar honest for the women waiting. Fully refundable if you don&apos;t
               leave the call with clarity, and credited against your plan.
             </p>
             <a
               href={CONSULTATION_FORM_URL}
-              className="block rounded-2xl px-5 py-4 text-[1rem] font-extrabold text-white no-underline"
+              className="block rounded-2xl px-5 py-4 text-[1rem] font-extrabold no-underline"
               style={{
-                background: "linear-gradient(135deg, #a855f7, #7e22ce)",
-                boxShadow: "0 12px 36px rgba(168,85,247,0.35)",
+                color: "#ffffff",
+                background: "linear-gradient(135deg, #0a6b60, #085e54)",
+                boxShadow: "0 12px 36px rgba(11,143,128,0.35)",
               }}
             >
               Pay ₹299 &amp; Pick My Time →
             </a>
-            <p className="mt-4 text-[0.72rem]" style={{ color: "rgba(243,244,247,0.35)" }}>
+            <p className="mt-4 text-[0.72rem]" style={{ color: "#857c6d" }}>
               Already paid? Open the booking link from your WhatsApp confirmation,
               or reply there and we&apos;ll sort it out immediately.
             </p>
@@ -566,25 +567,25 @@ export default function SessionBooked() {
             {/* Payment-received confirmation — unmistakable, then the calendar. */}
             <div
               className="mb-6 rounded-2xl border p-4 text-center"
-              style={{ borderColor: "rgba(213,183,101,0.45)", background: "rgba(213,183,101,0.08)" }}
+              style={{ borderColor: "rgba(160,124,51,0.45)", background: "rgba(160,124,51,0.08)" }}
             >
               <div className="mb-1.5 flex items-center justify-center gap-2">
                 <div
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
-                  style={{ borderColor: "rgba(168,85,247,0.45)", background: "rgba(168,85,247,0.12)" }}
+                  style={{ borderColor: "rgba(11,143,128,0.45)", background: "rgba(11,143,128,0.12)" }}
                 >
                   <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                    <path d="M2 7l3 3 7-7" stroke="#a855f7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M2 7l3 3 7-7" stroke="#0a6b60" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <p className="text-[0.9rem] font-bold" style={{ color: "#f3f4f7" }}>
+                <p className="text-[0.9rem] font-bold" style={{ color: "var(--t1)" }}>
                   Payment received — your consultation is confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
                 </p>
               </div>
-              <p className="text-[0.78rem]" style={{ color: "#a855f7" }}>
+              <p className="text-[0.78rem]" style={{ color: "#0a6b60" }}>
                 Last step: pick your call time below.
               </p>
-              <p className="mt-1.5 text-[0.72rem]" style={{ color: "rgba(243,244,247,0.55)" }}>
+              <p className="mt-1.5 text-[0.72rem]" style={{ color: "#6d6558" }}>
                 After booking, send your latest thyroid reports (TSH, T3, T4) on WhatsApp — Swapnil reviews them personally before your call.
               </p>
             </div>
