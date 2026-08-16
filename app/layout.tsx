@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, Fraunces, Inter } from "next/font/google";
+import { Caveat, Lora, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { ScarcityProvider } from "./context/ScarcityProvider";
 import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
@@ -7,14 +7,21 @@ import { RouteTracker } from "./components/tracking/RouteTracker";
 import { UserIdentityTracker } from "./components/tracking/UserIdentityTracker";
 // InputCookieCapture removed — lead data goes to Make webhook in BookingFlow.tsx
 
-const fraunces = Fraunces({
+// Lora replaces Fraunces: the display-cut Fraunces read as fashion-Didot
+// (hairline strokes vanish on a 40-year-old's phone). Lora is the warm,
+// moderate-contrast serif of premium wellness editorial — same authority,
+// double the legibility. Italic loads for the hero accent phrase.
+const lora = Lora({
     subsets: ["latin"],
     display: "swap",
     variable: "--font-display",
-    axes: ["opsz", "SOFT"],
+    style: ["normal", "italic"],
 });
 
-const inter = Inter({
+// Source Sans 3 replaces Inter for body: open apertures + tall x-height,
+// one of the most legible humanist sans faces for aging eyes, and warmer
+// than Inter's neutral-tech voice.
+const sourceSans = Source_Sans_3({
     subsets: ["latin"],
     display: "swap",
     variable: "--font-body",
@@ -64,7 +71,7 @@ export default function RootLayout({
     return (
           <html
                   lang="en"
-                  className={`${fraunces.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
+                  className={`${lora.variable} ${sourceSans.variable} ${caveat.variable} h-full antialiased`}
                 >
                 <head>
                         <GTMScript />
