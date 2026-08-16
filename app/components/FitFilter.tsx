@@ -6,7 +6,7 @@
 const FOR_YOU = [
   "You take thyroid medicine daily but the weight won't move",
   "Or your reports say “normal” while your body disagrees",
-  "Your day runs on meetings and family — not gym hours",
+  "Your day runs on meetings and family, not gym hours",
   "You're ready to fix this properly, with your reports on the table",
 ] as const;
 

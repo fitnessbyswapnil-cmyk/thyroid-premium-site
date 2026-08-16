@@ -32,7 +32,7 @@ export default function SymptomChips() {
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "22ch" }}
           >
-            Still ticking these boxes &mdash; even on your tablet?
+            Still ticking these boxes, even on your tablet?
           </h2>
         </header>
 
@@ -63,7 +63,7 @@ export default function SymptomChips() {
           The quiz narrows down which one.
         </p>
         <p className="mx-auto mt-2 max-w-[40ch] text-center text-[12.5px] leading-[1.55] text-[var(--t4)]">
-          No tablet &mdash; reports &ldquo;normal&rdquo; but body disagrees? Same quiz.
+          No tablet, and reports say &ldquo;normal&rdquo; but your body disagrees? Same quiz.
         </p>
 
         <SectionCta
@@ -72,7 +72,7 @@ export default function SymptomChips() {
           buttonClassName="w-full"
           label="Get My Free Thyroid Score"
           sublabel="Free 60-second quiz · then a private ₹299 consultation"
-          trust="Leave the call knowing your exact blocker — or your ₹299 back."
+          trust="Leave the call knowing your exact blocker, or your ₹299 back."
           ariaLabel="Take the free thyroid score assessment"
           location="symptoms"
         />
