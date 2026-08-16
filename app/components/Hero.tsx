@@ -59,54 +59,43 @@ export default function Hero() {
           <span className="text-gradient italic">It&rsquo;s blocked.</span>
         </h1>
 
-        {/* c) Recognition line — the detail only she knows */}
+        {/* c) Recognition line — the detail only she knows, one breath */}
         <p
-          className="hero-rise mt-[20px] max-w-[52ch] text-pretty italic leading-[1.6] text-[var(--t2)]"
+          className="hero-rise mt-[18px] max-w-[40ch] text-pretty italic leading-[1.55] text-[var(--t2)]"
           style={{
             animationDelay: "160ms",
             fontSize: "clamp(1rem, 0.95rem + 0.35vw, 1.15rem)",
             fontFamily: "var(--font-display), Georgia, serif",
           }}
         >
-          You take your tablet on an empty stomach, wait 30 minutes before your
-          tea &mdash; and the weight still doesn&rsquo;t move. Your TSH is
-          &ldquo;controlled&rdquo;. Nobody explains why the fat isn&rsquo;t.
+          Empty stomach, 30-minute wait, tablet every morning &mdash; and the
+          weight still doesn&rsquo;t move.
         </p>
 
-        {/* d) Subhead — the ladder in order: quiz → ₹299 call → plan */}
+        {/* d) Subhead — the gap + the ladder, nothing else */}
         <p
-          className="hero-rise mt-[18px] max-w-[50ch] text-pretty leading-[1.6] text-[var(--t2)]"
+          className="hero-rise mt-[16px] max-w-[44ch] text-pretty leading-[1.6] text-[var(--t2)]"
           style={{ animationDelay: "200ms", fontSize: "clamp(0.98rem, 0.94rem + 0.35vw, 1.1rem)" }}
         >
-          The tablet fixed your TSH &mdash; it never fixed your metabolism. That
-          gap is your <strong className="font-semibold text-[var(--t1)]">blocker</strong>.
-          Take the free 60-second quiz, then decode your result with me on a
-          private 1-on-1 call and leave with your 90-day plan.
-          <span className="mt-1 block">
-            Real Indian food. No starving. Works alongside your doctor and your
-            medication.
-          </span>
+          The tablet fixed your TSH &mdash; not your metabolism. That gap is
+          your <strong className="font-semibold text-[var(--t1)]">blocker</strong>.
+          Find yours: 60-second quiz, then one private call.
         </p>
 
-        {/* e) Evidence line — the 10–15 kg promise as verifiable fact, never a
-            naked claim (each number is a named client shown further down) */}
+        {/* e) Evidence + promises, compressed to chips-of-text */}
         <p
-          className="hero-rise mt-[16px] max-w-[52ch] text-pretty text-[13px] font-semibold leading-[1.6] text-[var(--p300)] sm:text-[14px]"
+          className="hero-rise mt-[14px] max-w-[46ch] text-pretty text-[13px] font-semibold leading-[1.6] text-[var(--p300)] sm:text-[14px]"
           style={{ animationDelay: "240ms" }}
         >
-          The T.H.Y.R.O.I.D. Lean Method &mdash; built for 10&ndash;15 kg down in
-          90 days, the way Heenal (&minus;15 kg), Namrata (&minus;16 kg) and
-          Vaidehi (&minus;12 kg) did it.
-          <span className="ml-1 font-normal text-[var(--t4)]">Individual results vary.</span>
+          10&ndash;15 kg in 90 days &mdash; like Heenal (&minus;15), Namrata
+          (&minus;16), Vaidehi (&minus;12).
+          <span className="ml-1 font-normal text-[var(--t4)]">Results vary.</span>
         </p>
-
-        {/* f) Second door — the normal-report woman stays included */}
         <p
-          className="hero-rise mt-[10px] max-w-[48ch] text-[12.5px] leading-[1.55] text-[var(--t3)]"
+          className="hero-rise mt-[8px] text-[12.5px] leading-[1.55] text-[var(--t3)]"
           style={{ animationDelay: "260ms" }}
         >
-          No tablet &mdash; but reports &ldquo;normal&rdquo; while your body
-          disagrees? Same quiz. Same answer.
+          Real Indian food &middot; No starving &middot; Alongside your doctor
         </p>
 
         {/* d) Credential strip — gold diamonds before each chip (design port) */}

@@ -56,14 +56,14 @@ export default function SymptomChips() {
           ))}
         </ul>
 
-        <p className="mx-auto mt-7 max-w-[46ch] text-center text-pretty text-[length:var(--text-sm)] leading-[1.7] text-[var(--t2)]">
-          Your TSH may be &ldquo;in range&rdquo; and these still won&rsquo;t go
-          &mdash; because the tablet manages the hormone, not the metabolism.
-          Count your ticks.{" "}
+        <p className="mx-auto mt-7 max-w-[38ch] text-center text-pretty text-[length:var(--text-sm)] leading-[1.7] text-[var(--t2)]">
           <strong className="font-semibold text-[var(--t1)]">
-            3 or more? That&rsquo;s your blocker talking
+            3 or more ticks? That&rsquo;s your blocker talking.
           </strong>{" "}
-          &mdash; the quiz narrows down which one.
+          The quiz narrows down which one.
+        </p>
+        <p className="mx-auto mt-2 max-w-[40ch] text-center text-[12.5px] leading-[1.55] text-[var(--t4)]">
+          No tablet &mdash; reports &ldquo;normal&rdquo; but body disagrees? Same quiz.
         </p>
 
         <SectionCta

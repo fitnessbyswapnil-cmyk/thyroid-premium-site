@@ -7,19 +7,19 @@ const PILLARS = [
     n: "1",
     name: "Fix the Root",
     body:
-      "Diets failed because the root — your thyroid and hormonal health — was never addressed. It's pressing the accelerator with the handbrake on. We track your markers, find your lifestyle gaps, and reset the metabolism first.",
+      "Diets failed because the root — thyroid and hormones — was never addressed. That's pressing the accelerator with the handbrake on. We reset the metabolism first.",
   },
   {
     n: "2",
     name: "Fuel the Body",
     body:
-      "No cutting out Indian food. Home-cooked roti-sabzi meals built for thyroid health — fueling the body properly instead of running it on 5% battery all day.",
+      "Home-cooked roti-sabzi meals built for thyroid health. No cutting out Indian food, no starving.",
   },
   {
     n: "3",
     name: "Flow into Fitness",
     body:
-      "No 2-hour gym guilt. Joint-friendly 30–40 minute routines that fit a meetings-till-8pm day — plus sleep and daily rhythm, so consistency happens naturally.",
+      "Joint-friendly, 30–40 minutes, fits a meetings-till-8pm day. Plus sleep and daily rhythm.",
   },
 ] as const;
 
@@ -59,12 +59,10 @@ export default function PillarsSection() {
           ))}
         </div>
 
-        <p className="mx-auto mt-8 max-w-[52ch] text-center text-pretty text-[length:var(--text-sm)] leading-[1.7] text-[var(--t2)]">
-          All three must work together &mdash; and in every stuck case, one of
-          them is broken.{" "}
+        <p className="mx-auto mt-8 max-w-[40ch] text-center text-pretty text-[length:var(--text-sm)] leading-[1.7] text-[var(--t2)]">
+          In every stuck case, one pillar is broken.{" "}
           <strong className="font-semibold text-[var(--t1)]">
-            The quiz + consultation finds which one is broken in YOUR case.
-            That&rsquo;s your blocker.
+            The consultation finds which one is yours.
           </strong>
         </p>
       </div>
