@@ -8,23 +8,23 @@ import SectionHeader from './SectionHeader'
 const faqs = [
   {
     q: "I'm already on thyroid medication. Can I still join?",
-    a: 'Yes. Coaching works alongside your medication — we focus on nutrition, lifestyle, and sustainable fat loss, not replacing your doctor.',
+    a: 'Yes. Coaching works alongside your medication. We focus on nutrition, lifestyle, and sustainable fat loss, not replacing your doctor.',
   },
   {
     q: 'What happens in the consultation call?',
-    a: "I review your intake before we speak. In 60 minutes you'll understand exactly why the fat isn't moving, what your thyroid actually needs, and what reversing it involves — with a written summary in 24 hours.",
+    a: "I review your intake before we speak. In 60 minutes you'll understand exactly why the fat isn't moving, what your thyroid actually needs, and what reversing it involves. You get a written summary in 24 hours.",
   },
   {
     q: 'Is the Thyroid Score assessment free?',
-    a: "Yes — the 60-second quiz and your score are completely free. Decoding what your score actually means for you happens on the private 1-on-1 call.",
+    a: "Yes. The 60-second quiz and your score are completely free. Decoding what your score actually means for you happens on the private 1-on-1 call.",
   },
   {
     q: 'Why is there a booking amount for the call?',
-    a: "₹299 reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching — and if you leave the call without clarity about your blocker, it's refunded.",
+    a: "₹299 reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching. And if you leave the call without clarity about your blocker, it's refunded.",
   },
   {
     q: "I'm already taking thyroid medicine. Why would I still need this?",
-    a: "The tablet manages your hormone level — it doesn't rebuild the metabolism, energy, and fat-loss response around it. That's why your TSH can be 'in range' while the weight won't move. Coaching works alongside your medication and your doctor, never instead of them.",
+    a: "The tablet manages your hormone level. It doesn't rebuild the metabolism, energy, and fat-loss response around it. That's why your TSH can be 'in range' while the weight won't move. Coaching works alongside your medication and your doctor, never instead of them.",
   },
   {
     q: 'How fast will I see results?',
@@ -32,23 +32,23 @@ const faqs = [
   },
   {
     q: "Is this suitable for Hashimoto's?",
-    a: "Absolutely. The system supports both hypothyroidism and Hashimoto's — with practical, anti-inflammatory Indian nutrition.",
+    a: "Absolutely. The system supports both hypothyroidism and Hashimoto's, with practical, anti-inflammatory Indian nutrition.",
   },
   {
     q: 'Will I have to follow a strict diet?',
-    a: 'No starvation. Real Indian meals at home — adapted to your culture, schedule, and thyroid needs.',
+    a: 'No starvation. Real Indian meals at home, adapted to your culture, schedule, and thyroid needs.',
   },
   {
     q: "I've tried coaching before and it didn't work. How is this different?",
-    a: "Generic programs give thyroid clients the same deficits as everyone else. This is built only around hypothyroid fat-loss physiology — the consultation call shows you that difference for your case.",
+    a: "Generic programs give thyroid clients the same deficits as everyone else. This is built only around hypothyroid fat-loss physiology. The consultation call shows you that difference for your case.",
   },
   {
     q: 'Will you offer me coaching on the call?',
-    a: "Yes — if you're a fit. The first 45 minutes are your diagnosis, and that's yours to keep either way. In the last 15, if I believe my 3-month reversal program is what you need, I'll show you exactly what it involves and what it costs for your case. One conversation, no chasing afterwards.",
+    a: "Yes, if you're a fit. The first 45 minutes are your diagnosis, and that's yours to keep either way. In the last 15, if I believe my 3-month reversal program is what you need, I'll show you exactly what it involves and what it costs for your case. One conversation, no chasing afterwards.",
   },
   {
     q: 'What does the 3-month program cost?',
-    a: "It depends on what your case actually needs — how far your thyroid has drifted, and how much support and monitoring that requires. I quote it on the call once I've seen your reports and your answers, never before. The ₹299 you pay for the consultation is adjusted against it if you join.",
+    a: "It depends on what your case actually needs, on how far your thyroid has drifted, and on how much support and monitoring that requires. I quote it on the call once I've seen your reports and your answers, never before. The ₹299 you pay for the consultation is adjusted against it if you join.",
   },
   {
     q: 'How much time does coaching take each week?',
@@ -56,7 +56,7 @@ const faqs = [
   },
   {
     q: 'What should I bring to the session?',
-    a: "Your most recent thyroid reports if you have them — TSH, T3, T4, and iron if tested. No reports? Come anyway; we'll map what to test.",
+    a: "Your most recent thyroid reports if you have them. That means TSH, T3, T4, and iron if tested. No reports? Come anyway; we'll map what to test.",
   },
 ]
 
@@ -193,7 +193,7 @@ export default function FAQSection() {
             style={{ maxWidth: 300 }}
             label="Get My Free Thyroid Score"
             sublabel="Free 60-second quiz · then a private ₹299 consultation"
-            trust="I personally review every quiz result before the call. Know your blocker — or your ₹299 back."
+            trust="I personally review every quiz result before the call. Know your blocker, or your ₹299 back."
             ariaLabel="Take the free thyroid score assessment"
             location="faq"
           />

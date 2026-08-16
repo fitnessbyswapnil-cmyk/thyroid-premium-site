@@ -10,7 +10,7 @@ export default function PostTestimonialCta() {
 
   return (
     <section
-      aria-label="Start your thyroid journey"
+      aria-label="Get your thyroid score"
       className="relative overflow-hidden bg-[var(--bg-page)] py-[clamp(2rem,6vw,3.5rem)]"
     >
       {/* Gentle ambient glow */}
@@ -74,7 +74,7 @@ export default function PostTestimonialCta() {
               marginRight: "auto",
             }}
           >
-            If this felt familiar &mdash; there&apos;s a reason.
+            If this felt familiar, there&apos;s a reason.
           </h2>
 
           {/* Ghost CTA — softer, curiosity-driven, mid-intensity */}
@@ -86,7 +86,7 @@ export default function PostTestimonialCta() {
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
-              <span className="cta-label">This Sounds Like Me &mdash; Get My Score</span>
+              <span className="cta-label">This Sounds Like Me. Get My Score</span>
               <span className="cta-sub">Free 60-second assessment · Then decode it live on a call</span>
             </button>
           </div>
@@ -101,7 +101,7 @@ export default function PostTestimonialCta() {
               letterSpacing: "0.035em",
             }}
           >
-            No pressure. No obligation. Just clarity.
+            No pressure, no obligation.
           </p>
         </div>
       </div>

@@ -48,7 +48,7 @@ export default function CertificationsSection() {
         </div>
 
         <p className="mt-5 text-center text-[0.7rem] leading-relaxed text-[var(--t5)]">
-          Credentials support your coaching — not a substitute for medical care.
+          Credentials support your coaching. They are not a substitute for medical care.
         </p>
       </div>
     </section>

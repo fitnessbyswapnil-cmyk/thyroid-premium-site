@@ -56,8 +56,8 @@ export default function Hero() {
           }}
         >
           Lose{" "}
-          <span className="text-gradient italic">10&ndash;15 kg in 90 days</span>{" "}
-          &mdash; even with a thyroid problem.
+          <span className="text-gradient italic">10&ndash;15 kg in 90 days</span>,
+          even with a thyroid problem.
         </h1>
 
         {/* c) Subhead — mechanism + path, three short sentences */}
@@ -65,7 +65,7 @@ export default function Hero() {
           className="hero-rise mt-[18px] max-w-[44ch] text-pretty leading-[1.6] text-[var(--t2)]"
           style={{ animationDelay: "200ms", fontSize: "clamp(0.98rem, 0.94rem + 0.35vw, 1.1rem)" }}
         >
-          Your weight isn&rsquo;t stuck &mdash; it&rsquo;s{" "}
+          Your weight isn&rsquo;t stuck. It&rsquo;s{" "}
           <strong className="font-semibold text-[var(--t1)]">blocked</strong>. The
           tablet fixed your TSH, not your metabolism. Find your blocker:
           60-second quiz, then one private call.
@@ -77,7 +77,7 @@ export default function Hero() {
           style={{ animationDelay: "240ms" }}
         >
           Heenal &minus;15 kg &middot; Namrata &minus;16 kg &middot; Vaidehi
-          &minus;12 kg &mdash; in 90 days.
+          &minus;12 kg. All in 90 days.
           <span className="ml-1 font-normal text-[var(--t4)]">Results vary.</span>
         </p>
         <p
@@ -143,7 +143,7 @@ export default function Hero() {
           />
           {/* Risk reversal at the decision point — the page's strongest line */}
           <p className="mt-3 text-center text-[12.5px] font-medium leading-[1.5] text-[var(--t3)]">
-            Leave the call knowing your exact blocker &mdash;{" "}
+            Leave the call knowing your exact blocker,{" "}
             <span className="font-semibold text-[var(--p300)]">or your ₹299 back.</span>
           </p>
         </div>

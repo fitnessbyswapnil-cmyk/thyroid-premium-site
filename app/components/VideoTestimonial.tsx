@@ -43,7 +43,7 @@ const STORIES: Story[] = [
     featured: true,
     name: "Kshama Handa",
     role: "Age 55 · Partial Thyroidectomy",
-    headline: "Half My Thyroid Was Removed. Nothing Worked — Until This.",
+    headline: "Half My Thyroid Was Removed. Nothing Worked Until This.",
     subtext:
       "After years of failed methods and coaches who didn't understand her condition, Kshama finally started seeing real results.",
     stats: [
@@ -75,7 +75,7 @@ const STORIES: Story[] = [
     role: "Hypothyroid Client",
     headline: "I Was Trying Everything. My Weight Wouldn't Move.",
     subtext:
-      "Then her specific thyroid blockers were finally identified correctly — and everything changed in 3 weeks.",
+      "Then her specific thyroid blockers were finally identified correctly, and everything changed in 3 weeks.",
     stats: [
       { num: "4.2 kg", label: "Lost" },
       { num: "3 Wks", label: "Timeline" },
@@ -257,7 +257,7 @@ function VideoCard({
           }}
           className="absolute inset-0 h-full w-full"
           style={{ objectFit: "contain" }}
-          aria-label={`Transformation video: ${story.name}`}
+          aria-label={`Client story video: ${story.name}`}
         />
 
         {/* Bottom cinematic gradient */}

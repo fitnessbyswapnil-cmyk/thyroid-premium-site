@@ -79,7 +79,7 @@ export default function HeroProofStrip() {
               200+
             </div>
             <div className="mx-auto mt-1 max-w-[11ch] text-[11px] leading-[1.25] text-[var(--t2)] sm:text-[12px]">
-              Indian Women Transformed
+              Indian Women Coached
             </div>
           </div>
           <Laurel flip />

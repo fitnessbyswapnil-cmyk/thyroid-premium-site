@@ -33,7 +33,7 @@ const TESTIMONIALS: Testimonial[] = [
     initials: "KN",
     condition: "Hashimoto's · Strategy session",
     quote:
-      "I walked in expecting a sales pitch. He spent the full hour on my actual reports — my TSH history, my food, my sleep. I left with three specific things to try that evening. That alone was honestly worth far more than I expected.",
+      "I walked in expecting a sales pitch. He spent the full hour on my actual reports. My TSH history, my food, my sleep. I left with three specific things to try that evening. That alone was honestly worth far more than I expected.",
     result: "Strategy session",
     featured: false,
   },
@@ -43,7 +43,7 @@ const TESTIMONIALS: Testimonial[] = [
     initials: "PR",
     condition: "Hypothyroidism · 6-week program",
     quote:
-      "I'd tried every diet for 3 years. Nothing worked. I didn't know my thyroid was the actual problem — not my willpower. In 6 weeks I lost 4.5 kg without giving up roti.",
+      "I'd tried every diet for 3 years. Nothing worked. I didn't know my thyroid was the actual problem, not my willpower. In 6 weeks I lost 4.5 kg without giving up roti.",
     result: "−4.5 kg · 6 weeks",
     featured: false,
   },
@@ -53,7 +53,7 @@ const TESTIMONIALS: Testimonial[] = [
     initials: "DM",
     condition: "Hashimoto's · 10-week program",
     quote:
-      "I cried on our first call because someone finally understood why nothing was working. This isn't just a coaching program — it's the first time I felt truly seen.",
+      "I cried on our first call because someone finally understood why nothing was working. This isn't just a coaching program. It's the first time I felt truly seen.",
     result: "−6 kg · 10 weeks",
     featured: true,
   },
@@ -385,16 +385,16 @@ export default function SocialProof() {
         <div className="mb-9 text-center sm:mb-11">
           <p className="section-label">Client Stories</p>
           {/*
-            Headline unchanged — "They were where you are" is excellent.
-            Subtitle improved: the original "Real food. Real results." is a
-            feature claim. The new line speaks to the emotional context:
-            "Not transformations. Breakthroughs." — premium, precise, different.
+            Headline unchanged: "They were where you are" is excellent.
+            Subtitle is plain on purpose. The earlier "Not transformations.
+            Breakthroughs." leaned on an ad-copy antithesis; this page sells a
+            1-on-1 relationship, so the line just points at the cards below.
           */}
           <h2 className="section-title mt-1 text-balance leading-[1.06] tracking-[-0.038em]">
             They were where you are.
           </h2>
           <p className="mx-auto mt-3 max-w-[28ch] text-center text-pretty text-[length:var(--text-sm)] leading-[1.68] text-[var(--t3)]">
-            Not transformations. Breakthroughs.
+            Here&rsquo;s what changed for them.
           </p>
         </div>
 

@@ -58,7 +58,7 @@ const SCARCITY_LINE = "Only a few sessions open this week";
 type Q = { id: string; t: string; opts?: string[]; multi?: boolean; scale?: boolean };
 const QS: Q[] = [
   { id: "diagnosis",  t: "Have you been diagnosed with a thyroid condition?", opts: ["Yes, hypothyroidism", "Yes, Hashimoto's", "I suspect it, not diagnosed yet", "No"] },
-  { id: "medication", t: "Are you on thyroid medication?", opts: ["Yes — and still struggling with weight", "Yes — and it's under control", "Not yet"] },
+  { id: "medication", t: "Are you on thyroid medication?", opts: ["Yes, and still struggling with weight", "Yes, and it's under control", "Not yet"] },
   { id: "duration",   t: "How long have you been fighting this weight?", opts: ["Under 6 months", "6–12 months", "1–3 years", "More than 3 years"] },
   { id: "symptoms",   t: "Beyond the scale, what else is bothering you?", multi: true, opts: ["Exhausted by afternoon", "Hair fall", "Bloating / puffiness", "Brain fog", "Mood swings", "Feeling cold all the time", "Clothes not fitting"] },
   { id: "tried",      t: "What have you already tried?", multi: true, opts: ["Dieting / calorie cutting", "Gym / personal trainer", "Nutritionists / diet plans", "Only medication", "YouTube / free plans", "Nothing structured yet"] },
@@ -69,11 +69,11 @@ const QS: Q[] = [
 ];
 const SECTIONS: [number, number, string][] = [[0, 2, "YOUR THYROID"], [3, 5, "YOUR HISTORY"]];
 const REACT: Record<string, string[]> = {
-  diagnosis: ["Diagnosed — we know what we're working with", "Hashimoto's — autoimmune needs its own plan", "Suspected — step one is the right panel", "Good — we'll rule it in or out properly"],
-  medication: ["Medicated and stuck — the classic gap", "Controlled — now we build on it", "Not yet — plenty of room to move"],
-  duration: ["Early — the best time to fix it", "Under a year — very recoverable", "1–3 years of fighting — that ends here", "Long fight. It was the method, not you"],
+  diagnosis: ["Diagnosed. We know what we're working with", "Hashimoto's. Autoimmune needs its own plan", "Suspected. Step one is the right panel", "Good. We'll rule it in or out properly"],
+  medication: ["Medicated and stuck. The classic gap", "Controlled. Now we build on it", "Not yet. Plenty of room to move"],
+  duration: ["Early. The best time to fix it", "Under a year. Very recoverable", "1–3 years of fighting. That ends here", "Long fight. It was the method, not you"],
   // Budget must never be scored, but she still deserves a human response.
-  budget: ["Noted — I'll prepare the full plan", "Noted — we'll map what fits", "Noted — we'll start where you are", "Fair — the call shows you the plan first"],
+  budget: ["Noted. I'll prepare the full plan", "Noted. We'll map what fits", "Noted. We'll start where you are", "Fair. The call shows you the plan first"],
 };
 
 type Answers = Record<string, number | number[] | null>;
@@ -122,9 +122,9 @@ function blockerLines(a: Answers): string[] {
   const symLabels = ((a.symptoms as number[]) || []).slice(0, 3).map((i) => (QS[3].opts![i] || "").toLowerCase());
 
   if (a.medication === 0)
-    out.push("You're on medication and still stuck — the dose treats your lab report, not your metabolism.");
+    out.push("You're on medication and still stuck. The dose treats your lab report, not your metabolism.");
   if (sym >= 3)
-    out.push(`${sym} symptoms beyond the scale — ${symLabels.join(", ")} — point to an under-supported thyroid.`);
+    out.push(`${sym} symptoms beyond the scale point to an under-supported thyroid. You flagged ${symLabels.join(", ")}.`);
   if (tried >= 2)
     out.push(`${tried} approaches already tried. None of them were built for a hypothyroid metabolism.`);
   if (((a.duration as number) ?? 0) >= 2)
@@ -136,18 +136,18 @@ function computeFrom(a: Answers) {
   const p = computeParts(a);
   const total = Math.max(35, Math.min(96, Math.round(33.5 + 0.17 * p.S + 0.21 * p.G + 0.27 * p.E)));
   let tierLabel: string, tierLine: string;
-  if (total >= 75) { tierLabel = "HIGH POTENTIAL"; tierLine = "Recoverable — but not on its own."; }
-  else if (total >= 58) { tierLabel = "STRONG POTENTIAL"; tierLine = "Recoverable — but not on its own."; }
-  else { tierLabel = "EMERGING POTENTIAL"; tierLine = "Recoverable — but not on its own."; }
+  if (total >= 75) { tierLabel = "HIGH POTENTIAL"; tierLine = "Recoverable, but not on its own."; }
+  else if (total >= 58) { tierLabel = "STRONG POTENTIAL"; tierLine = "Recoverable, but not on its own."; }
+  else { tierLabel = "EMERGING POTENTIAL"; tierLine = "Recoverable, but not on its own."; }
   const SYMS = QS[3].opts!, symArr = (a.symptoms as number[]) || [];
   const lc = (x: string) => x.charAt(0).toLowerCase() + x.slice(1);
   const rules: [boolean, string][] = [
-    [((a.tried as number[]) || []).includes(2) && ((a.tried as number[]) || []).includes(1), "You've tried nutritionists AND a gym — the effort was never the problem. Those plans weren't built for a hypothyroid metabolism."],
-    [p.tried >= 3, `You've tried ${p.tried} different approaches. That's not failure — it's proof you needed a thyroid-first plan all along.`],
-    [p.sym >= 4, `${p.sym} symptoms beyond the scale — including ${lc(SYMS[symArr[0]] || "")} and ${lc(SYMS[symArr[1]] || "")} — point to an under-supported thyroid, not a willpower problem.`],
-    [a.duration === 3, "More than 3 years of fighting the same weight almost always means the method was wrong — not your body."],
-    [a.medication === 0, "You're on medication and still struggling — the dose treats your lab report, not your metabolism. That gap is exactly what your call covers."],
-    [a.diagnosis === 2, "You suspect a thyroid issue but aren't diagnosed yet — confirming the right panel is step one, and your call covers exactly which tests."],
+    [((a.tried as number[]) || []).includes(2) && ((a.tried as number[]) || []).includes(1), "You've tried nutritionists AND a gym. The effort was never the problem. Those plans weren't built for a hypothyroid metabolism."],
+    [p.tried >= 3, `You've tried ${p.tried} different approaches. Not one of them was built for a hypothyroid metabolism, which is why the effort never showed up on the scale.`],
+    [p.sym >= 4, `${p.sym} symptoms beyond the scale, including ${lc(SYMS[symArr[0]] || "")} and ${lc(SYMS[symArr[1]] || "")}, point to an under-supported thyroid rather than a willpower problem.`],
+    [a.duration === 3, "More than 3 years of fighting the same weight almost always means the method was wrong, not your body."],
+    [a.medication === 0, "You're on medication and still struggling. The dose treats your lab report, not your metabolism. That gap is exactly what your call covers."],
+    [a.diagnosis === 2, "You suspect a thyroid issue but aren't diagnosed yet. Confirming the right panel is step one, and your call covers exactly which tests."],
     [true, "Your answer pattern closely matches the women who respond fastest once the plan finally fits the thyroid."],
   ];
   const insights = rules.filter((r) => r[0]).map((r) => r[1]).slice(0, 3);
@@ -156,8 +156,8 @@ function computeFrom(a: Answers) {
 }
 function reactionFor(qi: number, ans: Answers): string {
   const id = QS[qi].id;
-  if (id === "symptoms") { const n = ((ans.symptoms as number[]) || []).length; return n ? `${n} symptom${n > 1 ? "s" : ""} — a pattern, not willpower` : ""; }
-  if (id === "tried") { const n = ((ans.tried as number[]) || []).filter((i) => i !== 5).length; return n ? `${n} approach${n > 1 ? "es" : ""} tried — none built for a thyroid` : "Clean slate — we start it right"; }
+  if (id === "symptoms") { const n = ((ans.symptoms as number[]) || []).length; return n ? `${n} symptom${n > 1 ? "s" : ""}. A pattern, not willpower` : ""; }
+  if (id === "tried") { const n = ((ans.tried as number[]) || []).filter((i) => i !== 5).length; return n ? `${n} approach${n > 1 ? "es" : ""} tried. None built for a thyroid` : "Clean slate. We start it right"; }
   const arr = REACT[id]; const v = ans[id] as number;
   return arr && v != null ? arr[v] || "" : "";
 }
@@ -512,7 +512,7 @@ export default function QuizFunnel() {
     // -> 3 at the highest-drop-off moment; IP-based ct matching covers Meta,
     // and the WhatsApp playbook never used city). The form key stays so the
     // /api/quiz-lead payload shape is unchanged - it just sends "".
-    if (Object.keys(e).length) { setErrs(e); setFormErr("Please check the highlighted fields — we need them to reveal your score."); return; }
+    if (Object.keys(e).length) { setErrs(e); setFormErr("Please check the highlighted fields. We need them to reveal your score."); return; }
     setErrs({}); setFormErr(""); setSubmitting(true);
 
     const firstName = f.name.trim().split(/\s+/)[0] || "";
@@ -706,8 +706,8 @@ export default function QuizFunnel() {
   const bandTexts = ["under 6 months", "6–12 months", "1–3 years", "3+ years"], bandPcts = [18, 34, 61, 78];
   const herBand = ans.duration == null ? 2 : (ans.duration as number);
   let insightTitle = "", insightCaption = "";
-  if (insight === 0) { insightTitle = "How long women like you fought it"; insightCaption = `${bandPcts[herBand]}% of women fighting it ${bandTexts[herBand]} were on generic plans — built for normal thyroids.`; }
-  if (insight === 1) { insightTitle = "The Approach Gap"; insightCaption = parts.tried >= 2 ? `Women who tried ${parts.tried}+ methods and failed shared the same gap — the effort was never the problem.` : "The effort was never the problem — the plan was built for the wrong metabolism."; }
+  if (insight === 0) { insightTitle = "How long women like you fought it"; insightCaption = `${bandPcts[herBand]}% of women fighting it ${bandTexts[herBand]} were on generic plans, built for normal thyroids.`; }
+  if (insight === 1) { insightTitle = "The Approach Gap"; insightCaption = parts.tried >= 2 ? `Women who tried ${parts.tried}+ methods and failed shared the same gap. The effort was never the problem.` : "The effort was never the problem. The plan was built for the wrong metabolism."; }
   if (insight === 2) { const fig = insightFig(null).toLocaleString("en-IN"); insightTitle = "It was never the money"; insightCaption = `Women like you spent ₹${fig} on average before the right map. Spending more was never the answer.`; }
 
   const sc = scores || { total: 0, symptomLoad: 0, approachGap: 0, entrenched: 0, tierLabel: "", tierLine: "", insights: [] as string[], blockerLines: [] as string[], blockers: 0 };
@@ -804,7 +804,7 @@ export default function QuizFunnel() {
             <p style={{ fontSize: 34, marginBottom: 6 }}>✓</p>
             <h2 style={{ fontSize: 22, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif" }}>Your Thyroid Score is ready</h2>
             <p style={{ fontSize: 13.5, color: INK2, marginTop: 8, lineHeight: 1.6 }}>
-              Enter your details to reveal your score — then schedule your private 1-on-1 Thyroid Consultation Call to have it fully decoded.
+              Enter your details to reveal your score, then schedule your private 1-on-1 Thyroid Consultation Call to have it fully decoded.
             </p>
           </div>
           <div style={{ ...card, padding: 22, display: "grid", gap: 12 }}>
@@ -849,7 +849,7 @@ export default function QuizFunnel() {
     const stack = [
       `Your ${lines.length > 0 ? `${lines.length} blocker${lines.length > 1 ? "s" : ""}` : "results"} decoded live, in the order they need fixing`,
       "Your thyroid reports read before we speak, not during",
-      "A written summary sent to your WhatsApp afterwards — yours to keep",
+      "A written summary sent to your WhatsApp afterwards, yours to keep",
       `₹${SESSION_PRICE}, credited in full against your plan if you go ahead`,
     ];
 
@@ -863,7 +863,7 @@ export default function QuizFunnel() {
         <style>{KEYFRAMES}</style>
         <div style={{ maxWidth: 480, margin: "0 auto" }}>
           <p style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 700, marginBottom: 18 }}>
-            {firstName ? `${firstName.toUpperCase()} — YOUR THYROID ASSESSMENT` : "YOUR THYROID ASSESSMENT"}
+            {firstName ? `${firstName.toUpperCase()}, YOUR THYROID ASSESSMENT` : "YOUR THYROID ASSESSMENT"}
           </p>
 
           {/* THE BLOCKERS LEAD. The score used to sit here, and a reassuring
@@ -904,13 +904,13 @@ export default function QuizFunnel() {
               as standalone reassurance is what made her leave. Hope and
               dependency have to arrive in the same sentence. */}
           <p style={{ textAlign: "center", fontSize: 13.5, color: INK2, marginTop: 8 }}>
-            Thyroid Score {sc.total} / 100 — <span style={{ color: INK1, fontWeight: 600 }}>recoverable, but not on its own.</span>
+            Thyroid Score {sc.total} / 100. <span style={{ color: INK1, fontWeight: 600 }}>Recoverable, but not on its own.</span>
           </p>
 
           <div style={{ height: 1, background: GRID, margin: "22px 0" }} />
 
           <p style={{ fontSize: 14, color: INK1, lineHeight: 1.6, textAlign: "center" }}>
-            Each one is fixable. Together they compound — and the order you fix them in decides whether it works.{" "}
+            Each one is fixable. Together they compound, and the order you fix them in decides whether it works.{" "}
             <span style={{ color: PURPLE_L, fontWeight: 600 }}>That sequence is what we map on your call.</span>
           </p>
 
@@ -935,7 +935,7 @@ export default function QuizFunnel() {
             {/* Risk reversal sits immediately above the button, where the
                 hesitation actually happens. */}
             <p style={{ fontSize: 12.5, color: INK2, lineHeight: 1.55, fontStyle: "italic", borderLeft: `2px solid ${PURPLE}`, paddingLeft: 12, marginBottom: 16 }}>
-              &ldquo;If you finish the call and still don&apos;t know what&apos;s blocking you, tell me and I&apos;ll refund the ₹{SESSION_PRICE} — and you keep the written summary.&rdquo;
+              &ldquo;If you finish the call and still don&apos;t know what&apos;s blocking you, tell me and I&apos;ll refund the ₹{SESSION_PRICE}, and you keep the written summary.&rdquo;
             </p>
 
             <p style={{ fontSize: 11.5, color: MUTED, marginBottom: 14 }}>{SCARCITY_LINE}</p>
@@ -949,7 +949,7 @@ export default function QuizFunnel() {
             {payError && (
               <p style={{ fontSize: 12, color: "#c2453a", textAlign: "center", marginTop: 10 }}>{payError}</p>
             )}
-            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>Pay directly with GPay, PhonePe, Paytm or card — secure Cashfree checkout. Then pick your call time.</p>
+            <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>Pay directly with GPay, PhonePe, Paytm or card. Secure Cashfree checkout, then pick your call time.</p>
 
             {/* Quieter escape hatch. Safe to offer now that replies land in the
                 /admin inbox — before that, a tap here went nowhere. */}
@@ -1026,7 +1026,7 @@ export default function QuizFunnel() {
             <p style={{ fontSize: 30, fontWeight: 800, color: PURPLE_L, marginBottom: 10 }}>₹{Math.round(insightStat).toLocaleString("en-IN")}</p>
           )}
           <p style={{ fontSize: 13, color: INK2, lineHeight: 1.6 }}>{insightCaption}</p>
-          <p style={{ fontSize: 12, color: PURPLE_L, marginTop: 14, fontWeight: 600 }}>Your Thyroid Consultation Call decodes exactly this — ₹{SESSION_PRICE}, booked in one quick step.</p>
+          <p style={{ fontSize: 12, color: PURPLE_L, marginTop: 14, fontWeight: 600 }}>Your Thyroid Consultation Call decodes exactly this. ₹{SESSION_PRICE}, booked in one quick step.</p>
         </div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
