@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { draftMessage, draftWaLink, segmentOf, firstName, GUIDE_URL } from "./draft-message";
+import { draftMessage, draftWaLink, segmentOf, firstName, GUIDE_URL } from "./draft-message.ts";
 
 test("a woman on medication who is still stuck is not told her labs are normal", () => {
   const msg = draftMessage({
