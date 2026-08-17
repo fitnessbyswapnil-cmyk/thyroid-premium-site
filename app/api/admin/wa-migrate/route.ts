@@ -165,11 +165,29 @@ export async function GET(req: NextRequest) {
     );
   }
   cautions.push(
-    "Migration DEREGISTERS the number. It cannot send or receive until action:\"register\" succeeds, and that needs the 6-digit two-step verification PIN. Set a PIN you have written down BEFORE migrating.",
+    "The cutover DEREGISTERS the number from the source. It cannot send or receive until action:\"register\" succeeds, and that needs the 6-digit two-step verification PIN. Set a PIN you have written down BEFORE starting.",
   );
   cautions.push(
-    `After a successful migration, set WHATSAPP_WABA_ID=${destinationWabaId} in Vercel and redeploy, or every admin route keeps reading the old account.`,
+    `Afterwards, set WHATSAPP_WABA_ID=${destinationWabaId} in Vercel and redeploy, or every admin route keeps reading the old account.`,
   );
+
+  // A number can reach the destination two ways: this endpoint's migrate call,
+  // or Meta's "Add phone number" UI followed by an OTP — which leaves it on the
+  // destination at PENDING, awaiting the registration API. Telling someone in
+  // the second state to run `migrate` sends them at a destructive call that
+  // does not apply, so the recommendation is derived from what is actually
+  // there rather than assumed.
+  const digits = (s: string | null) => String(s ?? "").replace(/\D/g, "");
+  const alreadyOnDestination = dest.list.find((d) =>
+    source.list.some((s) => digits(s.number) === digits(d.number)),
+  );
+  const pendingOnDestination = alreadyOnDestination?.status === "PENDING";
+
+  const nextStep = blockers.length
+    ? "Clear the blockers above first."
+    : pendingOnDestination
+      ? `${alreadyOnDestination!.number} is already on the destination at PENDING — do NOT migrate, register it: POST {"action":"register","phoneNumberId":"${alreadyOnDestination!.id}","pin":"<6 digits>","confirm":"REGISTER"}`
+      : `POST here with {"action":"migrate","destinationWabaId":"${destinationWabaId}","phoneNumber":"<+cc number>","cc":"91","confirm":"MIGRATE"}`;
 
   return NextResponse.json({
     sourceWabaId,
@@ -183,9 +201,8 @@ export async function GET(req: NextRequest) {
     blockers,
     cautions,
     readyToMigrate: blockers.length === 0,
-    nextStep: blockers.length
-      ? "Clear the blockers above first."
-      : `POST here with {"action":"migrate","destinationWabaId":"${destinationWabaId}","phoneNumber":"+91 79784 60386","cc":"91","confirm":"MIGRATE"}`,
+    alreadyOnDestination: alreadyOnDestination ?? null,
+    nextStep,
   });
 }
 
