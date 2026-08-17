@@ -58,7 +58,7 @@ test("a lead already reminded is not reminded twice", () => {
 });
 
 test("someone still mid-checkout is left alone", () => {
-  const plan = planReminders({ rows: [row({ ts: agoMin(10) })], cols: COLS, now: NOW });
+  const plan = planReminders({ rows: [row({ ts: agoMin(2) })], cols: COLS, now: NOW });
   assert.equal(plan.candidates.length, 0);
   assert.equal(plan.skipped.tooNew, 1);
 });
@@ -98,7 +98,7 @@ test("the cap bounds a run and reaches the oldest leads first", () => {
 // ── boundaries ───────────────────────────────────────────────────────────────
 
 test("the window edges are inclusive at min and max", () => {
-  const atMin = planReminders({ rows: [row({ ts: agoMin(45) })], cols: COLS, now: NOW });
+  const atMin = planReminders({ rows: [row({ ts: agoMin(5) })], cols: COLS, now: NOW });
   assert.equal(atMin.candidates.length, 1);
   const atMax = planReminders({ rows: [row({ ts: agoMin(24 * 60) })], cols: COLS, now: NOW });
   assert.equal(atMax.candidates.length, 1);

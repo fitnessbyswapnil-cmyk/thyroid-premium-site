@@ -14,6 +14,9 @@
  *   MIN AGE   She must be given a genuine chance to pay. Nudging someone who is
  *             mid-checkout is worse than not nudging at all — it reads as
  *             pushy and can make her abandon a payment she was completing.
+ *             5 minutes comfortably clears a normal UPI/card completion
+ *             (typically 1-2 minutes) while still reaching her within minutes
+ *             of actually abandoning, not hours.
  *   MAX AGE   A reminder about a decision from last week is spam, and Meta
  *             prices every template send. The window closes.
  *   ONCE      A "Reminder Sent" stamp in her row. Sheets is the memory; the
@@ -57,7 +60,7 @@ export type ReminderColumns = {
   reminderSent: number;
 };
 
-export const DEFAULT_MIN_AGE_MINUTES = 45;
+export const DEFAULT_MIN_AGE_MINUTES = 5;
 export const DEFAULT_MAX_AGE_HOURS = 24;
 export const DEFAULT_LIMIT = 25;
 
