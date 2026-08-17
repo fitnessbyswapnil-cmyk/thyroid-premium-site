@@ -178,9 +178,17 @@ export async function GET(req: NextRequest) {
   }));
 
   const fundingId = w?.primary_funding_id ?? null;
-  if (!fundingId) {
+  if (!waba.ok) {
+    // Meta gates WABA-level fields (currency, primary_funding_id, review
+    // status) behind BSP access — a normal business app gets code 10 here.
+    // That is a permission ceiling, NOT evidence that funding is missing, so
+    // it must not be reported as a delivery problem.
     warnings.push(
-      "WABA reports no primary_funding_id — either the token lacks permission to read it, or nothing funds this account (template sends will fail).",
+      "WABA-level fields (currency, funding source, review status) could not be read: Meta restricts them to Business Solution Provider apps. This is a permission limit, not a fault — check funding in Business Manager → Billing instead.",
+    );
+  } else if (!fundingId) {
+    warnings.push(
+      "WABA returned no primary_funding_id — nothing is funding this account, so template sends will fail.",
     );
   }
   if (expiresAt !== 0 && expiresAt * 1000 < Date.now() + 14 * 86400_000) {
