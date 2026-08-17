@@ -26,7 +26,9 @@ export const dynamic = "force-dynamic";
 const GRAPH = "https://graph.facebook.com/v21.0";
 
 /** The account that actually sends — see the header comment. */
-const DEFAULT_WABA = "864737596644382";
+// Env-driven so a WABA migration needs only a Vercel variable change, not a
+// code deploy. Falls back to the original WABA until WHATSAPP_WABA_ID is set.
+const DEFAULT_WABA = process.env.WHATSAPP_WABA_ID || "864737596644382";
 
 /** Canonical blocker_video content, already approved once and verified
  *  character-for-character. Kept here so re-creating it can never drift. */
