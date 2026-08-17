@@ -213,7 +213,7 @@ export default function BookingFlow({
                   body: JSON.stringify({
                             event_name: "Lead",
                             event_id: leadEventId,
-                            source_url: "https://www.swapnilumbarkarfitness.in/book",
+                            source_url: window.location.href,
                             user_data: {
                                         first_name: firstName,
                                         ...(lastName && { last_name: lastName }),
