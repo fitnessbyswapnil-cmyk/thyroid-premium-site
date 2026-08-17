@@ -55,20 +55,35 @@ export async function GET(req: NextRequest) {
 
   const wabaId = new URL(req.url).searchParams.get("wabaId") || DEFAULT_WABA;
 
-  const [phone, waba, templates] = await Promise.all([
+  const [phone, waba, templates, tokenInfo, subscribed, numbers] = await Promise.all([
     get(
       `${encodeURIComponent(phoneId)}?fields=display_phone_number,verified_name,quality_rating,` +
         `messaging_limit_tier,status,code_verification_status,name_status,platform_type,throughput`,
       t,
     ),
+    // primary_funding_id answers "what pays for this WABA" — the field that
+    // proves whether a BSP credit line is still the funding source.
     get(
       `${encodeURIComponent(wabaId)}?fields=name,account_review_status,business_verification_status,` +
-        `country,currency,timezone_id,messaging_limit_tier,primary_business_location,ownership_type`,
+        `country,currency,timezone_id,messaging_limit_tier,primary_business_location,ownership_type,` +
+        `primary_funding_id`,
       t,
     ),
     get(
       `${encodeURIComponent(wabaId)}/message_templates?fields=name,language,status,category,quality_score,` +
         `rejected_reason&limit=100`,
+      t,
+    ),
+    // Which Meta app minted the sending token, and does it expire? If this
+    // reports a BSP's app, detaching the BSP would kill sending.
+    get(`debug_token?input_token=${encodeURIComponent(t)}`, t),
+    // Every app receiving this WABA's webhooks. More than one = a BSP app is
+    // still attached alongside ours.
+    get(`${encodeURIComponent(wabaId)}/subscribed_apps`, t),
+    // All numbers on the WABA — confirms which numbers share this asset.
+    get(
+      `${encodeURIComponent(wabaId)}/phone_numbers?fields=display_phone_number,verified_name,` +
+        `quality_rating,messaging_limit_tier,status&limit=50`,
       t,
     ),
   ]);
@@ -121,6 +136,62 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ── BSP-entanglement report ────────────────────────────────────────────
+  // Answers the three questions the Business-Manager UI cannot: who minted
+  // the sending token, what funds the WABA, and which apps still receive its
+  // webhooks. These decide whether detaching a BSP is safe.
+  const dbg = (tokenInfo.data as { data?: Record<string, unknown> })?.data ?? {};
+  const scopes = Array.isArray(dbg.scopes) ? (dbg.scopes as string[]) : [];
+  const expiresAt = typeof dbg.expires_at === "number" ? dbg.expires_at : 0;
+  const tokenIdentity = {
+    appId: dbg.app_id ?? null,
+    appName: dbg.application ?? null,
+    type: dbg.type ?? null,
+    isValid: dbg.is_valid ?? null,
+    // 0 = never expires (system user tokens). Anything else is a future outage.
+    expiresAt: expiresAt === 0 ? "never" : new Date(expiresAt * 1000).toISOString(),
+    scopes,
+    hasWhatsappManagement: scopes.includes("whatsapp_business_management"),
+    hasBusinessManagement: scopes.includes("business_management"),
+    ...(tokenInfo.ok ? {} : { error: tokenInfo.data }),
+  };
+
+  type SubApp = { whatsapp_business_api_data?: { id?: string; name?: string; link?: string } };
+  const subApps = ((subscribed.data as { data?: SubApp[] })?.data ?? []).map((s) => ({
+    id: s.whatsapp_business_api_data?.id ?? null,
+    name: s.whatsapp_business_api_data?.name ?? null,
+  }));
+
+  type Num = {
+    display_phone_number?: string;
+    verified_name?: string;
+    quality_rating?: string;
+    messaging_limit_tier?: string;
+    status?: string;
+  };
+  const numberList = ((numbers.data as { data?: Num[] })?.data ?? []).map((n) => ({
+    number: n.display_phone_number ?? null,
+    verifiedName: n.verified_name ?? null,
+    quality: n.quality_rating ?? null,
+    tier: n.messaging_limit_tier ?? null,
+    status: n.status ?? null,
+  }));
+
+  const fundingId = w?.primary_funding_id ?? null;
+  if (!fundingId) {
+    warnings.push(
+      "WABA reports no primary_funding_id — either the token lacks permission to read it, or nothing funds this account (template sends will fail).",
+    );
+  }
+  if (expiresAt !== 0 && expiresAt * 1000 < Date.now() + 14 * 86400_000) {
+    warnings.push("The WhatsApp sending token expires within 14 days — replace it with a non-expiring system user token.");
+  }
+  if (subApps.length > 1) {
+    warnings.push(
+      `${subApps.length} apps receive this WABA's webhooks (${subApps.map((a) => a.name ?? a.id).join(", ")}) — a BSP app may still be attached alongside your own.`,
+    );
+  }
+
   return NextResponse.json({
     phoneNumber: {
       id: phoneId,
@@ -135,11 +206,17 @@ export async function GET(req: NextRequest) {
     waba: {
       id: wabaId,
       name: w?.name ?? null,
+      currency: w?.currency ?? null,
+      ownershipType: w?.ownership_type ?? null,
+      primaryFundingId: fundingId,
       accountReviewStatus: w?.account_review_status ?? null,
       businessVerificationStatus: w?.business_verification_status ?? null,
       messagingLimitTier: w?.messaging_limit_tier ?? null,
       ...(waba.ok ? {} : { error: w }),
     },
+    numbersOnThisWaba: numberList,
+    tokenIdentity,
+    subscribedApps: subApps.length ? subApps : { note: "none returned", raw: subscribed.data },
     templates: tplList,
     warnings,
     healthy: warnings.length === 0,
