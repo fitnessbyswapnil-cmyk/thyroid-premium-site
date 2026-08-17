@@ -26,7 +26,9 @@ import { checkAdminKey } from "../_lib";
 export const dynamic = "force-dynamic";
 
 const GRAPH = "https://graph.facebook.com/v21.0";
-const DEFAULT_WABA = "864737596644382";
+// Env-driven so a WABA migration needs only a Vercel variable change, not a
+// code deploy. Falls back to the original WABA until WHATSAPP_WABA_ID is set.
+const DEFAULT_WABA = process.env.WHATSAPP_WABA_ID || "864737596644382";
 
 function token(): string | undefined {
   return process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN;
