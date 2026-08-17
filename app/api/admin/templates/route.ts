@@ -99,6 +99,12 @@ export async function POST(req: NextRequest) {
     sample?: string;
     buttonText?: string;
     buttonUrl?: string;
+    /** Raw Meta components, passed through verbatim. Used to REPLAY a template
+     *  exported from another WABA (GET ?full=1) during a WABA migration —
+     *  templates do not migrate with a phone number, so all of them have to be
+     *  recreated, and rebuilding them from bodyText/buttonText would silently
+     *  drop headers, footers and multi-button layouts. */
+    components?: unknown;
   };
   try {
     body = await req.json();
@@ -119,7 +125,11 @@ export async function POST(req: NextRequest) {
   const buttonText = String(body.buttonText ?? BUTTON_TEXT);
   const buttonUrl = String(body.buttonUrl ?? BUTTON_URL);
 
-  const components: Record<string, unknown>[] = [
+  // Replay path: exact components supplied (a migration restore). Everything
+  // below is skipped so nothing is reinterpreted or lost in translation.
+  const replay = Array.isArray(body.components) ? (body.components as Record<string, unknown>[]) : null;
+
+  const components: Record<string, unknown>[] = replay ?? [
     {
       type: "BODY",
       text: bodyText,
@@ -127,7 +137,9 @@ export async function POST(req: NextRequest) {
       ...(bodyText.includes("{{1}}") ? { example: { body_text: [[sample]] } } : {}),
     },
   ];
-  if (buttonText && buttonUrl) {
+  // Only when BUILDING. On a replay the exported components already carry
+  // their own buttons, and appending the default would duplicate them.
+  if (!replay && buttonText && buttonUrl) {
     components.push({
       type: "BUTTONS",
       buttons: [{ type: "URL", text: buttonText, url: buttonUrl }],
