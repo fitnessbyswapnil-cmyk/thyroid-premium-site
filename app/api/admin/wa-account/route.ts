@@ -179,6 +179,20 @@ export async function GET(req: NextRequest) {
     status: n.status ?? null,
   }));
 
+  // A failed phone_numbers call and a genuinely empty WABA both produce an
+  // empty array, and confusing the two is dangerous: "target WABA is empty"
+  // is exactly the fact a migration decision rests on. Surface the failure.
+  if (!numbers.ok) {
+    warnings.push(
+      "Could not read this WABA's phone numbers — the empty list below is a FAILED CALL, not proof the account is empty. Usually means this app has not been granted access to this WABA.",
+    );
+  }
+  if (!subscribed.ok) {
+    warnings.push(
+      "Could not read this WABA's subscribed apps — this app likely has no access to this WABA. Add the app to the WABA in Business Settings before relying on it.",
+    );
+  }
+
   const fundingId = w?.primary_funding_id ?? null;
   if (!waba.ok) {
     // Meta gates WABA-level fields (currency, primary_funding_id, review
@@ -225,6 +239,8 @@ export async function GET(req: NextRequest) {
       ...(waba.ok ? {} : { error: w }),
     },
     numbersOnThisWaba: numberList,
+    numbersReadOk: numbers.ok,
+    ...(numbers.ok ? {} : { numbersError: numbers.data }),
     tokenIdentity,
     subscribedApps: subApps.length ? subApps : { note: "none returned", raw: subscribed.data },
     templates: tplList,
