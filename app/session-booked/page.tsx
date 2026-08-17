@@ -411,7 +411,7 @@ export default function SessionBooked() {
       body: JSON.stringify({
         event_name: "Purchase",
         event_id: purchaseEventId,
-        source_url: "https://www.swapnilumbarkarfitness.in/session-booked",
+        source_url: window.location.href,
         custom_data: {
           value,
           currency: "INR",

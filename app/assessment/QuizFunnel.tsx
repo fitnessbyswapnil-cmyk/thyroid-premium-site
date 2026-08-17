@@ -547,7 +547,7 @@ export default function QuizFunnel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         event_name: "Lead", event_id: leadEventId,
-        source_url: "https://www.swapnilumbarkarfitness.in/assessment",
+        source_url: window.location.href,
         user_data: {
           first_name: firstName, ...(lastName && { last_name: lastName }),
           phone: phoneDigits, email: f.email.trim(),
