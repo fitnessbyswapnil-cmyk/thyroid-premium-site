@@ -1337,6 +1337,94 @@ a {
   }
 }
 
+/* ============================================================
+   /QUIZ — Thyroid Blocker Score (dark onyx + champagne gold)
+   ============================================================ */
+
+.quiz-page {
+  --gold: #c9a24b;
+  --gold-soft: #e4c97b;
+  --ivory: #fbf8f3;
+  --onyx: #0e0e10;
+
+  position: relative;
+  min-height: 100svh;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(201, 162, 75, 0.08) 0%, transparent 55%),
+    radial-gradient(90% 60% at 50% 110%, rgba(201, 162, 75, 0.05) 0%, transparent 60%),
+    var(--onyx);
+  overflow-x: hidden;
+}
+
+/* Playfair for the signature display moments */
+.quiz-display {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Champagne-gold primary CTA */
+.quiz-cta {
+  background: linear-gradient(135deg, #e4c97b 0%, #c9a24b 100%);
+  color: #1a1408;
+  font-weight: 800;
+  border: 1px solid rgba(228, 201, 123, 0.5);
+  box-shadow:
+    0 10px 30px rgba(201, 162, 75, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.35) inset;
+  transition:
+    transform 220ms var(--ease-cta),
+    box-shadow 220ms var(--ease-cta),
+    background 220ms var(--ease-cta);
+}
+
+.quiz-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #eed18a 0%, #d3ac56 100%);
+  box-shadow:
+    0 16px 38px rgba(201, 162, 75, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.4) inset;
+}
+
+/* Selected option card — gold border + faint gold wash */
+.quiz-option-selected {
+  border: 1px solid rgba(201, 162, 75, 0.55);
+  background: linear-gradient(
+    180deg,
+    rgba(201, 162, 75, 0.13) 0%,
+    rgba(201, 162, 75, 0.06) 100%
+  );
+  box-shadow: 0 0 22px rgba(201, 162, 75, 0.12);
+}
+
+/* "Analysing…" gold ring */
+@keyframes quiz-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes quiz-ring-glow {
+  0%, 100% {
+    box-shadow: 0 0 24px rgba(201, 162, 75, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 44px rgba(201, 162, 75, 0.5);
+  }
+}
+
+.quiz-analyzing-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--gold-soft);
+  border-right-color: var(--gold);
+  animation:
+    quiz-spin 0.9s linear infinite,
+    quiz-ring-glow 2.2s ease-in-out infinite;
+}
+
 /* DESKTOP */
 
 @media (min-width: 768px) {
