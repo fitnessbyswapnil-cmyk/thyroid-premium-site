@@ -37,12 +37,17 @@ import {
   sendPaymentReminderWithLink,
   sendTryingLanguages,
   isTemplateMissing,
+  isTemplateConfigError,
   isWhatsAppConfigured,
 } from "@/lib/whatsapp";
 import {
   planReminders,
   planBookingNudges,
   firstNameOf,
+  BOOKING_NUDGE_STAGE1_MAX_DAYS,
+  BOOKING_NUDGE_STAGE2_MIN_HOURS,
+  REMINDER2_MIN_AGE_MINUTES,
+  REMINDER2_MAX_AGE_HOURS,
   DEFAULT_LIMIT,
   DEFAULT_MAX_AGE_HOURS,
   DEFAULT_MIN_AGE_MINUTES,
@@ -63,15 +68,29 @@ const TEMPLATE = "payment_reminder_link";
 
 const SENT_TITLE = "Reminder Sent";
 const AT_TITLE = "Reminder At";
+// Touch two of the payment sequence. Its own stamp columns, so touch one's
+// "Reminder Sent" can never suppress it and vice versa.
+const TEMPLATE2 = "payment_reminder_day2";
+const SENT2_TITLE = "Reminder 2 Sent";
+const AT2_TITLE = "Reminder 2 At";
 
 // ── Second job in the same daily run: paid but never booked ──────────────────
 // She paid ₹299, got ONE booking_confirmation at payment time, and if she
 // missed it nothing ever followed up — the money was spent with no call behind
 // it (two of three payers ended there). The day after payment she gets the
 // same UTILITY template once more, with its booking button.
-const BOOKING_TEMPLATE = "booking_confirmation";
+// Stage 1 now uses a purpose-written template rather than re-sending the
+// payment receipt. booking_confirmation stays as the fallback so this is safe
+// to deploy before Meta approves booking_nudge_1h.
+const BOOKING_TEMPLATE = "booking_nudge_1h";
+const BOOKING_TEMPLATE_FALLBACK = "booking_confirmation";
 const NUDGE_SENT_TITLE = "Booking Nudge Sent";
 const NUDGE_AT_TITLE = "Booking Nudge At";
+
+// Stage 2, three days after payment, for anyone stage 1 did not move.
+const BOOKING_TEMPLATE2 = "booking_nudge_day3";
+const NUDGE2_SENT_TITLE = "Booking Nudge 2 Sent";
+const NUDGE2_AT_TITLE = "Booking Nudge 2 At";
 // Columns R (17) / S (18) — Booking Status and Session Date, written by the
 // Cal.com → Sheets scenario. Resolved by header name first in case the live
 // sheet has drifted; the positional contract is the fallback.
@@ -140,20 +159,55 @@ export async function GET(req: NextRequest) {
 
     const plan = planReminders({ rows, cols, now: Date.now(), minAgeMinutes, maxAgeHours, limit });
 
+    // Second payment touch, a day later, stamped in its OWN column so it can
+    // never be confused with touch one. Everything else — phone dedup, paid
+    // exclusion, per-row stamping — is the same tested planner.
+    const plan2 = planReminders({
+      rows,
+      cols: { ...cols, reminderSent: findCol(header, SENT2_TITLE) },
+      now: Date.now(),
+      minAgeMinutes: REMINDER2_MIN_AGE_MINUTES,
+      maxAgeHours: REMINDER2_MAX_AGE_HOURS,
+      limit,
+    });
+
     const byNameOr = (title: string, fallback: number): number => {
       const i = findCol(header, title);
       return i >= 0 ? i : fallback;
     };
-    const nudgeCols: BookingNudgeColumns = {
+    const nudgeColsBase = {
       name: 2,
       phone: 3,
       paid: findCol(header, "Paid"),
       paidAt: findCol(header, "Paid At"),
       bookingStatus: byNameOr("Booking Status", BOOKING_STATUS_FALLBACK),
       sessionDate: byNameOr("Session Date", SESSION_DATE_FALLBACK),
+    };
+    const nudgeCols: BookingNudgeColumns = {
+      ...nudgeColsBase,
       nudgeSent: findCol(header, NUDGE_SENT_TITLE),
     };
-    const nudgePlan = planBookingNudges({ rows, cols: nudgeCols, now: Date.now() });
+    // Stage 1: one hour after payment, capped at 24h so it can never overlap
+    // stage 2's window.
+    const nudgePlan = planBookingNudges({
+      rows,
+      cols: nudgeCols,
+      now: Date.now(),
+      maxAgeDays: BOOKING_NUDGE_STAGE1_MAX_DAYS,
+    });
+
+    // Stage 2: three days later, separate stamp column. A woman who booked
+    // after stage 1 is excluded here by bookedEvidence, exactly as before.
+    const nudge2Cols: BookingNudgeColumns = {
+      ...nudgeColsBase,
+      nudgeSent: findCol(header, NUDGE2_SENT_TITLE),
+    };
+    const nudge2Plan = planBookingNudges({
+      rows,
+      cols: nudge2Cols,
+      now: Date.now(),
+      minAgeHours: BOOKING_NUDGE_STAGE2_MIN_HOURS,
+    });
 
     const summary = {
       dryRun,
@@ -187,13 +241,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         ...summary,
         wouldSend: plan.candidates.map(describe),
+        wouldSendDay2: plan2.candidates.map(describe),
         wouldNudgeBooking: nudgePlan.candidates.map(describe),
+        wouldNudgeBookingDay3: nudge2Plan.candidates.map(describe),
       });
     }
 
-    if (!plan.candidates.length && !nudgePlan.candidates.length) {
+    const nothingToDo =
+      !plan.candidates.length &&
+      !plan2.candidates.length &&
+      !nudgePlan.candidates.length &&
+      !nudge2Plan.candidates.length;
+    if (nothingToDo) {
       console.log(
-        `[payment-reminder] nothing to send — reminders=${JSON.stringify(plan.skipped)} nudges=${JSON.stringify(nudgePlan.skipped)}`,
+        `[payment-reminder] nothing to send — reminders=${JSON.stringify(plan.skipped)} ` +
+          `reminders2=${JSON.stringify(plan2.skipped)} nudges=${JSON.stringify(nudgePlan.skipped)} ` +
+          `nudges2=${JSON.stringify(nudge2Plan.skipped)}`,
       );
       return NextResponse.json({ ...summary, sent: 0, failed: 0, results: [] });
     }
@@ -203,8 +266,12 @@ export async function GET(req: NextRequest) {
     // on every future run.
     let sentCol = cols.reminderSent;
     let atCol = findCol(header, AT_TITLE);
+    let sent2Col = findCol(header, SENT2_TITLE);
+    let at2Col = findCol(header, AT2_TITLE);
     let nudgeSentCol = nudgeCols.nudgeSent;
     let nudgeAtCol = findCol(header, NUDGE_AT_TITLE);
+    let nudge2SentCol = nudge2Cols.nudgeSent;
+    let nudge2AtCol = findCol(header, NUDGE2_AT_TITLE);
     {
       const next = [...header];
       const claim = (idx: number, title: string): number => {
@@ -215,8 +282,12 @@ export async function GET(req: NextRequest) {
       };
       sentCol = claim(sentCol, SENT_TITLE);
       atCol = claim(atCol, AT_TITLE);
+      sent2Col = claim(sent2Col, SENT2_TITLE);
+      at2Col = claim(at2Col, AT2_TITLE);
       nudgeSentCol = claim(nudgeSentCol, NUDGE_SENT_TITLE);
       nudgeAtCol = claim(nudgeAtCol, NUDGE_AT_TITLE);
+      nudge2SentCol = claim(nudge2SentCol, NUDGE2_SENT_TITLE);
+      nudge2AtCol = claim(nudge2AtCol, NUDGE2_AT_TITLE);
       if (next.length > header.length) {
         // Widen the fixed-width grid before writing past its last column.
         await ensureGridColumns(sheets, spreadsheetId, LEADS_SHEET, next.length - 1);
@@ -281,13 +352,79 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Paid-but-unbooked: one more booking_confirmation, the day after payment.
+    // Payment touch two, a day later. Unlike touch one there is NO fallback:
+    // if payment_reminder_day2 is not approved yet, she simply does not get a
+    // second message. Falling back to payment_reminder here would re-send her
+    // the identical text she already ignored, and stamp it as a new touch.
+    for (const c of plan2.candidates) {
+      const r = await sendTryingLanguages((language) =>
+        c.leadId
+          ? sendWhatsAppTemplate(c.phone, TEMPLATE2, [firstNameOf(c.name)], language, c.leadId)
+          : sendWhatsAppTemplate(c.phone, TEMPLATE2, [firstNameOf(c.name)], language),
+      );
+      results.push({
+        job: "payment_reminder_day2",
+        row: c.rowNumber,
+        phone: `***${c.phone.slice(-4)}`,
+        sent: r.sent,
+        template: TEMPLATE2,
+        detail: r.error || r.skipped,
+      });
+      if (r.sent) {
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(sent2Col)}${c.rowNumber}`, values: [["Y"]] });
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(at2Col)}${c.rowNumber}`, values: [[stampedAt]] });
+      }
+    }
+
+    // Paid-but-unbooked, stage 1: ONE HOUR after payment, while the decision
+    // is still warm. Falls back to booking_confirmation so this is safe to
+    // deploy before booking_nudge_1h clears Meta review — she still gets the
+    // Cal.com button either way.
     for (const c of nudgePlan.candidates) {
-      const r = await sendWhatsAppTemplate(c.phone, BOOKING_TEMPLATE, [firstNameOf(c.name)]);
-      results.push({ job: "booking_nudge", row: c.rowNumber, phone: `***${c.phone.slice(-4)}`, sent: r.sent, detail: r.error || r.skipped });
+      let usedTemplate: string = BOOKING_TEMPLATE;
+      let r = await sendTryingLanguages((language) =>
+        c.leadId
+          ? sendWhatsAppTemplate(c.phone, BOOKING_TEMPLATE, [firstNameOf(c.name)], language, c.leadId)
+          : sendWhatsAppTemplate(c.phone, BOOKING_TEMPLATE, [firstNameOf(c.name)], language),
+      );
+      if (!r.sent && isTemplateConfigError(r.error)) {
+        usedTemplate = `${BOOKING_TEMPLATE_FALLBACK} (fallback)`;
+        r = await sendWhatsAppTemplate(c.phone, BOOKING_TEMPLATE_FALLBACK, [firstNameOf(c.name)]);
+      }
+      results.push({
+        job: "booking_nudge_1h",
+        row: c.rowNumber,
+        phone: `***${c.phone.slice(-4)}`,
+        sent: r.sent,
+        template: usedTemplate,
+        detail: r.error || r.skipped,
+      });
       if (r.sent) {
         updates.push({ range: `${LEADS_SHEET}!${colLetter(nudgeSentCol)}${c.rowNumber}`, values: [["Y"]] });
         updates.push({ range: `${LEADS_SHEET}!${colLetter(nudgeAtCol)}${c.rowNumber}`, values: [[stampedAt]] });
+      }
+    }
+
+    // Stage 2, three days after payment. No fallback: re-sending stage 1's
+    // text as a "second" nudge would just repeat herself back at her, and
+    // stamp it as new contact.
+    for (const c of nudge2Plan.candidates) {
+      const r = await sendTryingLanguages((language) =>
+        c.leadId
+          ? sendWhatsAppTemplate(c.phone, BOOKING_TEMPLATE2, [firstNameOf(c.name)], language, c.leadId)
+          : sendWhatsAppTemplate(c.phone, BOOKING_TEMPLATE2, [firstNameOf(c.name)], language),
+      );
+      results.push({
+        job: "booking_nudge_day3",
+        row: c.rowNumber,
+        phone: `***${c.phone.slice(-4)}`,
+        sent: r.sent,
+        template: BOOKING_TEMPLATE2,
+        detail: r.error || r.skipped,
+      });
+      if (r.sent) {
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(nudge2SentCol)}${c.rowNumber}`, values: [["Y"]] });
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(nudge2AtCol)}${c.rowNumber}`, values: [[stampedAt]] });
       }
     }
 
