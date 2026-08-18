@@ -164,14 +164,30 @@ test("a phone already PAID on another row disqualifies her other rows", () => {
   assert.equal(plan.skipped.duplicatePhone, 1);
 });
 
-test("a phone already REMINDED on another row is not reminded again tomorrow", () => {
+test("a phone already reminded on one row still gets its own reminder on a genuinely different row", () => {
+  // Owner decision 2026-08-18: REMINDED is per-row, not cross-row like PAID.
+  // Row 1 is settled on ITS OWN stamp. Rows 2 and 3 are fresh retakes and are
+  // eligible — but still collapse to ONE send between themselves, since
+  // they're both unclaimed in the same batch.
   const rows = [
     row({ ts: agoMin(90), phone: "9876545199", reminded: "Y" }),
     row({ ts: agoMin(90), phone: "9876545199" }),
     row({ ts: agoMin(90), phone: "9876545199" }),
   ];
   const plan = planReminders({ rows, cols: COLS, now: NOW });
-  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.candidates.length, 1);
+  assert.equal(plan.skipped.alreadyReminded, 1, "only row 1, via its own stamp");
+  assert.equal(plan.skipped.duplicatePhone, 1, "rows 2 and 3 collapse to one send");
+});
+
+test("a genuine retake hours after her first reminder is eligible on its own", () => {
+  const rows = [
+    row({ ts: agoMin(60 * 6), phone: "9876545199", reminded: "Y" }), // reminded 6h ago
+    row({ ts: agoMin(90), phone: "9876545199" }), // fresh retake, 90 min old
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates.length, 1);
+  assert.equal(plan.candidates[0].ageMinutes, 90);
 });
 
 test("different women are not collapsed together", () => {
