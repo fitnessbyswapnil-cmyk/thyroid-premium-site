@@ -76,6 +76,33 @@ export type WhatsAppResult = {
   error?: string
 }
 
+/** Meta reports 132001 for BOTH "no such template" and "exists, but not in the
+ *  language you sent" — it does not distinguish them. */
+export function isTemplateMissing(error: string | undefined): boolean {
+  return /does not exist|132001/i.test(error ?? '')
+}
+
+/**
+ * Run a send, retrying under Meta's other English variants if it comes back
+ * "template missing".
+ *
+ * WhatsApp Manager shows a language LABEL, not its code, so a template created
+ * as "English" may be stored as en, en_US or en_GB. Since 132001 cannot tell
+ * "wrong language" apart from "no such template", trying each variant is the
+ * only way to distinguish them from here — and it costs nothing when the first
+ * attempt succeeds, which is the normal case.
+ */
+export async function sendTryingLanguages(
+  send: (language?: string) => Promise<WhatsAppResult>,
+): Promise<WhatsAppResult> {
+  let r = await send()
+  for (const language of ['en_US', 'en_GB']) {
+    if (r.sent || !isTemplateMissing(r.error)) break
+    r = await send(language)
+  }
+  return r
+}
+
 /**
  * Cloud API wants a bare E.164 number: country code + subscriber, no '+',
  * no spaces or dashes. Indian 10-digit input is the common case; anything
@@ -228,6 +255,25 @@ export async function sendWhatsAppTemplate(
 export async function sendWelcomeLead(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(phone, 'welcome_lead', [firstName])
+}
+
+/**
+ * welcome_lead whose button deep-links to /complete-payment?leadId=... instead
+ * of /assessment.
+ *
+ * The live welcome_lead template's button is a STATIC link to
+ * https://swapnilumbarkarfitness.in/assessment — the quiz. It fires the instant
+ * she FINISHES the quiz, so its own call-to-action sends her back to the thing
+ * she just completed, with her score and the pay button left behind. Confirmed
+ * by reading the approved template in WhatsApp Manager on 2026-08-18.
+ *
+ * Approved separately as welcome_lead_link so the original keeps sending,
+ * untouched, while this one clears review — same approach used for
+ * payment_reminder_link.
+ */
+export async function sendWelcomeLeadWithLink(phone: string, fullName: string, leadId: string, languageOverride?: string): Promise<WhatsAppResult> {
+  const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
+  return sendWhatsAppTemplate(phone, 'welcome_lead_link', [firstName], languageOverride, leadId)
 }
 
 /**

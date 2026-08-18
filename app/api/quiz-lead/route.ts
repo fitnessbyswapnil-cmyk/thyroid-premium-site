@@ -19,7 +19,7 @@
  */
 import { NextRequest, NextResponse, after } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
-import { sendWelcomeLead } from "@/lib/whatsapp";
+import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateMissing } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -223,9 +223,28 @@ export async function POST(req: NextRequest) {
   if (str(payload.phone)) {
     after(async () => {
       try {
-        const r = await sendWelcomeLead(str(payload.phone), str(payload.name));
+        const phone = str(payload.phone);
+        const name = str(payload.name);
+        const leadId = str(payload.leadId);
+
+        // Prefer welcome_lead_link: same copy, but its button deep-links to
+        // /complete-payment?leadId=... instead of /assessment. The live
+        // welcome_lead button is a STATIC link to the quiz — and this message
+        // fires the instant she FINISHES the quiz, so its own call-to-action
+        // sends her back to what she just completed, past her score and the
+        // pay button. Falls back to the original template when the new one
+        // isn't approved yet (or she has no leadId), so this is safe to ship
+        // before Meta review completes and needs no second deploy after.
+        let r = leadId
+          ? await sendTryingLanguages((language) => sendWelcomeLeadWithLink(phone, name, leadId, language))
+          : await sendWelcomeLead(phone, name);
+        const usedLink = leadId && r.sent;
+        if (!r.sent && isTemplateMissing(r.error)) {
+          r = await sendWelcomeLead(phone, name);
+        }
+
         console.log(
-          `[quiz-lead] welcome_lead sent=${r.sent}` +
+          `[quiz-lead] ${usedLink ? "welcome_lead_link" : "welcome_lead"} sent=${r.sent}` +
             (r.skipped ? ` skipped=${r.skipped}` : "") +
             (r.error ? ` error=${r.error}` : ""),
         );
