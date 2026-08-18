@@ -62,22 +62,32 @@ const QS: Q[] = [
   { id: "duration",   t: "How long have you been fighting this weight?", opts: ["Under 6 months", "6–12 months", "1–3 years", "More than 3 years"] },
   { id: "symptoms",   t: "Beyond the scale, what else is bothering you?", multi: true, opts: ["Exhausted by afternoon", "Hair fall", "Bloating / puffiness", "Brain fog", "Mood swings", "Feeling cold all the time", "Clothes not fitting"] },
   { id: "tried",      t: "What have you already tried?", multi: true, opts: ["Dieting / calorie cutting", "Gym / personal trainer", "Nutritionists / diet plans", "Only medication", "YouTube / free plans", "Nothing structured yet"] },
-  // Budget is deliberately LAST — maximum sunk cost, minimum drop-off. Its
-  // sub-copy frames it as preparation ("so I can prepare the right plan"),
-  // not screening; "can you afford this" is what gets abandoned.
-  { id: "budget",     t: "To fix this properly with a plan built for your thyroid, what are you able to invest?", opts: ["I can invest ₹20,000 or more", "₹10,000 – ₹20,000", "Under ₹10,000", "I'd want to see the plan first"] },
+  // Budget and decision-maker are deliberately LAST — maximum sunk cost,
+  // minimum drop-off. The sub-copy frames budget as preparation ("so I can
+  // prepare the right plan"), not screening; "can you afford this" is what
+  // gets abandoned.
+  //
+  // These option labels are NOT free text: they must match SCORING.investment
+  // in lib/lead-scoring.ts character for character, because that map is keyed
+  // on the label itself. The previous quiz labels ("₹10,000 – ₹20,000" etc.)
+  // matched nothing there, so every quiz lead silently scored 0 on the single
+  // strongest buying signal in the model.
+  { id: "budget",     t: "This is a paid programme. To fix this properly with a plan built for your thyroid, how much can you invest to reach a permanent result?", opts: ["I can invest ₹50,000", "I can invest ₹30,000", "I can invest ₹15,000"] },
+  { id: "decisionMaker", t: "If you decide to move forward with our solution, are you the sole financial decision-maker?", opts: ["Yes, I am the sole financial decision-maker", "No, I need to discuss it with my spouse/family"] },
 ];
-const SECTIONS: [number, number, string][] = [[0, 2, "YOUR THYROID"], [3, 5, "YOUR HISTORY"]];
+const SECTIONS: [number, number, string][] = [[0, 2, "YOUR THYROID"], [3, 6, "YOUR HISTORY"]];
 const REACT: Record<string, string[]> = {
   diagnosis: ["Diagnosed. We know what we're working with", "Hashimoto's. Autoimmune needs its own plan", "Suspected. Step one is the right panel", "Good. We'll rule it in or out properly"],
   medication: ["Medicated and stuck. The classic gap", "Controlled. Now we build on it", "Not yet. Plenty of room to move"],
   duration: ["Early. The best time to fix it", "Under a year. Very recoverable", "1–3 years of fighting. That ends here", "Long fight. It was the method, not you"],
-  // Budget must never be scored, but she still deserves a human response.
-  budget: ["Noted. I'll prepare the full plan", "Noted. We'll map what fits", "Noted. We'll start where you are", "Fair. The call shows you the plan first"],
+  // Budget and decision-maker must never be scored, but she still deserves a
+  // human response rather than silence on the two most uncomfortable questions.
+  budget: ["Noted. I'll prepare the full plan", "Noted. We'll map what fits", "Noted. We'll start where you are"],
+  decisionMaker: ["Good. That keeps this simple", "Understood. I'll give you everything you need to show them"],
 };
 
 type Answers = Record<string, number | number[] | null>;
-const emptyAnswers = (): Answers => ({ diagnosis: null, medication: null, duration: null, symptoms: [], tried: [], budget: null });
+const emptyAnswers = (): Answers => ({ diagnosis: null, medication: null, duration: null, symptoms: [], tried: [], budget: null, decisionMaker: null });
 
 // ── scoring — ported verbatim from the approved prototype ───────────────────
 function computeParts(a: Answers) {
@@ -95,10 +105,11 @@ function computeParts(a: Answers) {
   // Time Entrenched — how established the pattern is.
   const E = Math.min(100, Math.round(dur * 28 + (dur >= 2 ? 12 : 0)));
 
-  // NOTE: budget is deliberately absent. Two women with identical symptoms must
-  // see identical Thyroid Scores regardless of what they can pay — anything
-  // else is misleading, and indefensible the moment two friends compare
-  // results. Budget is a private sales field, surfaced only on the dashboard.
+  // NOTE: budget and decisionMaker are deliberately absent. Two women with
+  // identical symptoms must see identical Thyroid Scores regardless of what
+  // they can pay or who signs off on it — anything else is misleading, and
+  // indefensible the moment two friends compare results. Both are private
+  // sales fields, surfaced only on the dashboard.
   return { S, G, E, sym, tried, dur, diagnosed, stuck };
 }
 function answeredCount(a: Answers): number {
@@ -451,7 +462,11 @@ export default function QuizFunnel() {
     // pure drop-off.
     if (qi === 2) { celebrate("YOUR THYROID DECODED ✓"); goTo(3); return; }
     if (qi === 4) { showInsight(1); goTo(5); return; }
-    if (qi === 5) { celebrate("ASSESSMENT COMPLETE ✓"); timers.current.toProc = setTimeout(() => startProcessing(), 700); return; }
+    // Derived from QS, never hardcoded: this was `qi === 5` when the quiz had
+    // six questions, so adding a seventh silently skipped it — the last
+    // question rendered, and answering it jumped straight to the result with
+    // that answer discarded.
+    if (qi === QS.length - 1) { celebrate("ASSESSMENT COMPLETE ✓"); timers.current.toProc = setTimeout(() => startProcessing(), 700); return; }
     goTo(qi + 1);
   };
 
@@ -584,6 +599,7 @@ export default function QuizFunnel() {
         commitment: "",
         timing: "",
         budget: opt("budget", ans.budget as number | null),
+        decisionMaker: opt("decisionMaker", ans.decisionMaker as number | null),
         leadScore: sc.total,
         leadTier: sc.tierLabel,
         attribution,
@@ -728,7 +744,7 @@ export default function QuizFunnel() {
             Find out what&apos;s really blocking your thyroid weight loss
           </h1>
           <p style={{ fontSize: 14.5, color: INK2, lineHeight: 1.6, marginBottom: 8 }}>
-            6 questions · 60 seconds · watch your Thyroid Score build as you answer
+            7 questions · 60 seconds · watch your Thyroid Score build as you answer
           </p>
           {/* The price used to sit here in muted grey as a footnote. It now
               matches the time cost in size and colour: every woman who leaves at
