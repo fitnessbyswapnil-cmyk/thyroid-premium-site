@@ -32,7 +32,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { checkAdminKey } from "../../admin/_lib";
 import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
-import { sendWhatsAppTemplate, sendPaymentReminderWithLink, isWhatsAppConfigured } from "@/lib/whatsapp";
+import {
+  sendWhatsAppTemplate,
+  sendPaymentReminderWithLink,
+  sendTryingLanguages,
+  isTemplateMissing,
+  isWhatsAppConfigured,
+} from "@/lib/whatsapp";
 import {
   planReminders,
   planBookingNudges,
@@ -226,37 +232,19 @@ export async function GET(req: NextRequest) {
     // Sequential, not parallel. Meta rate-limits template sends per number, and
     // a batch arriving all at once is also a worse experience than a trickle.
     for (const c of plan.candidates) {
-      const templateMissing = (err: string | undefined) => /does not exist|132001/i.test(err ?? "");
-
       let r = c.leadId
-        ? await sendPaymentReminderWithLink(c.phone, c.name, c.leadId)
+        ? await sendTryingLanguages((language) => sendPaymentReminderWithLink(c.phone, c.name, c.leadId!, language))
         // No leadId on this row (older data predating the column) — fall back
         // to the original template rather than sending a dead/empty button.
         : await sendWhatsAppTemplate(c.phone, "payment_reminder", [firstNameOf(c.name)]);
 
-      // Error 132001 fires for TWO different reasons Meta doesn't distinguish
-      // in the message: the template doesn't exist at all, OR it exists but
-      // not under the language code we sent (WhatsApp Manager can store
-      // "English" as en, en_US, or en_GB depending on how it was picked at
-      // creation time -- documented gotcha, see lib/whatsapp.ts). A live
-      // symptom of hitting the second case: the reminder still arrives, but
-      // via the OLD template's static button (-> /assessment, the quiz),
-      // because the code fell straight through to the fallback below without
-      // ever trying the new template under a different language.
-      if (c.leadId && !r.sent && templateMissing(r.error)) {
-        r = await sendPaymentReminderWithLink(c.phone, c.name, c.leadId, "en_US");
-      }
-      if (c.leadId && !r.sent && templateMissing(r.error)) {
-        r = await sendPaymentReminderWithLink(c.phone, c.name, c.leadId, "en_GB");
-      }
-
-      // Self-healing: payment_reminder_link may still not be Meta-approved,
-      // or approved under some other language variant entirely. Rather than
-      // let every send fail silently until someone notices and redeploys,
-      // fall back to the original payment_reminder template -- no dynamic
-      // link, but she still gets reminded today. Once the new template is
-      // resolvable under one of the languages above, this stops firing.
-      if (!r.sent && templateMissing(r.error)) {
+      // Self-healing: payment_reminder_link may still not be Meta-approved, or
+      // approved under some language variant sendTryingLanguages didn't cover.
+      // Rather than let every send fail silently until someone notices and
+      // redeploys, fall back to the original payment_reminder — no dynamic
+      // link, but she still gets reminded today. Once the new template
+      // resolves, this stops firing on its own.
+      if (!r.sent && isTemplateMissing(r.error)) {
         r = await sendWhatsAppTemplate(c.phone, "payment_reminder", [firstNameOf(c.name)]);
       }
       results.push({ job: "payment_reminder", row: c.rowNumber, phone: `***${c.phone.slice(-4)}`, sent: r.sent, detail: r.error || r.skipped });
