@@ -19,7 +19,7 @@
  */
 import { NextRequest, NextResponse, after } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
-import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateMissing } from "@/lib/whatsapp";
+import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -227,24 +227,47 @@ export async function POST(req: NextRequest) {
         const name = str(payload.name);
         const leadId = str(payload.leadId);
 
-        // Prefer welcome_lead_link: same copy, but its button deep-links to
-        // /complete-payment?leadId=... instead of /assessment. The live
-        // welcome_lead button is a STATIC link to the quiz — and this message
-        // fires the instant she FINISHES the quiz, so its own call-to-action
-        // sends her back to what she just completed, past her score and the
-        // pay button. Falls back to the original template when the new one
-        // isn't approved yet (or she has no leadId), so this is safe to ship
-        // before Meta review completes and needs no second deploy after.
-        let r = leadId
-          ? await sendTryingLanguages((language) => sendWelcomeLeadWithLink(phone, name, leadId, language))
+        // Prefer welcome_lead_link. Two things make it better than the
+        // original: its button deep-links to /complete-payment?leadId=...
+        // rather than /assessment (the original's static button sends her
+        // back to the quiz she just finished), and it reads her own answers
+        // back to her instead of being a mail-merge.
+        //
+        // Her symptoms arrive comma-joined ("Tired by 4pm, Hair in the
+        // comb"). Only the FIRST is used: it is the one she picked first and
+        // reads naturally mid-sentence, where a full list would not.
+        const topSymptom = str(payload.symptoms).split(",")[0].trim();
+        const score = typeof payload.leadScore === "number" ? String(payload.leadScore) : "";
+
+        // welcome_lead_link declares three body params. If ANY value is
+        // missing the count would be wrong and Meta would reject the whole
+        // send (132000), so fall straight through to the plain template
+        // rather than sending something guaranteed to fail.
+        const canPersonalise = !!(leadId && topSymptom && score);
+        const personal = {
+          score,
+          // Lowercase the first letter so it sits inside a sentence: "the one
+          // you told me bothers you most is tired by 4pm".
+          symptom: topSymptom.charAt(0).toLowerCase() + topSymptom.slice(1),
+        };
+
+        let r = canPersonalise
+          ? await sendTryingLanguages((language) => sendWelcomeLeadWithLink(phone, name, leadId, personal, language))
           : await sendWelcomeLead(phone, name);
-        const usedLink = leadId && r.sent;
-        if (!r.sent && isTemplateMissing(r.error)) {
+        let usedTemplate = canPersonalise ? "welcome_lead_link" : "welcome_lead";
+
+        // Config-level failure (template absent, or param count wrong) keeps
+        // failing until a human intervenes, so fall back to the template that
+        // definitely works. A transient failure deliberately does NOT fall
+        // back — retrying it here would send the quiz-linked message for a
+        // problem that may have resolved by the next attempt.
+        if (!r.sent && isTemplateConfigError(r.error)) {
+          usedTemplate = "welcome_lead (fallback)";
           r = await sendWelcomeLead(phone, name);
         }
 
         console.log(
-          `[quiz-lead] ${usedLink ? "welcome_lead_link" : "welcome_lead"} sent=${r.sent}` +
+          `[quiz-lead] ${usedTemplate} sent=${r.sent}` +
             (r.skipped ? ` skipped=${r.skipped}` : "") +
             (r.error ? ` error=${r.error}` : ""),
         );
