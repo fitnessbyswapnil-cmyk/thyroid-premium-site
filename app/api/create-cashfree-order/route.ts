@@ -24,7 +24,7 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // The hosted-form fallback (payments.cashfree.com/forms?code=thyroid-session)
 // has also been set to ₹299 on the Cashfree dashboard, so both payment paths
 // charge the same amount.
-const IS_TEST_MODE = false;
+const IS_TEST_MODE = true;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
