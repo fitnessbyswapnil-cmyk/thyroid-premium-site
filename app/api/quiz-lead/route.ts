@@ -17,11 +17,14 @@
  * BookingFlow.tsx's client-side call) so the Welcome/Nudge/Close email
  * sequence picks up quiz leads exactly like native-form leads.
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWelcomeLead } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
+// after() work runs inside the route's budget, so give the WhatsApp + Make
+// calls room to finish rather than inheriting a short default.
+export const maxDuration = 30;
 
 const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/vafr1x6if1eehv2vxhyfw74ihh3b2nz8";
 
@@ -171,21 +174,32 @@ export async function POST(req: NextRequest) {
   }
 
   // Best-effort — never blocks the response to the visitor.
-  fetch(MAKE_WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: str(payload.name),
-      email: str(payload.email),
-      phone: str(payload.phone),
-      q1: str(payload.diagnosis),
-      q2: str(payload.struggleDuration),
-      q3: str(payload.goal),
-      stage: "qualified_unpaid",
-      submitted_at: new Date().toISOString(),
-      source: "thyroid_score_quiz",
-    }),
-  }).catch(() => {});
+  //
+  // Wrapped in after() rather than left as a bare un-awaited promise: on
+  // Vercel the serverless invocation can freeze the moment the response is
+  // returned, killing any still-in-flight fetch. after() is the framework's
+  // supported way to keep post-response work alive to completion.
+  after(async () => {
+    try {
+      await fetch(MAKE_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: str(payload.name),
+          email: str(payload.email),
+          phone: str(payload.phone),
+          q1: str(payload.diagnosis),
+          q2: str(payload.struggleDuration),
+          q3: str(payload.goal),
+          stage: "qualified_unpaid",
+          submitted_at: new Date().toISOString(),
+          source: "thyroid_score_quiz",
+        }),
+      });
+    } catch (err) {
+      console.error("[quiz-lead] Make webhook failed:", err instanceof Error ? err.message : String(err));
+    }
+  });
 
   // First-touch WhatsApp, fired the instant the quiz is finished.
   //
@@ -195,11 +209,30 @@ export async function POST(req: NextRequest) {
   // WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID exist, so this is inert until
   // billing is live on the WABA.
   //
-  // Deliberately not awaited and never allowed to reject: a Meta outage must
-  // not fail a submission the visitor already completed, and the lead is
-  // already safely in the sheet by this point.
+  // Never allowed to reject: a Meta outage must not fail a submission the
+  // visitor already completed, and the lead is already safely in the sheet.
+  //
+  // 2026-08-18: this was a bare un-awaited promise, which made welcome_lead
+  // fire only intermittently in production -- a real end-to-end test got no
+  // message at all. On Vercel the serverless invocation can be frozen as soon
+  // as the response is returned, so a fetch to Meta's Graph API that takes a
+  // few hundred ms often never completed. Nothing logged, because the whole
+  // execution context was gone. after() keeps the invocation alive until the
+  // send finishes, and the result is now logged either way so a silent
+  // failure can never look like a success again.
   if (str(payload.phone)) {
-    sendWelcomeLead(str(payload.phone), str(payload.name)).catch(() => {});
+    after(async () => {
+      try {
+        const r = await sendWelcomeLead(str(payload.phone), str(payload.name));
+        console.log(
+          `[quiz-lead] welcome_lead sent=${r.sent}` +
+            (r.skipped ? ` skipped=${r.skipped}` : "") +
+            (r.error ? ` error=${r.error}` : ""),
+        );
+      } catch (err) {
+        console.error("[quiz-lead] welcome_lead threw (swallowed):", err instanceof Error ? err.message : String(err));
+      }
+    });
   }
 
   return NextResponse.json({ ok: true });
