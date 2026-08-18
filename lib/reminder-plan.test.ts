@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planReminders, parseSheetTime, firstNameOf, phoneKey, type ReminderColumns } from "./reminder-plan.ts";
+import { planReminders, planCallReminders, parseSheetTime, firstNameOf, phoneKey, type ReminderColumns, type CallReminderColumns } from "./reminder-plan.ts";
 
 const COLS: ReminderColumns = { timestamp: 0, leadId: 1, name: 2, phone: 3, paid: 40, reminderSent: 44 };
 
@@ -419,4 +419,71 @@ test("minAgeHours defaults to 0 so a plain broadcast reaches everyone", () => {
   const plan = planBroadcast({ rows: [bRow({ ts: agoMin(30) })], cols: BCOLS, now: NOW });
   assert.equal(plan.candidates.length, 1);
   assert.equal(plan.skipped.tooNew, 0);
+});
+
+// ── call reminders ───────────────────────────────────────────────────────────
+// These fire relative to a FUTURE anchor, so the failure mode that matters is
+// firing late: "your call starts in one hour" arriving after the call is worse
+// than never sending it.
+
+const CRCOLS: CallReminderColumns = { name: 2, phone: 3, sessionDate: 18, bookingStatus: 17, reminderSent: 46 };
+
+function callRow(o: { session?: string; phone?: string; status?: string; sent?: string }): string[] {
+  const r = new Array<string>(50).fill("");
+  r[CRCOLS.name] = "Priya Sharma";
+  r[CRCOLS.phone] = o.phone ?? "9876543210";
+  r[CRCOLS.sessionDate] = o.session ?? "";
+  r[CRCOLS.bookingStatus] = o.status ?? "Booked";
+  r[CRCOLS.reminderSent] = o.sent ?? "";
+  return r;
+}
+const inHrs = (h: number) => new Date(NOW + h * 3600000).toISOString();
+
+test("a call 23 hours out gets the 24h reminder", () => {
+  const plan = planCallReminders({
+    rows: [callRow({ session: inHrs(23) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(plan.candidates.length, 1);
+});
+
+test("a call three days out is not reminded yet", () => {
+  const plan = planCallReminders({
+    rows: [callRow({ session: inHrs(72) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(plan.skipped.notYetDue, 1);
+});
+
+test("a reminder never fires late — a call already past is skipped, not sent", () => {
+  const plan = planCallReminders({
+    rows: [callRow({ session: inHrs(-1) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 0,
+  });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.tooLate, 1);
+});
+
+test("the 24h stage cannot fire minutes before the call", () => {
+  const plan = planCallReminders({
+    rows: [callRow({ session: inHrs(0.5) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(plan.skipped.tooLate, 1, "inside the 1h stage's territory, not the 24h stage's");
+});
+
+test("a cancelled booking is never reminded", () => {
+  const plan = planCallReminders({
+    rows: [callRow({ session: inHrs(5), status: "Cancelled" })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(plan.skipped.cancelled, 1);
+});
+
+test("an unreadable session date is counted, never guessed at", () => {
+  const plan = planCallReminders({
+    rows: [callRow({ session: "sometime thursday" })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(plan.skipped.unparseableTime, 1);
+});
+
+test("each stage stamps its own column, so 24h and 1h never suppress each other", () => {
+  const rows = [callRow({ session: inHrs(0.5), sent: "" })];
+  const oneHour = planCallReminders({ rows, cols: CRCOLS, now: NOW, withinHours: 1, notWithinHours: 0 });
+  assert.equal(oneHour.candidates.length, 1, "the 1h stage still fires for a call 30 min out");
 });

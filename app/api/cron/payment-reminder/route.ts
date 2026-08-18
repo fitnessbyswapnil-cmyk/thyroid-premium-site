@@ -43,6 +43,8 @@ import {
 import {
   planReminders,
   planBookingNudges,
+  planCallReminders,
+  formatSessionTimeIST,
   firstNameOf,
   BOOKING_NUDGE_STAGE1_MAX_DAYS,
   BOOKING_NUDGE_STAGE2_MIN_HOURS,
@@ -53,6 +55,7 @@ import {
   DEFAULT_MIN_AGE_MINUTES,
   type ReminderColumns,
   type BookingNudgeColumns,
+  type CallReminderColumns,
   type ReminderCandidate,
 } from "@/lib/reminder-plan";
 
@@ -91,6 +94,16 @@ const NUDGE_AT_TITLE = "Booking Nudge At";
 const BOOKING_TEMPLATE2 = "booking_nudge_day3";
 const NUDGE2_SENT_TITLE = "Booking Nudge 2 Sent";
 const NUDGE2_AT_TITLE = "Booking Nudge 2 At";
+
+// ── Call reminders ──────────────────────────────────────────────────────────
+// Anchored to her session time rather than elapsed time. call_reminder_24h
+// takes TWO body params (name, session time); call_reminder_1h takes one.
+const CALL_TEMPLATE_24H = "call_reminder_24h";
+const CALL24_SENT_TITLE = "Call Reminder 24h Sent";
+const CALL24_AT_TITLE = "Call Reminder 24h At";
+const CALL_TEMPLATE_1H = "call_reminder_1h";
+const CALL1_SENT_TITLE = "Call Reminder 1h Sent";
+const CALL1_AT_TITLE = "Call Reminder 1h At";
 // Columns R (17) / S (18) — Booking Status and Session Date, written by the
 // Cal.com → Sheets scenario. Resolved by header name first in case the live
 // sheet has drifted; the positional contract is the fallback.
@@ -209,6 +222,24 @@ export async function GET(req: NextRequest) {
       minAgeHours: BOOKING_NUDGE_STAGE2_MIN_HOURS,
     });
 
+    // Call reminders. Windows are deliberately disjoint: the 24h stage stops
+    // at 2h out, the 1h stage runs from 1h to 0. Neither can ever fire after
+    // the call has started.
+    const callColsBase = {
+      name: 2,
+      phone: 3,
+      sessionDate: byNameOr("Session Date", SESSION_DATE_FALLBACK),
+      bookingStatus: byNameOr("Booking Status", BOOKING_STATUS_FALLBACK),
+    };
+    const call24Cols: CallReminderColumns = { ...callColsBase, reminderSent: findCol(header, CALL24_SENT_TITLE) };
+    const call24Plan = planCallReminders({
+      rows, cols: call24Cols, now: Date.now(), withinHours: 24, notWithinHours: 2,
+    });
+    const call1Cols: CallReminderColumns = { ...callColsBase, reminderSent: findCol(header, CALL1_SENT_TITLE) };
+    const call1Plan = planCallReminders({
+      rows, cols: call1Cols, now: Date.now(), withinHours: 1, notWithinHours: 0,
+    });
+
     const summary = {
       dryRun,
       template: TEMPLATE,
@@ -244,6 +275,18 @@ export async function GET(req: NextRequest) {
         wouldSendDay2: plan2.candidates.map(describe),
         wouldNudgeBooking: nudgePlan.candidates.map(describe),
         wouldNudgeBookingDay3: nudge2Plan.candidates.map(describe),
+        wouldRemindCall24h: call24Plan.candidates.map((c) => ({
+          row: c.rowNumber, name: c.name, phone: `***${c.phone.slice(-4)}`,
+          sessionAt: new Date(c.sessionAt).toISOString(),
+          sessionTimeIST: formatSessionTimeIST(c.sessionAt),
+          hoursUntil: Math.round(c.hoursUntil * 10) / 10,
+        })),
+        wouldRemindCall1h: call1Plan.candidates.map((c) => ({
+          row: c.rowNumber, name: c.name, phone: `***${c.phone.slice(-4)}`,
+          sessionTimeIST: formatSessionTimeIST(c.sessionAt),
+          hoursUntil: Math.round(c.hoursUntil * 10) / 10,
+        })),
+        callReminderSkipped: { h24: call24Plan.skipped, h1: call1Plan.skipped },
       });
     }
 
@@ -251,7 +294,9 @@ export async function GET(req: NextRequest) {
       !plan.candidates.length &&
       !plan2.candidates.length &&
       !nudgePlan.candidates.length &&
-      !nudge2Plan.candidates.length;
+      !nudge2Plan.candidates.length &&
+      !call24Plan.candidates.length &&
+      !call1Plan.candidates.length;
     if (nothingToDo) {
       console.log(
         `[payment-reminder] nothing to send — reminders=${JSON.stringify(plan.skipped)} ` +
@@ -272,6 +317,10 @@ export async function GET(req: NextRequest) {
     let nudgeAtCol = findCol(header, NUDGE_AT_TITLE);
     let nudge2SentCol = nudge2Cols.nudgeSent;
     let nudge2AtCol = findCol(header, NUDGE2_AT_TITLE);
+    let call24SentCol = call24Cols.reminderSent;
+    let call24AtCol = findCol(header, CALL24_AT_TITLE);
+    let call1SentCol = call1Cols.reminderSent;
+    let call1AtCol = findCol(header, CALL1_AT_TITLE);
     {
       const next = [...header];
       const claim = (idx: number, title: string): number => {
@@ -288,6 +337,10 @@ export async function GET(req: NextRequest) {
       nudgeAtCol = claim(nudgeAtCol, NUDGE_AT_TITLE);
       nudge2SentCol = claim(nudge2SentCol, NUDGE2_SENT_TITLE);
       nudge2AtCol = claim(nudge2AtCol, NUDGE2_AT_TITLE);
+      call24SentCol = claim(call24SentCol, CALL24_SENT_TITLE);
+      call24AtCol = claim(call24AtCol, CALL24_AT_TITLE);
+      call1SentCol = claim(call1SentCol, CALL1_SENT_TITLE);
+      call1AtCol = claim(call1AtCol, CALL1_AT_TITLE);
       if (next.length > header.length) {
         // Widen the fixed-width grid before writing past its last column.
         await ensureGridColumns(sheets, spreadsheetId, LEADS_SHEET, next.length - 1);
@@ -425,6 +478,37 @@ export async function GET(req: NextRequest) {
       if (r.sent) {
         updates.push({ range: `${LEADS_SHEET}!${colLetter(nudge2SentCol)}${c.rowNumber}`, values: [["Y"]] });
         updates.push({ range: `${LEADS_SHEET}!${colLetter(nudge2AtCol)}${c.rowNumber}`, values: [[stampedAt]] });
+      }
+    }
+
+    // Call reminder, 24h out. TWO body params: her name and her session time,
+    // rendered in IST because that is how she will read it.
+    for (const c of call24Plan.candidates) {
+      const r = await sendTryingLanguages((language) =>
+        sendWhatsAppTemplate(c.phone, CALL_TEMPLATE_24H, [firstNameOf(c.name), formatSessionTimeIST(c.sessionAt)], language),
+      );
+      results.push({
+        job: "call_reminder_24h", row: c.rowNumber, phone: `***${c.phone.slice(-4)}`,
+        sent: r.sent, template: CALL_TEMPLATE_24H, detail: r.error || r.skipped,
+      });
+      if (r.sent) {
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(call24SentCol)}${c.rowNumber}`, values: [["Y"]] });
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(call24AtCol)}${c.rowNumber}`, values: [[stampedAt]] });
+      }
+    }
+
+    // Call reminder, 1h out. One body param.
+    for (const c of call1Plan.candidates) {
+      const r = await sendTryingLanguages((language) =>
+        sendWhatsAppTemplate(c.phone, CALL_TEMPLATE_1H, [firstNameOf(c.name)], language),
+      );
+      results.push({
+        job: "call_reminder_1h", row: c.rowNumber, phone: `***${c.phone.slice(-4)}`,
+        sent: r.sent, template: CALL_TEMPLATE_1H, detail: r.error || r.skipped,
+      });
+      if (r.sent) {
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(call1SentCol)}${c.rowNumber}`, values: [["Y"]] });
+        updates.push({ range: `${LEADS_SHEET}!${colLetter(call1AtCol)}${c.rowNumber}`, values: [[stampedAt]] });
       }
     }
 
