@@ -34,8 +34,12 @@ import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
 import { SESSION_PRICE } from "@/app/lib/pricing";
 import { checkoutRedirectTarget } from "@/lib/checkout-target";
 
-type Lead = { leadId: string; name: string; phone: string; email: string };
-type Status = "loading" | "ready" | "not_found" | "error";
+type Lead = { leadId: string; name: string; phone: string; email: string; paid?: boolean; booked?: boolean };
+// "already_paid" is the double-payment guard: she reached a pay link but the
+// sheet already shows her as paid (possibly from a different entry point, or
+// a different row carrying the same phone). Charging her again would be the
+// worst outcome this page could produce, so it never offers the button.
+type Status = "loading" | "ready" | "already_paid" | "not_found" | "error";
 
 export default function CompletePaymentClient() {
   const [status, setStatus] = useState<Status>("loading");
@@ -64,13 +68,24 @@ export default function CompletePaymentClient() {
       .then((data) => {
         if (!data) return;
         setLead({ ...data, leadId });
-        setStatus("ready");
+
         const firstName = (data.name || "").trim().split(/\s+/)[0];
         persistUserIdentity({
           ...(firstName && { first_name: firstName }),
           ...(data.phone && { phone: data.phone }),
           ...(data.email && { email: data.email }),
         });
+
+        // She already paid — send her to book, never to pay again. This is the
+        // whole point of the guard: with a site checkout AND a WhatsApp button
+        // both live, the same woman can reach a pay link twice, and a second
+        // charge is far worse than a redundant booking prompt.
+        if (data.paid) {
+          setStatus("already_paid");
+          return;
+        }
+
+        setStatus("ready");
         // Warm the SDK while she reads the screen, same as the quiz result page.
         import("@cashfreepayments/cashfree-js")
           .then(({ load }) => load({ mode: process.env.NODE_ENV === "production" ? "production" : "sandbox" }))
@@ -178,6 +193,30 @@ export default function CompletePaymentClient() {
             <a href={CONSULTATION_FORM_URL} className="cta-button mt-6 inline-flex w-auto px-8">
               Continue to payment
             </a>
+          </div>
+        )}
+
+        {status === "already_paid" && lead && (
+          <div className="glass-card-sm max-w-[420px] p-8">
+            <p className="section-label">
+              {lead.name ? `${lead.name.trim().split(/\s+/)[0]}, you're already paid` : "You're already paid"}
+            </p>
+            <h1 className="section-title mt-2 text-[1.4rem]">
+              {lead.booked ? "Your call is booked" : "Just pick your call time"}
+            </h1>
+            <p className="mt-3 text-[0.9rem] leading-relaxed text-[var(--t3)]">
+              {lead.booked
+                ? "Nothing left to do. Check your WhatsApp for the confirmation and calendar invite."
+                : "We have your payment. The only step left is choosing a time that suits you."}
+            </p>
+            {!lead.booked && (
+              <a
+                href={`/session-booked?leadId=${encodeURIComponent(lead.leadId)}`}
+                className="cta-button mt-6 inline-flex w-auto px-8"
+              >
+                Pick My Call Time
+              </a>
+            )}
           </div>
         )}
 
