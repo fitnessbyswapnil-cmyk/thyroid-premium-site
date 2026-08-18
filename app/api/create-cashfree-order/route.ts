@@ -19,12 +19,19 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // ── TEST MODE ─────────────────────────────────────────────────────────────────
 // Set IS_TEST_MODE = true during QA to charge ₹1 instead of ₹299.
 // UI/copy always shows ₹299 — only the actual Cashfree transaction amount changes.
-// 2026-08-09: LIVE. Flipped back to false at the owner's request — testing is
-// finished and the funnel now charges the real SESSION_PRICE (₹299).
-// The hosted-form fallback (payments.cashfree.com/forms?code=thyroid-session)
-// has also been set to ₹299 on the Cashfree dashboard, so both payment paths
-// charge the same amount.
-const IS_TEST_MODE = true;
+// 2026-08-19: LIVE at ₹299. Flipped back to false at the owner's request —
+// QA is finished and ads are running, so every real payment must charge the
+// real SESSION_PRICE. While this was true the checkout displayed ₹299 and
+// charged ₹1, which at 3-4 bookings a day was roughly ₹900/day uncollected.
+//
+// This is the ONLY switch that changes what a customer is charged. The
+// hosted form at payments.cashfree.com/forms?code=thyroid-session also
+// charges ₹299, but is deliberately NOT used as the funnel's payment path:
+// lib/cashfree-payload.ts normalises FORM webhooks to payment:null, so a
+// payment made there never stamps Paid, never fires booking_confirmation,
+// and never fires Schedule — which is the event the live ad campaign is
+// currently optimising against.
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
