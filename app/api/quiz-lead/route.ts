@@ -46,6 +46,7 @@ type QuizLeadPayload = {
   commitment?: string; // "1".."10"
   timing?: string;
   budget?: string; // what she said she can invest — sales signal, never scored
+  decisionMaker?: string; // whether she signs off alone — sales signal, never scored
   leadScore?: number;
   leadTier?: string;
   attribution?: {
@@ -97,15 +98,28 @@ export async function POST(req: NextRequest) {
       return name in FALLBACK ? FALLBACK[name] : null;
     };
 
-    // "Budget" is a new column. idx() returns null for headers it has never
-    // seen and set() then silently skips the value — so without this the budget
-    // answer would be collected, scored-out, and quietly dropped. Create the
-    // header once, past every existing column, so it can never collide with the
-    // reserved Booking columns (17/18) owned by the Cal.com Make scenario.
+    // "Budget" and "Decision Maker" are columns the sheet may not have yet.
+    // idx() returns null for headers it has never seen and set() then silently
+    // skips the value — so without this, both answers would be collected,
+    // scored-out, and quietly dropped.
+    //
+    // Both are appended past every existing column so they can never collide
+    // with the reserved Booking columns (17/18) owned by the Cal.com Make
+    // scenario. Written in ONE header update rather than two, so a failure
+    // cannot leave the sheet with one new column and not the other.
     let budgetIdx = hdr.lastIndexOf("Budget");
-    if (budgetIdx < 0 && str(payload.budget)) {
-      budgetIdx = hdr.length;
-      hdr[budgetIdx] = "Budget";
+    let decisionIdx = hdr.lastIndexOf("Decision Maker");
+    const needBudget = budgetIdx < 0 && !!str(payload.budget);
+    const needDecision = decisionIdx < 0 && !!str(payload.decisionMaker);
+    if (needBudget || needDecision) {
+      if (needBudget) {
+        budgetIdx = hdr.length;
+        hdr[budgetIdx] = "Budget";
+      }
+      if (needDecision) {
+        decisionIdx = hdr.length;
+        hdr[decisionIdx] = "Decision Maker";
+      }
       try {
         await sheets.spreadsheets.values.update({
           spreadsheetId: sheetId,
@@ -114,8 +128,10 @@ export async function POST(req: NextRequest) {
           requestBody: { values: [hdr] },
         });
       } catch (hdrErr) {
-        console.error("[quiz-lead] could not add Budget header:", hdrErr instanceof Error ? hdrErr.message : String(hdrErr));
-        budgetIdx = -1; // fall through: lose the budget value, never the lead
+        console.error("[quiz-lead] could not add sales-signal headers:", hdrErr instanceof Error ? hdrErr.message : String(hdrErr));
+        // Fall through: lose these two values, never the lead itself.
+        if (needBudget) budgetIdx = -1;
+        if (needDecision) decisionIdx = -1;
       }
     }
 
@@ -155,6 +171,7 @@ export async function POST(req: NextRequest) {
     set("Commitment (1-10)", str(payload.commitment));
     set("Timing", str(payload.timing));
     if (budgetIdx >= 0 && str(payload.budget)) cells.set(budgetIdx, str(payload.budget));
+    if (decisionIdx >= 0 && str(payload.decisionMaker)) cells.set(decisionIdx, str(payload.decisionMaker));
     set("UTM Content", str(payload.attribution?.utm_content));
     set("UTM Term", str(payload.attribution?.utm_term));
     if (typeof payload.leadScore === "number") set("Lead Score", String(payload.leadScore));
