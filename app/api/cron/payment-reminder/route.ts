@@ -174,6 +174,11 @@ export async function GET(req: NextRequest) {
       firstName: firstNameOf(c.name),
       phone: `***${c.phone.slice(-4)}`,
       ageMinutes: c.ageMinutes,
+      // A row with no leadId can only ever get the OLD template, whose button
+      // points back at the quiz. Surfacing it here means a dry run answers
+      // "why did she get a quiz link?" without spending a send to find out.
+      leadId: c.leadId || "(none — would send old quiz-linked template)",
+      wouldUseTemplate: c.leadId ? TEMPLATE : "payment_reminder",
     });
 
     if (dryRun) {
@@ -226,12 +231,17 @@ export async function GET(req: NextRequest) {
     }
 
     const stampedAt = new Date().toISOString();
-    const results: { job: string; row: number; phone: string; sent: boolean; detail?: string }[] = [];
+    // `template` records which one ACTUALLY went out. Without it, a run that
+    // silently fell back to the old quiz-linked template looks identical to a
+    // healthy one in the response — the exact ambiguity that made "she got a
+    // link back to the quiz" impossible to diagnose from the outside.
+    const results: { job: string; row: number; phone: string; sent: boolean; template?: string; detail?: string }[] = [];
     const updates: { range: string; values: string[][] }[] = [];
 
     // Sequential, not parallel. Meta rate-limits template sends per number, and
     // a batch arriving all at once is also a worse experience than a trickle.
     for (const c of plan.candidates) {
+      let usedTemplate = c.leadId ? TEMPLATE : "payment_reminder";
       let r = c.leadId
         ? await sendTryingLanguages((language) => sendPaymentReminderWithLink(c.phone, c.name, c.leadId!, language))
         // No leadId on this row (older data predating the column) — fall back
@@ -244,10 +254,24 @@ export async function GET(req: NextRequest) {
       // redeploys, fall back to the original payment_reminder — no dynamic
       // link, but she still gets reminded today. Once the new template
       // resolves, this stops firing on its own.
+      //
+      // NOTE: this fallback is what sends a button pointing back at the QUIZ,
+      // since the original payment_reminder's button is a static /assessment
+      // link. It is the lesser evil versus sending nothing, but every time it
+      // fires it is a signal that payment_reminder_link is not resolving —
+      // which is why `template` is reported per row below.
       if (!r.sent && isTemplateMissing(r.error)) {
+        usedTemplate = "payment_reminder (fallback)";
         r = await sendWhatsAppTemplate(c.phone, "payment_reminder", [firstNameOf(c.name)]);
       }
-      results.push({ job: "payment_reminder", row: c.rowNumber, phone: `***${c.phone.slice(-4)}`, sent: r.sent, detail: r.error || r.skipped });
+      results.push({
+        job: "payment_reminder",
+        row: c.rowNumber,
+        phone: `***${c.phone.slice(-4)}`,
+        sent: r.sent,
+        template: usedTemplate,
+        detail: r.error || r.skipped,
+      });
 
       // Only a delivered send is stamped. A failure must stay eligible so the
       // next run retries it rather than writing her off permanently.

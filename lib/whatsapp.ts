@@ -95,12 +95,27 @@ export function isTemplateMissing(error: string | undefined): boolean {
 export async function sendTryingLanguages(
   send: (language?: string) => Promise<WhatsAppResult>,
 ): Promise<WhatsAppResult> {
-  let r = await send()
-  for (const language of ['en_US', 'en_GB']) {
-    if (r.sent || !isTemplateMissing(r.error)) break
+  // undefined = whatever WHATSAPP_TEMPLATE_LANG resolves to, tried first so a
+  // correctly-configured account costs exactly one call.
+  //
+  // 'en' is listed EXPLICITLY rather than assumed: if WHATSAPP_TEMPLATE_LANG
+  // is set to a variant (the module docstring above suggests setting it to
+  // en_US as a fix for 132001), then plain 'en' would otherwise never be
+  // tried — and every template on this WABA is stored as plain "English".
+  // That would silently fall through to the older template on every send.
+  const attempts: (string | undefined)[] = [undefined, 'en', 'en_US', 'en_GB']
+  const tried = new Set<string>()
+
+  let r: WhatsAppResult | null = null
+  for (const language of attempts) {
+    const key = language ?? (process.env.WHATSAPP_TEMPLATE_LANG || 'en')
+    if (tried.has(key)) continue
+    tried.add(key)
+
     r = await send(language)
+    if (r.sent || !isTemplateMissing(r.error)) return r
   }
-  return r
+  return r ?? { sent: false, error: 'no_language_attempted' }
 }
 
 /**
