@@ -259,11 +259,25 @@ export async function GET(req: NextRequest) {
       firstName: firstNameOf(c.name),
       phone: `***${c.phone.slice(-4)}`,
       ageMinutes: c.ageMinutes,
-      // A row with no leadId can only ever get the OLD template, whose button
-      // points back at the quiz. Surfacing it here means a dry run answers
-      // "why did she get a quiz link?" without spending a send to find out.
+    });
+
+    // Payment-reminder-specific. A row with no leadId can only ever get the
+    // OLD template, whose button points back at the quiz, so a dry run
+    // answers "why did she get a quiz link?" without spending a send.
+    //
+    // Deliberately NOT shared with the nudge jobs: they do not choose their
+    // template by leadId, and annotating their candidates with payment-
+    // reminder reasoning reported the wrong template for them entirely.
+    const describePayment = (c: ReminderCandidate) => ({
+      ...describe(c),
       leadId: c.leadId || "(none — would send old quiz-linked template)",
       wouldUseTemplate: c.leadId ? TEMPLATE : "payment_reminder",
+    });
+
+    /** Jobs that always send one known template, whatever the row holds. */
+    const describeFixed = (template: string) => (c: ReminderCandidate) => ({
+      ...describe(c),
+      wouldUseTemplate: template,
     });
 
     if (dryRun) {
@@ -271,10 +285,10 @@ export async function GET(req: NextRequest) {
       // the list against the sheet by eye before any money is spent.
       return NextResponse.json({
         ...summary,
-        wouldSend: plan.candidates.map(describe),
-        wouldSendDay2: plan2.candidates.map(describe),
-        wouldNudgeBooking: nudgePlan.candidates.map(describe),
-        wouldNudgeBookingDay3: nudge2Plan.candidates.map(describe),
+        wouldSend: plan.candidates.map(describePayment),
+        wouldSendDay2: plan2.candidates.map(describeFixed(TEMPLATE2)),
+        wouldNudgeBooking: nudgePlan.candidates.map(describeFixed(BOOKING_TEMPLATE)),
+        wouldNudgeBookingDay3: nudge2Plan.candidates.map(describeFixed(BOOKING_TEMPLATE2)),
         wouldRemindCall24h: call24Plan.candidates.map((c) => ({
           row: c.rowNumber, name: c.name, phone: `***${c.phone.slice(-4)}`,
           sessionAt: new Date(c.sessionAt).toISOString(),
