@@ -19,8 +19,15 @@
  *             of actually abandoning, not hours.
  *   MAX AGE   A reminder about a decision from last week is spam, and Meta
  *             prices every template send. The window closes.
- *   ONCE      A "Reminder Sent" stamp in her row. Sheets is the memory; the
- *             cron is stateless and may run twice on a retry.
+ *   ONCE      A "Reminder Sent" stamp in her row, scoped to THAT row — Sheets
+ *             is the memory; the cron is stateless and may run twice on a
+ *             retry. A stamp on one row no longer blocks a different row for
+ *             the same phone (owner decision, 2026-08-18): a genuine retake
+ *             is a fresh signal and earns its own reminder. Rows from the
+ *             same batch still collapse to one send (see claimedPhones).
+ *   PAID      Still permanent and cross-row, unlike ONCE above — a phone that
+ *             paid on any row is settled everywhere, forever. Never a timing
+ *             question.
  *   CAP       A bounded number per run. If a rule is ever wrong, the blast
  *             radius is one batch, not the whole list.
  */
@@ -150,18 +157,25 @@ export function planReminders(opts: {
   };
 
   // One woman can occupy several rows — she retook the quiz, or the funnel
-  // wrote a partial row first. The sheet's unit is a row; hers is a phone
-  // number. Deduplicating only within this batch is not enough: if she has
-  // three rows and we message and stamp one, the other two stay unstamped and
-  // she gets nudged again on every future run. So a phone that is settled on
-  // ANY row — paid, or already reminded — disqualifies all of her rows.
+  // wrote a partial row first. PAID is a permanent, cross-row fact: if any
+  // row shows she paid, every row for that phone is settled forever — asking
+  // a payer to pay again is simply wrong, whenever it happens.
+  //
+  // REMINDED is deliberately NOT cross-row anymore (owner decision,
+  // 2026-08-18): a genuine retake — she submits the quiz again, even minutes
+  // after the first attempt — is a fresh signal of real intent and earns its
+  // own reminder cycle, not a permanent "already handled" block just because
+  // an older, unrelated row for the same phone was reminded once before.
+  // Rows from the SAME batch still collapse to one send via claimedPhones
+  // below, so a literal double-submit in one sitting still isn't double
+  // messaged — only reminders from genuinely separate cron runs are exempt
+  // from blocking each other now.
   const settledPhones = new Set<string>();
   for (const r of rows) {
     const p = phoneKey(cell(r ?? [], cols.phone));
     if (!p) continue;
     const isPaid = cell(r ?? [], cols.paid).toUpperCase() === "Y";
-    const isReminded = !!cell(r ?? [], cols.reminderSent);
-    if (isPaid || isReminded) settledPhones.add(p);
+    if (isPaid) settledPhones.add(p);
   }
 
   // Phones picked so far in this run, so three rows for one woman yield one
