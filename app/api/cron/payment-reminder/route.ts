@@ -32,7 +32,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { checkAdminKey } from "../../admin/_lib";
 import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
-import { sendWhatsAppTemplate, isWhatsAppConfigured } from "@/lib/whatsapp";
+import { sendWhatsAppTemplate, sendPaymentReminderWithLink, isWhatsAppConfigured } from "@/lib/whatsapp";
 import {
   planReminders,
   planBookingNudges,
@@ -49,7 +49,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const LEADS_SHEET = "Leads";
-const TEMPLATE = "payment_reminder";
+// payment_reminder_link: same copy as the original payment_reminder, but its
+// button deep-links to /complete-payment?leadId=... instead of the quiz
+// intro (Meta 2026-08-18 approval). Submitted as a SEPARATE template so the
+// original keeps sending, untouched, while this one clears review.
+const TEMPLATE = "payment_reminder_link";
 
 const SENT_TITLE = "Reminder Sent";
 const AT_TITLE = "Reminder At";
@@ -121,6 +125,7 @@ export async function GET(req: NextRequest) {
 
     const cols: ReminderColumns = {
       timestamp: 0, // pinned column A, written by the quiz on create
+      leadId: 1, // pinned column B, written by the quiz on create
       name: 2,
       phone: 3,
       paid: findCol(header, "Paid"),
@@ -221,7 +226,20 @@ export async function GET(req: NextRequest) {
     // Sequential, not parallel. Meta rate-limits template sends per number, and
     // a batch arriving all at once is also a worse experience than a trickle.
     for (const c of plan.candidates) {
-      const r = await sendWhatsAppTemplate(c.phone, TEMPLATE, [firstNameOf(c.name)]);
+      let r = c.leadId
+        ? await sendPaymentReminderWithLink(c.phone, c.name, c.leadId)
+        // No leadId on this row (older data predating the column) — fall back
+        // to the original template rather than sending a dead/empty button.
+        : await sendWhatsAppTemplate(c.phone, "payment_reminder", [firstNameOf(c.name)]);
+
+      // Self-healing: payment_reminder_link (#131) may not be Meta-approved
+      // yet. Rather than let every send fail silently until someone notices
+      // and redeploys, fall back to the original payment_reminder template —
+      // no dynamic link, but she still gets reminded today. Once the new
+      // template is approved this branch stops firing on its own.
+      if (!r.sent && /does not exist|132001/i.test(r.error ?? "")) {
+        r = await sendWhatsAppTemplate(c.phone, "payment_reminder", [firstNameOf(c.name)]);
+      }
       results.push({ job: "payment_reminder", row: c.rowNumber, phone: `***${c.phone.slice(-4)}`, sent: r.sent, detail: r.error || r.skipped });
 
       // Only a delivered send is stamped. A failure must stay eligible so the
