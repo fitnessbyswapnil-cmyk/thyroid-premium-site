@@ -83,6 +83,21 @@ export function isTemplateMissing(error: string | undefined): boolean {
 }
 
 /**
+ * Template failures that are CONFIGURATION problems, not transient ones: the
+ * template is absent (132001) or the caller sent the wrong number of body
+ * parameters (132000). Both keep failing identically until a human changes
+ * something, so the right response is to fall back to a template that works
+ * — never to retry the same call.
+ *
+ * Kept separate from isTemplateMissing because the language-retry loop must
+ * NOT re-attempt on a parameter mismatch: the count is wrong in every
+ * language, so retrying just burns three API calls to fail three times.
+ */
+export function isTemplateConfigError(error: string | undefined): boolean {
+  return isTemplateMissing(error) || /132000|number of parameters/i.test(error ?? '')
+}
+
+/**
  * Run a send, retrying under Meta's other English variants if it comes back
  * "template missing".
  *
@@ -286,9 +301,31 @@ export async function sendWelcomeLead(phone: string, fullName: string): Promise<
  * untouched, while this one clears review — same approach used for
  * payment_reminder_link.
  */
-export async function sendWelcomeLeadWithLink(phone: string, fullName: string, leadId: string, languageOverride?: string): Promise<WhatsAppResult> {
+export async function sendWelcomeLeadWithLink(
+  phone: string,
+  fullName: string,
+  leadId: string,
+  /**
+   * Her own quiz answers, read back to her. This is the difference between a
+   * mail-merge and a message that proves a human looked at what she wrote:
+   * she answered six questions moments ago, and naming her score and the
+   * symptom she picked is the cheapest trust you will ever buy.
+   *
+   * welcome_lead_link declares THREE body params, so both values are
+   * REQUIRED. Callers that cannot supply them must send plain welcome_lead
+   * instead — sending the wrong count fails the whole message (132000).
+   */
+  personal: { score: string; symptom: string },
+  languageOverride?: string,
+): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'welcome_lead_link', [firstName], languageOverride, leadId)
+  return sendWhatsAppTemplate(
+    phone,
+    'welcome_lead_link',
+    [firstName, personal.score, personal.symptom],
+    languageOverride,
+    leadId,
+  )
 }
 
 /**
