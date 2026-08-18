@@ -293,8 +293,27 @@ test("the nudge fires once, ever", () => {
 });
 
 test("too soon after payment is left alone — booking_confirmation just arrived", () => {
-  const plan = planBookingNudges({ rows: [paidRow({ paidAt: agoHrs(3) })], cols: NCOLS, now: NOW });
+  // The floor is now ONE hour, not 20: she paid because she was ready in that
+  // moment, and a nudge the next morning arrives after it has passed. Anything
+  // inside the first hour is still genuinely "the confirmation just landed".
+  const plan = planBookingNudges({ rows: [paidRow({ paidAt: agoMin(20) })], cols: NCOLS, now: NOW });
   assert.equal(plan.skipped.tooNew, 1);
+});
+
+test("an hour after payment she is nudged, not left until tomorrow", () => {
+  const plan = planBookingNudges({ rows: [paidRow({ paidAt: agoHrs(3) })], cols: NCOLS, now: NOW });
+  assert.equal(plan.candidates.length, 1, "3h old clears the 1h floor");
+});
+
+test("the two nudge stages cannot both claim the same woman on one run", () => {
+  // Stage 1 caps at 24h and stage 2 opens at 72h, so a single payment can
+  // never be eligible for both in the same pass — which would double-message
+  // her with two different templates at once.
+  const rows = [paidRow({ paidAt: agoHrs(5) })];
+  const stage1 = planBookingNudges({ rows, cols: NCOLS, now: NOW, maxAgeDays: 1 });
+  const stage2 = planBookingNudges({ rows, cols: NCOLS, now: NOW, minAgeHours: 72 });
+  assert.equal(stage1.candidates.length, 1);
+  assert.equal(stage2.candidates.length, 0);
 });
 
 test("a payment older than a week belongs to personal outreach, not automation", () => {

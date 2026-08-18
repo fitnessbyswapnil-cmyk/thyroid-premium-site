@@ -465,9 +465,25 @@ export type BookingNudgePlan = {
   scanned: number;
 };
 
-export const BOOKING_NUDGE_MIN_AGE_HOURS = 20;
+// Stage 1 fires ONE HOUR after payment, not 20. She paid because she was
+// ready in that moment; by the next morning that moment has passed. 15 of the
+// funnel's payers booked only 4 calls, and a nudge that arrives a day late is
+// the single most expensive thing in the funnel — the money is already
+// collected and the ₹20k conversation never happens without the call.
+export const BOOKING_NUDGE_MIN_AGE_HOURS = 1;
+export const BOOKING_NUDGE_STAGE1_MAX_DAYS = 1;
+
+// Stage 2, three days later, for anyone stage 1 did not move. Separate stamp
+// column, so it can never re-send stage 1's message.
+export const BOOKING_NUDGE_STAGE2_MIN_HOURS = 72;
 export const BOOKING_NUDGE_MAX_AGE_DAYS = 7;
 export const BOOKING_NUDGE_LIMIT = 15;
+
+// Second payment reminder, a day after the first. Different angle, not a
+// repeat: touch one says the slot is open, touch two answers the actual
+// objection with the refund guarantee.
+export const REMINDER2_MIN_AGE_MINUTES = 24 * 60;
+export const REMINDER2_MAX_AGE_HOURS = 72;
 
 export function planBookingNudges(opts: {
   rows: string[][];
