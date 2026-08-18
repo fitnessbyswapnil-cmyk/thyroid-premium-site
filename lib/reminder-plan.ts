@@ -31,6 +31,10 @@ export type ReminderCandidate = {
   name: string;
   phone: string;
   ageMinutes: number;
+  /** Quiz leadId, so the reminder can link her straight back to
+   *  /complete-payment?leadId=... instead of the quiz intro. Only populated
+   *  by planReminders — planBroadcast/planBookingNudges leave it "". */
+  leadId?: string;
 };
 
 export type ReminderSkips = {
@@ -58,6 +62,8 @@ export type ReminderColumns = {
   phone: number;
   paid: number;
   reminderSent: number;
+  /** Column B — "Lead ID", written by the quiz on create. -1 reads as "". */
+  leadId: number;
 };
 
 export const DEFAULT_MIN_AGE_MINUTES = 5;
@@ -212,6 +218,7 @@ export function planReminders(opts: {
       name: cell(row, cols.name),
       phone,
       ageMinutes: Math.round(ageMinutes),
+      leadId: cell(row, cols.leadId),
     });
   }
 

@@ -119,6 +119,14 @@ export async function sendWhatsAppTemplate(
    * find the right one against the live API without a redeploy per guess.
    */
   languageOverride?: string,
+  /**
+   * Value for a dynamic URL button's {{1}} suffix (button index 0), for
+   * templates approved with a "Visit Website" button whose URL ends in a
+   * variable. Omit entirely for templates with a static button URL or no
+   * button — passing this for a template that doesn't declare a dynamic
+   * button parameter makes Meta reject the whole send.
+   */
+  buttonUrlParam?: string,
 ): Promise<WhatsAppResult> {
   const token = readToken()
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
@@ -135,6 +143,27 @@ export async function sendWhatsAppTemplate(
 
   const language = languageOverride || process.env.WHATSAPP_TEMPLATE_LANG || 'en'
 
+  const components = [
+    ...(bodyParams.length
+      ? [
+          {
+            type: 'body',
+            parameters: bodyParams.map((text) => ({ type: 'text', text })),
+          },
+        ]
+      : []),
+    ...(buttonUrlParam
+      ? [
+          {
+            type: 'button',
+            sub_type: 'url',
+            index: '0',
+            parameters: [{ type: 'text', text: buttonUrlParam }],
+          },
+        ]
+      : []),
+  ]
+
   const body = {
     messaging_product: 'whatsapp',
     to: recipient,
@@ -142,16 +171,7 @@ export async function sendWhatsAppTemplate(
     template: {
       name: templateName,
       language: { code: language },
-      ...(bodyParams.length
-        ? {
-            components: [
-              {
-                type: 'body',
-                parameters: bodyParams.map((text) => ({ type: 'text', text })),
-              },
-            ],
-          }
-        : {}),
+      ...(components.length ? { components } : {}),
     },
   }
 
@@ -222,6 +242,22 @@ export async function sendWelcomeLead(phone: string, fullName: string): Promise<
 export async function sendBookingConfirmation(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(phone, 'booking_confirmation', [firstName])
+}
+
+/**
+ * Payment reminder whose button deep-links straight back to
+ * /complete-payment?leadId=... instead of the quiz intro — approved
+ * separately as payment_reminder_link so the original payment_reminder
+ * template (already sending, already accumulating quality data) is never
+ * touched or put through re-review.
+ *
+ * DO NOT call this until payment_reminder_link shows Active in WhatsApp
+ * Manager. Sending an unapproved/nonexistent template name fails the whole
+ * request — Meta doesn't partially send a template.
+ */
+export async function sendPaymentReminderWithLink(phone: string, fullName: string, leadId: string): Promise<WhatsAppResult> {
+  const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
+  return sendWhatsAppTemplate(phone, 'payment_reminder_link', [firstName], undefined, leadId)
 }
 
 /**

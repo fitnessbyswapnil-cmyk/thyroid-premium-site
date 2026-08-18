@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { planReminders, parseSheetTime, firstNameOf, phoneKey, type ReminderColumns } from "./reminder-plan.ts";
 
-const COLS: ReminderColumns = { timestamp: 0, name: 2, phone: 3, paid: 40, reminderSent: 44 };
+const COLS: ReminderColumns = { timestamp: 0, leadId: 1, name: 2, phone: 3, paid: 40, reminderSent: 44 };
 
 const NOW = Date.parse("2026-08-11T12:00:00.000Z");
 const agoMin = (m: number) => new Date(NOW - m * 60000).toISOString();
@@ -14,9 +14,11 @@ function row(o: {
   phone?: string;
   paid?: string;
   reminded?: string;
+  leadId?: string;
 }): string[] {
   const r = new Array<string>(50).fill("");
   r[COLS.timestamp] = o.ts ?? agoMin(90);
+  r[COLS.leadId] = o.leadId ?? "quiz_1786000000000_ab12cd";
   r[COLS.name] = o.name ?? "Priya Sharma";
   r[COLS.phone] = o.phone ?? "9876543210";
   r[COLS.paid] = o.paid ?? "";
@@ -32,6 +34,17 @@ test("an unpaid lead inside the window is nudged", () => {
   assert.equal(plan.candidates[0].rowNumber, 2, "rows[0] is sheet row 2, under the header");
   assert.equal(plan.candidates[0].phone, "9876543210");
   assert.equal(plan.candidates[0].ageMinutes, 90);
+});
+
+test("her leadId comes through, so the reminder can link straight to /complete-payment", () => {
+  const plan = planReminders({ rows: [row({ leadId: "quiz_1786012345000_xy9z8w" })], cols: COLS, now: NOW });
+  assert.equal(plan.candidates[0].leadId, "quiz_1786012345000_xy9z8w");
+});
+
+test("a missing leadId column (-1) reads as empty, not a crash", () => {
+  const cols: ReminderColumns = { ...COLS, leadId: -1 };
+  const plan = planReminders({ rows: [row({})], cols, now: NOW });
+  assert.equal(plan.candidates[0].leadId, "");
 });
 
 // ── the exclusions, one per rule ─────────────────────────────────────────────
