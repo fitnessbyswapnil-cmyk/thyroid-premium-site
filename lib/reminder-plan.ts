@@ -601,3 +601,163 @@ export function planBookingNudges(opts: {
 
   return { candidates, skipped, scanned: rows.length };
 }
+
+// ── Call reminders: fire relative to her SESSION time, not elapsed time ──────
+//
+// Every other planner here answers "how long since X happened". These answer
+// "how long until the call starts", which is a different shape: the anchor is
+// in the FUTURE and moves past us, so a job that misses its window must never
+// fire late — a "starts in one hour" message arriving after the call is worse
+// than no message at all.
+//
+// Session Date is written by the Cal.com → Sheets scenario, whose exact format
+// is not controlled by this codebase. parseSheetTime already tolerates ISO
+// strings, Sheets date serials and locale strings; anything it cannot read is
+// COUNTED and skipped rather than guessed at, so a format drift shows up as a
+// number in the dry run instead of as silently missing reminders.
+
+export type CallReminderColumns = {
+  name: number;
+  phone: number;
+  sessionDate: number;
+  /** Cancelled bookings must never be reminded. */
+  bookingStatus: number;
+  /** Per-stage stamp column, so 24h and 1h can never suppress each other. */
+  reminderSent: number;
+};
+
+export type CallReminderSkips = {
+  noSession: number;
+  unparseableTime: number;
+  cancelled: number;
+  alreadySent: number;
+  /** The call is further away than this stage's window. */
+  notYetDue: number;
+  /** The call is already too close, or has started. Never remind late. */
+  tooLate: number;
+  noPhone: number;
+  duplicatePhone: number;
+  overCap: number;
+};
+
+export type CallReminderCandidate = {
+  rowNumber: number;
+  name: string;
+  phone: string;
+  /** Epoch ms of her session, for formatting the time into the template. */
+  sessionAt: number;
+  hoursUntil: number;
+};
+
+export type CallReminderPlan = {
+  candidates: CallReminderCandidate[];
+  skipped: CallReminderSkips;
+  scanned: number;
+};
+
+export const CALL_REMINDER_LIMIT = 25;
+
+export function planCallReminders(opts: {
+  rows: string[][];
+  cols: CallReminderColumns;
+  now: number;
+  /** Fire once the call is this many hours away or nearer. */
+  withinHours: number;
+  /** Never fire once it is THIS near (or past). Stops the 24h stage firing
+   *  minutes before the call if its stamp somehow never landed. */
+  notWithinHours: number;
+  limit?: number;
+}): CallReminderPlan {
+  const { rows, cols, now, withinHours, notWithinHours, limit = CALL_REMINDER_LIMIT } = opts;
+
+  const skipped: CallReminderSkips = {
+    noSession: 0,
+    unparseableTime: 0,
+    cancelled: 0,
+    alreadySent: 0,
+    notYetDue: 0,
+    tooLate: 0,
+    noPhone: 0,
+    duplicatePhone: 0,
+    overCap: 0,
+  };
+
+  const claimedPhones = new Set<string>();
+  const eligible: CallReminderCandidate[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] ?? [];
+    const rowNumber = i + 2;
+
+    if (cell(row, cols.reminderSent)) {
+      skipped.alreadySent++;
+      continue;
+    }
+
+    // Any cancellation wording disqualifies her. Reminding someone about a
+    // call she cancelled reads as though nobody is paying attention.
+    if (/cancel/i.test(cell(row, cols.bookingStatus))) {
+      skipped.cancelled++;
+      continue;
+    }
+
+    const raw = cell(row, cols.sessionDate);
+    if (!raw) {
+      skipped.noSession++;
+      continue;
+    }
+    const sessionAt = parseSheetTime(raw);
+    if (sessionAt === null) {
+      skipped.unparseableTime++;
+      continue;
+    }
+
+    const phone = cell(row, cols.phone).replace(/\.0$/, "").replace(/\D/g, "");
+    if (phone.length < 10) {
+      skipped.noPhone++;
+      continue;
+    }
+
+    const hoursUntil = (sessionAt - now) / 3600000;
+    if (hoursUntil > withinHours) {
+      skipped.notYetDue++;
+      continue;
+    }
+    if (hoursUntil <= notWithinHours) {
+      skipped.tooLate++;
+      continue;
+    }
+
+    eligible.push({ rowNumber, name: cell(row, cols.name), phone, sessionAt, hoursUntil });
+  }
+
+  // Soonest call first: if the cap bites, the most urgent reminder still goes.
+  eligible.sort((a, b) => a.hoursUntil - b.hoursUntil);
+
+  const unique: CallReminderCandidate[] = [];
+  for (const c of eligible) {
+    const key = phoneKey(c.phone);
+    if (claimedPhones.has(key)) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+    claimedPhones.add(key);
+    unique.push(c);
+  }
+
+  const candidates = unique.slice(0, limit);
+  skipped.overCap = unique.length - candidates.length;
+
+  return { candidates, skipped, scanned: rows.length };
+}
+
+/** Her session time as she would read it, in IST. Templates take a display
+ *  string, not a timestamp. */
+export function formatSessionTimeIST(sessionAt: number): string {
+  return new Date(sessionAt).toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+}
