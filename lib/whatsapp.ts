@@ -255,9 +255,9 @@ export async function sendBookingConfirmation(phone: string, fullName: string): 
  * Manager. Sending an unapproved/nonexistent template name fails the whole
  * request — Meta doesn't partially send a template.
  */
-export async function sendPaymentReminderWithLink(phone: string, fullName: string, leadId: string): Promise<WhatsAppResult> {
+export async function sendPaymentReminderWithLink(phone: string, fullName: string, leadId: string, languageOverride?: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'payment_reminder_link', [firstName], undefined, leadId)
+  return sendWhatsAppTemplate(phone, 'payment_reminder_link', [firstName], languageOverride, leadId)
 }
 
 /**
