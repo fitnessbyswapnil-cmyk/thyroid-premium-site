@@ -12,12 +12,19 @@ This document plus the repo covers the backend, the automation, and the reasonin
 behind both. It does not cover everything about the business. Four things live
 elsewhere, and a session working only from this file will have blind spots.
 
-**The two handover PDFs.** `thyroid-business-handover.pdf` and
-`thyroid-meta-ads-whatsapp-strategy.pdf` describe the business model, the funnel
-from ad click to booked call, the tracking architecture, the ad creative strategy,
-and the copy rules (no em dashes, no "not X but Y", never invent client names or
-figures, "blocker" is proprietary vocabulary). They are NOT in this repo. Ask the
-owner to attach them. Nothing here replaces them.
+**The two handover documents — now IN this repo, read them.**
+`docs/business-handover.md` and `docs/meta-ads-whatsapp-strategy.md` describe the
+business model, the funnel from ad click to booked call, the tracking
+architecture, the ad creative strategy, and the copy rules (no em dashes, no
+"not X but Y", never invent client names or figures, "blocker" is proprietary
+vocabulary).
+
+They were originally PDFs handed to a session, and were subsequently **lost from
+the owner's machine** — transcribed into markdown on 2026-08-19 from a session
+that had read them in full, precisely so that cannot happen again. Treat them as
+authoritative for the business and the funnel; treat THIS file as authoritative
+wherever the two disagree about the automation, since the strategy doc's WhatsApp
+section predates the rebuild and is explicitly marked superseded.
 
 **PR #116 is OPEN and unmerged.** It adds a second, standalone 14-question quiz at
 `/quiz` plus `/api/quiz` — 10 files, ~1,640 lines, on branch
