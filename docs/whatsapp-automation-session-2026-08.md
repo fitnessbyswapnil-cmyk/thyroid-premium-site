@@ -1,12 +1,40 @@
 # WhatsApp automation build — session record, 17–19 Aug 2026
 
-Everything in this file is the state of the funnel automation **after** PRs #116–#132.
+Everything in this file is the state of the funnel automation **after** PRs #117–#133.
 It exists so a future session does not have to re-derive decisions, and does not
 re-make mistakes that were already made and fixed here.
 
-Read this alongside `AGENTS.md`. It does **not** replace the two handover PDFs
-(`thyroid-business-handover.pdf`, `thyroid-meta-ads-whatsapp-strategy.pdf`) —
-those still describe the business and the funnel. This describes what changed.
+---
+
+## 0. What this file does NOT cover — read this first
+
+This document plus the repo covers the backend, the automation, and the reasoning
+behind both. It does not cover everything about the business. Four things live
+elsewhere, and a session working only from this file will have blind spots.
+
+**The two handover PDFs.** `thyroid-business-handover.pdf` and
+`thyroid-meta-ads-whatsapp-strategy.pdf` describe the business model, the funnel
+from ad click to booked call, the tracking architecture, the ad creative strategy,
+and the copy rules (no em dashes, no "not X but Y", never invent client names or
+figures, "blocker" is proprietary vocabulary). They are NOT in this repo. Ask the
+owner to attach them. Nothing here replaces them.
+
+**PR #116 is OPEN and unmerged.** It adds a second, standalone 14-question quiz at
+`/quiz` plus `/api/quiz` — 10 files, ~1,640 lines, on branch
+`add-quiz-blocker-score-page`. It is fully built, typechecks, builds, and was
+verified in-browser, but `app/quiz/` does NOT exist on `main` and nothing links to
+it. The live quiz is the 7-question one at `/assessment`. Decide whether to merge
+or close it; leaving a large open PR is a trap for the next session, which will
+otherwise find two quiz implementations and not know which is real.
+
+**Meta Ads Manager state is not in code.** Campaign objective (Leads), conversion
+event (Schedule), budget, audience, the six creatives A1–A6, and the account
+spending-limit warning all live in Ads Manager only.
+
+**WhatsApp template contents are not in code.** The code knows template names and
+how many body params each takes. The actual body copy and button URLs live in
+WhatsApp Manager on WABA `976081968452524`. If a button URL is wrong, the fix is
+there, not here.
 
 ---
 
