@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
-import { pushDL, trackInitiateCheckout } from "@/app/lib/analytics";
+import { pushDL, trackInitiateCheckout, trackSchedule } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
@@ -48,6 +48,7 @@ export default function ConfirmSessionClient() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const cashfreeRef = useRef<Awaited<ReturnType<typeof import("@cashfreepayments/cashfree-js")["load"]>> | null>(null);
+  const scheduleFiredRef = useRef(false);
 
   // Resolve the Cal.com booking into a lead, and warm the checkout SDK.
   useEffect(() => {
@@ -82,6 +83,55 @@ export default function ConfirmSessionClient() {
               ...(data.name && { first_name: data.name.split(/\s+/)[0] }),
               ...(data.phone && { phone: data.phone }),
             });
+
+            // ── Schedule ──────────────────────────────────────────────────────
+            // Fired here, at booking time. /booking-confirmed also fires Schedule
+            // but belongs to the pay-FIRST flow, and pay-at-end never lands on
+            // it — so the live funnel had no browser Schedule at all, and the ad
+            // set optimises for exactly this event.
+            //
+            // event_id is schedule_<uid>, identical to the one /api/cal-webhook
+            // sends, so Meta collapses the two legs into a single Schedule
+            // rather than counting both.
+            //
+            // It also decouples Schedule from Cal.com's confirmation step. The
+            // webhook only acts on BOOKING_CREATED, and with "Requires
+            // confirmation" switched on Cal.com defers that trigger until the
+            // booking is accepted — often hours later, sometimes never. This leg
+            // fires the moment she has a held slot, which is the moment the
+            // campaign is trying to buy.
+            //
+            // Guarded per uid across remounts so a refresh cannot re-fire it.
+            if (!scheduleFiredRef.current) {
+              const key = `schedule_fired_${uid}`;
+              let already = false;
+              try { already = !!sessionStorage.getItem(key); } catch { /* storage unavailable */ }
+              if (!already) {
+                scheduleFiredRef.current = true;
+                try { sessionStorage.setItem(key, "1"); } catch { /* non-critical */ }
+                const when = new Date(data.startTime);
+                const dated = !Number.isNaN(when.getTime());
+                trackSchedule(
+                  {
+                    ...(data.name && { name: data.name }),
+                    ...(dated && {
+                      date: when.toLocaleDateString("en-IN", {
+                        weekday: "long", day: "numeric", month: "long", year: "numeric",
+                      }),
+                      time: when.toLocaleTimeString("en-IN", {
+                        hour: "2-digit", minute: "2-digit", hour12: true,
+                      }),
+                    }),
+                  },
+                  `schedule_${uid}`,
+                  {
+                    ...(data.name && { first_name: data.name.split(/\s+/)[0] }),
+                    ...(data.phone && { phone: data.phone }),
+                  },
+                );
+              }
+            }
+
             pushDL({ event: "booking_awaiting_payment" });
             return;
           }
