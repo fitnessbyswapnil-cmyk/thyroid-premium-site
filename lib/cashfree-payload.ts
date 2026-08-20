@@ -104,6 +104,51 @@ export function normalize(body: Json): { source: PaymentSource | 'UNKNOWN'; stat
     }
   }
 
-  // FORM — shape unconfirmed. Log it rather than guess at a payment.
-  return { source, status: str(obj(data.payment).payment_status) || str(data.status), payment: null }
+  // FORM — the Cashfree hosted form (payments.cashfree.com/forms?code=...).
+  //
+  // This used to return payment:null because the payload shape was never
+  // confirmed against a live event, so a FORM payment stamped nothing, fired no
+  // booking_confirmation and produced no Purchase. That made the hosted form
+  // unusable as a payment path.
+  //
+  // It is now handled, but defensively: the field paths below are tried in
+  // order and we only act when a SUCCESS/PAID status, a reference and an amount
+  // are ALL present. If the real shape differs from every guess here we return
+  // payment:null exactly as before, so this can only improve on the old
+  // behaviour, never regress it.
+  //
+  // A FORM reference is not thyroid_<leadId>_<ts>, so parseLeadId() yields ''
+  // and the webhook falls through to its phone match — which is why the
+  // customer phone below is the load-bearing field, not the reference.
+  {
+    const pay = obj(data.payment)
+    const status =
+      str(pay.payment_status) || str(data.status) || str(data.form_status) || str(data.payment_status)
+    const ok = status.toUpperCase() === 'SUCCESS' || status.toUpperCase() === 'PAID'
+    const refId =
+      str(pay.cf_payment_id) ||
+      str(data.cf_payment_id) ||
+      str(data.transaction_id) ||
+      str(data.form_payment_id) ||
+      (str(data.form_id) && str(cust.customer_phone)
+        ? `CFForm_${str(data.form_id)}_${str(cust.customer_phone)}`
+        : '')
+    const amount = num(pay.payment_amount, num(data.amount, num(data.payment_amount)))
+
+    if (!ok || !refId || amount <= 0) {
+      return { source, status, payment: null }
+    }
+    return {
+      source,
+      status,
+      payment: {
+        source,
+        ...common,
+        refId,
+        amount,
+        currency: str(pay.payment_currency) || str(data.currency) || 'INR',
+        tags: obj(data.form_tags ?? data.order_tags) as Record<string, string>,
+      },
+    }
+  }
 }
