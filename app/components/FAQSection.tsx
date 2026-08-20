@@ -15,8 +15,8 @@ const faqs = [
     a: "I review your intake before we speak. In 60 minutes you'll understand exactly why the fat isn't moving, what your thyroid actually needs, and what reversing it involves. You get a written summary in 24 hours.",
   },
   {
-    q: 'Is the Thyroid Score assessment free?',
-    a: "Yes. The 60-second quiz and your score are completely free. Decoding what your score actually means for you happens on the private 1-on-1 call.",
+    q: 'Why does the session cost ₹299?',
+    a: "So the woman in that slot actually turns up, and so I arrive having read your answers properly. It is adjusted against your plan if you decide to work with me.",
   },
   {
     q: 'Why is there a booking amount for the call?',
@@ -107,7 +107,7 @@ function AccordionItem({
     <div
       className="border-b border-[var(--b-soft)] last:border-b-0"
       style={{
-        background: isOpen ? 'rgba(11,143,128,0.05)' : 'transparent',
+        background: isOpen ? 'rgba(163, 114, 32,0.05)' : 'transparent',
         transition: 'background 200ms ease',
       }}
     >
@@ -158,7 +158,7 @@ export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <section className="cv-auto section-pad relative bg-[var(--bg-page)]">
+    <section className="cv-auto section-pad relative bg-[var(--bg-section)]">
       <div className="container-narrow relative z-10">
         <SectionHeader
           label="FAQs"
@@ -191,10 +191,10 @@ export default function FAQSection() {
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
-            label="Find My Thyroid Blocker"
-            sublabel="60-second quiz · then your private ₹299 consultation"
+            label="Schedule My 1-1 Thyroid Call"
+            sublabel="60 minutes, one to one with Swapnil · ₹299"
             trust="I personally review every quiz result before the call. Know your blocker, or your ₹299 back."
-            ariaLabel="Find my thyroid blocker with the free 60-second quiz"
+            ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="faq"
           />
         </div>

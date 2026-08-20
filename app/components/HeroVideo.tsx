@@ -175,7 +175,7 @@ export default function HeroVideo() {
         style={{
           background: "#111114",
           boxShadow:
-            "0 0 0 1px rgba(43,38,32,0.05), 0 24px 70px -20px rgba(43,38,32,0.28)",
+            "0 0 0 1px rgba(36, 31, 26,0.05), 0 24px 70px -20px rgba(36, 31, 26,0.28)",
         }}
       >
         <div className="relative aspect-video">
@@ -205,7 +205,7 @@ export default function HeroVideo() {
                   className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full outline-offset-4 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p400)]"
                   style={{
                     background: "var(--p400)",
-                    boxShadow: "0 10px 30px rgba(10,107,96,0.45)",
+                    boxShadow: "0 10px 30px rgba(150, 102, 26,0.45)",
                     transition: "transform 240ms var(--ease-cta)",
                   }}
                 >

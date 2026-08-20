@@ -40,15 +40,15 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 import { checkoutRedirectTarget } from "@/lib/checkout-target";
 
 // ── palette (matches the site + admin dashboard system) ─────────────────────
-const BG = "#faf6ef";
+const BG = "#ffffff";
 const CARD = "#ffffff";
-const CARD2 = "#f4eee1";
-const GRID = "#e7dfd2";
-const INK1 = "#2b2620";
-const INK2 = "#4a443b";
+const CARD2 = "#fdf6e4";
+const GRID = "#ede7dd";
+const INK1 = "#241f1a";
+const INK2 = "#423b33";
 const MUTED = "#857c6d";
-const PURPLE = "#0a6b60";
-const PURPLE_L = "#0b8f80";
+const PURPLE = "#96661a";
+const PURPLE_L = "#a37220";
 const GOOD = "#047857";
 const WARN = "#b45309";
 
@@ -205,12 +205,12 @@ function SegmentedRing({ size, val, answered }: { size: "sm" | "lg"; val: number
           <circle
             key={i}
             cx={center} cy={center} r={r} fill="none"
-            stroke={on ? `url(#${cx})` : "#e0d7c6"}
+            stroke={on ? `url(#${cx})` : "#ddd4c6"}
             strokeWidth={size === "sm" ? 4 : 8}
             strokeDasharray={`${dash.toFixed(2)} ${(C - dash).toFixed(2)}`}
             strokeLinecap="round"
             transform={`rotate(${rot} ${center} ${center})`}
-            style={{ filter: on ? "drop-shadow(0 0 5px rgba(11,143,128,0.45))" : "none", transition: "stroke 300ms ease" }}
+            style={{ filter: on ? "drop-shadow(0 0 5px rgba(163, 114, 32,0.45))" : "none", transition: "stroke 300ms ease" }}
           />
         );
       })}
@@ -251,7 +251,7 @@ function ScoreEnginePanel({
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div ref={ringBoxRef} style={{ position: "relative", flexShrink: 0 }}>
             <SegmentedRing size="sm" val={ringVal} answered={answered} />
-            {sweepOn && <div style={{ position: "absolute", inset: -4, borderRadius: "50%", boxShadow: `0 0 24px 6px rgba(11,143,128,0.5)`, animation: "engineBloom 900ms ease-out" }} />}
+            {sweepOn && <div style={{ position: "absolute", inset: -4, borderRadius: "50%", boxShadow: `0 0 24px 6px rgba(163, 114, 32,0.5)`, animation: "engineBloom 900ms ease-out" }} />}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 9, letterSpacing: "0.12em", color: MUTED, textTransform: "uppercase" }}>Thyroid Score · Live</p>
@@ -278,7 +278,7 @@ function ScoreEnginePanel({
         <p style={{ fontSize: 10.5, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase", marginBottom: 18 }}>Your Thyroid Score · Live</p>
         <div ref={ringBoxRef} style={{ position: "relative", display: "inline-block" }}>
           <SegmentedRing size="lg" val={ringVal} answered={answered} />
-          {sweepOn && <div style={{ position: "absolute", inset: -8, borderRadius: "50%", boxShadow: `0 0 40px 10px rgba(11,143,128,0.5)`, animation: "engineBloom 900ms ease-out" }} />}
+          {sweepOn && <div style={{ position: "absolute", inset: -8, borderRadius: "50%", boxShadow: `0 0 40px 10px rgba(163, 114, 32,0.5)`, animation: "engineBloom 900ms ease-out" }} />}
         </div>
         <p style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>out of 100</p>
         <div style={{ minHeight: 44, marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -756,7 +756,7 @@ export default function QuizFunnel() {
           </p>
           <button
             onClick={() => { ringTargetRef.current = 0; setScreen("quiz"); setQ(0); window.scrollTo(0, 0); }}
-            style={{ width: "100%", padding: "18px 0", borderRadius: 16, background: `linear-gradient(135deg, ${PURPLE}, #085e54)`, border: "none", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 14px 40px rgba(11,143,128,0.35)" }}
+            style={{ width: "100%", padding: "18px 0", borderRadius: 16, background: `linear-gradient(135deg, ${PURPLE}, #8a5d12)`, border: "none", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 14px 40px rgba(163, 114, 32,0.35)" }}
           >
             Start My Assessment
           </button>
@@ -797,7 +797,7 @@ export default function QuizFunnel() {
               const done = proc >= b, active = proc >= a && proc < b;
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, opacity: done || active ? 1 : 0.4 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${done || active ? PURPLE : "#e0d7c6"}`, background: done ? PURPLE : "transparent", flexShrink: 0, display: "grid", placeItems: "center" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${done || active ? PURPLE : "#ddd4c6"}`, background: done ? PURPLE : "transparent", flexShrink: 0, display: "grid", placeItems: "center" }}>
                     {done && <span style={{ color: "#fff", fontSize: 10 }}>✓</span>}
                   </div>
                   <p style={{ fontSize: 13, color: active ? INK1 : done ? INK2 : MUTED }}>{text}</p>
@@ -830,10 +830,10 @@ export default function QuizFunnel() {
               <input
                 key={k} type={type} placeholder={ph} value={form[k]}
                 onChange={(ev) => setForm((f) => ({ ...f, [k]: ev.target.value }))}
-                style={{ width: "100%", padding: "13px 14px", borderRadius: 12, background: "#ffffff", border: `1px solid ${errs[k] ? "#c2453a" : "#d9d0bf"}`, color: INK1, fontSize: 14, outline: "none" }}
+                style={{ width: "100%", padding: "13px 14px", borderRadius: 12, background: "#ffffff", border: `1px solid ${errs[k] ? "#b8322b" : "#d9d0bf"}`, color: INK1, fontSize: 14, outline: "none" }}
               />
             ))}
-            {formErr && <p style={{ fontSize: 12, color: "#c2453a" }}>{formErr}</p>}
+            {formErr && <p style={{ fontSize: 12, color: "#b8322b" }}>{formErr}</p>}
             <button
               onClick={submit} disabled={submitting}
               style={{ marginTop: 4, padding: "16px 0", borderRadius: 14, background: PURPLE, border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}
@@ -936,7 +936,7 @@ export default function QuizFunnel() {
             {bars.map(([label, v]) => <MicroBar key={label} label={label} val={v} />)}
           </div>
 
-          <div style={{ marginTop: 22, borderRadius: 22, border: `1px solid ${GRID}`, background: `linear-gradient(160deg, rgba(11,143,128,0.10), ${CARD2})`, padding: 24 }}>
+          <div style={{ marginTop: 22, borderRadius: 22, border: `1px solid ${GRID}`, background: `linear-gradient(160deg, rgba(163, 114, 32,0.10), ${CARD2})`, padding: 24 }}>
             <p style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PURPLE_L, textTransform: "uppercase", fontWeight: 800, marginBottom: 6 }}>The 60-minute thyroid blocker call</p>
             <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 14 }}>₹{SESSION_PRICE}, credited against your plan</h3>
             <div style={{ display: "grid", gap: 9, marginBottom: 16 }}>
@@ -958,12 +958,12 @@ export default function QuizFunnel() {
             <button
               onClick={payNow}
               disabled={payLoading}
-              style={{ width: "100%", padding: "17px 0", borderRadius: 14, background: `linear-gradient(135deg, ${PURPLE}, #085e54)`, border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: payLoading ? "default" : "pointer", boxShadow: "0 14px 36px rgba(11,143,128,0.32)", opacity: payLoading ? 0.75 : 1 }}
+              style={{ width: "100%", padding: "17px 0", borderRadius: 14, background: `linear-gradient(135deg, ${PURPLE}, #8a5d12)`, border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: payLoading ? "default" : "pointer", boxShadow: "0 14px 36px rgba(163, 114, 32,0.32)", opacity: payLoading ? 0.75 : 1 }}
             >
               {payLoading ? "Opening secure checkout…" : `Book My Call · ₹${SESSION_PRICE}`}
             </button>
             {payError && (
-              <p style={{ fontSize: 12, color: "#c2453a", textAlign: "center", marginTop: 10 }}>{payError}</p>
+              <p style={{ fontSize: 12, color: "#b8322b", textAlign: "center", marginTop: 10 }}>{payError}</p>
             )}
             <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 10 }}>Pay directly with GPay, PhonePe, Paytm or card. Secure Cashfree checkout, then pick your call time.</p>
 
@@ -1031,7 +1031,7 @@ export default function QuizFunnel() {
                 <div key={label} style={{ display: "grid", gridTemplateColumns: "90px 1fr 36px", gap: 8, alignItems: "center" }}>
                   <span style={{ fontSize: 11, color: i === herBand ? PURPLE_L : MUTED }}>{label}</span>
                   <div style={{ height: 8, borderRadius: 999, background: GRID, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${bandPcts[i]}%`, background: i === herBand ? `linear-gradient(90deg, ${PURPLE_L}, ${PURPLE})` : "#e0d7c6", transition: `width 620ms cubic-bezier(.22,.61,.36,1) ${i * 80}ms` }} />
+                    <div style={{ height: "100%", width: `${bandPcts[i]}%`, background: i === herBand ? `linear-gradient(90deg, ${PURPLE_L}, ${PURPLE})` : "#ddd4c6", transition: `width 620ms cubic-bezier(.22,.61,.36,1) ${i * 80}ms` }} />
                   </div>
                   <span style={{ fontSize: 11, color: i === herBand ? PURPLE_L : MUTED, textAlign: "right" }}>{bandPcts[i]}%</span>
                 </div>
@@ -1052,7 +1052,7 @@ export default function QuizFunnel() {
               <button
                 key={label}
                 onClick={(e) => { if (isMulti) toggleMulti(q, i); else selectSingle(q, i); }}
-                style={{ textAlign: "left", padding: "16px 18px", borderRadius: 14, background: s ? "rgba(11,143,128,0.10)" : CARD, border: `1px solid ${s ? PURPLE : GRID}`, color: s ? "#085e54" : INK2, fontSize: 14.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: s ? "0 0 0 3px rgba(11,143,128,0.15)" : "none", transition: "all 150ms ease" }}
+                style={{ textAlign: "left", padding: "16px 18px", borderRadius: 14, background: s ? "rgba(163, 114, 32,0.10)" : CARD, border: `1px solid ${s ? PURPLE : GRID}`, color: s ? "#8a5d12" : INK2, fontSize: 14.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: s ? "0 0 0 3px rgba(163, 114, 32,0.15)" : "none", transition: "all 150ms ease" }}
               >
                 {label}
                 {isMulti && <span style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${s ? PURPLE : "#d9d0bf"}`, background: s ? PURPLE : "transparent", flexShrink: 0, display: "grid", placeItems: "center", fontSize: 11, color: "#fff" }}>{s ? "✓" : ""}</span>}
@@ -1060,7 +1060,7 @@ export default function QuizFunnel() {
             );
           })}
           {isMulti && (
-            <button onClick={continueMulti} disabled={mCount === 0} style={{ marginTop: 6, padding: "15px 0", borderRadius: 14, background: mCount ? PURPLE : "#e0d7c6", border: "none", color: mCount ? "#fff" : "#9c9384", fontSize: 14.5, fontWeight: 700, cursor: mCount ? "pointer" : "default" }}>
+            <button onClick={continueMulti} disabled={mCount === 0} style={{ marginTop: 6, padding: "15px 0", borderRadius: 14, background: mCount ? PURPLE : "#ddd4c6", border: "none", color: mCount ? "#fff" : "#9c9384", fontSize: 14.5, fontWeight: 700, cursor: mCount ? "pointer" : "default" }}>
               {mCount ? `Continue · ${mCount} selected` : "Continue"}
             </button>
           )}

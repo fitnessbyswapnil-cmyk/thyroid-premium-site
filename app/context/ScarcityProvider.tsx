@@ -20,12 +20,15 @@ const ScarcityContext = createContext<ScarcityContextValue | null>(null);
 const SCARCITY_LINE = "Only a few sessions open this week";
 const SCARCITY_SHORT = "Limited weekly intake";
 
-// QUIZ-FIRST funnel (owner decision): every CTA sends her into the free
-// Thyroid Score assessment (/assessment) FIRST — never straight to payment.
-// She sees her score and active blockers, THEN the result screen's own CTA
-// opens the Rs 299 embedded Cashfree checkout (QuizFunnel.tsx payNow) —
-// fully on-domain, prefilled from the name/phone/email already captured at
-// the quiz unlock step, so nothing is asked twice.
+// SCHEDULE-FIRST funnel (owner decision, 20 Aug 2026): every CTA sends her to
+// /schedule — three fields, then the same Rs 299 embedded Cashfree checkout,
+// then Cal.com for the slot and the qualifying questions.
+//
+// This replaces the quiz-first order. The quiz asked 7 questions at the point
+// of LOWEST commitment and produced 0 payments on Rs 5,637 of spend; the
+// qualifying questions now sit on the Cal.com form AFTER payment, where she is
+// already invested. /assessment still works and is untouched, so the old flow
+// stays available for a side-by-side test.
 //
 // CONSULTATION_FORM_URL stays exported as the LAST-RESORT fallback the quiz
 // and /book payment flows fall back to if the embedded SDK checkout can't
@@ -35,7 +38,7 @@ export const CONSULTATION_FORM_URL =
 
 export function ScarcityProvider({ children }: { children: ReactNode }) {
   const goToCta = useCallback(() => {
-    window.location.href = "/assessment";
+    window.location.href = "/schedule";
   }, []);
 
   const value: ScarcityContextValue = {

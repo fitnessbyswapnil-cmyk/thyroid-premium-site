@@ -59,8 +59,8 @@ export default function FitFilter() {
             </ul>
           </div>
 
-          <div className="glass-card-sm p-6" style={{ borderColor: "var(--coral-border)" }}>
-            <p className="mb-4 text-[0.72rem] font-bold uppercase tracking-[0.16em] text-[var(--coral)]">
+          <div className="glass-card-sm p-6" style={{ borderColor: "var(--border-strong)" }}>
+            <p className="mb-4 text-[0.72rem] font-bold uppercase tracking-[0.16em] text-[var(--t3)]">
               This is NOT for you if
             </p>
             <ul className="space-y-3">

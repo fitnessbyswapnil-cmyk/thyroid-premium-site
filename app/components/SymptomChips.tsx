@@ -21,7 +21,7 @@ const SYMPTOMS = [
 export default function SymptomChips() {
   return (
     <section
-      className="section-pad relative bg-[var(--bg-page)]"
+      className="section-pad relative bg-[var(--bg-section)]"
       aria-labelledby="symptoms-heading"
     >
       <div className="container-narrow relative z-10">
@@ -43,11 +43,11 @@ export default function SymptomChips() {
           {SYMPTOMS.map((s) => (
             <li
               key={s}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--coral-border)] bg-white px-3.5 py-2 text-[13.5px] font-medium text-[var(--t2)]"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-3.5 py-2 text-[13.5px] font-medium text-[var(--t2)]"
             >
               <span
                 aria-hidden="true"
-                className="flex h-[15px] w-[15px] items-center justify-center rounded-[4px] border-[1.5px] border-[var(--coral)] text-[10px] font-bold text-[var(--coral)]"
+                className="flex h-[15px] w-[15px] items-center justify-center rounded-[4px] bg-[var(--yellow-mark)] text-[10px] font-bold text-[var(--ink-on-yellow)]"
               >
                 ✓
               </span>
@@ -70,10 +70,10 @@ export default function SymptomChips() {
           variant="primary"
           className="mx-auto mt-8 max-w-sm"
           buttonClassName="w-full"
-          label="Find My Thyroid Blocker"
-          sublabel="60-second quiz · then your private ₹299 consultation"
+          label="Schedule My 1-1 Thyroid Call"
+          sublabel="Find what is blocking your thyroid fat loss · ₹299"
           trust="Leave the call knowing your exact blocker, or your ₹299 back."
-          ariaLabel="Find my thyroid blocker with the free 60-second quiz"
+          ariaLabel="Schedule my 1-1 thyroid fat loss session"
           location="symptoms"
         />
       </div>

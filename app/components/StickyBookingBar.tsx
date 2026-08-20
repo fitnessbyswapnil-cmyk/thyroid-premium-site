@@ -59,20 +59,20 @@ export default function StickyBookingBar() {
         className="flex w-full max-w-[420px] items-center gap-3 rounded-[1.5rem] px-4 py-3"
         style={{
           background: "rgba(255,255,255,0.96)",
-          border: "1px solid #e0d7c6",
+          border: "1px solid #ddd4c6",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
           boxShadow:
-            "0 12px 40px rgba(43,38,32,0.18), 0 0 0 1px rgba(11,143,128,0.06)",
+            "0 12px 40px rgba(36, 31, 26,0.18), 0 0 0 1px rgba(163, 114, 32,0.06)",
         }}
       >
         {/* Text */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-[12px] font-semibold leading-tight tracking-[-0.01em] text-[var(--t1)]">
-            Your Thyroid Score
+            Your 1-1 thyroid session
           </p>
           <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">
-            60-second quiz · Personally reviewed by Swapnil
+            60 minutes with Swapnil · ₹299
           </p>
         </div>
 
@@ -80,10 +80,10 @@ export default function StickyBookingBar() {
         <button
           type="button"
           onClick={() => { trackCtaClick("sticky_bar"); goToCta("sticky_bar"); }}
-          aria-label="Find my thyroid blocker with the free 60-second quiz"
+          aria-label="Schedule my 1-1 thyroid fat loss session"
           className="btn-sticky shrink-0"
         >
-          Find My Blocker
+          Schedule Call
         </button>
       </div>
     </div>

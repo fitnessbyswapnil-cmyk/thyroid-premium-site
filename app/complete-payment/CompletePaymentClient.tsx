@@ -224,10 +224,10 @@ export default function CompletePaymentClient() {
           <div className="glass-card-sm max-w-[420px] p-8">
             <p className="text-[1.05rem] font-bold">We couldn&apos;t find that session.</p>
             <p className="mt-2 text-[0.9rem] text-[var(--t3)]">
-              Take the 60-second quiz to get your Thyroid Score and continue from there.
+              Start again and pick a slot for your 1-1 thyroid session.
             </p>
-            <a href="/assessment" className="cta-button mt-6 inline-flex w-auto px-8">
-              Find My Thyroid Blocker
+            <a href="/schedule" className="cta-button mt-6 inline-flex w-auto px-8">
+              Schedule My 1-1 Thyroid Call
             </a>
           </div>
         )}

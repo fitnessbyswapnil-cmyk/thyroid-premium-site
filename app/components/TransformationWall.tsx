@@ -94,7 +94,7 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
             {entry.stat}
           </span>
         </div>
-        <p className="mt-1.5 text-[12.5px] font-semibold leading-[1.5] text-[var(--coral)]">
+        <p className="mt-1.5 text-[12.5px] font-semibold leading-[1.5] text-[var(--t2)]">
           {entry.story}
         </p>
         {entry.quote ? (

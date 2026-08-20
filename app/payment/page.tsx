@@ -65,7 +65,7 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] text-[var(--t1)] antialiased">
       {/* Header */}
-      <header className="border-b border-[#e7dfd2] px-6 py-5 text-center">
+      <header className="border-b border-[#ede7dd] px-6 py-5 text-center">
         <p className="font-black tracking-[-0.02em]">Swapnil Umbarkar</p>
         <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[var(--t4)]">
           ACE &amp; INFS Certified Thyroid Coach
@@ -110,12 +110,12 @@ export default function PaymentPage() {
       </main>
 
       {/* Real client proof */}
-      <section className="border-y border-[#e7dfd2] bg-[var(--bg-section)] py-12" aria-labelledby="proof-heading">
+      <section className="border-y border-[#ede7dd] bg-[var(--bg-section)] py-12" aria-labelledby="proof-heading">
         <div className="container-narrow">
           <h2 id="proof-heading" className="section-label text-center">Real client results</h2>
           <ul className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3" role="list">
             {PROOF.map((p) => (
-              <li key={p.name} className="overflow-hidden rounded-2xl border border-[#e7dfd2] bg-white">
+              <li key={p.name} className="overflow-hidden rounded-2xl border border-[#ede7dd] bg-white">
                 <div className="relative aspect-[3/4] w-full">
                   <Image
                     src={p.image}
@@ -126,7 +126,7 @@ export default function PaymentPage() {
                   />
                 </div>
                 <div className="px-3 py-2.5">
-                  <p className="text-[12px] font-semibold text-[#2b2620]">{p.name}</p>
+                  <p className="text-[12px] font-semibold text-[#241f1a]">{p.name}</p>
                   <p className="mt-0.5 text-[11px] leading-snug" style={{ color: GOLD }}>{p.line}</p>
                 </div>
               </li>
@@ -138,7 +138,7 @@ export default function PaymentPage() {
       <main className="container-narrow">
         {/* Payment panel */}
         <section className="py-14" aria-labelledby="enroll-heading">
-          <div className="mx-auto max-w-[460px] rounded-[1.75rem] border border-[var(--p-border)] bg-[var(--bg-elevated)] p-7 shadow-[0_24px_70px_rgba(43,38,32,0.12)] sm:p-9">
+          <div className="mx-auto max-w-[460px] rounded-[1.75rem] border border-[var(--p-border)] bg-[var(--bg-elevated)] p-7 shadow-[0_24px_70px_rgba(36, 31, 26,0.12)] sm:p-9">
             <h2 id="enroll-heading" className="text-center text-[1.3rem] font-black leading-snug tracking-[-0.02em]">
               Secure your place
             </h2>
@@ -161,7 +161,7 @@ export default function PaymentPage() {
               Secured by Cashfree · UPI · Cards · Net-banking · EMI · 256-bit encrypted
             </p>
 
-            <ol className="mt-7 space-y-2.5 border-t border-[#e7dfd2] pt-6">
+            <ol className="mt-7 space-y-2.5 border-t border-[#ede7dd] pt-6">
               {["Complete payment", "Instant app access + onboarding", "We schedule your consultation call"].map((s, i) => (
                 <li key={s} className="flex items-center gap-3 text-[0.88rem] text-[var(--t3)]">
                   <span
@@ -183,8 +183,8 @@ export default function PaymentPage() {
           <h2 id="faq-heading" className="section-label text-center">Questions</h2>
           <div className="mx-auto mt-5 max-w-[34rem] space-y-2.5">
             {FAQS.map((f) => (
-              <details key={f.q} className="group rounded-xl border border-[#e7dfd2] bg-white px-4 py-1">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-3.5 text-[0.9rem] font-semibold text-[#2b2620] [&::-webkit-details-marker]:hidden">
+              <details key={f.q} className="group rounded-xl border border-[#ede7dd] bg-white px-4 py-1">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-3.5 text-[0.9rem] font-semibold text-[#241f1a] [&::-webkit-details-marker]:hidden">
                   {f.q}
                   <span aria-hidden="true" className="text-[var(--p400)] transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none">+</span>
                 </summary>
@@ -196,7 +196,7 @@ export default function PaymentPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#e7dfd2] px-6 py-10 text-center">
+      <footer className="border-t border-[#ede7dd] px-6 py-10 text-center">
         <p className="text-[0.8rem] text-[var(--t3)]">@heal_thyroid_with_swapnil · swapnilumbarkarfitness.in</p>
         <p className="mx-auto mt-4 max-w-[48ch] text-[11px] leading-relaxed text-[var(--t5)]">
           A nutrition and lifestyle coaching program, not medical treatment. Always

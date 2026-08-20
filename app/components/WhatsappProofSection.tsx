@@ -197,8 +197,8 @@ const stagger = {
 // the rest of the page's teal system.
 const ACCENT = 'var(--p500)'
 const ACCENT_LIGHT = 'var(--p300)'
-const ACCENT_DIM = 'rgba(11,143,128,0.28)'
-const ACCENT_GLOW = 'rgba(11,143,128,0.1)'
+const ACCENT_DIM = 'rgba(163, 114, 32,0.28)'
+const ACCENT_GLOW = 'rgba(163, 114, 32,0.1)'
 
 // ── FeaturedStoryCard ─────────────────────────────────────────────────────────
 
@@ -214,12 +214,12 @@ function FeaturedStoryCard({
       className="overflow-hidden rounded-[28px]"
       style={{
         border: featured
-          ? '1px solid rgba(11,143,128,0.4)'
-          : '1px solid #e7dfd2',
+          ? '1px solid rgba(163, 114, 32,0.4)'
+          : '1px solid #ede7dd',
         background: '#ffffff',
         boxShadow: featured
-          ? '0 0 0 1px rgba(11,143,128,0.08), 0 20px 50px rgba(43,38,32,0.12)'
-          : '0 1px 2px rgba(43,38,32,0.04), 0 20px 50px rgba(43,38,32,0.08)',
+          ? '0 0 0 1px rgba(163, 114, 32,0.08), 0 20px 50px rgba(36, 31, 26,0.12)'
+          : '0 1px 2px rgba(36, 31, 26,0.04), 0 20px 50px rgba(36, 31, 26,0.08)',
       }}
     >
       <div className="grid sm:grid-cols-[180px_1fr]">
@@ -237,7 +237,7 @@ function FeaturedStoryCard({
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'linear-gradient(to top, rgba(43,38,32,0.3) 0%, transparent 40%)',
+                'linear-gradient(to top, rgba(36, 31, 26,0.3) 0%, transparent 40%)',
             }}
           />
         </div>
@@ -297,13 +297,13 @@ function ProofCard({
         width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
         flexShrink: 0,
         borderRadius: '28px',
-        border: '1px solid #e7dfd2',
+        border: '1px solid #ede7dd',
         background: '#ffffff',
         // One shadow, not two stacked 60/120px blurs — blur radius is the
         // single most expensive thing to composite; ~half the paint cost per
         // card. Hover animates transform ONLY (GPU-cheap), never box-shadow.
         boxShadow:
-          '0 1px 2px rgba(43,38,32,0.04), 0 26px 54px -14px rgba(43,38,32,0.12)',
+          '0 1px 2px rgba(36, 31, 26,0.04), 0 26px 54px -14px rgba(36, 31, 26,0.12)',
         transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
       onMouseEnter={(e) => {
@@ -354,10 +354,10 @@ function ProofCard({
         style={{
           aspectRatio: '9 / 15',
           borderRadius: '18px',
-          background: '#f4eee1',
-          border: '1px solid #e7dfd2',
+          background: '#fdf6e4',
+          border: '1px solid #ede7dd',
           boxShadow:
-            'inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 20px rgba(43,38,32,0.08)',
+            'inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 20px rgba(36, 31, 26,0.08)',
         }}
       >
         <Image
@@ -381,7 +381,7 @@ function ProofCard({
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black"
             style={{
               background: 'var(--p400)',
-              boxShadow: '0 0 0 2px rgba(11,143,128,0.18), 0 2px 8px rgba(11,143,128,0.25)',
+              boxShadow: '0 0 0 2px rgba(163, 114, 32,0.18), 0 2px 8px rgba(163, 114, 32,0.25)',
               color: '#fff',
             }}
             aria-hidden="true"
@@ -404,9 +404,12 @@ function ProofCard({
 
 export default function WhatsappProofSection() {
   return (
+    // White is mandatory here: WhatsApp green against a yellow wash plus a red
+    // CTA makes a red-yellow-green traffic light, on the calmest section of the
+    // page. Keep yellow at least 32px clear of every screenshot.
     <section
       className="cv-auto section-pad relative overflow-hidden"
-      style={{ background: 'var(--bg-section)' }}
+      style={{ background: 'var(--bg-page)' }}
       aria-labelledby="whatsapp-proof-heading"
     >
       {/* ── Ambient background glows ──────────────────────────────────────── */}
@@ -414,21 +417,21 @@ export default function WhatsappProofSection() {
         <div
           className="absolute left-1/2 top-[-6%] h-[min(70vw,420px)] w-[min(70vw,420px)] -translate-x-1/2 rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(11,143,128,0.05) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(163, 114, 32,0.05) 0%, transparent 70%)`,
             filter: 'blur(100px)',
           }}
         />
         <div
           className="absolute left-[8%] top-[30%] h-[260px] w-[260px] rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(194,69,58,0.04) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(184, 50, 43,0.04) 0%, transparent 70%)`,
             filter: 'blur(80px)',
           }}
         />
         <div
           className="absolute right-[6%] bottom-[14%] h-[240px] w-[240px] rounded-full"
           style={{
-            background: `radial-gradient(circle, rgba(11,143,128,0.04) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, rgba(163, 114, 32,0.04) 0%, transparent 70%)`,
             filter: 'blur(70px)',
           }}
         />
@@ -509,10 +512,10 @@ export default function WhatsappProofSection() {
             variant="primary"
             className="mx-auto mt-12 max-w-sm"
             buttonClassName="w-full"
-            label="Find My Thyroid Blocker"
-            sublabel="60-second quiz · then your private ₹299 consultation"
+            label="Schedule My 1-1 Thyroid Call"
+            sublabel="₹299, adjusted against your plan if you join"
             trust="Leave the call knowing your exact blocker, or your ₹299 back."
-            ariaLabel="Find my thyroid blocker with the free 60-second quiz"
+            ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="transformations"
           />
         </div>
