@@ -6,7 +6,6 @@ import PillarsSection from "@/app/components/PillarsSection";
 import TransformationWall from "@/app/components/TransformationWall";
 import VideoTestimonial from "@/app/components/VideoTestimonial";
 import WhatsappProofSection from "@/app/components/WhatsappProofSection";
-import SocialProof from "@/app/components/SocialProof";
 import PostTestimonialCta from "@/app/components/PostTestimonialCta";
 import FitFilter from "@/app/components/FitFilter";
 import FAQSection from "@/app/components/FAQSection";
@@ -36,7 +35,10 @@ export default function Home() {
       <TransformationWall />       {/* photo wall + verified story lines */}
       <VideoTestimonial />         {/* video proof */}
       <WhatsappProofSection />     {/* WhatsApp proof + the stack CTA */}
-      <SocialProof />              {/* named written testimonials */}
+      {/* SocialProof (named written testimonials) removed: the page already
+          carries transformation photos, video testimonials and WhatsApp
+          screenshots. A fourth proof block of plain text quotes was the
+          weakest of the four and the easiest to cut for length. */}
       <PostTestimonialCta />
       <FitFilter />                {/* for you / not for you + seriousness line */}
       <FAQSection />

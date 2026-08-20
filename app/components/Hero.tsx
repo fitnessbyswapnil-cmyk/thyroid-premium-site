@@ -88,28 +88,13 @@ export default function Hero() {
           &minus;12 kg. All in 90 days.
           <span className="ml-1 font-normal text-[var(--t4)]">Results vary.</span>
         </p>
-        <p
-          className="hero-rise mt-[8px] text-[12.5px] leading-[1.55] text-[var(--t3)]"
-          style={{ animationDelay: "260ms" }}
-        >
-          Real Indian food &middot; No starving &middot; Alongside your doctor
-        </p>
-
-        {/* d) Credential strip — gold diamonds before each chip (design port) */}
-        <div
-          className="hero-rise mt-[26px] flex flex-wrap items-center justify-center gap-x-[18px] gap-y-2"
-          style={{ animationDelay: "300ms" }}
-          aria-label="Credentials"
-        >
-          {["ACE & INFS Certified", "Thyroid-Only", "By Private Intake"].map((c) => (
-            <span key={c} className="inline-flex items-center gap-[7px]">
-              <span aria-hidden="true" style={{ color: "var(--gold-ink)", fontSize: 6, lineHeight: 1 }}>◆</span>
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--t3)]">
-                {c}
-              </span>
-            </span>
-          ))}
-        </div>
+        {/* Two blocks used to sit here and both are gone deliberately.
+            "Real Indian food / No starving / Alongside your doctor" was a
+            fourth stacked line of small grey type in a hero that already had
+            three, and the credential strip (ACE & INFS / Thyroid-Only / By
+            Private Intake) duplicated the Certifications section immediately
+            below it. Six text blocks above the fold read as clutter; four
+            read as a claim. */}
 
         {/* e) VSL video frame — teal→coral hairline ring, soft warm shadow.
             The video itself stays dark: it is the page's one dark element. */}
