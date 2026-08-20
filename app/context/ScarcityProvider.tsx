@@ -20,9 +20,19 @@ const ScarcityContext = createContext<ScarcityContextValue | null>(null);
 const SCARCITY_LINE = "Only a few sessions open this week";
 const SCARCITY_SHORT = "Limited weekly intake";
 
-// SCHEDULE-FIRST funnel (owner decision, 20 Aug 2026): every CTA sends her to
-// /schedule — three fields, then the same Rs 299 embedded Cashfree checkout,
-// then Cal.com for the slot and the qualifying questions.
+// PAY-AT-END funnel (owner decision, 20 Aug 2026): every CTA sends her to
+// /book-session — the Cal.com embed, where she picks a slot and answers the
+// qualification questions FIRST — then /confirm-session asks for the Rs 299
+// that confirms the slot.
+//
+// Why this order: her budget answer (Rs 50k / 30k / 15k) sits two questions
+// before the price, so Rs 299 is read against an anchor she set herself, and
+// she has already invested several minutes and mentally owns the slot. It also
+// keeps the qualification data of everyone who does NOT pay, because the lead
+// is written before the charge — pay-first threw that away.
+//
+// /schedule (pay-first, three fields then checkout) is left intact so the two
+// orders can be tested against each other on cost per paid booking.
 //
 // This replaces the quiz-first order. The quiz asked 7 questions at the point
 // of LOWEST commitment and produced 0 payments on Rs 5,637 of spend; the
@@ -38,7 +48,7 @@ export const CONSULTATION_FORM_URL =
 
 export function ScarcityProvider({ children }: { children: ReactNode }) {
   const goToCta = useCallback(() => {
-    window.location.href = "/schedule";
+    window.location.href = "/book-session";
   }, []);
 
   const value: ScarcityContextValue = {
