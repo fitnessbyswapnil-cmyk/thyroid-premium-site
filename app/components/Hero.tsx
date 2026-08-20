@@ -48,11 +48,18 @@ export default function Hero() {
         {/* b) Headline — the claim, direct, with the audience right above it */}
         <h1
           id="hero-heading"
-          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-medium leading-[1.14] tracking-[-0.01em]"
+          className="hero-rise mx-auto mt-[30px] max-w-[19ch] text-balance font-medium leading-[1.06] tracking-[-0.025em]"
           style={{
             animationDelay: "100ms",
-            fontSize: "clamp(2.1rem, 1.55rem + 2.7vw, 3.9rem)",
+            fontSize: "clamp(2.2rem, 1.6rem + 2.9vw, 4.1rem)",
             fontFamily: "var(--font-display), Georgia, serif",
+            // Display-size refinements: lining figures so "10-15" and "90" sit
+            // on a common baseline with the caps, and kerning/ligatures on so
+            // the pairs Lora is designed for actually engage at large sizes.
+            fontVariantNumeric: "lining-nums",
+            fontKerning: "normal",
+            fontFeatureSettings: '"kern" 1, "liga" 1, "calt" 1',
+            textRendering: "optimizeLegibility",
           }}
         >
           Lose{" "}

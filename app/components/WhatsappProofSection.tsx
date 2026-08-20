@@ -471,19 +471,13 @@ export default function WhatsappProofSection() {
             scroll jank on the page. A draggable snap rail renders each
             client once, only paints on interaction, and matches the
             approved design's "screenshots casually laid down" look. */}
-        <div className="relative overflow-hidden">
+        {/* The two edge fades that used to sit here were scroll hints for the
+            rail. There is no horizontal scroll any more, and they painted
+            --bg-section (lemon wash) across a section that is deliberately
+            white, so they are gone rather than recoloured. */}
+        <div className="relative">
           <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0 z-20 h-full w-12 md:w-24"
-            style={{ background: 'linear-gradient(to right, var(--bg-section), transparent)' }}
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 z-20 h-full w-12 md:w-24"
-            style={{ background: 'linear-gradient(to left, var(--bg-section), transparent)' }}
-          />
-          <div
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto scrollbar-hide md:gap-6"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
             style={{ padding: '14px 1.25rem 22px' }}
           >
             {ALL_CARDS.map((card) => (
@@ -491,7 +485,7 @@ export default function WhatsappProofSection() {
               // screenshots of readable chat text, and rotation makes that
               // text visibly crooked. The tilt suited empty placeholders in
               // the prototype; it fights legibility with actual content.
-              <div key={card.id} className="snap-center flex-shrink-0">
+              <div key={card.id}>
                 <ProofCard card={card} isMobile />
               </div>
             ))}
