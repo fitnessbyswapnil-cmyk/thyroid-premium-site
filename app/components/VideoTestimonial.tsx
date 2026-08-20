@@ -193,13 +193,13 @@ function VideoCard({
       whileHover={{ y: -4, transition: { duration: 0.3, ease: "easeOut" } }}
       className="group relative flex flex-col overflow-hidden rounded-[28px]"
       style={{
-        background: "#ffffff",
+        background: "var(--bg-elevated)",
         border: story.featured
-          ? "1px solid rgba(11,143,128,0.4)"
-          : "1px solid #e7dfd2",
+          ? "1px solid rgba(163, 114, 32,0.4)"
+          : "1px solid #ede7dd",
         boxShadow: story.featured
-          ? "0 0 0 1px rgba(11,143,128,0.08), 0 24px 60px rgba(43,38,32,0.12)"
-          : "0 1px 2px rgba(43,38,32,0.04), 0 16px 48px rgba(43,38,32,0.09)",
+          ? "0 0 0 1px rgba(163, 114, 32,0.08), 0 24px 60px rgba(36, 31, 26,0.12)"
+          : "0 1px 2px rgba(36, 31, 26,0.04), 0 16px 48px rgba(36, 31, 26,0.09)",
       }}
     >
       {/* Featured badge */}
@@ -208,7 +208,7 @@ function VideoCard({
           className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5"
           style={{
             background: "rgba(0,0,0,0.6)",
-            border: "1px solid rgba(11,143,128,0.5)",
+            border: "1px solid rgba(163, 114, 32,0.5)",
             backdropFilter: "blur(12px)",
           }}
         >
@@ -279,9 +279,9 @@ function VideoCard({
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex h-[68px] w-[68px] items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 active:scale-95"
               style={{
-                background: "rgba(11,143,128,0.35)",
+                background: "rgba(163, 114, 32,0.35)",
                 border: "1.5px solid rgba(255,255,255,0.55)",
-                boxShadow: "0 0 48px rgba(11,143,128,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
+                boxShadow: "0 0 48px rgba(163, 114, 32,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
                 backdropFilter: "blur(12px)",
               }}
             >
@@ -350,7 +350,7 @@ function VideoCard({
               className="h-10 w-10 rounded-full border-2"
               style={{
                 borderColor: "rgba(255,255,255,0.15)",
-                borderTopColor: "rgba(11,143,128,0.85)",
+                borderTopColor: "rgba(163, 114, 32,0.85)",
                 animation: "vt-spin 0.8s linear infinite",
               }}
             />
@@ -414,7 +414,7 @@ function VideoCard({
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[0.72rem] font-bold text-white"
             style={{
               background: "var(--p400)",
-              boxShadow: "0 0 12px rgba(11,143,128,0.25)",
+              boxShadow: "0 0 12px rgba(163, 114, 32,0.25)",
             }}
           >
             {story.name.charAt(0)}
@@ -444,15 +444,14 @@ export default function VideoTestimonial() {
 
   return (
     <section
-      className="cv-auto section-pad relative overflow-hidden"
-      style={{ background: "var(--bg-section)" }}
+      className="cv-auto section-pad section-deep relative overflow-hidden"
       aria-labelledby="testimonial-heading"
     >
-      {/* Ambient background glows — warm tints on sand */}
+      {/* Ambient glows — warm tints on the one dark band of the page */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute left-1/2 top-0 h-[560px] w-[900px] -translate-x-1/2 rounded-full bg-[#0b8f80]/[0.04] blur-[150px]" />
-        <div className="absolute bottom-0 left-[-5%] h-[380px] w-[440px] rounded-full bg-[#c2453a]/[0.04] blur-[110px]" />
-        <div className="absolute bottom-0 right-[-5%] h-[380px] w-[440px] rounded-full bg-[#0b8f80]/[0.03] blur-[110px]" />
+        <div className="absolute left-1/2 top-0 h-[560px] w-[900px] -translate-x-1/2 rounded-full bg-[#a37220]/[0.04] blur-[150px]" />
+        <div className="absolute bottom-0 left-[-5%] h-[380px] w-[440px] rounded-full bg-[#b8322b]/[0.04] blur-[110px]" />
+        <div className="absolute bottom-0 right-[-5%] h-[380px] w-[440px] rounded-full bg-[#a37220]/[0.03] blur-[110px]" />
       </div>
 
       <div className="container-default relative z-10">

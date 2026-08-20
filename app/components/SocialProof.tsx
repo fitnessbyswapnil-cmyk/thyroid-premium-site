@@ -74,7 +74,7 @@ function QuoteIcon() {
     >
       <path
         d="M0 24V14.4C0 10.4 0.933333 7.06667 2.8 4.4C4.8 1.6 7.86667 0 12 0V4C9.6 4 7.86667 4.93333 6.8 6.8C6 8.26667 5.6 10 5.6 12H10.4V24H0ZM18 24V14.4C18 10.4 18.9333 7.06667 20.8 4.4C22.8 1.6 25.8667 0 30 0V4C27.6 4 25.8667 4.93333 24.8 6.8C24 8.26667 23.6 10 23.6 12H28.4V24H18Z"
-        fill="rgba(11,143,128,0.14)"
+        fill="rgba(163, 114, 32,0.14)"
       />
     </svg>
   );
@@ -107,11 +107,11 @@ function TestimonialCard({
         // Featured card: white with teal accent border
         background: "#ffffff",
         border: t.featured
-          ? "1px solid rgba(11,143,128,0.32)"
-          : "1px solid #e7dfd2",
+          ? "1px solid rgba(163, 114, 32,0.32)"
+          : "1px solid #ede7dd",
         boxShadow: t.featured
-          ? "0 1px 2px rgba(43,38,32,0.04), 0 8px 28px rgba(11,143,128,0.1)"
-          : "0 1px 2px rgba(43,38,32,0.04), 0 4px 16px rgba(43,38,32,0.06)",
+          ? "0 1px 2px rgba(36, 31, 26,0.04), 0 8px 28px rgba(163, 114, 32,0.1)"
+          : "0 1px 2px rgba(36, 31, 26,0.04), 0 4px 16px rgba(36, 31, 26,0.06)",
         padding: "20px",
       }}
     >
@@ -126,7 +126,7 @@ function TestimonialCard({
             bottom: 0,
             width: 3,
             background:
-              "linear-gradient(to bottom, rgba(11,143,128,0.75), rgba(52,211,153,0.4))",
+              "linear-gradient(to bottom, rgba(163, 114, 32,0.75), rgba(52,211,153,0.4))",
             borderRadius: "0 0 0 0",
           }}
         />
@@ -191,8 +191,8 @@ function TestimonialCard({
               letterSpacing: "0.09em",
               textTransform: "uppercase",
               color: "var(--t3)",
-              background: "rgba(43,38,32,0.03)",
-              border: "1px solid #e7dfd2",
+              background: "rgba(36, 31, 26,0.03)",
+              border: "1px solid #ede7dd",
             }}
           >
             <svg
@@ -258,11 +258,11 @@ function TestimonialCard({
                 letterSpacing: "0.04em",
                 color: "var(--p300)",
                 background: t.featured
-                  ? "rgba(11,143,128,0.16)"
-                  : "rgba(11,143,128,0.1)",
+                  ? "rgba(163, 114, 32,0.16)"
+                  : "rgba(163, 114, 32,0.1)",
                 border: t.featured
-                  ? "1px solid rgba(11,143,128,0.4)"
-                  : "1px solid rgba(11,143,128,0.25)",
+                  ? "1px solid rgba(163, 114, 32,0.4)"
+                  : "1px solid rgba(163, 114, 32,0.25)",
               }}
             >
               {t.initials}
@@ -300,15 +300,11 @@ function TestimonialCard({
               fontSize: 10.5,
               fontWeight: 600,
               lineHeight: 1,
-              color: t.result === "Strategy session"
-                ? "#047857"
-                : "var(--p300)",
-              background: t.result === "Strategy session"
-                ? "rgba(16,185,129,0.08)"
-                : "rgba(11,143,128,0.07)",
-              border: t.result === "Strategy session"
-                ? "1px solid rgba(16,185,129,0.28)"
-                : "1px solid rgba(11,143,128,0.22)",
+              // One badge treatment, gold family. The green variant was a
+              // fourth colour outside the system and only cleared 2.16:1.
+              color: "var(--gold-ink)",
+              background: "var(--yellow-soft)",
+              border: "1px solid rgba(138, 93, 18, 0.22)",
             }}
           >
             {t.result}

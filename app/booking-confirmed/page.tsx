@@ -194,7 +194,7 @@ function BookingConfirmedInner() {
           className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full blur-[120px]"
           style={{ background: "radial-gradient(ellipse, rgba(184,147,74,0.12) 0%, transparent 70%)" }}
         />
-        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(11,143,128,0.09)" }} />
+        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(163, 114, 32,0.09)" }} />
         <div className="absolute bottom-0 right-0 h-[300px] w-[300px] rounded-full blur-[110px]" style={{ background: "rgba(184,147,74,0.08)" }} />
       </div>
 
@@ -215,16 +215,16 @@ function BookingConfirmedInner() {
           <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#a07c33]/25 bg-[#a07c33]/10 px-4 py-2 shadow-[0_0_24px_rgba(4,120,87,0.1)]">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 6.5l2.5 2.5 5.5-5.5" stroke="#0a6b60" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 6.5l2.5 2.5 5.5-5.5" stroke="#96661a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <span className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-[#0a6b60]">
+              <span className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-[#96661a]">
                 Session Confirmed
               </span>
             </div>
           </div>
 
           <div className="rounded-[24px] border border-[#a07c33]/15 bg-[#a07c33]/[0.06] p-6 text-center">
-            <h1 className="mb-3 text-[1.7rem] font-black leading-tight tracking-[-0.04em] text-[#2b2620]">
+            <h1 className="mb-3 text-[1.7rem] font-black leading-tight tracking-[-0.04em] text-[#241f1a]">
               {firstName ? (
                 <>You&apos;re booked, {firstName} <span aria-hidden>✓</span></>
               ) : (
@@ -235,28 +235,28 @@ function BookingConfirmedInner() {
             {(dispDate || dispTime) ? (
               <div className="mx-auto grid max-w-[380px] grid-cols-2 gap-3 text-left">
                 {dispDate && (
-                  <div className="rounded-xl border border-[#0a6b60]/10 bg-white p-3.5">
+                  <div className="rounded-xl border border-[#96661a]/10 bg-white p-3.5">
                     <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#8a6d2f]">Date</p>
-                    <p className="text-[0.85rem] font-semibold leading-snug text-[#2b2620]">{dispDate}</p>
+                    <p className="text-[0.85rem] font-semibold leading-snug text-[#241f1a]">{dispDate}</p>
                   </div>
                 )}
                 {dispTime && (
-                  <div className="rounded-xl border border-[#0a6b60]/10 bg-white p-3.5">
+                  <div className="rounded-xl border border-[#96661a]/10 bg-white p-3.5">
                     <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-[#8a6d2f]">Time</p>
-                    <p className="text-[0.85rem] font-semibold text-[#2b2620]">{dispTime}</p>
+                    <p className="text-[0.85rem] font-semibold text-[#241f1a]">{dispTime}</p>
                     <p className="mt-0.5 text-[0.65rem] text-[#857c6d]">India Standard Time</p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-[0.82rem] leading-relaxed text-[#6d6558]">
+              <p className="text-[0.82rem] leading-relaxed text-[#6b6157]">
                 Your session details and Google Meet link are in your confirmation email.
               </p>
             )}
           </div>
 
           {/* ── 2. Calendar + reports — the two actions that matter ── */}
-          <div className="rounded-[24px] border border-[#0a6b60]/25 bg-[#0a6b60]/[0.08] p-6 text-center">
+          <div className="rounded-[24px] border border-[#96661a]/25 bg-[#96661a]/[0.08] p-6 text-center">
             <a
               href={gcalHref(dispDate, dispTime)}
               target="_blank"
@@ -275,26 +275,26 @@ function BookingConfirmedInner() {
               <span className="cta-label">Send My Reports on WhatsApp</span>
             </a>
 
-            <p className="mx-auto mt-4 max-w-[40ch] text-[0.74rem] leading-relaxed text-[#6d6558]">
+            <p className="mx-auto mt-4 max-w-[40ch] text-[0.74rem] leading-relaxed text-[#6b6157]">
               Swapnil personally reviews your reports and answers before the
               call, so the 60 minutes start on YOUR case — not the basics.
             </p>
           </div>
 
           {/* ── 3. Before your call — short and practical ── */}
-          <div className="rounded-[24px] border border-[#0a6b60]/10 bg-white p-5">
-            <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#6d6558]">
+          <div className="rounded-[24px] border border-[#96661a]/10 bg-white p-5">
+            <p className="mb-3 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#6b6157]">
               Before your call
             </p>
             <div className="space-y-3">
               {BEFORE_CALL.map((s) => (
                 <div key={s.n} className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#0a6b60]/25 bg-[#0a6b60]/10 text-[0.8rem] font-black text-[#085e54]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#96661a]/25 bg-[#96661a]/10 text-[0.8rem] font-black text-[#8a5d12]">
                     {s.n}
                   </div>
                   <div>
-                    <p className="text-[0.85rem] font-semibold text-[#2b2620]">{s.title}</p>
-                    <p className="text-[0.74rem] leading-relaxed text-[#6d6558]">{s.body}</p>
+                    <p className="text-[0.85rem] font-semibold text-[#241f1a]">{s.title}</p>
+                    <p className="text-[0.74rem] leading-relaxed text-[#6b6157]">{s.body}</p>
                   </div>
                 </div>
               ))}
@@ -310,19 +310,19 @@ function BookingConfirmedInner() {
             {QUOTES.map((q) => (
               <div
                 key={q.name}
-                className="rounded-[16px] border border-[#0a6b60]/15 bg-[#0a6b60]/[0.05] px-5 py-[18px] text-left"
+                className="rounded-[16px] border border-[#96661a]/15 bg-[#96661a]/[0.05] px-5 py-[18px] text-left"
               >
                 <div className="mb-2.5 flex gap-1" aria-hidden>
                   {[0, 1, 2, 3, 4].map((j) => (
-                    <svg key={j} viewBox="0 0 12 12" fill="#0a6b60" width="11" height="11">
+                    <svg key={j} viewBox="0 0 12 12" fill="#96661a" width="11" height="11">
                       <path d="M6 1l1.27 2.572L10 4.07l-2 1.947.472 2.752L6 7.5 3.528 8.769 4 6.017 2 4.07l2.73-.498z" />
                     </svg>
                   ))}
                 </div>
-                <p className="mb-2.5 text-[0.8rem] italic leading-[1.65] text-[#4a443b]">
+                <p className="mb-2.5 text-[0.8rem] italic leading-[1.65] text-[#423b33]">
                   &ldquo;{q.quote}&rdquo;
                 </p>
-                <span className="text-[0.7rem] font-semibold tracking-[0.03em] text-[#085e54]">
+                <span className="text-[0.7rem] font-semibold tracking-[0.03em] text-[#8a5d12]">
                   — {q.name}, {q.city}&nbsp;&nbsp;·&nbsp;&nbsp;{q.condition}
                 </span>
               </div>
@@ -332,7 +332,7 @@ function BookingConfirmedInner() {
           {/* Trust footer */}
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 pt-2">
             {["Private & confidential", "200+ women helped", "ACE & INFS certified"].map((item) => (
-              <span key={item} className="text-[0.65rem] text-[#6d6558]">{item}</span>
+              <span key={item} className="text-[0.65rem] text-[#6b6157]">{item}</span>
             ))}
           </div>
         </motion.div>

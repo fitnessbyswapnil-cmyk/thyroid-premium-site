@@ -22,7 +22,7 @@ export default function Hero() {
         className="pointer-events-none absolute inset-x-0 top-0 h-[min(70vw,440px)] overflow-hidden sm:h-[520px]"
       >
         <div className="hero-aurora-1 absolute left-1/2 top-[-22%] h-[min(82vw,340px)] w-[min(82vw,340px)] -translate-x-1/2 rounded-full bg-[var(--p500)]/[0.06] blur-[120px]" />
-        <div className="hero-aurora-2 absolute left-1/2 top-[10%] h-[140px] w-[min(88vw,420px)] -translate-x-1/2 rounded-full bg-[#c2453a]/[0.05] blur-[90px]" />
+        <div className="hero-aurora-2 absolute left-1/2 top-[10%] h-[140px] w-[min(88vw,420px)] -translate-x-1/2 rounded-full bg-[#b8322b]/[0.05] blur-[90px]" />
       </div>
 
       {/* Film-grain texture — ~4% opacity, barely perceptible, adds richness */}
@@ -39,7 +39,7 @@ export default function Hero() {
 
         {/* a) Eyebrow — hyperniche filter: the medicated-but-stuck woman */}
         <div className="hero-rise flex w-full items-center justify-center gap-2" style={{ animationDelay: "0ms" }}>
-          <span aria-hidden="true" style={{ color: "#b8934a", fontSize: 7, lineHeight: 1 }}>◆</span>
+          <span aria-hidden="true" style={{ color: "var(--gold-ink)", fontSize: 7, lineHeight: 1 }}>◆</span>
           <p className="max-w-[36ch] text-[11px] font-semibold uppercase leading-[1.5] tracking-[0.2em] text-[var(--t3)] sm:max-w-none sm:text-[11.5px] sm:tracking-[0.22em]">
             For busy professional women 30+ on thyroid medication
           </p>
@@ -48,7 +48,7 @@ export default function Hero() {
         {/* b) Headline — the claim, direct, with the audience right above it */}
         <h1
           id="hero-heading"
-          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-bold leading-[1.14] tracking-[-0.01em]"
+          className="hero-rise mx-auto mt-[30px] max-w-[20ch] text-balance font-medium leading-[1.14] tracking-[-0.01em]"
           style={{
             animationDelay: "100ms",
             fontSize: "clamp(2.1rem, 1.55rem + 2.7vw, 3.9rem)",
@@ -56,7 +56,8 @@ export default function Hero() {
           }}
         >
           Lose{" "}
-          <span className="text-gradient italic">10&ndash;15 kg in 90 days</span>,
+          <span className="mark-swipe italic">10&ndash;15 kg</span>{" "}
+          <span className="italic">in 90 days</span>,
           even with a thyroid problem.
         </h1>
 
@@ -95,7 +96,7 @@ export default function Hero() {
         >
           {["ACE & INFS Certified", "Thyroid-Only", "By Private Intake"].map((c) => (
             <span key={c} className="inline-flex items-center gap-[7px]">
-              <span aria-hidden="true" style={{ color: "#b8934a", fontSize: 6, lineHeight: 1 }}>◆</span>
+              <span aria-hidden="true" style={{ color: "var(--gold-ink)", fontSize: 6, lineHeight: 1 }}>◆</span>
               <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--t3)]">
                 {c}
               </span>
@@ -113,9 +114,9 @@ export default function Hero() {
             borderRadius: 22,
             padding: 1,
             background:
-              "linear-gradient(165deg, rgba(11,143,128,0.45), #e0d7c6 28%, #e0d7c6 72%, rgba(194,69,58,0.35))",
+              "linear-gradient(165deg, rgba(163, 114, 32,0.45), #ddd4c6 28%, #ddd4c6 72%, rgba(184, 50, 43,0.35))",
             boxShadow:
-              "0 24px 60px -20px rgba(43,38,32,0.28), 0 10px 30px -10px rgba(43,38,32,0.14)",
+              "0 24px 60px -20px rgba(36, 31, 26,0.28), 0 10px 30px -10px rgba(36, 31, 26,0.14)",
             overflow: "hidden",
           }}
         >

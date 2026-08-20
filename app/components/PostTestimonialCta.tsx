@@ -23,7 +23,7 @@ export default function PostTestimonialCta() {
           style={{
             width: "min(60vw, 280px)",
             height: "min(60vw, 280px)",
-            background: "radial-gradient(ellipse, rgba(11,143,128,0.06) 0%, transparent 70%)",
+            background: "radial-gradient(ellipse, rgba(163, 114, 32,0.06) 0%, transparent 70%)",
             filter: "blur(40px)",
           }}
         />
@@ -38,11 +38,11 @@ export default function PostTestimonialCta() {
             transition: "opacity 0.65s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.65s cubic-bezier(0.25,0.46,0.45,0.94)",
             position: "relative",
             borderRadius: 20,
-            border: "1px solid #e7dfd2",
+            border: "1px solid #ede7dd",
             background: "#ffffff",
             padding: "clamp(1.75rem, 5.5vw, 2.5rem) clamp(1.25rem, 5vw, 2rem)",
             textAlign: "center",
-            boxShadow: "0 1px 2px rgba(43,38,32,0.04), 0 10px 32px rgba(43,38,32,0.07)",
+            boxShadow: "0 1px 2px rgba(36, 31, 26,0.04), 0 10px 32px rgba(36, 31, 26,0.07)",
             overflow: "hidden",
           }}
         >
@@ -56,7 +56,7 @@ export default function PostTestimonialCta() {
               transform: "translateX(-50%)",
               width: "55%",
               height: 1,
-              background: "linear-gradient(90deg, transparent, rgba(11,143,128,0.5), transparent)",
+              background: "linear-gradient(90deg, transparent, rgba(163, 114, 32,0.5), transparent)",
             }}
           />
 

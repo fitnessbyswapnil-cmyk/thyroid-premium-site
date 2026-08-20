@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #faf6ef;
-  --color-foreground: #2b2620;
+  --color-background: #ffffff;
+  --color-foreground: #241f1a;
   --font-sans: var(--font-body);
   --font-display: var(--font-display), Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* ── WARM-LIGHT THEME ─────────────────────────────────────────────────────
-   Evidence-based ground for the 30+ female reader: positive polarity (dark
-   text on warm cream — Piepenbrock et al. 2013, advantage grows with age),
-   cream instead of pure white to cut glare, deep teal as the single
-   trust/action hue, terracotta-coral as the single emotional accent.
-   Body sizes raised for presbyopic eyes (18px floor on base text). */
+/* ── WHITE / YELLOW / RED SYSTEM (v1, 20 Aug 2026) ────────────────────────
+   White ground, yellow as a SURFACE only, red reserved for CTAs.
+   The load-bearing rule: yellow #FBD24E is 1.46:1 on white, so it is never
+   text, never a stroke, never a thin rule. Anywhere the design wants "yellow
+   text", use --gold-ink #8A5D12 (5.8:1) instead. Every teal token below is
+   remapped into the gold family rather than into yellow, precisely because
+   several of them are used as SVG strokes and small marks.
+   Body sizes stay raised for presbyopic eyes (18px floor on base text). */
 
 :root {
   /* Typography — floors raised for 40+ eyes (base ≈18px) */
@@ -37,42 +39,77 @@
   --space-16: 4rem;
   --space-20: 5rem;
 
-  /* Background hierarchy — warm cream ground, sand sections, white cards */
-  --bg-page: #faf6ef;
-  --bg-section: #f4eee1;
+  /* Background hierarchy — white ground, yellow wash sections, white cards */
+  --bg-page: #ffffff;
+  --bg-section: #fdf6e4;
   --bg-elevated: #ffffff;
 
+  /* New surface tokens */
+  --surface-page: #ffffff;
+  --surface-wash: #fdf6e4;
+  --surface-wash-strong: #faecc9;
+  --surface-card: #ffffff;
+  --surface-deep: #1e1a16;
+
+  /* Yellow — fills and solid shapes ONLY, never text or strokes */
+  --yellow-mark: #fbd24e;
+  --yellow-soft: #faecc9;
+  --gold-ink: #8a5d12;
+
+  --ink-on-yellow: #241f1a;
+  --ink-on-deep: #e8e1d7;
+
+  --border-hairline: #ede7dd;
+  --border-on-wash: #f1e4c6;
+  --border-strong: #ddd4c6;
+  --focus-ring: #8a5d12;
+
+  --radius-button: 6px;
+  --radius-card: 12px;
+  --radius-image: 8px;
+  --shadow-card: 0 1px 2px rgba(36,31,26,.05), 0 8px 24px -14px rgba(36,31,26,.14);
+
   /* Surface system — warm dark-alpha on light ground */
-  --s1: rgba(43,38,32,0.035);
-  --s2: rgba(43,38,32,0.05);
-  --s3: rgba(43,38,32,0.07);
+  --s1: rgba(36,31,26,0.035);
+  --s2: rgba(36,31,26,0.05);
+  --s3: rgba(36,31,26,0.07);
 
-  --b-soft: rgba(43,38,32,0.1);
-  --b-mid: rgba(43,38,32,0.16);
+  --b-soft: rgba(36,31,26,0.1);
+  --b-mid: rgba(36,31,26,0.16);
 
-  /* Text — warm charcoal ramp (t1 on cream ≈ 13:1, AAA) */
-  --t1: #2b2620;
-  --t2: #4a443b;
-  --t3: #6d6558;
-  --t4: #857c6d;
-  --t5: #9c9384;
+  /* Text — ink ramp on white. t1 15.4:1 AAA, t2 11.0:1 AAA, t3 6.0:1 AA.
+     t4 is 3.7:1 — large text only, never body copy. */
+  --t1: #241f1a;
+  --t2: #423b33;
+  --t3: #6b6157;
+  --t4: #7a7065;   /* 4.7:1 — spec ships #8E8477 (3.7:1) but flags it as
+                      never-body-copy; this codebase uses t4 for small
+                      captions, so the token is darkened to clear AA. */
+  --t5: #7c7367;   /* 4.5:1 — this codebase uses the faint end for real
+                      disclaimers at 11-13px, so it clears AA rather than
+                      sitting at the spec's 3.7:1 large-text-only value. */
 
-  /* Accent — deep teal: the single trust/action hue.
-     p300 = accent TEXT on light ground (darkest, 6.9:1 on cream),
-     p400/p500 = fills and marks, p600 = pressed/deep. */
-  --p300: #085e54;
-  --p400: #0a6b60;
-  --p500: #0b8f80;
-  --p600: #075247;
+  /* Accent — the gold family replaces teal. These stay DARK on purpose:
+     p300/p400/p500 are used for accent text, small marks and SVG strokes,
+     all of which bright yellow would render invisible on white. */
+  --p300: #8a5d12;
+  --p400: #96661a;
+  --p500: #a37220;
+  --p600: #6f4a0d;
 
-  --p-subtle: rgba(11,143,128,0.07);
-  --p-tint: rgba(11,143,128,0.12);
-  --p-border: rgba(11,143,128,0.28);
+  --p-subtle: rgba(250,236,201,0.55);
+  --p-tint: rgba(250,236,201,0.9);
+  --p-border: rgba(138,93,18,0.28);
 
-  /* Emotional accent — terracotta coral, text-safe on cream (4.9:1) */
-  --coral: #c2453a;
-  --coral-tint: rgba(194,69,58,0.1);
-  --coral-border: rgba(194,69,58,0.3);
+  /* Red — CTA ONLY. Never headlines, prices, icons or urgency text.
+     #B8322B is 5.95:1 with white text (the old coral was borderline). */
+  --coral: #b8322b;
+  --red-cta: #b8322b;
+  --red-cta-hover: #9e2620;
+  --red-cta-press: #85201b;
+  --red-tint: #fbeae7;
+  --coral-tint: rgba(184,50,43,0.1);
+  --coral-border: rgba(184,50,43,0.3);
 
   /* Radius */
   --r-sm: 0.5rem;
@@ -84,6 +121,42 @@
 
   --ease: cubic-bezier(0.16,1,0.3,1);
   --ease-cta: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── SECTION SURFACES ─────────────────────────────────────────────────────
+   The page rhythm is 7 white / 4 wash / 1 deep. Wash never appears twice in a
+   row and never behind a photograph (yellow ground makes Indian skin tones
+   read jaundiced and makes the transformation photos look colour-graded).
+
+   .section-deep redefines the ink ramp for its whole subtree rather than
+   editing every descendant, so a 500-line component flips safely in one move. */
+
+.section-wash { background: var(--surface-wash); }
+
+.section-deep .section-label { color: var(--yellow-mark); }
+
+.section-deep {
+  background: var(--surface-deep);
+  --t1: #ffffff;
+  --t2: #e8e1d7;
+  --t3: #c9c1b5;
+  --t4: #a89f92;
+  --t5: #8e8477;
+  --bg-elevated: #2a251f;
+  --bg-page: #1e1a16;
+  --bg-section: #1e1a16;
+  --border-hairline: rgba(255,255,255,0.12);
+  --border-strong: rgba(255,255,255,0.18);
+  --b-soft: rgba(255,255,255,0.12);
+  --b-mid: rgba(255,255,255,0.2);
+  --s1: rgba(255,255,255,0.04);
+  --s2: rgba(255,255,255,0.06);
+  --s3: rgba(255,255,255,0.09);
+  /* Yellow may act as TEXT here only: #FBD24E on #1E1A16 is 9.6:1. */
+  --p300: var(--yellow-mark);
+  --p400: var(--yellow-mark);
+  --p500: var(--yellow-mark);
+  --gold-ink: var(--yellow-mark);
 }
 
 /* RESET */
@@ -170,7 +243,10 @@ a {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--coral);
+  /* Gold-ink, not red. Red is reserved for buttons: the moment it appears as
+     text, every red button on the page loses its meaning. Gold-ink is the
+     yellow family at a weight that actually passes on white (5.8:1). */
+  color: var(--gold-ink);
   margin-bottom: 0.7rem;
 }
 
@@ -223,7 +299,7 @@ a {
   height: min(72vw, 280px);
   transform: translateX(-50%);
   border-radius: 50%;
-  background: rgba(194, 69, 58, 0.05);
+  background: rgba(184, 50, 43, 0.05);
   filter: blur(80px);
 }
 
@@ -237,16 +313,21 @@ a {
 
 /* GRADIENT TEXT */
 
-.text-gradient {
-  background: linear-gradient(
-    135deg,
-    #2b2620 0%,
-    #0a6b60 55%,
-    #0b8f80 100%
-  );
+/* Highlighter swipe — yellow's best use on the page. Ink text ON yellow
+   (10.3:1), never yellow text. Square edges: a rounded swipe reads as a chip.
+   Max 2-4 words, once per section, at most one per viewport. */
+.mark-swipe {
+  background: var(--yellow-mark);
+  color: var(--ink-on-yellow);
+  padding: 0.04em 0.14em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
 
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* Retained so any remaining call site degrades to plain ink rather than to
+   a gradient — gradients on the yellow family are ruled out by the system. */
+.text-gradient {
+  color: var(--t1);
 }
 
 /* GLASS CARDS */
@@ -254,23 +335,23 @@ a {
 .glass-card {
   background: #ffffff;
 
-  border: 1px solid #e7dfd2;
+  border: 1px solid #ede7dd;
 
   border-radius: 1.5rem;
 
   box-shadow:
-    0 1px 2px rgba(43,38,32,0.04),
-    0 10px 30px rgba(43,38,32,0.07);
+    0 1px 2px rgba(36, 31, 26,0.04),
+    0 10px 30px rgba(36, 31, 26,0.07);
 }
 
 .glass-card-sm {
   background: #ffffff;
 
-  border: 1px solid #e7dfd2;
+  border: 1px solid #ede7dd;
 
   border-radius: var(--r-xl);
 
-  box-shadow: 0 1px 2px rgba(43,38,32,0.04), 0 6px 18px rgba(43,38,32,0.05);
+  box-shadow: 0 1px 2px rgba(36, 31, 26,0.04), 0 6px 18px rgba(36, 31, 26,0.05);
 }
 
 /* BADGES */
@@ -327,16 +408,17 @@ a {
   width: 100%;
   min-height: 56px;
 
-  border-radius: 999px;
+  /* 6px, not a pill: a fully rounded CTA next to yellow reads app-promo. */
+  border-radius: var(--radius-button);
 
   padding: 0.82rem 1.1rem;
 
-  /* Flat deep teal — the page's single action color */
-  background: var(--p400);
+  /* Red is the page's single action colour, and appears nowhere else. */
+  background: var(--red-cta);
 
   color: #ffffff;
 
-  font-weight: 800;
+  font-weight: 700;
   font-size: clamp(0.95rem, 2.5vw, 1.02rem);
 
   letter-spacing: -0.01em;
@@ -348,30 +430,20 @@ a {
 
   gap: 0.14rem;
 
-  box-shadow:
-    0 2px 6px rgba(10, 107, 96, 0.18),
-    0 10px 26px -8px rgba(10, 107, 96, 0.35);
+  /* No shadow: the button gets colour, and colour is enough. A coloured
+     glow under a red button is the clearest discount-page tell there is. */
+  box-shadow: none;
 
-  transition:
-    transform 240ms var(--ease-cta),
-    box-shadow 240ms var(--ease-cta),
-    background 240ms var(--ease-cta);
+  transition: background 200ms var(--ease-cta);
 }
 
 .cta-button:hover {
-  transform: translateY(-2px);
-  background: var(--p300);
-
-  box-shadow:
-    0 3px 8px rgba(10, 107, 96, 0.2),
-    0 16px 34px -8px rgba(10, 107, 96, 0.4);
+  /* Darken only — no lift, no scale. */
+  background: var(--red-cta-hover);
 }
 
 .cta-button:active {
-  transform: translateY(0) scale(0.99);
-  background: var(--p600);
-
-  box-shadow: 0 2px 8px rgba(10, 107, 96, 0.2);
+  background: var(--red-cta-press);
 }
 
 .cta-sub {
@@ -387,13 +459,14 @@ a {
   max-width: 22rem;
   min-height: 56px;
 
-  border-radius: 999px;
+  border-radius: var(--radius-button);
 
+  /* Secondary CTA: red OUTLINE so it never competes with a primary. */
   background: #ffffff;
   color: var(--t1);
-  border: 1px solid #e0d7c6;
+  border: 1.5px solid var(--red-cta);
 
-  font-weight: 800;
+  font-weight: 700;
   font-size: clamp(0.95rem, 2.5vw, 1rem);
 
   padding: 0.9rem 1.25rem;
@@ -404,23 +477,17 @@ a {
   justify-content: center;
   gap: 0.12rem;
 
-  box-shadow:
-    0 1px 2px rgba(43, 38, 32, 0.05),
-    0 6px 20px rgba(43, 38, 32, 0.08);
+  box-shadow: none;
 
-  transition: all 220ms var(--ease);
+  transition: background 200ms var(--ease);
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  border-color: var(--p-border);
-  box-shadow:
-    0 2px 4px rgba(43, 38, 32, 0.06),
-    0 10px 24px rgba(43, 38, 32, 0.1);
+  background: var(--red-tint);
 }
 
 .btn-primary:active {
-  transform: scale(0.99);
+  background: var(--red-tint);
 }
 
 .btn-primary .cta-sub {
@@ -459,9 +526,9 @@ a {
 
 .btn-ghost:hover {
   background: var(--p-tint);
-  border-color: rgba(11, 143, 128, 0.45);
+  border-color: rgba(163, 114, 32, 0.45);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(10, 107, 96, 0.12);
+  box-shadow: 0 8px 24px rgba(150, 102, 26, 0.12);
 }
 
 .btn-ghost:active {
@@ -475,11 +542,11 @@ a {
 }
 
 .btn-sticky {
-  min-height: 44px;
-  border-radius: 999px;
+  min-height: 48px;
+  border-radius: var(--radius-button);
   padding: 0.55rem 1.1rem;
 
-  background: var(--p400);
+  background: var(--red-cta);
   color: #fff;
   border: none;
 
@@ -488,20 +555,17 @@ a {
   letter-spacing: -0.01em;
   white-space: nowrap;
 
-  box-shadow: 0 6px 18px rgba(10, 107, 96, 0.25);
+  box-shadow: none;
 
-  transition:
-    transform 200ms var(--ease-cta),
-    box-shadow 200ms var(--ease-cta);
+  transition: background 200ms var(--ease-cta);
 }
 
 .btn-sticky:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(10, 107, 96, 0.32);
+  background: var(--red-cta-hover);
 }
 
 .btn-sticky:active {
-  transform: scale(0.98);
+  background: var(--red-cta-press);
 }
 
 .glow-hero {
@@ -512,7 +576,7 @@ a {
   height: min(92vw, 480px);
   transform: translateX(-50%);
   border-radius: 999px;
-  background: rgba(194, 69, 58, 0.05);
+  background: rgba(184, 50, 43, 0.05);
   filter: blur(100px);
 }
 
@@ -571,15 +635,15 @@ a {
 
 .result-card {
   background: #ffffff;
-  border: 1px solid #e7dfd2;
+  border: 1px solid #ede7dd;
   border-radius: var(--r-2xl);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
   box-shadow:
-    0 1px 2px rgba(43,38,32,0.04),
-    0 8px 28px rgba(43,38,32,0.07);
+    0 1px 2px rgba(36, 31, 26,0.04),
+    0 8px 28px rgba(36, 31, 26,0.07);
   transition:
     border-color 260ms var(--ease),
     transform 260ms var(--ease),
@@ -590,8 +654,8 @@ a {
   border-color: var(--p-border);
   transform: translateY(-5px) scale(1.006);
   box-shadow:
-    0 2px 4px rgba(43,38,32,0.05),
-    0 28px 60px rgba(43,38,32,0.12);
+    0 2px 4px rgba(36, 31, 26,0.05),
+    0 28px 60px rgba(36, 31, 26,0.12);
 }
 
 /* Portrait aspect ratio — consistent across all breakpoints */
@@ -622,7 +686,7 @@ a {
   gap: 0.28rem;
   padding: 0.2rem 0.52rem;
   border-radius: 999px;
-  background: rgba(11,143,128,0.85);
+  background: rgba(163, 114, 32,0.85);
   border: 1px solid rgba(255,255,255,0.35);
   font-size: 0.58rem;
   font-weight: 700;
@@ -817,7 +881,7 @@ a {
   border-radius: 1.75rem;
   background: radial-gradient(
     ellipse at center,
-    rgba(11, 143, 128, 0.14) 0%,
+    rgba(163, 114, 32, 0.14) 0%,
     transparent 72%
   );
 }
@@ -840,10 +904,10 @@ a {
   width: min(38vw, 148px);
   scroll-snap-align: start;
   border-radius: var(--r-lg);
-  border: 1px solid #e7dfd2;
+  border: 1px solid #ede7dd;
   background: #ffffff;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(43, 38, 32, 0.05);
+  box-shadow: 0 2px 8px rgba(36, 31, 26, 0.05);
 }
 
 @media (min-width: 768px) {
@@ -926,9 +990,9 @@ a {
   border-radius: 50%;
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgba(11, 143, 128, 0.3) 0%,
-    rgba(11, 143, 128, 0.12) 40%,
-    rgba(11, 143, 128, 0.03) 65%,
+    rgba(163, 114, 32, 0.3) 0%,
+    rgba(163, 114, 32, 0.12) 40%,
+    rgba(163, 114, 32, 0.03) 65%,
     transparent 78%
   );
   z-index: 0;
@@ -943,16 +1007,16 @@ a {
   padding: 2px;
   background: linear-gradient(
     145deg,
-    rgba(11, 143, 128, 0.72) 0%,
-    rgba(11, 143, 128, 0.28) 30%,
+    rgba(163, 114, 32, 0.72) 0%,
+    rgba(163, 114, 32, 0.28) 30%,
     rgba(255, 255, 255, 0.06) 58%,
-    rgba(11, 143, 128, 0.45) 100%
+    rgba(163, 114, 32, 0.45) 100%
   );
   box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.7),
     0 20px 48px rgba(0, 0, 0, 0.45),
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 0 80px rgba(11, 143, 128, 0.14);
+    0 0 80px rgba(163, 114, 32, 0.14);
 }
 
 /* Inner card — dark bg + overflow clip for rounded image */
@@ -971,7 +1035,7 @@ a {
     rgba(14, 15, 18, 0.96) 0%,
     rgba(10, 11, 14, 0.99) 100%
   );
-  border-top: 1px solid rgba(11, 143, 128, 0.2);
+  border-top: 1px solid rgba(163, 114, 32, 0.2);
   padding: 1rem 1.1rem 1.15rem;
   text-align: center;
   display: flex;
@@ -988,8 +1052,8 @@ a {
   margin-top: 0.5rem;
   padding: 0.22rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid rgba(11, 143, 128, 0.25);
-  background: rgba(11, 143, 128, 0.09);
+  border: 1px solid rgba(163, 114, 32, 0.25);
+  background: rgba(163, 114, 32, 0.09);
   font-size: 0.59rem;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -1003,8 +1067,8 @@ a {
   align-items: center;
   padding: 0.22rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid rgba(11, 143, 128, 0.18);
-  background: rgba(11, 143, 128, 0.06);
+  border: 1px solid rgba(163, 114, 32, 0.18);
+  background: rgba(163, 114, 32, 0.06);
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--p300);
@@ -1102,7 +1166,7 @@ a {
   background: var(--p400);
   flex-shrink: 0;
   margin-top: 0.5rem;
-  box-shadow: 0 0 6px rgba(11, 143, 128, 0.55);
+  box-shadow: 0 0 6px rgba(163, 114, 32, 0.55);
 }
 
 /* ── Certification grid ───────────────────────────────────── */
@@ -1172,7 +1236,7 @@ a {
   transform: translateY(-3px);
   box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(11, 143, 128, 0.1);
+    0 0 0 1px rgba(163, 114, 32, 0.1);
 }
 
 /* Image container — 4:3 ratio */
@@ -1188,13 +1252,13 @@ a {
 .authority-cert-img-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(11, 143, 128, 0);
+  background: rgba(163, 114, 32, 0);
   transition: background 240ms var(--ease);
   pointer-events: none;
 }
 
 .authority-cert-card:hover .authority-cert-img-overlay {
-  background: rgba(11, 143, 128, 0.04);
+  background: rgba(163, 114, 32, 0.04);
 }
 
 /* Cert card label */
@@ -1259,12 +1323,12 @@ a {
 
   background: rgba(255,255,255,0.94);
 
-  border: 1px solid #e7dfd2;
+  border: 1px solid #ede7dd;
 
   backdrop-filter: blur(18px);
 
   box-shadow:
-    0 12px 40px rgba(43,38,32,0.16);
+    0 12px 40px rgba(36, 31, 26,0.16);
 }
 
 /* SCROLLBAR */
@@ -1281,7 +1345,8 @@ a {
 /* FOCUS */
 
 :focus-visible {
-  outline: 2px solid var(--p500);
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
   outline-offset: 3px;
   border-radius: var(--r-sm);
 }

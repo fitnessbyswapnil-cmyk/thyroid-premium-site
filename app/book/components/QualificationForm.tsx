@@ -48,7 +48,7 @@ function QuestionShell({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-[0.82rem] font-bold tracking-[-0.01em] text-[#2b2620]">
+      <p className="mb-1.5 text-[0.82rem] font-bold tracking-[-0.01em] text-[#241f1a]">
         {label}
       </p>
       {hint && (
@@ -82,7 +82,7 @@ function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       autoComplete={autoComplete}
-      className="w-full rounded-2xl border border-[#e0d7c6] bg-white px-5 py-4 text-[0.95rem] text-white placeholder-[#9c9384] outline-none transition-all duration-200 focus:border-[#0b8f80] focus:bg-white focus:shadow-[0_0_0_3px_rgba(11,143,128,0.15)]"
+      className="w-full rounded-2xl border border-[#ddd4c6] bg-white px-5 py-4 text-[0.95rem] text-white placeholder-[#9c9384] outline-none transition-all duration-200 focus:border-[#a37220] focus:bg-white focus:shadow-[0_0_0_3px_rgba(163, 114, 32,0.15)]"
       style={{ WebkitTapHighlightColor: "transparent" }}
     />
   );
@@ -105,8 +105,8 @@ function SelectCard({
       onClick={onToggle}
       className={`relative w-full rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.98] ${
         selected
-          ? "border-[#0b8f80] bg-[#0b8f80]/12 shadow-[0_0_20px_rgba(11,143,128,0.15)]"
-          : "border-[#e0d7c6] bg-white hover:border-[#c9c0af] hover:bg-[#faf6ef]"
+          ? "border-[#a37220] bg-[#a37220]/12 shadow-[0_0_20px_rgba(163, 114, 32,0.15)]"
+          : "border-[#ddd4c6] bg-white hover:border-[#c9c0af] hover:bg-[#ffffff]"
       }`}
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
@@ -114,7 +114,7 @@ function SelectCard({
         {emoji && <span className="text-lg leading-none">{emoji}</span>}
         <span
           className={`flex-1 text-[0.87rem] font-medium leading-snug ${
-            selected ? "text-[#2b2620]" : "text-[#4a443b]"
+            selected ? "text-[#241f1a]" : "text-[#423b33]"
           }`}
         >
           {label}
@@ -122,12 +122,12 @@ function SelectCard({
         <div
           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${
             selected
-              ? "border-[#0b8f80] bg-[#0b8f80]"
-              : "border-[#e0d7c6]"
+              ? "border-[#a37220] bg-[#a37220]"
+              : "border-[#ddd4c6]"
           }`}
         >
           {selected && (
-            <div className="h-2 w-2 rounded-full bg-[#0a6b60]" />
+            <div className="h-2 w-2 rounded-full bg-[#96661a]" />
           )}
         </div>
       </div>
@@ -178,7 +178,7 @@ function PhoneQuestion({
           onChange={(e) => onChange(e.target.value)}
           placeholder="98765 43210"
           autoComplete="tel"
-          className="w-full rounded-2xl border border-[#e0d7c6] bg-white py-4 pl-14 pr-5 text-[0.95rem] text-white placeholder-[#9c9384] outline-none transition-all duration-200 focus:border-[#0b8f80] focus:bg-white focus:shadow-[0_0_0_3px_rgba(11,143,128,0.15)]"
+          className="w-full rounded-2xl border border-[#ddd4c6] bg-white py-4 pl-14 pr-5 text-[0.95rem] text-white placeholder-[#9c9384] outline-none transition-all duration-200 focus:border-[#a37220] focus:bg-white focus:shadow-[0_0_0_3px_rgba(163, 114, 32,0.15)]"
           style={{ WebkitTapHighlightColor: "transparent" }}
         />
       </div>
@@ -266,8 +266,8 @@ function ThyroidDurationQuestion({
             onClick={() => onChange(r.val)}
             className={`rounded-full border px-5 py-2.5 text-[0.85rem] font-semibold transition-all duration-200 active:scale-[0.96] ${
               value === r.val
-                ? "border-[#0b8f80] bg-[#0b8f80]/15 text-[#085e54] shadow-[0_0_14px_rgba(11,143,128,0.2)]"
-                : "border-[#e0d7c6] bg-white text-[#6d6558] hover:border-[#c9c0af]"
+                ? "border-[#a37220] bg-[#a37220]/15 text-[#8a5d12] shadow-[0_0_14px_rgba(163, 114, 32,0.2)]"
+                : "border-[#ddd4c6] bg-white text-[#6b6157] hover:border-[#c9c0af]"
             }`}
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
@@ -366,20 +366,20 @@ export function QualificationForm({
   const isLast = qIndex === QUESTION_ORDER.length - 1;
 
   return (
-    <div className="rounded-[28px] border border-[#e0d7c6] bg-white p-6 shadow-[0_24px_80px_rgba(43,38,32,0.14)] backdrop-blur-2xl sm:p-8">
+    <div className="rounded-[28px] border border-[#ddd4c6] bg-white p-6 shadow-[0_24px_80px_rgba(36, 31, 26,0.14)] backdrop-blur-2xl sm:p-8">
       {/* Progress */}
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#857c6d]">
             Question {qIndex + 1} of {QUESTION_ORDER.length}
           </span>
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#0a6b60]">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#96661a]">
             {Math.round(progress)}% complete
           </span>
         </div>
-        <div className="h-1 overflow-hidden rounded-full bg-[#e7dfd2]">
+        <div className="h-1 overflow-hidden rounded-full bg-[#ede7dd]">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-[#0a6b60] to-[#085e54]"
+            className="h-full rounded-full bg-gradient-to-r from-[#96661a] to-[#8a5d12]"
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           />
@@ -430,7 +430,7 @@ export function QualificationForm({
 
       {/* Auto-advance hint for card questions */}
       {(currentQuestion === "thyroidCondition" || currentQuestion === "mainGoal") && isCurrentValid() && (
-        <p className="mb-3 text-center text-[0.65rem] text-[#0a6b60]/50">
+        <p className="mb-3 text-center text-[0.65rem] text-[#96661a]/50">
           Tap Continue to proceed
         </p>
       )}
@@ -441,7 +441,7 @@ export function QualificationForm({
           <button
             type="button"
             onClick={handleBack}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#e0d7c6] bg-white text-[#857c6d] transition-all duration-200 hover:border-[#c9c0af] hover:text-[#4a443b] active:scale-95"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#ddd4c6] bg-white text-[#857c6d] transition-all duration-200 hover:border-[#c9c0af] hover:text-[#423b33] active:scale-95"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -456,8 +456,8 @@ export function QualificationForm({
           disabled={!isCurrentValid()}
           className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 text-[0.95rem] font-bold tracking-[-0.015em] transition-all duration-300 ${
             isCurrentValid()
-              ? "bg-gradient-to-r from-[#0a6b60] to-[#085e54] text-white shadow-[0_8px_32px_rgba(10,107,96,0.35)] hover:scale-[1.01] active:scale-[0.99]"
-              : "cursor-not-allowed bg-[#e7dfd2] text-[#9c9384]"
+              ? "bg-gradient-to-r from-[#96661a] to-[#8a5d12] text-white shadow-[0_8px_32px_rgba(150, 102, 26,0.35)] hover:scale-[1.01] active:scale-[0.99]"
+              : "cursor-not-allowed bg-[#ede7dd] text-[#9c9384]"
           }`}
           style={{ WebkitTapHighlightColor: "transparent" }}
         >

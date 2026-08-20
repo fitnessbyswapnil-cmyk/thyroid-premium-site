@@ -26,13 +26,13 @@ import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
 import { SESSION_PRICE } from "@/app/lib/pricing";
 import { checkoutRedirectTarget } from "@/lib/checkout-target";
 
-const BG = "#faf6ef";
+const BG = "#ffffff";
 const CARD = "#ffffff";
-const GRID = "#e7dfd2";
-const INK1 = "#2b2620";
+const GRID = "#ede7dd";
+const INK1 = "#241f1a";
 const INK2 = "#6b6154";
-const TEAL = "#0b8f80";
-const CORAL = "#c2453a";
+const TEAL = "#a37220";
+const CORAL = "#b8322b";
 
 const THYROID_OPTIONS = [
   "Yes, I take thyroid medicine daily",
@@ -318,7 +318,7 @@ export default function ScheduleClient() {
         </div>
 
         <div style={{
-          marginTop: 18, padding: "16px 18px", background: "#f4eee1",
+          marginTop: 18, padding: "16px 18px", background: "#fdf6e4",
           border: `1px solid ${GRID}`, borderRadius: 12,
         }}>
           <p style={{ fontSize: 14, fontWeight: 700, color: INK1, marginBottom: 6 }}>
