@@ -41,26 +41,28 @@
 
   /* Background hierarchy — white ground, yellow wash sections, white cards */
   --bg-page: #ffffff;
-  --bg-section: #fdf6e4;
+  --bg-section: #fffdeb;
   --bg-elevated: #ffffff;
 
   /* New surface tokens */
   --surface-page: #ffffff;
-  --surface-wash: #fdf6e4;
-  --surface-wash-strong: #faecc9;
+  --surface-wash: #fffdeb;
+  --surface-wash-strong: #fff7b8;
   --surface-card: #ffffff;
   --surface-deep: #1e1a16;
 
   /* Yellow — fills and solid shapes ONLY, never text or strokes */
-  --yellow-mark: #fbd24e;
-  --yellow-soft: #faecc9;
+  /* Pure lemon yellow (owner decision). Still surface-only: #ffeb00 is 1.09:1
+     on white, so it can never be text or a stroke. Ink on it is 13.3:1. */
+  --yellow-mark: #ffeb00;
+  --yellow-soft: #fff7b8;
   --gold-ink: #8a5d12;
 
   --ink-on-yellow: #241f1a;
   --ink-on-deep: #e8e1d7;
 
   --border-hairline: #ede7dd;
-  --border-on-wash: #f1e4c6;
+  --border-on-wash: #f2e9a8;
   --border-strong: #ddd4c6;
   --focus-ring: #8a5d12;
 
@@ -97,16 +99,18 @@
   --p500: #a37220;
   --p600: #6f4a0d;
 
-  --p-subtle: rgba(250,236,201,0.55);
-  --p-tint: rgba(250,236,201,0.9);
+  --p-subtle: rgba(255,247,184,0.55);
+  --p-tint: rgba(255,247,184,0.9);
   --p-border: rgba(138,93,18,0.28);
 
   /* Red — CTA ONLY. Never headlines, prices, icons or urgency text.
      #B8322B is 5.95:1 with white text (the old coral was borderline). */
-  --coral: #b8322b;
-  --red-cta: #b8322b;
-  --red-cta-hover: #9e2620;
-  --red-cta-press: #85201b;
+  /* Pure red. #ff0000 itself is only 4.00:1 with white text and fails AA;
+     #e60000 is visually the same red and clears it at 4.81:1. */
+  --coral: #e60000;
+  --red-cta: #e60000;
+  --red-cta-hover: #cc0000;
+  --red-cta-press: #b30000;
   --red-tint: #fbeae7;
   --coral-tint: rgba(184,50,43,0.1);
   --coral-border: rgba(184,50,43,0.3);
