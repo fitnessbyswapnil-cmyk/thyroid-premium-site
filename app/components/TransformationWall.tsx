@@ -66,7 +66,7 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
   return (
     <figure
       ref={ref}
-      className="wall-cell w-[78vw] shrink-0 snap-center sm:w-auto"
+      className="wall-cell"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(14px)",
@@ -134,11 +134,16 @@ export default function TransformationWall() {
           </h2>
         </header>
 
-        {/* Mobile: scroll-snap rail · sm+: grid */}
-        <div
-          className="mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4"
-          style={{ scrollbarWidth: "none", scrollPaddingInline: "1.25rem" }}
-        >
+        {/* Grid at every breakpoint — never a rail.
+            This was a horizontal scroll-snap rail on mobile, which showed ~1.3
+            of the four cards to the ~80% of traffic that is mobile and hid the
+            rest behind a sideways swipe most people never discover. Proof only
+            works by accumulation: one before/after is an anecdote, four seen
+            together are a pattern, so all four must sit in the vertical scroll
+            path. 2-up rather than 1-up on mobile because these are 9:16
+            portraits — stacked full-width they would run ~2,700px and get
+            abandoned, while 2x2 puts the whole wall on roughly one screen. */}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
           {WALL.map((entry, i) => (
             <WallCell key={entry.src} entry={entry} index={i} />
           ))}
