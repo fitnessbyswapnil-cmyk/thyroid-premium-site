@@ -68,25 +68,19 @@ export default function Hero() {
           even with a thyroid problem.
         </h1>
 
-        {/* c) Subhead — mechanism + path, three short sentences */}
+        {/* c) One line, and its only job is to start the video.
+            The subhead and the named-results microline that used to sit here
+            are gone: the hero was explaining the mechanism in text AND then
+            asking her to watch a video that explains the same mechanism
+            better. Two blocks competing to make one point meant neither got
+            read. The proof lives further down the page, on photographs and
+            screenshots, where it is evidence rather than a claim. */}
         <p
-          className="hero-rise mt-[18px] max-w-[44ch] text-pretty leading-[1.6] text-[var(--t2)]"
-          style={{ animationDelay: "200ms", fontSize: "clamp(0.98rem, 0.94rem + 0.35vw, 1.1rem)" }}
+          className="hero-rise mt-[18px] max-w-[38ch] text-pretty leading-[1.6] text-[var(--t2)]"
+          style={{ animationDelay: "200ms", fontSize: "clamp(1rem, 0.96rem + 0.35vw, 1.14rem)" }}
         >
-          Your weight isn&rsquo;t stuck. It&rsquo;s{" "}
-          <strong className="font-semibold text-[var(--t1)]">blocked</strong>. The
-          tablet fixed your TSH, not your metabolism. Find your blocker on a
-          private 1-1 session with me.
-        </p>
-
-        {/* d) Proof microline — the claim's receipts, right below it */}
-        <p
-          className="hero-rise mt-[14px] text-pretty text-[13px] font-semibold leading-[1.6] text-[var(--p300)] sm:text-[14px]"
-          style={{ animationDelay: "240ms" }}
-        >
-          Heenal &minus;15 kg &middot; Namrata &minus;16 kg &middot; Vaidehi
-          &minus;12 kg. All in 90 days.
-          <span className="ml-1 font-normal text-[var(--t4)]">Results vary.</span>
+          Watch me explain the one thing that is actually{" "}
+          <strong className="font-semibold text-[var(--t1)]">blocking</strong> it.
         </p>
         {/* Two blocks used to sit here and both are gone deliberately.
             "Real Indian food / No starving / Alongside your doctor" was a
