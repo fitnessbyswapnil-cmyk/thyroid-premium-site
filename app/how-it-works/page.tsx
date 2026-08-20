@@ -203,7 +203,7 @@ export default function HowItWorks() {
             marginBottom: 6,
           }}
         >
-          Find My Blocker — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
+          Schedule My 1-1 Call — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
         </a>
         <p style={{ textAlign: "center", fontSize: 12, color: INK2, lineHeight: 1.6, marginBottom: 36 }}>
           I&apos;m not selling you a call — I&apos;m finding your blocker.
@@ -433,7 +433,7 @@ export default function HowItWorks() {
             marginBottom: 12,
           }}
         >
-          Okay — Find My Blocker — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
+          Okay — Schedule My 1-1 Call — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
         </a>
         <p style={{ textAlign: "center", fontSize: 11.5, color: MUTED, lineHeight: 1.6 }}>
           <span style={{ color: GOOD }}>✓</span> GPay · PhonePe · Paytm · Cards &nbsp;·&nbsp;

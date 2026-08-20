@@ -8,7 +8,7 @@ import HeroProofStrip from "./HeroProofStrip";
 // credential chips, gradient-ring video frame, tactile pill CTA, drifting
 // aurora glows. Primary CTA books the Rs 299 consultation directly (see
 // ScarcityProvider.goToCta → Cashfree form); a soft secondary link offers
-// the free Thyroid Score quiz so hesitant visitors still become leads.
+// the /schedule booking page so hesitant visitors still become leads.
 
 export default function Hero() {
   return (
@@ -67,8 +67,8 @@ export default function Hero() {
         >
           Your weight isn&rsquo;t stuck. It&rsquo;s{" "}
           <strong className="font-semibold text-[var(--t1)]">blocked</strong>. The
-          tablet fixed your TSH, not your metabolism. Find your blocker:
-          60-second quiz, then one private call.
+          tablet fixed your TSH, not your metabolism. Find your blocker on a
+          private 1-1 session with me.
         </p>
 
         {/* d) Proof microline — the claim's receipts, right below it */}
@@ -135,9 +135,9 @@ export default function Hero() {
           <CtaButton
             variant="primary"
             className="relative z-[1] w-full"
-            label="Find My Thyroid Blocker"
-            sublabel="60-second quiz · then your private ₹299 consultation · limited weekly slots"
-            ariaLabel="Find my thyroid blocker with the free 60-second quiz"
+            label="Schedule My 1-1 Thyroid Call"
+            sublabel="60 minutes, one to one with Swapnil · ₹299 · limited weekly slots"
+            ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="hero"
             showArrow
           />

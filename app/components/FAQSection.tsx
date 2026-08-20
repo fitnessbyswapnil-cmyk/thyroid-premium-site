@@ -15,8 +15,8 @@ const faqs = [
     a: "I review your intake before we speak. In 60 minutes you'll understand exactly why the fat isn't moving, what your thyroid actually needs, and what reversing it involves. You get a written summary in 24 hours.",
   },
   {
-    q: 'Is the Thyroid Score assessment free?',
-    a: "Yes. The 60-second quiz and your score are completely free. Decoding what your score actually means for you happens on the private 1-on-1 call.",
+    q: 'Why does the session cost ₹299?',
+    a: "So the woman in that slot actually turns up, and so I arrive having read your answers properly. It is adjusted against your plan if you decide to work with me.",
   },
   {
     q: 'Why is there a booking amount for the call?',
@@ -191,10 +191,10 @@ export default function FAQSection() {
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
-            label="Find My Thyroid Blocker"
-            sublabel="60-second quiz · then your private ₹299 consultation"
+            label="Schedule My 1-1 Thyroid Call"
+            sublabel="60 minutes, one to one with Swapnil · ₹299"
             trust="I personally review every quiz result before the call. Know your blocker, or your ₹299 back."
-            ariaLabel="Find my thyroid blocker with the free 60-second quiz"
+            ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="faq"
           />
         </div>

@@ -82,12 +82,12 @@ export default function PostTestimonialCta() {
             <button
               type="button"
               onClick={() => { trackCtaClick("post_testimonial"); goToCta("post_testimonial"); }}
-              aria-label="Find my thyroid blocker with the free 60-second quiz"
+              aria-label="Schedule my 1-1 thyroid fat loss session"
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
-              <span className="cta-label">This Sounds Like Me. Find My Blocker</span>
-              <span className="cta-sub">Free 60-second assessment · Then decode it live on a call</span>
+              <span className="cta-label">This Sounds Like Me. Schedule My Call</span>
+              <span className="cta-sub">60 minutes, one to one with Swapnil · ₹299</span>
             </button>
           </div>
 

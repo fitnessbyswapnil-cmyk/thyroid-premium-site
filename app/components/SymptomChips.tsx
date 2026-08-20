@@ -70,10 +70,10 @@ export default function SymptomChips() {
           variant="primary"
           className="mx-auto mt-8 max-w-sm"
           buttonClassName="w-full"
-          label="Find My Thyroid Blocker"
-          sublabel="60-second quiz · then your private ₹299 consultation"
+          label="Schedule My 1-1 Thyroid Call"
+          sublabel="Find what is blocking your thyroid fat loss · ₹299"
           trust="Leave the call knowing your exact blocker, or your ₹299 back."
-          ariaLabel="Find my thyroid blocker with the free 60-second quiz"
+          ariaLabel="Schedule my 1-1 thyroid fat loss session"
           location="symptoms"
         />
       </div>

@@ -38,7 +38,7 @@ const caveat = Caveat({
 export const metadata: Metadata = {
     title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
     description:
-          "On thyroid medication but the weight won't move? Your weight isn't stuck. It's blocked. Free 60-second quiz, then a private 1-on-1 consultation to find your blocker and get your 90-day plan. Real Indian food, no starving. Works alongside your doctor.",
+          "On thyroid medication but the weight won't move? Your weight isn't stuck. It's blocked. A private 1-on-1 consultation to find your blocker and get your 90-day plan. Real Indian food, no starving. Works alongside your doctor.",
     openGraph: {
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:
