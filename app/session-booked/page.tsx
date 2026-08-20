@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cal, { getCalApi } from "@calcom/embed-react";
+import { CAL_UI_CONFIG } from "@/lib/cal-theme";
 import { trackPurchase } from "../lib/analytics";
 import { SESSION_PRICE } from "../lib/pricing";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
@@ -109,15 +110,7 @@ function CalcomStep({
       // Premium, on-brand styling. month_view = calendar with date picker and
       // time slots side-by-side (the wide container gives it room). cal-brand
       // (plum-rose) drives the selected day + chosen slot highlight.
-      cal("ui", {
-        theme: "light",
-        layout: "month_view",
-        hideEventTypeDetails: false,
-        cssVarsPerTheme: {
-          light: { "cal-brand": "#96661a" },
-          dark: { "cal-brand": "#96661a" },
-        },
-      });
+      cal("ui", CAL_UI_CONFIG);
 
       cal("on", {
         action: "bookingSuccessful",

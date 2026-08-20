@@ -15,6 +15,7 @@ import { useEffect, useRef } from "react";
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { pushDL } from "@/app/lib/analytics";
 import { SESSION_PRICE } from "@/app/lib/pricing";
+import { CAL_UI_CONFIG } from "@/lib/cal-theme";
 
 const INK1 = "#241f1a";
 const INK2 = "#6b6157";
@@ -26,6 +27,11 @@ export default function BookSessionClient() {
   useEffect(() => {
     (async () => {
       const cal = await getCalApi({ namespace: "60min" });
+
+      // Theme the booker to the site palette so it does not read as a
+      // third-party widget dropped onto the page.
+      cal("ui", CAL_UI_CONFIG);
+
       cal("on", {
         action: "bookingSuccessful",
         callback: (e: unknown) => {
