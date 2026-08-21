@@ -9,6 +9,37 @@ export function pushDL(payload: DLPayload) {
   w.dataLayer.push(payload);
 }
 
+// ── Browser Pixel leg ───────────────────────────────────────────────────────
+// Everything on this site reaches Meta through dataLayer → GTM → server-side
+// container → CAPI, which arrives at Meta as "Server". That is a single leg, so
+// there is nothing for Meta to deduplicate against and the event carries only
+// the match keys the server could reconstruct.
+//
+// Events Manager shows the consequence plainly: PageView reads "Deduplicated"
+// (two legs) while Schedule reads "Processed" (one). The browser pixel is
+// already loaded on the page — fbq exists and dataset 1004294955172584 is
+// configured — it is simply never asked to send this event.
+//
+// Firing it directly with the SAME event_id creates the pair. Meta collapses
+// them into one event and keeps the better match data: the browser leg carries
+// _fbp and _fbc natively, which the server leg can only pass along if they were
+// captured and forwarded correctly.
+//
+// Safe if GTM later adds its own browser tag for these: a third leg with the
+// same event_id is collapsed too. Deduplication is by event_id, not by count.
+type FbqParams = Record<string, string | number | undefined>;
+
+function fbqTrack(eventName: string, eventId: string, params?: FbqParams) {
+  if (typeof window === "undefined") return;
+  const w = window as typeof window & { fbq?: (...args: unknown[]) => void };
+  if (typeof w.fbq !== "function") return; // pixel not loaded — server leg still goes
+  try {
+    w.fbq("track", eventName, params ?? {}, { eventID: eventId });
+  } catch {
+    /* never let a tracking call break the page */
+  }
+}
+
 export function generateEventId(eventName: string): string {
   const ts = Math.floor(Date.now() / 1000);
   const rand = Math.random().toString(36).slice(2, 6);
@@ -264,6 +295,13 @@ export function trackPurchase(userData?: UserData, eventId?: string, transaction
     userData,
   );
   pushDL(payload);
+  // Browser leg, same event_id → collapses with the Cashfree webhook's CAPI
+  // Purchase rather than arriving as a second, unmatched event.
+  fbqTrack("Purchase", event_id, {
+    ...(value != null ? { value } : {}),
+    currency: "INR",
+    ...(transactionId ? { order_id: transactionId } : {}),
+  });
   return event_id;
 }
 
@@ -299,6 +337,9 @@ export function trackSchedule(
     userData,
   );
   pushDL(payload);
+  // Browser leg, same event_id → Meta collapses this with the /api/cal-webhook
+  // server leg instead of counting one unpaired event.
+  fbqTrack("Schedule", eventId, { ...(PRODUCT.value != null ? { value: PRODUCT.value } : {}), currency: "INR" });
   return eventId;
 }
 
