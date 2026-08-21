@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
       { source: "/complete-payment", destination: "/book-session", permanent: false },
       { source: "/payment", destination: "/book-session", permanent: false },
       { source: "/how-it-works", destination: "/book-session", permanent: false },
+      { source: "/book", destination: "/book-session", permanent: false },
+      { source: "/payment-success", destination: "/book-session", permanent: false },
     ];
   },
   images: {
