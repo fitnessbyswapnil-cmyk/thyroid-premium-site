@@ -105,7 +105,7 @@ function TestimonialCard({
         position: "relative",
         overflow: "hidden",
         // Featured card: white with teal accent border
-        background: "#ffffff",
+        background: "var(--surface-page)",
         border: t.featured
           ? "1px solid rgba(163, 114, 32,0.32)"
           : "1px solid #ede7dd",

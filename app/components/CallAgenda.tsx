@@ -64,7 +64,7 @@ export default function CallAgenda() {
                   : "",
               ].join(" ")}
             >
-              <span className="pt-[2px] text-[12.5px] font-semibold uppercase tracking-[0.06em] text-[var(--gold-ink)]">
+              <span className="pt-[2px] text-[length:var(--text-xs)] font-semibold uppercase tracking-[0.06em] text-[var(--gold-ink)]">
                 {row.when}
               </span>
               <span className="text-pretty text-[length:var(--text-sm)] leading-[1.65] text-[var(--t2)]">

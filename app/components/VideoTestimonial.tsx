@@ -444,7 +444,7 @@ export default function VideoTestimonial() {
 
   return (
     <section
-      className="cv-auto section-pad section-deep relative overflow-hidden"
+      className="cv-auto section-pad-tight section-deep relative overflow-hidden"
       aria-labelledby="testimonial-heading"
     >
       {/* Ambient glows — warm tints on the one dark band of the page */}

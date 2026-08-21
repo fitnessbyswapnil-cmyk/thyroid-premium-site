@@ -47,7 +47,7 @@ export default function PillarsSection() {
               <div className="mb-3 flex items-center gap-3">
                 <span
                   aria-hidden="true"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-[var(--yellow-mark)] text-[16px] font-semibold text-[var(--ink-on-yellow)]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-[var(--yellow-mark)] text-[length:var(--text-sm)] font-semibold text-[var(--ink-on-yellow)]"
                   style={{ fontFamily: "var(--font-display), Georgia, serif" }}
                 >
                   {p.n}

@@ -181,7 +181,7 @@ export default function HeroVideo() {
         <div className="relative aspect-video">
           {missing ? (
             <div className="flex h-full w-full items-center justify-center">
-              <p className="text-[15px] font-medium text-white/60">Video coming soon</p>
+              <p className="text-[length:var(--text-sm)] font-medium text-white/60">Video coming soon</p>
             </div>
           ) : (
             <>
@@ -235,7 +235,7 @@ export default function HeroVideo() {
                     <path d="M2 22 C 14 20, 26 12, 32 3" />
                     <polyline points="26,3 32,3 31,9" strokeLinejoin="round" fill="none" />
                   </svg>
-                  <span className="font-hand text-[20px] leading-none text-white/85">
+                  <span className="font-hand text-[length:var(--text-lg)] leading-none text-white/85">
                     Watch the Video
                   </span>
                 </div>
@@ -292,7 +292,7 @@ export default function HeroVideo() {
                 />
 
                 <span
-                  className="shrink-0 text-[11.5px] text-white/55"
+                  className="shrink-0 text-[length:var(--text-2xs)] text-white/55"
                   style={{ fontFamily: "var(--font-geist-mono, monospace)" }}
                 >
                   {fmt(time)} / {fmt(duration)}

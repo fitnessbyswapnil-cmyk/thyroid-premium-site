@@ -19,6 +19,9 @@
 
 :root {
   /* Typography — floors raised for 40+ eyes (base ≈18px) */
+  /* Bottom rung: micro-labels, badges, legal lines. Added because the page
+     was reaching for 9px–11.5px in fifteen different arbitrary values. */
+  --text-2xs: clamp(0.68rem, 0.655rem + 0.14vw, 0.75rem);
   --text-xs: clamp(0.78rem, 0.76rem + 0.18vw, 0.86rem);
   --text-sm: clamp(0.94rem, 0.9rem + 0.22vw, 1.02rem);
   --text-base: clamp(1.08rem, 1.03rem + 0.25vw, 1.17rem);
@@ -238,6 +241,17 @@ a {
 
 .section-pad {
   padding-block: clamp(4rem, 8vw, 7rem);
+}
+
+/* A deliberate pause — used where the page changes what it is saying. */
+.section-pad-lg {
+  padding-block: clamp(5.5rem, 11vw, 10rem);
+}
+
+/* Consecutive blocks that are one idea shown several ways. Tightening them
+   makes the group read as a single argument instead of three separate ones. */
+.section-pad-tight {
+  padding-block: clamp(2.5rem, 5vw, 4rem);
 }
 
 /* SECTION LABEL */

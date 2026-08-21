@@ -39,7 +39,7 @@ export default function Hero() {
         {/* a) Eyebrow — hyperniche filter: the medicated-but-stuck woman */}
         <div className="hero-rise flex w-full items-center justify-center gap-2" style={{ animationDelay: "0ms" }}>
           <span aria-hidden="true" style={{ color: "var(--gold-ink)", fontSize: 7, lineHeight: 1 }}>◆</span>
-          <p className="max-w-[36ch] text-[11px] font-semibold uppercase leading-[1.5] tracking-[0.2em] text-[var(--t3)] sm:max-w-none sm:text-[11.5px] sm:tracking-[0.22em]">
+          <p className="max-w-[36ch] text-[length:var(--text-2xs)] font-semibold uppercase leading-[1.5] tracking-[0.2em] text-[var(--t3)] sm:max-w-none sm:text-[length:var(--text-2xs)] sm:tracking-[0.22em]">
             For busy professional women 30+ on thyroid medication
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function Hero() {
             showArrow
           />
           {/* Risk reversal at the decision point — the page's strongest line */}
-          <p className="mt-3 text-center text-[12.5px] font-medium leading-[1.5] text-[var(--t3)]">
+          <p className="mt-3 text-center text-[length:var(--text-xs)] font-medium leading-[1.5] text-[var(--t3)]">
             Leave the call knowing your exact blocker,{" "}
             <span className="font-semibold text-[var(--p300)]">and it costs you nothing.</span>
           </p>

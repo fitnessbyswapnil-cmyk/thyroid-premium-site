@@ -89,17 +89,17 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
           exists) as a small teal serif quote. */}
       <figcaption className="mt-2.5 px-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[13px] font-semibold text-[var(--t2)]">{entry.name}</span>
-          <span className="rounded-full border border-[var(--p-border)] bg-[var(--p-tint)] px-2.5 py-[3px] text-[10.5px] font-bold tracking-[0.04em] text-[var(--p300)]">
+          <span className="text-[length:var(--text-xs)] font-semibold text-[var(--t2)]">{entry.name}</span>
+          <span className="rounded-full border border-[var(--p-border)] bg-[var(--p-tint)] px-2.5 py-[3px] text-[length:var(--text-2xs)] font-bold tracking-[0.04em] text-[var(--p300)]">
             {entry.stat}
           </span>
         </div>
-        <p className="mt-1.5 text-[12.5px] font-semibold leading-[1.5] text-[var(--t2)]">
+        <p className="mt-1.5 text-[length:var(--text-xs)] font-semibold leading-[1.5] text-[var(--t2)]">
           {entry.story}
         </p>
         {entry.quote ? (
           <p
-            className="mt-1 text-[13px] italic leading-[1.55] text-[var(--p300)]"
+            className="mt-1 text-[length:var(--text-xs)] italic leading-[1.55] text-[var(--p300)]"
             style={{ fontFamily: "var(--font-display), Georgia, serif" }}
           >
             &ldquo;{entry.quote}&rdquo;
@@ -113,7 +113,7 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
 export default function TransformationWall() {
   return (
     <section
-      className="cv-auto section-pad relative bg-[var(--bg-page)]"
+      className="cv-auto section-pad-tight relative bg-[var(--bg-page)]"
       aria-labelledby="transformations-heading"
     >
       <div aria-hidden="true" className="section-glow">
@@ -152,7 +152,7 @@ export default function TransformationWall() {
           ))}
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-[var(--t5)]">
+        <p className="mt-6 text-center text-[length:var(--text-2xs)] text-[var(--t5)]">
           Individual results vary. Not a substitute for medical advice.
         </p>
       </div>

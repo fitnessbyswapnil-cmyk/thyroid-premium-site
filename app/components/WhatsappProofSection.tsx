@@ -216,7 +216,7 @@ function FeaturedStoryCard({
         border: featured
           ? '1px solid rgba(163, 114, 32,0.4)'
           : '1px solid #ede7dd',
-        background: '#ffffff',
+        background: 'var(--surface-page)',
         boxShadow: featured
           ? '0 0 0 1px rgba(163, 114, 32,0.08), 0 20px 50px rgba(36, 31, 26,0.12)'
           : '0 1px 2px rgba(36, 31, 26,0.04), 0 20px 50px rgba(36, 31, 26,0.08)',
@@ -298,7 +298,7 @@ function ProofCard({
         flexShrink: 0,
         borderRadius: '28px',
         border: '1px solid #ede7dd',
-        background: '#ffffff',
+        background: 'var(--surface-page)',
         // One shadow, not two stacked 60/120px blurs — blur radius is the
         // single most expensive thing to composite; ~half the paint cost per
         // card. Hover animates transform ONLY (GPU-cheap), never box-shadow.
@@ -408,7 +408,7 @@ export default function WhatsappProofSection() {
     // CTA makes a red-yellow-green traffic light, on the calmest section of the
     // page. Keep yellow at least 32px clear of every screenshot.
     <section
-      className="cv-auto section-pad relative overflow-hidden"
+      className="cv-auto section-pad-tight relative overflow-hidden"
       style={{ background: 'var(--bg-page)' }}
       aria-labelledby="whatsapp-proof-heading"
     >

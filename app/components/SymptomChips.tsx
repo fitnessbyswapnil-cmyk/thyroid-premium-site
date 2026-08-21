@@ -143,7 +143,7 @@ export default function SymptomChips() {
                     aria-hidden="true"
                     className={[
                       "mt-[2px] flex h-[19px] w-[19px] flex-none items-center justify-center rounded-[5px]",
-                      "text-[11px] font-bold transition-colors duration-150",
+                      "text-[length:var(--text-2xs)] font-bold transition-colors duration-150",
                       on
                         ? "bg-[var(--yellow-mark)] text-[var(--ink-on-yellow)]"
                         : "border border-[var(--border-strong)] bg-white text-transparent",
@@ -153,7 +153,7 @@ export default function SymptomChips() {
                   </span>
                   <span
                     className={[
-                      "text-[15px] leading-[1.5] transition-colors duration-150",
+                      "text-[length:var(--text-sm)] leading-[1.5] transition-colors duration-150",
                       on ? "font-medium text-[var(--t1)]" : "text-[var(--t2)]",
                     ].join(" ")}
                   >
@@ -171,7 +171,7 @@ export default function SymptomChips() {
           </p>
         </div>
 
-        <p className="mx-auto mt-2 max-w-[40ch] text-center text-[12.5px] leading-[1.55] text-[var(--t4)]">
+        <p className="mx-auto mt-2 max-w-[40ch] text-center text-[length:var(--text-xs)] leading-[1.55] text-[var(--t4)]">
           No tablet, and your report says &ldquo;normal&rdquo; but your body disagrees? This still applies.
         </p>
 

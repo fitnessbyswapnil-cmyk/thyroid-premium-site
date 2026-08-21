@@ -68,10 +68,10 @@ export default function StickyBookingBar() {
       >
         {/* Text */}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] font-semibold leading-tight tracking-[-0.01em] text-[var(--t1)]">
+          <p className="truncate text-[length:var(--text-xs)] font-semibold leading-tight tracking-[-0.01em] text-[var(--t1)]">
             Your 1-1 thyroid session
           </p>
-          <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">
+          <p className="mt-0.5 text-[length:var(--text-2xs)] leading-snug text-[var(--t4)]">
             60 minutes with Swapnil · free
           </p>
         </div>

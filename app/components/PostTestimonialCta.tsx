@@ -39,7 +39,7 @@ export default function PostTestimonialCta() {
             position: "relative",
             borderRadius: 20,
             border: "1px solid #ede7dd",
-            background: "#ffffff",
+            background: "var(--surface-page)",
             padding: "clamp(1.75rem, 5.5vw, 2.5rem) clamp(1.25rem, 5vw, 2rem)",
             textAlign: "center",
             boxShadow: "0 1px 2px rgba(36, 31, 26,0.04), 0 10px 32px rgba(36, 31, 26,0.07)",

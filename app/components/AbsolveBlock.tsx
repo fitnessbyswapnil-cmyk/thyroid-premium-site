@@ -10,7 +10,7 @@
 // no CTA deliberately — the ask comes after the state has changed, not during.
 export default function AbsolveBlock() {
   return (
-    <section className="section-pad relative" aria-labelledby="absolve-heading">
+    <section className="section-pad-lg relative" aria-labelledby="absolve-heading">
       <div className="container-narrow relative z-10">
         <header className="section-header">
           <p className="section-label">Before you blame yourself again</p>
