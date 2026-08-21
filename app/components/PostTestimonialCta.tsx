@@ -86,7 +86,7 @@ export default function PostTestimonialCta() {
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
-              <span className="cta-label">Schedule My 1-1 Thyroid Call</span>
+              <span className="cta-label">Schedule My 1-1 Thyroid Fat Loss Call</span>
               <span className="cta-sub">Free · 60 minutes · one to one</span>
             </button>
           </div>

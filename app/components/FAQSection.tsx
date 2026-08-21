@@ -191,7 +191,7 @@ export default function FAQSection() {
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
-            label="Schedule My 1-1 Thyroid Call"
+            label="Schedule My 1-1 Thyroid Fat Loss Call"
             sublabel="Free · 60 minutes · one to one"
             ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="faq"
