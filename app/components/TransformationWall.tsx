@@ -132,6 +132,9 @@ export default function TransformationWall() {
           >
             Real women. 12&ndash;16 kg down in 90 days.
           </h2>
+          <p className="mx-auto mt-3 max-w-[34ch] text-center text-[length:var(--text-sm)] leading-[1.6] text-[var(--t3)]">
+            100+ Indian women with hypothyroidism coached, one to one.
+          </p>
         </header>
 
         {/* Grid at every breakpoint — never a rail.
