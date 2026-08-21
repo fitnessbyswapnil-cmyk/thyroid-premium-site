@@ -149,11 +149,15 @@ export async function POST(req: NextRequest) {
     // spreadsheet API was slow. The Cashfree webhook stamps Paid regardless.
   }
 
+  // city rides back for Meta advanced matching: ct is one of the higher-value
+  // match keys and it is already sitting in her Cal.com answers, so leaving it
+  // on the server was costing event match quality for nothing.
   return NextResponse.json({
     leadId,
     name,
     phone,
     email,
+    city: pick(a, 'city', 'whichcity'),
     startTime: str(booking.start) || str(booking.startTime),
     uid,
   })

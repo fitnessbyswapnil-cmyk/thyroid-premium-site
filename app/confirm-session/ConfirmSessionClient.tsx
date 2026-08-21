@@ -22,7 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { pushDL, trackSchedule } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 
-type Resolved = { leadId: string; name: string; phone: string; startTime: string };
+type Resolved = { leadId: string; name: string; phone: string; email?: string; city?: string; startTime: string };
 
 const INK1 = "#241f1a";
 const INK2 = "#6b6157";
@@ -71,6 +71,26 @@ export default function ConfirmSessionClient() {
               ...(data.phone && { phone: data.phone }),
             });
 
+            // ── Advanced matching payload ─────────────────────────────────
+            // Meta scores every event on how many identifiers it can match to a
+            // real person. Email and phone are the two heaviest, first/last name
+            // and city are next, and all four are sitting in her Cal.com answers
+            // — so leaving them server-side was costing match quality for free.
+            //
+            // Pushed BEFORE the Schedule event so a GTM tag reading these as
+            // variables has them populated when it fires, not a tick later.
+            const nameParts = (data.name || "").trim().split(/\s+/);
+            pushDL({
+              event: "booking_identity",
+              user_email: (data.email || "").trim().toLowerCase() || undefined,
+              user_phone: (data.phone || "").replace(/\D/g, "") || undefined,
+              user_first_name: (nameParts[0] || "").toLowerCase() || undefined,
+              user_last_name: (nameParts.slice(1).join(" ") || "").toLowerCase() || undefined,
+              user_city: (data.city || "").trim().toLowerCase() || undefined,
+              user_country: "in",
+              booking_uid: uid,
+            });
+
             // ── Schedule ──────────────────────────────────────────────────────
             // Fires here, at booking time. /booking-confirmed also fires Schedule
             // but belongs to the pay-first flow, which nothing routes to now — so
@@ -110,6 +130,8 @@ export default function ConfirmSessionClient() {
                   {
                     ...(data.name && { first_name: data.name.split(/\s+/)[0] }),
                     ...(data.phone && { phone: data.phone }),
+                    ...(data.email && { email: data.email }),
+                    ...(data.city && { city: data.city }),
                   },
                 );
               }
