@@ -219,19 +219,67 @@ export default function ConfirmSessionClient() {
 
         {/* The one ask. It replaces the Rs 299 as the seriousness filter, and
             unlike a payment wall it makes the call materially better. */}
+        {/* The one ask. It replaces the Rs 299 as the seriousness filter, and
+            unlike a payment wall it makes the call materially better. */}
         <div style={{
-          border: `1px solid ${GRID}`, borderRadius: 12, padding: "18px 20px", marginBottom: 20,
+          border: `1px solid ${GRID}`, borderRadius: 12, padding: "18px 20px", marginBottom: 16,
         }}>
           <p style={{ fontSize: 15.5, fontWeight: 700, color: INK1, margin: "0 0 8px" }}>
             One thing before we speak
           </p>
           <p style={{ fontSize: 15, lineHeight: 1.6, color: INK2, margin: "0 0 10px" }}>
-            Send me your latest thyroid report — TSH, T3, T4, and anything else
-            you have. Reply to the WhatsApp confirmation with a photo of it.
+            Send me your latest thyroid report &mdash; TSH, T3, T4, and anything
+            else you have. Reply to the WhatsApp confirmation with a photo of it.
           </p>
           <p style={{ fontSize: 14, lineHeight: 1.6, color: INK2, margin: 0 }}>
-            I read it before the call. That is the difference between me
-            diagnosing your case and me interviewing you for an hour.
+            An older report is fine. No report at all is also fine &mdash; tell me
+            that on WhatsApp and we will work from your symptoms instead.
+          </p>
+        </div>
+
+        {/* Preparation. Lemon wash ties it to the session card above: both are
+            "this is your appointment", as against the white cards which are
+            "here is information". */}
+        <div style={{
+          background: "#fffdeb", border: "1px solid #f2e9a8", borderRadius: 12,
+          padding: "18px 20px", marginBottom: 16,
+        }}>
+          <p style={{ fontSize: 15.5, fontWeight: 700, color: INK1, margin: "0 0 12px" }}>
+            How to get the most out of the hour
+          </p>
+
+          {[
+            ["A quiet room.", "Not the car, not the office corridor, not while cooking. You will be talking about things you have not said out loud in years."],
+            ["Pen and paper.", "You will want to write down your blocker and what to do about it. People who take notes act on them."],
+            ["A strong connection.", "We are on video and I will share your reports on screen. Wifi if you have it."],
+            ["Be on time.", "The full sixty minutes is yours only if we start on time."],
+          ].map(([head, body]) => (
+            <div key={head} style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <span aria-hidden="true" style={{
+                flex: "none", width: 6, height: 6, borderRadius: 3,
+                background: "#8a5d12", marginTop: 8,
+              }} />
+              <p style={{ fontSize: 14.5, lineHeight: 1.6, color: INK2, margin: 0 }}>
+                <strong style={{ color: INK1, fontWeight: 700 }}>{head}</strong>{" "}
+                {body}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* The commitment line. Stated once, plainly, with the reason — a policy
+            without a reason reads as rigid; with one it reads as fair. */}
+        <div style={{
+          borderLeft: `3px solid ${RED}`, background: "#ffffff",
+          borderRadius: "0 10px 10px 0", padding: "14px 16px", marginBottom: 16,
+        }}>
+          <p style={{ fontSize: 14.5, lineHeight: 1.6, color: INK1, margin: 0, fontWeight: 700 }}>
+            This slot will not be rescheduled.
+          </p>
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: INK2, margin: "6px 0 0" }}>
+            I hold a limited number of these each week and this one is now closed
+            to everyone else. If you cannot make it, tell me on WhatsApp before
+            the day so someone else can use it.
           </p>
         </div>
 
@@ -243,15 +291,15 @@ export default function ConfirmSessionClient() {
           </p>
           <p style={{ fontSize: 14, lineHeight: 1.6, color: INK2, margin: 0 }}>
             We go through your reports and your answers, and you leave knowing
-            which of the three blockers is holding your fat loss — and what
+            which of the three blockers is holding your fat loss &mdash; and what
             fixing it involves. A written summary follows within 24 hours,
             yours to keep either way.
           </p>
         </div>
 
         <p style={{ fontSize: 13, color: INK2, marginTop: 18, textAlign: "center", lineHeight: 1.5 }}>
-          A calendar invite and a WhatsApp confirmation are on their way. If the
-          time no longer works, use the reschedule link in either one.
+          A calendar invite and a WhatsApp confirmation are on their way. Add it
+          to your calendar now, while you are here.
         </p>
       </div>
     </main>
