@@ -1,6 +1,7 @@
 "use client";
 
 import CtaButton from "./CtaButton";
+import BookingActivity from "./BookingActivity";
 import HeroVideo from "./HeroVideo";
 
 // VSL hero — approved Claude Design "final" port: gold-diamond eyebrow and
@@ -122,6 +123,7 @@ export default function Hero() {
             location="hero"
             showArrow
           />
+          <BookingActivity className="mt-3" />
           {/* Risk reversal at the decision point — the page's strongest line */}
           <p className="mt-3 text-center text-[length:var(--text-xs)] font-medium leading-[1.5] text-[var(--t3)]">
             Leave the call knowing your exact blocker,{" "}
