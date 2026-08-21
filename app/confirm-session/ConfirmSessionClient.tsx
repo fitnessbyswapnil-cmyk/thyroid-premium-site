@@ -229,7 +229,7 @@ export default function ConfirmSessionClient() {
           </p>
           <p style={{ fontSize: 15, lineHeight: 1.6, color: INK2, margin: "0 0 10px" }}>
             Send me your latest thyroid report &mdash; TSH, T3, T4, and anything
-            else you have. Reply to the WhatsApp confirmation with a photo of it.
+            else you have. WhatsApp it to me on +91 79784 60386.
           </p>
           <p style={{ fontSize: 14, lineHeight: 1.6, color: INK2, margin: 0 }}>
             An older report is fine. No report at all is also fine &mdash; tell me
@@ -298,8 +298,8 @@ export default function ConfirmSessionClient() {
         </div>
 
         <p style={{ fontSize: 13, color: INK2, marginTop: 18, textAlign: "center", lineHeight: 1.5 }}>
-          A calendar invite and a WhatsApp confirmation are on their way. Add it
-          to your calendar now, while you are here.
+          A calendar invite is on its way to your email. Add it to your
+          calendar now, while you are here.
         </p>
       </div>
     </main>
