@@ -258,6 +258,27 @@ export async function POST(req: NextRequest) {
         // UTILITY category, which is both cheaper and more deliverable than
         // marketing because it follows an action she just took.
         if (str(payload.source) === "calcom_pay_at_end") {
+          // HELD. booking_confirmation's live body reads "your payment is
+          // confirmed ✅ … Pick your call time below", with a button back to the
+          // Cal.com picker. Sending that to a woman who paid nothing and has
+          // already chosen a slot is worse than sending nothing: it invents a
+          // payment, then invites a duplicate booking.
+          //
+          // The template cannot currently be rewritten — WhatsApp Manager's
+          // editor is inert on this WABA, gated behind "set up a payment
+          // configuration", and Meta has separately reclassified it from
+          // UTILITY to MARKETING.
+          //
+          // Cal.com still sends its own confirmation email, so she is not left
+          // with nothing. Flip this to true the moment a correct template
+          // exists, and point BOOKING_TEMPLATE at it.
+          const BOOKING_TEMPLATE_READY = false;
+          if (!BOOKING_TEMPLATE_READY) {
+            console.warn(
+              "[quiz-lead] booking confirmation HELD — template still says 'payment confirmed'",
+            );
+            return;
+          }
           const rb = await sendBookingConfirmation(phone, name);
           console.log(
             `[quiz-lead] booking_confirmation sent=${rb.sent}` +
