@@ -88,7 +88,7 @@ export default function CallAgenda() {
           variant="primary"
           className="mx-auto mt-8 max-w-sm"
           buttonClassName="w-full"
-          label="Show Me What's Blocking It"
+          label="Schedule My 1-1 Thyroid Call"
           sublabel="Free · 60 minutes · one to one"
           trust="Bring your latest thyroid report. I read it before we speak."
           ariaLabel="Schedule my 1-1 thyroid fat loss session"

@@ -83,7 +83,7 @@ export default function StickyBookingBar() {
           aria-label="Schedule my 1-1 thyroid fat loss session"
           className="btn-sticky shrink-0"
         >
-          Show Me
+          Schedule Call
         </button>
       </div>
     </div>

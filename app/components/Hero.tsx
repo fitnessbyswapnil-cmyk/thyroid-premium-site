@@ -116,7 +116,7 @@ export default function Hero() {
           <CtaButton
             variant="primary"
             className="relative z-[1] w-full"
-            label="Show Me What's Blocking It"
+            label="Schedule My 1-1 Thyroid Call"
             sublabel="Free · 60 minutes · one to one"
             ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="hero"
