@@ -2,7 +2,6 @@
 
 import CtaButton from "./CtaButton";
 import HeroVideo from "./HeroVideo";
-import HeroProofStrip from "./HeroProofStrip";
 
 // VSL hero — approved Claude Design "final" port: gold-diamond eyebrow and
 // credential chips, gradient-ring video frame, tactile pill CTA, drifting
@@ -109,21 +108,16 @@ export default function Hero() {
           <HeroVideo />
         </div>
 
-        {/* f) Social-proof strip */}
-        <div className="hero-rise w-full" style={{ animationDelay: "520ms" }}>
-          <HeroProofStrip />
-        </div>
-
-        {/* g) Primary CTA — quiz-first (owner decision). Every CTA sends her
-            into the free Thyroid Score assessment; the paid call is offered
-            on the quiz's own result screen once she has a score and reason
-            to book, not blind on first click. */}
+        {/* f) Primary CTA — books directly. The call is free, so there is no
+            payment step to soften and no reason to route her through the quiz
+            first; the symptom checklist immediately below does the qualifying
+            work the quiz used to do, at a fraction of the friction. */}
         <div className="hero-rise mt-[40px] w-full max-w-[720px]" style={{ animationDelay: "620ms" }}>
           <CtaButton
             variant="primary"
             className="relative z-[1] w-full"
             label="Schedule My 1-1 Thyroid Call"
-            sublabel="60 minutes, one to one with Swapnil · ₹299 · limited weekly slots"
+            sublabel="60 minutes, one to one with Swapnil · free · limited weekly slots"
             ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="hero"
             showArrow
@@ -131,7 +125,7 @@ export default function Hero() {
           {/* Risk reversal at the decision point — the page's strongest line */}
           <p className="mt-3 text-center text-[12.5px] font-medium leading-[1.5] text-[var(--t3)]">
             Leave the call knowing your exact blocker,{" "}
-            <span className="font-semibold text-[var(--p300)]">or your ₹299 back.</span>
+            <span className="font-semibold text-[var(--p300)]">and it costs you nothing.</span>
           </p>
         </div>
 

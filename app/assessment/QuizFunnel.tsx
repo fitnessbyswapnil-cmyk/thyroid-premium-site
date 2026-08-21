@@ -728,7 +728,7 @@ export default function QuizFunnel() {
 
   const sc = scores || { total: 0, symptomLoad: 0, approachGap: 0, entrenched: 0, tierLabel: "", tierLine: "", insights: [] as string[], blockerLines: [] as string[], blockers: 0 };
   const firstName = form.name.trim().split(/\s+/)[0] || "";
-  const stagesDef: [number, number, string][] = [[2, 38, "Analysing your symptom pattern…"], [38, 74, "Comparing with 200+ hypothyroid client profiles…"], [74, 100, "Calculating your Thyroid Score…"]];
+  const stagesDef: [number, number, string][] = [[2, 38, "Analysing your symptom pattern…"], [38, 74, "Comparing with 100+ hypothyroid client profiles…"], [74, 100, "Calculating your Thyroid Score…"]];
 
   const card: React.CSSProperties = { background: CARD, border: `1px solid ${GRID}`, borderRadius: 20 };
   const shell: React.CSSProperties = { minHeight: "100vh", background: BG, color: INK1, fontFamily: "var(--font-body), Inter, system-ui, sans-serif" };
@@ -766,7 +766,7 @@ export default function QuizFunnel() {
                 <div key={ini} style={{ width: 26, height: 26, borderRadius: "50%", background: `linear-gradient(135deg, ${PURPLE_L}, ${PURPLE})`, border: `2px solid ${BG}`, marginLeft: i ? -8 : 0, display: "grid", placeItems: "center", fontSize: 9, fontWeight: 800, color: "#ffffff" }}>{ini}</div>
               ))}
             </div>
-            <p style={{ fontSize: 11.5, color: MUTED }}>Taken by 200+ Indian women with hypothyroidism</p>
+            <p style={{ fontSize: 11.5, color: MUTED }}>Taken by 100+ Indian women with hypothyroidism</p>
           </div>
         </div>
       </main>

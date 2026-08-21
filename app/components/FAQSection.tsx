@@ -7,20 +7,20 @@ import SectionHeader from './SectionHeader'
 
 const faqs = [
   {
+    q: 'Is this a sales call?',
+    a: "No. It is a diagnosis. The first 45 minutes are yours to keep whether or not you ever work with me — I read your reports beforehand and tell you which blocker is actually holding your fat loss. If my programme is not right for you, I will say so on the call.",
+  },
+  {
+    q: 'Why is the call free?',
+    a: "Because the diagnosis is what convinces you, not a payment page. I ask for your thyroid reports instead — that tells me you are serious, and it means I arrive having actually read your case rather than interviewing you cold.",
+  },
+  {
     q: "I'm already on thyroid medication. Can I still join?",
     a: 'Yes. Coaching works alongside your medication. We focus on nutrition, lifestyle, and sustainable fat loss, not replacing your doctor.',
   },
   {
     q: 'What happens in the consultation call?',
     a: "I review your intake before we speak. In 60 minutes you'll understand exactly why the fat isn't moving, what your thyroid actually needs, and what reversing it involves. You get a written summary in 24 hours.",
-  },
-  {
-    q: 'Why does the session cost ₹299?',
-    a: "So the woman in that slot actually turns up, and so I arrive having read your answers properly. It is adjusted against your plan if you decide to work with me.",
-  },
-  {
-    q: 'Why is there a booking amount for the call?',
-    a: "₹299 reserves a private 60-minute slot just for you and keeps the calendar for women who are serious about fixing this. It's fully adjusted against your plan if you join coaching. And if you leave the call without clarity about your blocker, it's refunded.",
   },
   {
     q: "I'm already taking thyroid medicine. Why would I still need this?",
@@ -48,7 +48,7 @@ const faqs = [
   },
   {
     q: 'What does the 3-month program cost?',
-    a: "It depends on what your case actually needs, on how far your thyroid has drifted, and on how much support and monitoring that requires. I quote it on the call once I've seen your reports and your answers, never before. The ₹299 you pay for the consultation is adjusted against it if you join.",
+    a: "It depends on what your case actually needs, on how far your thyroid has drifted, and on how much support and monitoring that requires. I quote it on the call once I've seen your reports and your answers, never before.",
   },
   {
     q: 'How much time does coaching take each week?',
@@ -192,8 +192,8 @@ export default function FAQSection() {
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
             label="Schedule My 1-1 Thyroid Call"
-            sublabel="60 minutes, one to one with Swapnil · ₹299"
-            trust="I personally review every quiz result before the call. Know your blocker, or your ₹299 back."
+            sublabel="60 minutes, one to one with Swapnil · free"
+            trust="I read your reports before we speak. You leave knowing your blocker."
             ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="faq"
           />

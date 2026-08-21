@@ -1,6 +1,8 @@
 import { ScrollDepthTracker } from "@/app/components/tracking/ScrollDepthTracker";
 import Hero from "@/app/components/Hero";
 import SymptomChips from "@/app/components/SymptomChips";
+import AbsolveBlock from "@/app/components/AbsolveBlock";
+import CallAgenda from "@/app/components/CallAgenda";
 import CertificationsSection from "@/app/components/CertificationsSection";
 import PillarsSection from "@/app/components/PillarsSection";
 import TransformationWall from "@/app/components/TransformationWall";
@@ -29,12 +31,14 @@ export default function Home() {
       />
       <ScrollDepthTracker />
       <Hero />                     {/* hero + VSL: blocked-not-stuck, medicated hyperniche */}
-      <SymptomChips />             {/* "still ticking these even on your tablet?" */}
-      <CertificationsSection />
-      <PillarsSection />           {/* the method revealed; the diagnosis withheld */}
+      <SymptomChips />             {/* interactive: she describes herself before anyone sells to her */}
+      <AbsolveBlock />             {/* lifts self-blame before the first real ask */}
+      <CallAgenda />               {/* minute-by-minute + "is this a sales call?" */}
       <TransformationWall />       {/* photo wall + verified story lines */}
       <VideoTestimonial />         {/* video proof */}
       <WhatsappProofSection />     {/* WhatsApp proof + the stack CTA */}
+      <PillarsSection />           {/* the method: reassurance AFTER she has identified */}
+      <CertificationsSection />    {/* supports the decision, does not cause it */}
       {/* SocialProof (named written testimonials) removed: the page already
           carries transformation photos, video testimonials and WhatsApp
           screenshots. A fourth proof block of plain text quotes was the

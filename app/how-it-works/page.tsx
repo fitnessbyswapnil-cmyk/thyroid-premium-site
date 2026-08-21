@@ -438,7 +438,7 @@ export default function HowItWorks() {
         <p style={{ textAlign: "center", fontSize: 11.5, color: MUTED, lineHeight: 1.6 }}>
           <span style={{ color: GOOD }}>✓</span> GPay · PhonePe · Paytm · Cards &nbsp;·&nbsp;
           <span style={{ color: GOOD }}>✓</span> Full refund if no clarity &nbsp;·&nbsp;
-          <span style={{ color: GOOD }}>✓</span> 200+ women guided
+          <span style={{ color: GOOD }}>✓</span> 100+ women guided
         </p>
       </div>
     </main>

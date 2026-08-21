@@ -340,7 +340,7 @@ function TrustLine() {
           letterSpacing: "0.01em",
         }}
       >
-        Trusted by 200+ Indian hypothyroid women · Thyroid-specific coaching only
+        Trusted by 100+ Indian hypothyroid women · Thyroid-specific coaching only
       </p>
     </div>
   );

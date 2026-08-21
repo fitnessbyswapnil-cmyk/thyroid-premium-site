@@ -87,7 +87,7 @@ export default function PostTestimonialCta() {
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
               <span className="cta-label">This Sounds Like Me. Schedule My Call</span>
-              <span className="cta-sub">60 minutes, one to one with Swapnil · ₹299</span>
+              <span className="cta-sub">60 minutes, one to one with Swapnil · free</span>
             </button>
           </div>
 

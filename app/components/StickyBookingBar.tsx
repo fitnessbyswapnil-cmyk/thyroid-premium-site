@@ -72,7 +72,7 @@ export default function StickyBookingBar() {
             Your 1-1 thyroid session
           </p>
           <p className="mt-0.5 text-[10px] leading-snug text-[var(--t4)]">
-            60 minutes with Swapnil · ₹299
+            60 minutes with Swapnil · free
           </p>
         </div>
 

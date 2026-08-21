@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Fragment } from "react";
 
-// Hero social-proof strip: 200+ laurel block + four client claims.
+// Hero social-proof strip: 100+ laurel block + four client claims.
 // No headshots exist in the repo (only WhatsApp screenshots and full-body
 // composites), so avatars render INITIALS on a --p-tint fill; the img slot is
 // wired so a real portrait can be dropped in later without touching layout.
@@ -71,12 +71,12 @@ export default function HeroProofStrip() {
     // reachable). sm+: the original single centred row.
     <div className="container-default mt-[36px] sm:mt-[44px]">
       <div role="list" aria-label="Client results" className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
-        {/* 200+ laurel block */}
+        {/* 100+ laurel block */}
         <div role="listitem" className="flex shrink-0 items-center gap-1.5">
           <Laurel />
           <div className="text-center">
             <div className="text-[26px] font-bold leading-none text-[var(--p300)] sm:text-[30px]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
-              200+
+              100+
             </div>
             <div className="mx-auto mt-1 max-w-[11ch] text-[11px] leading-[1.25] text-[var(--t2)] sm:text-[12px]">
               Indian Women Coached
