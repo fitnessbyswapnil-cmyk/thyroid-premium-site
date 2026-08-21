@@ -72,7 +72,7 @@ export default function StickyBookingBar() {
             Your 1-1 thyroid session
           </p>
           <p className="mt-0.5 text-[length:var(--text-2xs)] leading-snug text-[var(--t4)]">
-            60 minutes with Swapnil · free
+            Free · 60 minutes
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export default function StickyBookingBar() {
           aria-label="Schedule my 1-1 thyroid fat loss session"
           className="btn-sticky shrink-0"
         >
-          Schedule Call
+          Show Me
         </button>
       </div>
     </div>

@@ -191,9 +191,8 @@ export default function FAQSection() {
             className="!mt-0"
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
-            label="Schedule My 1-1 Thyroid Call"
-            sublabel="60 minutes, one to one with Swapnil · free"
-            trust="I read your reports before we speak. You leave knowing your blocker."
+            label="Show Me What's Blocking It"
+            sublabel="Free · 60 minutes · one to one"
             ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="faq"
           />

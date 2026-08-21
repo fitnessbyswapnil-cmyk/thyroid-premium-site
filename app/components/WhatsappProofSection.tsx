@@ -506,9 +506,8 @@ export default function WhatsappProofSection() {
             variant="primary"
             className="mx-auto mt-12 max-w-sm"
             buttonClassName="w-full"
-            label="Schedule My 1-1 Thyroid Call"
-            sublabel="No charge · 60 minutes, one to one"
-            trust="Leave the call knowing your exact blocker. No charge, no obligation."
+            label="Show Me What's Blocking It"
+            sublabel="Free · 60 minutes · one to one"
             ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="transformations"
           />

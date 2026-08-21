@@ -245,7 +245,9 @@ a {
 
 /* A deliberate pause — used where the page changes what it is saying. */
 .section-pad-lg {
-  padding-block: clamp(5.5rem, 11vw, 10rem);
+  /* Stacks on the preceding section's bottom padding, so this is tuned for
+     the COMBINED gap, not for its own value. */
+  padding-block: clamp(4rem, 8.5vw, 7rem);
 }
 
 /* Consecutive blocks that are one idea shown several ways. Tightening them

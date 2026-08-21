@@ -86,8 +86,8 @@ export default function PostTestimonialCta() {
               className="btn-ghost"
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
-              <span className="cta-label">This Sounds Like Me. Schedule My Call</span>
-              <span className="cta-sub">60 minutes, one to one with Swapnil · free</span>
+              <span className="cta-label">This Sounds Like Me</span>
+              <span className="cta-sub">Free · 60 minutes · one to one</span>
             </button>
           </div>
 

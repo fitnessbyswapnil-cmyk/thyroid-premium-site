@@ -179,9 +179,8 @@ export default function SymptomChips() {
           variant="primary"
           className="mx-auto mt-8 max-w-sm"
           buttonClassName="w-full"
-          label={count >= 3 ? "Find Out Which Blocker Is Mine" : "Schedule My 1-1 Thyroid Call"}
-          sublabel="Find what is blocking your thyroid fat loss · free"
-          trust="Leave the call knowing your exact blocker. No charge, no obligation."
+          label="Show Me What's Blocking It"
+          sublabel="Free · 60 minutes · one to one"
           ariaLabel="Schedule my 1-1 thyroid fat loss session"
           location="symptoms"
         />
