@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       { source: "/assessment", destination: "/book-session", permanent: false },
       { source: "/complete-payment", destination: "/book-session", permanent: false },
       { source: "/payment", destination: "/book-session", permanent: false },
+      { source: "/how-it-works", destination: "/book-session", permanent: false },
     ];
   },
   images: {

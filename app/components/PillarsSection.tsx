@@ -1,6 +1,6 @@
 // The 3-pillar method section — reveals the MECHANISM (what the method is,
 // why past attempts failed) while withholding the DIAGNOSIS (which pillar is
-// broken in HER case — that's what the ₹299 call sells). The analogies are
+// broken in HER case — that's what the free call diagnoses). The analogies are
 // the owner's own sales-call language, compressed for the page.
 const PILLARS = [
   {

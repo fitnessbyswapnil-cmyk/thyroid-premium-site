@@ -5,8 +5,8 @@
  * a slot and answers the qualification questions BEFORE any payment is asked.
  *
  * On bookingSuccessful we take the Cal.com booking uid and hand her to
- * /confirm-session?uid=..., which resolves the booking into a lead and opens
- * the embedded Cashfree checkout. The uid is the canonical booking id and is
+ * /confirm-session?uid=..., which resolves the booking into a lead and confirms
+ * it. There is no payment step: the call is free. The uid is the canonical id and is
  * the same value /api/cal-webhook uses for its Schedule event_id, so nothing
  * about tracking dedup changes.
  */
@@ -14,7 +14,6 @@
 import { useEffect, useRef } from "react";
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { pushDL } from "@/app/lib/analytics";
-import { SESSION_PRICE } from "@/app/lib/pricing";
 import { CAL_UI_CONFIG } from "@/lib/cal-theme";
 
 const INK1 = "#241f1a";
@@ -75,8 +74,8 @@ export default function BookSessionClient() {
           margin: "0 auto 24px", maxWidth: "52ch",
         }}>
           Choose a time and answer a few questions so I can read your situation
-          before we speak. You confirm the slot with ₹{SESSION_PRICE} on the next
-          screen.
+          before we speak. The call is free — the questions are how I arrive
+          already knowing your case.
         </p>
 
         <div style={{ borderRadius: 14, overflow: "hidden" }}>
