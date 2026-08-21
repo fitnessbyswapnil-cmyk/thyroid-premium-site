@@ -87,6 +87,24 @@ const AT2_TITLE = "Reminder 2 At";
 // to deploy before Meta approves booking_nudge_1h.
 const BOOKING_TEMPLATE = "booking_nudge_1h";
 const BOOKING_TEMPLATE_FALLBACK = "booking_confirmation";
+
+// ── Paid-funnel reminders: retired ──────────────────────────────────────────
+// The consultation is free. Four of the six jobs in this cron exist only for a
+// funnel that charged Rs299:
+//
+//   payment_reminder / payment_reminder_day2  — chase a payment nobody owes
+//   booking_nudge_1h / booking_nudge_day3     — chase "paid but never booked",
+//                                               a state that can no longer exist
+//                                               because booking IS the first act
+//
+// Sending any of them now would be worse than useless: it would ask a woman for
+// money she was told she does not owe, which is the fastest way to lose the
+// trust the whole funnel is built on.
+//
+// Gated rather than deleted. The plans still compute, so the logs still show
+// what WOULD have matched, and turning payment back on is one boolean.
+const PAID_FUNNEL_ACTIVE = false;
+
 const NUDGE_SENT_TITLE = "Booking Nudge Sent";
 const NUDGE_AT_TITLE = "Booking Nudge At";
 
@@ -378,7 +396,7 @@ export async function GET(req: NextRequest) {
 
     // Sequential, not parallel. Meta rate-limits template sends per number, and
     // a batch arriving all at once is also a worse experience than a trickle.
-    for (const c of plan.candidates) {
+    for (const c of PAID_FUNNEL_ACTIVE ? plan.candidates : []) {
       let usedTemplate = c.leadId ? TEMPLATE : "payment_reminder";
       let r = c.leadId
         ? await sendTryingLanguages((language) => sendPaymentReminderWithLink(c.phone, c.name, c.leadId!, language))
@@ -423,7 +441,7 @@ export async function GET(req: NextRequest) {
     // if payment_reminder_day2 is not approved yet, she simply does not get a
     // second message. Falling back to payment_reminder here would re-send her
     // the identical text she already ignored, and stamp it as a new touch.
-    for (const c of plan2.candidates) {
+    for (const c of PAID_FUNNEL_ACTIVE ? plan2.candidates : []) {
       const r = await sendTryingLanguages((language) =>
         c.leadId
           ? sendWhatsAppTemplate(c.phone, TEMPLATE2, [firstNameOf(c.name)], language, c.leadId)
@@ -447,7 +465,7 @@ export async function GET(req: NextRequest) {
     // is still warm. Falls back to booking_confirmation so this is safe to
     // deploy before booking_nudge_1h clears Meta review — she still gets the
     // Cal.com button either way.
-    for (const c of nudgePlan.candidates) {
+    for (const c of PAID_FUNNEL_ACTIVE ? nudgePlan.candidates : []) {
       let usedTemplate: string = BOOKING_TEMPLATE;
       let r = await sendTryingLanguages((language) =>
         c.leadId
@@ -475,7 +493,7 @@ export async function GET(req: NextRequest) {
     // Stage 2, three days after payment. No fallback: re-sending stage 1's
     // text as a "second" nudge would just repeat herself back at her, and
     // stamp it as new contact.
-    for (const c of nudge2Plan.candidates) {
+    for (const c of PAID_FUNNEL_ACTIVE ? nudge2Plan.candidates : []) {
       const r = await sendTryingLanguages((language) =>
         c.leadId
           ? sendWhatsAppTemplate(c.phone, BOOKING_TEMPLATE2, [firstNameOf(c.name)], language, c.leadId)

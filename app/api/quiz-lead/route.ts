@@ -19,7 +19,7 @@
  */
 import { NextRequest, NextResponse, after } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
-import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError } from "@/lib/whatsapp";
+import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -29,6 +29,9 @@ export const maxDuration = 30;
 const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/vafr1x6if1eehv2vxhyfw74ihh3b2nz8";
 
 type QuizLeadPayload = {
+  // Which entry point wrote this lead. booking-payment sets
+  // "calcom_pay_at_end", which selects booking_confirmation over welcome_lead.
+  source?: string;
   leadId?: string;
   name?: string;
   phone?: string;
@@ -243,6 +246,26 @@ export async function POST(req: NextRequest) {
         const phone = str(payload.phone);
         const name = str(payload.name);
         const leadId = str(payload.leadId);
+
+        // A Cal.com booking is not a quiz completion, and /api/booking-payment
+        // routes through here to reuse the sheet contract. Without this branch
+        // she receives welcome_lead — a quiz follow-up that congratulates her on
+        // a Thyroid Score she never took, with a button pointing at
+        // /complete-payment, a route that now redirects away.
+        //
+        // She has already picked a slot, so the right message is the one that
+        // confirms it and asks for her thyroid report. booking_confirmation is
+        // UTILITY category, which is both cheaper and more deliverable than
+        // marketing because it follows an action she just took.
+        if (str(payload.source) === "calcom_pay_at_end") {
+          const rb = await sendBookingConfirmation(phone, name);
+          console.log(
+            `[quiz-lead] booking_confirmation sent=${rb.sent}` +
+              (rb.error ? ` error=${rb.error}` : "") +
+              (rb.skipped ? ` skipped=${rb.skipped}` : ""),
+          );
+          return;
+        }
 
         // Prefer welcome_lead_link. Two things make it better than the
         // original: its button deep-links to /complete-payment?leadId=...
