@@ -135,11 +135,17 @@ export async function POST(req: NextRequest) {
         struggleDuration: pick(a, 'howlong', 'weightstuck'),
         symptoms: '',
         biggestChallenge: pick(a, 'inyourownwords', 'biggestchallenge', 'whathappens'),
-        triedBefore: pick(a, 'professionalhelp', 'investedinsofar'),
-        amountSpent: '',
+        // Has she ever actually paid for help before — the strongest predictor
+        // of a high-ticket close, and a far better signal than stated budget.
+        triedBefore: pick(a, 'paidforhelpbefore', 'professionalhelp', 'investedinsofar'),
+        amountSpent: pick(a, 'paidforhelpbefore'),
         goal: pick(a, 'weighttolose', 'urgentgoal', 'goal'),
-        commitment: pick(a, 'budget', 'howmuchcanyouinvest', 'paidprogram'),
-        timing: pick(a, 'decisionmaker', 'solefinancialdecisionmaker'),
+        commitment: pick(a, 'investmentlevel', 'budget', 'howmuchcanyouinvest', 'paidprogram'),
+        // Readiness, not capacity. These are different things and the sheet has
+        // a column for each.
+        timing: pick(a, 'whenwouldyoustart'),
+        decisionMaker: pick(a, 'financialdecisionmaker', 'decisionmaker', 'solefinancialdecisionmaker'),
+        profession: pick(a, 'profession'),
         source: 'calcom_pay_at_end',
         bookingUid: uid,
       }),
