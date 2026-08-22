@@ -346,13 +346,19 @@ export async function sendWelcomeLeadWithLink(
  * MARKETING on 17 Aug 2026, which is what payment language plus a booking
  * button reads as.
  *
- * booking_confirmed_free is UTILITY, takes the same single {{1}} first-name
+ * booking_confirmed_free_v2 is UTILITY, takes the same single {{1}} first-name
  * parameter, and has no button. It asks for her thyroid report instead, which
  * is the filter that replaced the Rs299.
+ *
+ * v2 over v1: the em dashes are gone (they read as machine-written), the ask is
+ * a bold line with a document marker so it survives a phone skim, and the
+ * closing line is about her hour rather than mine. Two emoji, used as
+ * structure. More than that reads as spam on a utility message, which is the
+ * category Meta already reclassified once in this account.
  */
 export async function sendBookingConfirmedFree(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'booking_confirmed_free', [firstName])
+  return sendWhatsAppTemplate(phone, 'booking_confirmed_free_v2', [firstName])
 }
 
 export async function sendBookingConfirmation(phone: string, fullName: string): Promise<WhatsAppResult> {
