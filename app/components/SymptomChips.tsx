@@ -119,24 +119,23 @@ export default function SymptomChips() {
             far bigger tap target on the phone, which is where nearly all of
             this traffic reads it. */}
         <ul
-          className="mx-auto max-w-[46ch] overflow-hidden rounded-[14px] border border-[var(--border-hairline)] bg-white"
+          className="mx-auto grid max-w-[46ch] gap-2 sm:max-w-[720px] sm:grid-cols-2"
           role="list"
         >
           {SYMPTOMS.map((s, i) => {
             const on = picked.has(s);
             return (
-              <li
-                key={s}
-                className={i > 0 ? "border-t border-[var(--border-hairline)]" : ""}
-              >
+              <li key={s} className="contents">
                 <button
                   type="button"
                   aria-pressed={on}
                   onClick={() => toggle(s)}
                   className={[
-                    "flex w-full cursor-pointer items-start gap-3 px-4 py-3.5 text-left",
+                    "flex h-full w-full cursor-pointer items-start gap-3 rounded-[12px] border px-4 py-3.5 text-left",
                     "transition-colors duration-150",
-                    on ? "bg-[var(--yellow-soft)]" : "bg-white hover:bg-[var(--surface-wash)]",
+                    on
+                      ? "border-[var(--t1)] bg-[var(--yellow-soft)]"
+                      : "border-[var(--border-hairline)] bg-white hover:border-[var(--t4)]",
                   ].join(" ")}
                 >
                   <span
