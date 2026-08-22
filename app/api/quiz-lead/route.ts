@@ -258,7 +258,9 @@ export async function POST(req: NextRequest) {
         // UTILITY category, which is both cheaper and more deliverable than
         // marketing because it follows an action she just took.
         if (str(payload.source) === "calcom_pay_at_end") {
-          // HELD. booking_confirmation's live body reads "your payment is
+          // LIVE since 22 Aug 2026. booking_confirmed_free is approved.
+          //
+          // It replaced booking_confirmation, whose body reads "your payment is
           // confirmed ✅ … Pick your call time below", with a button back to the
           // Cal.com picker. Sending that to a woman who paid nothing and has
           // already chosen a slot is worse than sending nothing: it invents a
@@ -273,7 +275,7 @@ export async function POST(req: NextRequest) {
           // with nothing. Flip this to true the moment a correct template
           // exists. booking_confirmed_free was created 22 Aug 2026 and is IN
           // REVIEW — flip this the moment Meta approves it.
-          const BOOKING_TEMPLATE_READY = false;
+          const BOOKING_TEMPLATE_READY = true;
           if (!BOOKING_TEMPLATE_READY) {
             console.warn(
               "[quiz-lead] booking confirmation HELD — template still says 'payment confirmed'",
