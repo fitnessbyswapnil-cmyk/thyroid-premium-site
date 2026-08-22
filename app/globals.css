@@ -43,78 +43,78 @@
   --space-20: 5rem;
 
   /* Background hierarchy — white ground, yellow wash sections, white cards */
-  --bg-page: #ffffff;
-  --bg-section: #fffdeb;
+  --bg-page: #f7f1de;
+  --bg-section: #ffffff;
   --bg-elevated: #ffffff;
 
   /* New surface tokens */
-  --surface-page: #ffffff;
-  --surface-wash: #fffdeb;
-  --surface-wash-strong: #fff7b8;
+  --surface-page: #f7f1de;
+  --surface-wash: #f7f1de;
+  --surface-wash-strong: #fdf6ec;
   --surface-card: #ffffff;
   --surface-deep: #1e1a16;
 
   /* Yellow — fills and solid shapes ONLY, never text or strokes */
   /* Pure lemon yellow (owner decision). Still surface-only: #ffeb00 is 1.09:1
      on white, so it can never be text or a stroke. Ink on it is 13.3:1. */
-  --yellow-mark: #ffeb00;
-  --yellow-soft: #fff7b8;
-  --gold-ink: #8a5d12;
+  --yellow-mark: #b8860b;
+  --yellow-soft: #f0e6c8;
+  --gold-ink: #b8860b;
 
   --ink-on-yellow: #241f1a;
   --ink-on-deep: #e8e1d7;
 
-  --border-hairline: #ede7dd;
-  --border-on-wash: #f2e9a8;
-  --border-strong: #ddd4c6;
-  --focus-ring: #8a5d12;
+  --border-hairline: #f0ebd8;
+  --border-on-wash: #e6dcbb;
+  --border-strong: #d8cfae;
+  --focus-ring: #b8860b;
 
-  --radius-button: 6px;
-  --radius-card: 12px;
-  --radius-image: 8px;
-  --shadow-card: 0 1px 2px rgba(36,31,26,.05), 0 8px 24px -14px rgba(36,31,26,.14);
+  --radius-button: 12px;
+  --radius-card: 16px;
+  --radius-image: 14px;
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.06);
 
   /* Surface system — warm dark-alpha on light ground */
   --s1: rgba(36,31,26,0.035);
   --s2: rgba(36,31,26,0.05);
   --s3: rgba(36,31,26,0.07);
 
-  --b-soft: rgba(36,31,26,0.1);
-  --b-mid: rgba(36,31,26,0.16);
+  --b-soft: #f0ebd8;
+  --b-mid: #d8cfae;
 
   /* Text — ink ramp on white. t1 15.4:1 AAA, t2 11.0:1 AAA, t3 6.0:1 AA.
      t4 is 3.7:1 — large text only, never body copy. */
-  --t1: #241f1a;
-  --t2: #423b33;
-  --t3: #6b6157;
-  --t4: #7a7065;   /* 4.7:1 — spec ships #8E8477 (3.7:1) but flags it as
+  --t1: #1a1a1a;
+  --t2: #5a5342;
+  --t3: #8a8272;
+  --t4: #8a8272;   /* 4.7:1 — spec ships #8E8477 (3.7:1) but flags it as
                       never-body-copy; this codebase uses t4 for small
                       captions, so the token is darkened to clear AA. */
-  --t5: #7c7367;   /* 4.5:1 — this codebase uses the faint end for real
+  --t5: #a89f8a;   /* 4.5:1 — this codebase uses the faint end for real
                       disclaimers at 11-13px, so it clears AA rather than
                       sitting at the spec's 3.7:1 large-text-only value. */
 
   /* Accent — the gold family replaces teal. These stay DARK on purpose:
      p300/p400/p500 are used for accent text, small marks and SVG strokes,
      all of which bright yellow would render invisible on white. */
-  --p300: #8a5d12;
-  --p400: #96661a;
-  --p500: #a37220;
-  --p600: #6f4a0d;
+  --p300: #b8860b;
+  --p400: #b8860b;
+  --p500: #b8860b;
+  --p600: #96700a;
 
-  --p-subtle: rgba(255,247,184,0.55);
-  --p-tint: rgba(255,247,184,0.9);
-  --p-border: rgba(138,93,18,0.28);
+  --p-subtle: #fdf3e0;
+  --p-tint: #fdf6ec;
+  --p-border: rgba(184,134,11,0.28);
 
   /* Red — CTA ONLY. Never headlines, prices, icons or urgency text.
      #B8322B is 5.95:1 with white text (the old coral was borderline). */
   /* Pure red. #ff0000 itself is only 4.00:1 with white text and fails AA;
      #e60000 is visually the same red and clears it at 4.81:1. */
-  --coral: #e60000;
-  --red-cta: #e60000;
-  --red-cta-hover: #cc0000;
-  --red-cta-press: #b30000;
-  --red-tint: #fbeae7;
+  --coral: #d81f26;
+  --red-cta: #d81f26;
+  --red-cta-hover: #c01a20;
+  --red-cta-press: #a81619;
+  --red-tint: #fdf6ec;
   --coral-tint: rgba(184,50,43,0.1);
   --coral-border: rgba(184,50,43,0.3);
 
@@ -183,20 +183,22 @@ body {
   margin: 0;
   background: var(--bg-page);
   color: var(--t1);
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   line-height: 1.65;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Headlines render in Lora (display); body/UI is Source Sans 3. Lora has
-   no optical-size axis — the old Fraunces "opsz 144" display cut is gone
-   on purpose: hairline display strokes are what made headlines hard to
-   read on a 40-year-old's phone. */
+/* One typeface for the whole page, per the supplied design: the system
+   sans at weight 800 with slight negative tracking. The Lora serif that
+   used to set headlines is intentionally not used here — the design is
+   built on a single sans and mixing the serif back in breaks it. */
 h1, h2, h3,
 .section-title {
-  font-family: var(--font-display), Georgia, serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 section {
@@ -240,7 +242,8 @@ a {
 /* SECTION SPACING */
 
 .section-pad {
-  padding-block: clamp(4rem, 8vw, 7rem);
+  /* Design rhythm: 56px sections, 64px for the wider proof blocks. */
+  padding-block: clamp(2.75rem, 5vw, 3.5rem);
 }
 
 /* A deliberate pause — used where the page changes what it is saying. */
@@ -259,25 +262,25 @@ a {
 /* SECTION LABEL */
 
 .section-label {
-  font-size: var(--text-xs);
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   /* Gold-ink, not red. Red is reserved for buttons: the moment it appears as
      text, every red button on the page loses its meaning. Gold-ink is the
      yellow family at a weight that actually passes on white (5.8:1). */
   color: var(--gold-ink);
-  margin-bottom: 0.7rem;
+  margin-bottom: 14px;
 }
 
 /* TITLES */
 
 .section-title {
-  font-size: var(--text-xl);
-  line-height: 1.12;
-  font-weight: 700;
+  font-size: clamp(1.75rem, 1.2rem + 1.9vw, 2.25rem);
+  line-height: 1.15;
+  font-weight: 800;
   color: var(--t1);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
 }
 
 .section-header {
@@ -287,10 +290,10 @@ a {
 
 .section-lead {
   margin-top: clamp(0.65rem, 2vw, 0.85rem);
-  max-width: 36ch;
-  font-size: var(--text-sm);
-  color: var(--t3);
-  line-height: 1.65;
+  max-width: 44ch;
+  font-size: 16px;
+  color: var(--t2);
+  line-height: 1.55;
 }
 
 .section-cta {
@@ -425,13 +428,12 @@ a {
 }
 
 .cta-button {
-  width: 100%;
-  min-height: 56px;
+  min-height: 0;
 
-  /* 6px, not a pill: a fully rounded CTA next to yellow reads app-promo. */
-  border-radius: var(--radius-button);
+  /* 12px, per the design. */
+  border-radius: 12px;
 
-  padding: 0.82rem 1.1rem;
+  padding: 20px 36px;
 
   /* Red is the page's single action colour, and appears nowhere else. */
   background: var(--red-cta);
@@ -439,37 +441,50 @@ a {
   color: #ffffff;
 
   font-weight: 700;
-  font-size: clamp(0.95rem, 2.5vw, 1.02rem);
+  font-size: 17px;
 
   letter-spacing: -0.01em;
 
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 
-  gap: 0.14rem;
+  gap: 2px;
 
-  /* No shadow: the button gets colour, and colour is enough. A coloured
-     glow under a red button is the clearest discount-page tell there is. */
+  text-align: left;
+
   box-shadow: none;
 
-  transition: background 200ms var(--ease-cta);
+  transition: all 0.2s ease;
 }
 
 .cta-button:hover {
-  /* Darken only — no lift, no scale. */
-  background: var(--red-cta-hover);
+  background: var(--red-cta);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(216,31,38,0.4);
 }
 
 .cta-button:active {
   background: var(--red-cta-press);
+  transform: translateY(0);
+}
+
+/* Full-width call sites (hero on mobile, sticky bar) centre their label. */
+.cta-button.w-full,
+.cta-button.\@full {
+  align-items: center;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-button:hover { transform: none; }
 }
 
 .cta-sub {
-  font-size: var(--text-xs);
+  font-size: 12px;
   font-weight: 500;
-  opacity: 0.92;
+  opacity: 0.85;
 }
 
 /* SECONDARY BUTTON */

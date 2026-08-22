@@ -113,7 +113,7 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
 export default function TransformationWall() {
   return (
     <section
-      className="cv-auto section-pad-tight relative bg-[var(--bg-page)]"
+      className="cv-auto section-pad-tight relative bg-[var(--bg-elevated)]"
       aria-labelledby="transformations-heading"
     >
       <div aria-hidden="true" className="section-glow">

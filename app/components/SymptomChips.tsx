@@ -81,7 +81,7 @@ export default function SymptomChips() {
   }, [count]);
 
   return (
-    <section className="section-pad relative bg-[var(--bg-section)]" aria-labelledby="symptoms-heading">
+    <section className="relative bg-[var(--bg-page)] pb-16 pt-8" aria-labelledby="symptoms-heading">
       <div className="container-narrow relative z-10 flex flex-col items-center">
         <header className="section-header">
           <p className="section-label">Sound familiar?</p>
@@ -129,10 +129,10 @@ export default function SymptomChips() {
                   aria-pressed={on}
                   onClick={() => toggle(s)}
                   className={[
-                    "flex w-full cursor-pointer items-start gap-4 px-[26px] py-5 text-left transition-colors duration-150",
+                    "flex w-full cursor-pointer items-start gap-4 px-[24px] py-[18px] text-left transition-colors duration-150",
                     i < SYMPTOMS.length - 1 ? "border-b border-[var(--border-hairline)]" : "",
                   ].join(" ")}
-                  style={{ background: on ? "var(--surface-wash)" : "#fff" }}
+                  style={{ background: on ? "var(--p-tint)" : "#fff" }}
                 >
                   {/* Selected state is inline, not Tailwind. The arbitrary
                       utilities for it rendered into the DOM but produced no
@@ -145,7 +145,7 @@ export default function SymptomChips() {
                       the scanner, so the state is expressed that way. */}
                   <span
                     aria-hidden="true"
-                    className="mt-[2px] flex h-[26px] w-[26px] flex-none items-center justify-center rounded-lg border-2 transition-all duration-200"
+                    className="mt-[1px] flex h-[24px] w-[24px] flex-none items-center justify-center rounded-[7px] border-2 transition-all duration-200"
                     style={
                       on
                         ? {
@@ -168,8 +168,8 @@ export default function SymptomChips() {
                   </span>
                   <span
                     className={[
-                      "text-[17px] leading-[1.45] transition-colors duration-200",
-                      on ? "text-[var(--t1)]" : "text-[var(--t2)]",
+                      "text-[16px] leading-[1.4] transition-colors duration-200",
+                      on ? "text-[var(--t1)]" : "text-[#4a4436]",
                     ].join(" ")}
                   >
                     {s}

@@ -105,11 +105,8 @@ function AccordionItem({
 
   return (
     <div
-      className="border-b border-[var(--b-soft)] last:border-b-0"
-      style={{
-        background: isOpen ? 'rgba(163, 114, 32,0.05)' : 'transparent',
-        transition: 'background 200ms ease',
-      }}
+      className="mb-[10px] overflow-hidden rounded-xl bg-white"
+      style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
     >
       <button
         id={btnId}
@@ -117,35 +114,30 @@ function AccordionItem({
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={onToggle}
-        className="flex w-full min-h-[56px] items-center justify-between gap-4 px-4 text-left sm:px-5"
+        className="flex w-full items-center justify-between gap-3 px-[22px] py-[18px] text-left"
         style={{
-          fontSize: 'var(--text-sm)',
-          fontWeight: 600,
-          color: isOpen ? 'var(--t1)' : 'var(--t2)',
+          fontSize: '15.5px',
+          fontWeight: 700,
+          color: 'var(--t1)',
           background: 'none',
         }}
       >
         <span className="text-pretty pr-2">{faq.q}</span>
         <span
           aria-hidden="true"
-          className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border"
+          className="flex-none text-[18px] leading-none text-[var(--gold-ink)]"
           style={{
-            background: isOpen ? 'var(--p-tint)' : 'var(--s1)',
-            borderColor: isOpen ? 'var(--p-border)' : 'var(--b-soft)',
-            color: isOpen ? 'var(--p400)' : 'var(--t3)',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 240ms var(--ease), background 180ms ease, border-color 180ms ease',
+            transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+            transition: 'transform 200ms ease',
           }}
         >
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M2 4l4 4 4-4" />
-          </svg>
+          +
         </span>
       </button>
 
       <div ref={bodyRef} id={panelId} role="region" aria-labelledby={btnId} style={{ height: 0, overflow: 'hidden' }}>
-        <div className="px-4 pb-4 sm:px-5">
-          <p className="max-w-[52ch] text-pretty text-[length:var(--text-sm)] leading-[1.65] text-[var(--t3)]">
+        <div className="px-[22px] pb-5">
+          <p className="text-[14.5px] leading-[1.55] text-[var(--t2)]">
             {faq.a}
           </p>
         </div>
@@ -158,7 +150,7 @@ export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <section className="cv-auto section-pad relative bg-[var(--bg-section)]">
+    <section className="cv-auto section-pad relative bg-[var(--bg-page)]">
       <div className="container-narrow relative z-10">
         <SectionHeader
           label="FAQs"
@@ -167,7 +159,7 @@ export default function FAQSection() {
           titleMaxCh="20ch"
         />
 
-        <div className="glass-card-sm overflow-hidden rounded-[var(--r-xl)] border border-[var(--b-soft)]">
+        <div>
           {faqs.map((faq, i) => (
             <AccordionItem
               key={faq.q}

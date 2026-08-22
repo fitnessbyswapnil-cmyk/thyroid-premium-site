@@ -26,7 +26,7 @@ const PILLARS = [
 export default function PillarsSection() {
   return (
     <section
-      className="section-pad relative bg-[var(--bg-section)]"
+      className="relative bg-[var(--bg-elevated)] py-16"
       aria-labelledby="pillars-heading"
     >
       <div className="container-default relative z-10">
@@ -41,25 +41,28 @@ export default function PillarsSection() {
           </h2>
         </header>
 
-        <div className="mx-auto grid max-w-[960px] gap-4 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-[1000px] grid-cols-1 gap-5 sm:grid-cols-3">
           {PILLARS.map((p) => (
-            <article key={p.n} className="glass-card-sm p-6">
-              <div className="mb-3 flex items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-[var(--yellow-mark)] text-[length:var(--text-sm)] font-semibold text-[var(--ink-on-yellow)]"
-                  style={{ fontFamily: "var(--font-display), Georgia, serif" }}
-                >
-                  {p.n}
-                </span>
-                <h3 className="text-[1.15rem] font-bold text-[var(--t1)]">{p.name}</h3>
-              </div>
-              <p className="text-[0.95rem] leading-[1.7] text-[var(--t2)]">{p.body}</p>
+            <article
+              key={p.n}
+              className="rounded-2xl bg-[var(--bg-page)] p-7 text-center"
+            >
+              <span
+                aria-hidden="true"
+                className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
+                style={{ background: "var(--red-cta)" }}
+              >
+                {p.n}
+              </span>
+              <h3 className="mb-2 text-[18px] font-extrabold text-[var(--t1)]">
+                {p.name}
+              </h3>
+              <p className="text-[14px] leading-[1.45] text-[var(--t2)]">{p.body}</p>
             </article>
           ))}
         </div>
 
-        <p className="mx-auto mt-8 max-w-[40ch] text-center text-pretty text-[length:var(--text-sm)] leading-[1.7] text-[var(--t2)]">
+        <p className="mx-auto mt-7 max-w-[62ch] text-center text-[15px] leading-[1.55] text-[#3a3528]">
           In every stuck case, one pillar is broken.{" "}
           <strong className="font-semibold text-[var(--t1)]">
             The consultation finds which one is yours.

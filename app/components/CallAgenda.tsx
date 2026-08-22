@@ -1,89 +1,84 @@
 import SectionCta from "./SectionCta";
 
+// Ported to the supplied design: a horizontal six-step timeline, numbered red
+// discs on a hairline connector, gold time labels beneath them.
+//
 // Ambiguity aversion is the largest remaining barrier once the call is free:
 // an unspecified process gets avoided even when the expected value is good.
-// "60 minutes, one to one" describes duration, not content — so this section
-// says exactly what happens, minute by minute.
-//
 // It also answers the objection she will never voice on a free call ("this is
 // really a pitch"). Left unanswered she does not argue with it; she simply
 // does not book.
+//
+// Copy is the design's own, which is terser than what this section used to
+// run — the horizontal layout gives each step roughly six words of room.
 const AGENDA = [
-  {
-    when: "Before",
-    what: "You send your thyroid reports. I read them before we speak — not during.",
-  },
-  {
-    when: "0–10 min",
-    what: "Your history, in your words. What you have already tried, and what happened.",
-  },
-  {
-    when: "10–35 min",
-    what: "Your reports on screen, and which of the three blockers is actually holding your fat loss.",
-  },
-  {
-    when: "35–50 min",
-    what: "What fixing that one involves — food, movement, and the order it has to happen in.",
-  },
-  {
-    when: "50–60 min",
-    what: "Your questions. If my programme is not right for you, I will say so.",
-  },
-  {
-    when: "After",
-    what: "A written summary within 24 hours. Yours to keep either way.",
-  },
+  { n: 1, when: "Before", what: "Send your reports. I read them before we speak." },
+  { n: 2, when: "0–10 min", what: "Your history, in your words." },
+  { n: 3, when: "10–35 min", what: "Which of the three blockers is holding you back." },
+  { n: 4, when: "35–50 min", what: "Food, movement, and the order it happens in." },
+  { n: 5, when: "50–60 min", what: "Your questions, answered honestly." },
+  { n: 6, when: "After", what: "Written summary within 24 hours." },
 ] as const;
 
 export default function CallAgenda() {
   return (
     <section
-      className="section-pad relative bg-[var(--bg-section)]"
+      className="relative bg-[var(--bg-page)]"
       aria-labelledby="agenda-heading"
     >
-      <div className="container-narrow relative z-10">
-        <header className="section-header">
+      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-6 py-14">
+        <header className="mb-11 text-center">
           <p className="section-label">What actually happens</p>
-          <h2
-            id="agenda-heading"
-            className="section-title mx-auto text-balance"
-            style={{ maxWidth: "20ch" }}
-          >
+          <h2 id="agenda-heading" className="section-title mx-auto text-balance">
             Sixty minutes, and here is every one of them.
           </h2>
         </header>
 
-        <ol className="mx-auto max-w-[52ch] space-y-0" role="list">
-          {AGENDA.map((row, i) => (
+        <ol
+          role="list"
+          className="relative grid grid-cols-2 gap-x-3 gap-y-9 sm:grid-cols-3 lg:grid-cols-6 lg:gap-[14px]"
+        >
+          {/* Connector rail — desktop only, sits behind the discs. */}
+          <div
+            aria-hidden="true"
+            className="absolute left-[5%] right-[5%] top-[19px] hidden h-[2px] bg-[var(--border-on-wash)] lg:block"
+            style={{ zIndex: 0 }}
+          />
+
+          {AGENDA.map((row) => (
             <li
               key={row.when}
-              className={[
-                "grid grid-cols-[86px_1fr] gap-4 py-4 sm:grid-cols-[104px_1fr] sm:gap-5",
-                i < AGENDA.length - 1
-                  ? "border-b border-[var(--border-hairline)]"
-                  : "",
-              ].join(" ")}
+              className="relative flex flex-col items-center gap-[10px] text-center"
+              style={{ zIndex: 1 }}
             >
-              <span className="pt-[2px] text-[length:var(--text-xs)] font-semibold uppercase tracking-[0.06em] text-[var(--gold-ink)]">
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white"
+                style={{
+                  background: "var(--red-cta)",
+                  boxShadow: "0 4px 12px rgba(216,31,38,0.3)",
+                }}
+              >
+                {row.n}
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--gold-ink)]">
                 {row.when}
               </span>
-              <span className="text-pretty text-[length:var(--text-sm)] leading-[1.65] text-[var(--t2)]">
+              <span className="text-[13.5px] leading-[1.35] text-[#3a3528]">
                 {row.what}
               </span>
             </li>
           ))}
         </ol>
 
-        <div className="mx-auto mt-9 max-w-[46ch] rounded-[14px] border border-[var(--border-hairline)] bg-white px-6 py-5 text-center">
-          <p className="text-[length:var(--text-base)] font-semibold leading-[1.5] text-[var(--t1)]">
-            Is this a sales call? No.
-          </p>
-          <p className="mt-2 text-pretty text-[length:var(--text-sm)] leading-[1.68] text-[var(--t2)]">
-            It is a diagnosis. You leave knowing your blocker whether or not you
-            ever work with me.
-          </p>
-        </div>
+        <p className="mx-auto mt-9 max-w-[62ch] text-center text-[15px] leading-[1.55] text-[var(--t3)]">
+          Is this a sales call? No — it is a diagnosis. You leave knowing your
+          blocker whether or not you ever work with me.
+        </p>
 
+        {/* Kept deliberately. The design has no button in this section, but the
+            ads are live and this is a tracked mid-page booking surface; taking
+            it out mid-campaign is a funnel change, not a design change. */}
         <SectionCta
           variant="primary"
           className="mx-auto mt-8 max-w-sm"

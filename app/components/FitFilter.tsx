@@ -19,7 +19,7 @@ const NOT_FOR_YOU = [
 export default function FitFilter() {
   return (
     <section
-      className="section-pad relative bg-[var(--bg-page)]"
+      className="relative bg-[var(--bg-page)] py-14"
       aria-labelledby="fit-heading"
     >
       <div className="container-narrow relative z-10">
@@ -34,50 +34,34 @@ export default function FitFilter() {
           </h2>
         </header>
 
-        <div className="mx-auto grid max-w-[760px] gap-4 sm:grid-cols-2">
-          <div className="glass-card-sm p-6">
-            <p className="mb-4 text-[0.72rem] font-bold uppercase tracking-[0.16em] text-[var(--p300)]">
-              This is for you if
+        <div className="mx-auto grid max-w-[900px] grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="rounded-2xl bg-white p-7">
+            <p className="mb-4 text-[15px] font-extrabold text-[#1a7a3c]">
+              This IS for you if
             </p>
             <ul className="space-y-3">
               {FOR_YOU.map((line) => (
-                <li key={line} className="flex items-start gap-2.5 text-[0.92rem] leading-[1.6] text-[var(--t2)]">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    aria-hidden="true"
-                    className="mt-1 shrink-0"
-                  >
-                    <circle cx="8" cy="8" r="7.25" stroke="var(--p500)" strokeWidth="1.4" />
-                    <path d="M5 8.2l2 2 4-4.4" stroke="var(--p500)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {line}
+                <li key={line} className="flex items-start gap-[10px]">
+                  <span aria-hidden="true" className="flex-none font-extrabold text-[#1a7a3c]">
+                    ✓
+                  </span>
+                  <span className="text-[14.5px] leading-[1.4] text-[var(--t1)]">{line}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="glass-card-sm p-6" style={{ borderColor: "var(--border-strong)" }}>
-            <p className="mb-4 text-[0.72rem] font-bold uppercase tracking-[0.16em] text-[var(--t3)]">
+          <div className="rounded-2xl bg-white p-7">
+            <p className="mb-4 text-[15px] font-extrabold text-[var(--red-cta)]">
               This is NOT for you if
             </p>
             <ul className="space-y-3">
               {NOT_FOR_YOU.map((line) => (
-                <li key={line} className="flex items-start gap-2.5 text-[0.92rem] leading-[1.6] text-[var(--t2)]">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    aria-hidden="true"
-                    className="mt-1 shrink-0"
-                  >
-                    <circle cx="8" cy="8" r="7.25" stroke="var(--coral)" strokeWidth="1.4" />
-                    <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="var(--coral)" strokeWidth="1.6" strokeLinecap="round" />
-                  </svg>
-                  {line}
+                <li key={line} className="flex items-start gap-[10px]">
+                  <span aria-hidden="true" className="flex-none font-extrabold text-[var(--red-cta)]">
+                    ✕
+                  </span>
+                  <span className="text-[14.5px] leading-[1.4] text-[var(--t1)]">{line}</span>
                 </li>
               ))}
             </ul>
@@ -85,7 +69,7 @@ export default function FitFilter() {
         </div>
 
         {/* Seriousness signal — filters on commitment without naming a price */}
-        <p className="mx-auto mt-8 max-w-[42ch] text-center text-pretty text-[0.9rem] leading-[1.7] text-[var(--t3)]">
+        <p className="mx-auto mt-6 max-w-[70ch] text-center text-[14px] leading-[1.55] text-[var(--t2)]">
           My 3-month programs are a{" "}
           <strong className="font-semibold text-[var(--t2)]">serious investment</strong>,
           quoted only on the call. Either way, the diagnosis is yours to keep.
