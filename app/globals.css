@@ -1540,3 +1540,25 @@ a {
   content-visibility: auto;
   contain-intrinsic-size: auto 720px;
 }
+
+
+/* ── Symptom checklist motion ─────────────────────────────────────────────
+   Both are RESPONSES to her action, not ambient decoration. popIn fires when a
+   box is ticked; pulseGlow only starts once she has ticked five, at which point
+   the CTA is answering a conclusion she has just reached rather than nagging a
+   reader who has not engaged. A CTA that pulses on arrival is the low-trust
+   pattern; one that reacts is not. Both respect prefers-reduced-motion. */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 6px 18px rgba(230, 0, 0, 0.22); }
+  50%      { box-shadow: 0 12px 30px rgba(230, 0, 0, 0.40); }
+}
+@keyframes popIn {
+  0%   { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+.cta-pulse { animation: pulseGlow 1.8s ease-in-out infinite; }
+.tick-pop  { animation: popIn 0.25s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-pulse, .tick-pop { animation: none; }
+}

@@ -4,26 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import SectionCta from "./SectionCta";
 import { pushDL } from "@/app/lib/analytics";
 
-// Symptom recognition — framed for the MEDICATED woman ("still ticking these
-// even on the tablet?"), which keeps the hyperniche sharp while letting the
-// undiagnosed reader self-include. Descriptive only: symptoms are named, never
-// "treated" or "cured", which keeps the section clean for ASCI and for Meta's
-// health policy. Nothing here asserts that the reader has a condition.
+// Symptom recognition, built to the supplied design.
 //
-// WHY THESE ARE SENTENCES AND NOT LABELS:
-// "Constant fatigue" is a category. She has to decide whether her tiredness
-// counts as "constant", and half the time she talks herself out of it.
-// "By 4pm you are finished" is a memory — she either recognises the afternoon
-// or she doesn't, and there is nothing to argue with. Recognition is what this
-// whole section exists to produce, so every line names a moment she has
-// actually lived rather than a symptom she has to categorise.
+// Every line names a moment she has lived rather than a symptom she has to
+// categorise. "Constant fatigue" is a category she has to judge herself
+// against, and half the time she talks herself out of it. "By 4pm you are
+// finished" is a memory: she either recognises the afternoon or she does not,
+// and there is nothing to argue with. Recognition is the only thing this
+// section exists to produce, and it is the rung the rest of the page rests on.
 //
-// WHY IT IS INTERACTIVE, AND WHY IT SITS SECOND ON THE PAGE:
-// this is the only point before the CTA where she describes herself rather
-// than being described. Ticking is a small self-identifying act, which makes
-// the larger consistent act — booking — materially more likely. The running
-// count also leaves the list visibly unfinished, which pulls at attention in a
-// way a static grid does not.
+// Descriptive only. Symptoms are named, never "treated" or "cured", and
+// nothing here asserts the reader has a condition — that keeps the section
+// clean for ASCI and for Meta's Personal Attributes policy.
 //
 // The tally is written to sessionStorage so the booking step can open holding
 // her own answers instead of asking her to repeat them.
@@ -42,30 +34,28 @@ const SYMPTOMS = [
 
 export const SYMPTOM_TALLY_KEY = "thyroid_symptom_tally";
 
-/** The result line is the CTA's argument, so it has to move with the count. */
-function verdict(n: number): { head: string; body: string } {
-  if (n === 0) {
-    return {
-      head: "Tap the ones that are true for you.",
-      body: "Most women on thyroid medicine tick more than they expect to.",
-    };
+// Shown at thresholds rather than on every tick: an encouragement that fires
+// on tick one is noise, one that fires at three is a verdict.
+const ENCOURAGE: Record<number, string> = {
+  3: "That's already more than most.",
+  6: "Sound like a lot? You're not imagining it.",
+  9: "Every single one — this call is exactly for you.",
+};
+
+function encouragementFor(n: number): string {
+  let out = "";
+  for (const t of Object.keys(ENCOURAGE).map(Number).sort((a, b) => a - b)) {
+    if (n >= t) out = ENCOURAGE[t];
   }
-  if (n <= 2) {
-    return {
-      head: `${n} ticked.`,
-      body: "Even one or two can be your thyroid talking — especially if your report came back normal.",
-    };
-  }
-  return {
-    head: `${n} out of 10.`,
-    body: "Three or more is a pattern, not bad luck. On the call I read your reports against it and tell you which of the three blockers is yours.",
-  };
+  return out;
 }
 
 export default function SymptomChips() {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const count = picked.size;
-  const { head, body } = verdict(count);
+  const total = SYMPTOMS.length;
+  const pct = Math.round((count / total) * 100);
+  const encourage = encouragementFor(count);
 
   const toggle = useCallback((s: string) => {
     setPicked((prev) => {
@@ -76,84 +66,92 @@ export default function SymptomChips() {
     });
   }, []);
 
-  // Persist for the booking step.
   useEffect(() => {
     try {
       if (count === 0) sessionStorage.removeItem(SYMPTOM_TALLY_KEY);
-      else {
-        sessionStorage.setItem(
-          SYMPTOM_TALLY_KEY,
-          JSON.stringify({ count, symptoms: [...picked] }),
-        );
-      }
+      else sessionStorage.setItem(SYMPTOM_TALLY_KEY, JSON.stringify({ count, symptoms: [...picked] }));
     } catch {
       /* storage unavailable — the section still works, it just does not carry forward */
     }
   }, [count, picked]);
 
-  // One dataLayer event at the point the pattern becomes meaningful, not on
-  // every tap — three ticks is where she has effectively self-qualified.
+  // One dataLayer event where the pattern becomes meaningful, not per tap.
   useEffect(() => {
     if (count === 3) pushDL({ event: "symptom_pattern_reached", symptom_count: 3 });
   }, [count]);
 
   return (
-    <section
-      className="section-pad relative bg-[var(--bg-section)]"
-      aria-labelledby="symptoms-heading"
-    >
-      <div className="container-narrow relative z-10">
+    <section className="section-pad relative bg-[var(--bg-section)]" aria-labelledby="symptoms-heading">
+      <div className="container-narrow relative z-10 flex flex-col items-center">
         <header className="section-header">
           <p className="section-label">Sound familiar?</p>
-          <h2
-            id="symptoms-heading"
-            className="section-title mx-auto text-balance"
-            style={{ maxWidth: "22ch" }}
-          >
+          <h2 id="symptoms-heading" className="section-title mx-auto text-balance" style={{ maxWidth: "22ch" }}>
             Still ticking these boxes, even on your tablet?
           </h2>
         </header>
 
-        {/* Rows, not pills. These are sentences now, and a sentence in a pill
-            either wraps badly or gets truncated. A full-width row also gives a
-            far bigger tap target on the phone, which is where nearly all of
-            this traffic reads it. */}
-        <ul
-          className="mx-auto grid max-w-[46ch] gap-2 sm:max-w-[720px] sm:grid-cols-2"
-          role="list"
-        >
+        {/* Progress bar, sticky so the count stays visible while she works down
+            the list. It is the section's feedback loop: without it, ticking is
+            data entry; with it, she is watching a number about herself climb. */}
+        <div className="sticky top-4 z-[5] mb-7 w-full max-w-[640px]">
+          <div className="flex items-center gap-4 rounded-[14px] bg-white px-[22px] py-4 shadow-[0_2px_12px_rgba(36,31,26,0.08)]">
+            <div
+              className="h-[10px] flex-1 overflow-hidden rounded-lg bg-[var(--yellow-soft)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]"
+              role="progressbar"
+              aria-valuenow={count}
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-label="Symptoms ticked"
+            >
+              <div
+                className="h-full rounded-lg transition-[width] duration-[400ms] ease-out"
+                style={{
+                  width: `${pct}%`,
+                  background: "linear-gradient(90deg, var(--red-cta), #e8622a)",
+                  boxShadow: count ? "0 0 8px rgba(230,0,0,0.4)" : "none",
+                }}
+              />
+            </div>
+            <div className="whitespace-nowrap text-[length:var(--text-xs)] font-semibold text-[var(--t1)]">
+              {count} of {total} ticked
+            </div>
+          </div>
+        </div>
+
+        <ul className="mb-10 w-full max-w-[640px] overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_rgba(36,31,26,0.06)]" role="list">
           {SYMPTOMS.map((s, i) => {
             const on = picked.has(s);
             return (
-              <li key={s} className="contents">
+              <li key={s}>
                 <button
                   type="button"
                   aria-pressed={on}
                   onClick={() => toggle(s)}
                   className={[
-                    "flex h-full w-full cursor-pointer items-start gap-3 rounded-[12px] border px-4 py-3.5 text-left",
-                    "transition-colors duration-150",
-                    on
-                      ? "border-[var(--t1)] bg-[var(--yellow-soft)]"
-                      : "border-[var(--border-hairline)] bg-white hover:border-[var(--t4)]",
+                    "flex w-full cursor-pointer items-start gap-4 px-[26px] py-5 text-left transition-colors duration-150",
+                    i < SYMPTOMS.length - 1 ? "border-b border-[var(--border-hairline)]" : "",
+                    on ? "bg-[var(--surface-wash)]" : "bg-white hover:bg-[var(--surface-wash)]",
                   ].join(" ")}
                 >
                   <span
                     aria-hidden="true"
                     className={[
-                      "mt-[2px] flex h-[19px] w-[19px] flex-none items-center justify-center rounded-[5px]",
-                      "text-[length:var(--text-2xs)] font-bold transition-colors duration-150",
+                      "mt-[2px] flex h-[26px] w-[26px] flex-none items-center justify-center rounded-lg border-2 transition-all duration-200",
                       on
-                        ? "bg-[var(--yellow-mark)] text-[var(--ink-on-yellow)]"
-                        : "border border-[var(--border-strong)] bg-white text-transparent",
+                        ? "border-[var(--red-cta)] bg-[var(--red-cta)] shadow-[0_2px_6px_rgba(230,0,0,0.35)]"
+                        : "border-[var(--border-strong)] bg-white shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)]",
                     ].join(" ")}
                   >
-                    ✓
+                    {on && (
+                      <svg width="15" height="12" viewBox="0 0 15 12" fill="none" className="tick-pop">
+                        <path d="M1.5 6L5.5 10L13.5 1.5" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
                   </span>
                   <span
                     className={[
-                      "text-[length:var(--text-sm)] leading-[1.5] transition-colors duration-150",
-                      on ? "font-medium text-[var(--t1)]" : "text-[var(--t2)]",
+                      "text-[17px] leading-[1.45] transition-colors duration-200",
+                      on ? "text-[var(--t1)]" : "text-[var(--t2)]",
                     ].join(" ")}
                   >
                     {s}
@@ -164,20 +162,29 @@ export default function SymptomChips() {
           })}
         </ul>
 
-        <div aria-live="polite" className="mx-auto mt-7 max-w-[42ch] text-center">
-          <p className="text-pretty text-[length:var(--text-sm)] leading-[1.7] text-[var(--t2)]">
-            <strong className="font-semibold text-[var(--t1)]">{head}</strong> {body}
+        <div className="mb-9 max-w-[600px] text-center">
+          <p className="mb-2.5 text-[19px] leading-[1.5] text-[var(--t1)]">
+            <strong className="font-semibold">Tap the ones that are true for you.</strong>{" "}
+            Most women on thyroid medicine tick more than they expect to.
+          </p>
+          <p className="text-[length:var(--text-sm)] leading-[1.5] text-[var(--t4)]">
+            No tablet, and your report says &ldquo;normal&rdquo; but your body disagrees? This still applies.
           </p>
         </div>
 
-        <p className="mx-auto mt-2 max-w-[40ch] text-center text-[length:var(--text-xs)] leading-[1.55] text-[var(--t4)]">
-          No tablet, and your report says &ldquo;normal&rdquo; but your body disagrees? This still applies.
-        </p>
+        {encourage && (
+          <div
+            aria-live="polite"
+            className="tick-pop -mt-4 mb-7 max-w-[600px] text-center text-[length:var(--text-sm)] font-semibold text-[var(--gold-ink)]"
+          >
+            {encourage}
+          </div>
+        )}
 
         <SectionCta
           variant="primary"
-          className="mx-auto mt-8 max-w-sm"
-          buttonClassName="w-full"
+          className="mx-auto max-w-sm"
+          buttonClassName={`w-full${count >= 5 ? " cta-pulse" : ""}`}
           label="Schedule My 1-1 Thyroid Fat Loss Call"
           sublabel="Free · 60 minutes · one to one"
           ariaLabel="Schedule my 1-1 thyroid fat loss session"
