@@ -3,6 +3,7 @@
  * Edge middleware — runs on every request BEFORE page render.
  * Responsibilities:
  *  1. Capture fbclid → write _fbc cookie (Meta standard format)
+ *  1b. Seed _fbp server-side so Safari's ITP cannot truncate it to 7 days
  *  2. Capture UTM params → persist as cookies (30-day)
  *  3. Generate/refresh session_id (30-min rolling)
  *  4. Generate/persist visitor_id (180-day first-party identity)
@@ -63,6 +64,26 @@ export function middleware(req: NextRequest) {
   const existingSession = req.cookies.get('_session_id')?.value
   const sessionId = existingSession || genId('s')
   res.cookies.set('_session_id', sessionId, COOKIE_OPTS_SESSION)
+
+  // ── 4b. _fbp — first-party browser id, seeded server-side
+  //
+  // The Meta pixel writes _fbp itself, but it writes it with JavaScript, and a
+  // JS-written cookie is exactly what Safari's ITP truncates to seven days.
+  // A woman who clicks an ad, thinks about it, and books nine days later
+  // arrives with no _fbp, so her Schedule loses a match key.
+  //
+  // Setting it here instead makes it a genuine first-party cookie from our own
+  // origin, which ITP does not cap the same way. The pixel reads an existing
+  // _fbp rather than minting a new one, so this seeds it rather than fighting
+  // it — the value must therefore be Meta's exact format or fbevents discards
+  // it: fb.{subdomainIndex}.{creationTimeMs}.{random}.
+  //
+  // Only ever written when absent. Overwriting a live _fbp would orphan every
+  // event already attributed to the old value.
+  if (!req.cookies.get('_fbp')?.value) {
+    const rand = Math.floor(Math.random() * 9_000_000_000) + 1_000_000_000
+    res.cookies.set('_fbp', `fb.1.${Date.now()}.${rand}`, COOKIE_OPTS_LONG)
+  }
 
   // ── 5. visitor_id — 180-day first-party identity anchor
   const existingVisitor = req.cookies.get('_visitor_id')?.value
