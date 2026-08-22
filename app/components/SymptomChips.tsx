@@ -134,6 +134,15 @@ export default function SymptomChips() {
                   ].join(" ")}
                   style={{ background: on ? "var(--surface-wash)" : "#fff" }}
                 >
+                  {/* Selected state is inline, not Tailwind. The arbitrary
+                      utilities for it rendered into the DOM but produced no
+                      computed style on the deployed build: the box stayed white
+                      with the unchecked border while aria-pressed was true.
+                      Other arbitrary values in this codebase, including
+                      bg-[var(--token)] and comma-bearing shadows, do generate
+                      correctly, so the cause was specific to these classes and
+                      was never pinned down. Inline styles cannot be dropped by
+                      the scanner, so the state is expressed that way. */}
                   <span
                     aria-hidden="true"
                     className="mt-[2px] flex h-[26px] w-[26px] flex-none items-center justify-center rounded-lg border-2 transition-all duration-200"
