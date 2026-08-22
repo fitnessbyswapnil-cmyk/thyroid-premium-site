@@ -19,7 +19,7 @@
  */
 import { NextRequest, NextResponse, after } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
-import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation } from "@/lib/whatsapp";
+import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation, sendBookingConfirmedFree } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -271,7 +271,8 @@ export async function POST(req: NextRequest) {
           //
           // Cal.com still sends its own confirmation email, so she is not left
           // with nothing. Flip this to true the moment a correct template
-          // exists, and point BOOKING_TEMPLATE at it.
+          // exists. booking_confirmed_free was created 22 Aug 2026 and is IN
+          // REVIEW — flip this the moment Meta approves it.
           const BOOKING_TEMPLATE_READY = false;
           if (!BOOKING_TEMPLATE_READY) {
             console.warn(
@@ -279,7 +280,7 @@ export async function POST(req: NextRequest) {
             );
             return;
           }
-          const rb = await sendBookingConfirmation(phone, name);
+          const rb = await sendBookingConfirmedFree(phone, name);
           console.log(
             `[quiz-lead] booking_confirmation sent=${rb.sent}` +
               (rb.error ? ` error=${rb.error}` : "") +

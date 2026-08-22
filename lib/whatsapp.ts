@@ -337,6 +337,24 @@ export async function sendWelcomeLeadWithLink(
  * than marketing and higher deliverability, because it follows an action she
  * just took. Its button links straight to the Cal.com picker.
  */
+/**
+ * The free-consultation replacement for booking_confirmation.
+ *
+ * booking_confirmation says "your payment is confirmed" and carries a button
+ * back to the Cal.com picker — wrong on both counts now: nobody pays, and she
+ * has already chosen her slot. Meta also reclassified it from UTILITY to
+ * MARKETING on 17 Aug 2026, which is what payment language plus a booking
+ * button reads as.
+ *
+ * booking_confirmed_free is UTILITY, takes the same single {{1}} first-name
+ * parameter, and has no button. It asks for her thyroid report instead, which
+ * is the filter that replaced the Rs299.
+ */
+export async function sendBookingConfirmedFree(phone: string, fullName: string): Promise<WhatsAppResult> {
+  const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
+  return sendWhatsAppTemplate(phone, 'booking_confirmed_free', [firstName])
+}
+
 export async function sendBookingConfirmation(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(phone, 'booking_confirmation', [firstName])
