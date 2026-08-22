@@ -104,9 +104,10 @@ export default function SymptomChips() {
               aria-label="Symptoms ticked"
             >
               <div
-                className="h-full rounded-lg transition-[width] duration-[400ms] ease-out"
+                className="h-full rounded-lg"
                 style={{
                   width: `${pct}%`,
+                  transition: "width 400ms ease-out",
                   background: "linear-gradient(90deg, var(--red-cta), #e8622a)",
                   boxShadow: count ? "0 0 8px rgba(230,0,0,0.4)" : "none",
                 }}
@@ -130,17 +131,25 @@ export default function SymptomChips() {
                   className={[
                     "flex w-full cursor-pointer items-start gap-4 px-[26px] py-5 text-left transition-colors duration-150",
                     i < SYMPTOMS.length - 1 ? "border-b border-[var(--border-hairline)]" : "",
-                    on ? "bg-[var(--surface-wash)]" : "bg-white hover:bg-[var(--surface-wash)]",
                   ].join(" ")}
+                  style={{ background: on ? "var(--surface-wash)" : "#fff" }}
                 >
                   <span
                     aria-hidden="true"
-                    className={[
-                      "mt-[2px] flex h-[26px] w-[26px] flex-none items-center justify-center rounded-lg border-2 transition-all duration-200",
+                    className="mt-[2px] flex h-[26px] w-[26px] flex-none items-center justify-center rounded-lg border-2 transition-all duration-200"
+                    style={
                       on
-                        ? "border-[var(--red-cta)] bg-[var(--red-cta)] shadow-[0_2px_6px_rgba(230,0,0,0.35)]"
-                        : "border-[var(--border-strong)] bg-white shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)]",
-                    ].join(" ")}
+                        ? {
+                            borderColor: "var(--red-cta)",
+                            background: "var(--red-cta)",
+                            boxShadow: "0 2px 6px rgba(230,0,0,0.35)",
+                          }
+                        : {
+                            borderColor: "var(--border-strong)",
+                            background: "#fff",
+                            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
+                          }
+                    }
                   >
                     {on && (
                       <svg width="15" height="12" viewBox="0 0 15 12" fill="none" className="tick-pop">
