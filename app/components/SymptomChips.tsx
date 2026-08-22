@@ -81,7 +81,7 @@ export default function SymptomChips() {
   }, [count]);
 
   return (
-    <section className="relative bg-[var(--bg-page)] pb-16 pt-8" aria-labelledby="symptoms-heading">
+    <section className="relative bg-[var(--bg-page)] px-4 pb-10 pt-5 md:px-6 md:pb-14 md:pt-7" aria-labelledby="symptoms-heading">
       <div className="container-narrow relative z-10 flex flex-col items-center">
         <header className="section-header">
           <p className="section-label">Sound familiar?</p>
@@ -93,8 +93,8 @@ export default function SymptomChips() {
         {/* Progress bar, sticky so the count stays visible while she works down
             the list. It is the section's feedback loop: without it, ticking is
             data entry; with it, she is watching a number about herself climb. */}
-        <div className="sticky top-4 z-[5] mb-7 w-full max-w-[640px]">
-          <div className="flex items-center gap-4 rounded-[14px] bg-white px-[22px] py-4 shadow-[0_2px_12px_rgba(36,31,26,0.08)]">
+        <div className="sticky top-3 z-[5] mb-5 w-full max-w-[640px]">
+          <div className="flex items-center gap-[14px] rounded-[14px] bg-white px-[18px] py-[14px] shadow-[0_2px_12px_rgba(36,31,26,0.08)]">
             <div
               className="h-[10px] flex-1 overflow-hidden rounded-lg bg-[var(--yellow-soft)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]"
               role="progressbar"
@@ -129,7 +129,7 @@ export default function SymptomChips() {
                   aria-pressed={on}
                   onClick={() => toggle(s)}
                   className={[
-                    "flex w-full cursor-pointer items-start gap-4 px-[24px] py-[18px] text-left transition-colors duration-150",
+                    "flex w-full cursor-pointer items-start gap-[14px] px-4 py-[14px] text-left transition-colors duration-150 md:px-[22px] md:py-4",
                     i < SYMPTOMS.length - 1 ? "border-b border-[var(--border-hairline)]" : "",
                   ].join(" ")}
                   style={{ background: on ? "var(--p-tint)" : "#fff" }}
@@ -145,7 +145,7 @@ export default function SymptomChips() {
                       the scanner, so the state is expressed that way. */}
                   <span
                     aria-hidden="true"
-                    className="mt-[1px] flex h-[24px] w-[24px] flex-none items-center justify-center rounded-[7px] border-2 transition-all duration-200"
+                    className="mt-[1px] flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] border-2 transition-all duration-200"
                     style={
                       on
                         ? {
@@ -161,14 +161,14 @@ export default function SymptomChips() {
                     }
                   >
                     {on && (
-                      <svg width="15" height="12" viewBox="0 0 15 12" fill="none" className="tick-pop">
+                      <svg width="13" height="10" viewBox="0 0 15 12" fill="none" className="tick-pop">
                         <path d="M1.5 6L5.5 10L13.5 1.5" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </span>
                   <span
                     className={[
-                      "text-[16px] leading-[1.4] transition-colors duration-200",
+                      "text-[14.5px] leading-[1.4] transition-colors duration-200 md:text-[15.5px]",
                       on ? "text-[var(--t1)]" : "text-[#4a4436]",
                     ].join(" ")}
                   >
@@ -202,7 +202,7 @@ export default function SymptomChips() {
         <SectionCta
           variant="primary"
           className="mx-auto max-w-sm"
-          buttonClassName={`w-full${count >= 5 ? " cta-pulse" : ""}`}
+          buttonClassName={count >= 5 ? "cta-pulse" : ""}
           label="Schedule My 1-1 Thyroid Fat Loss Call"
           sublabel="Free · 60 minutes · one to one"
           ariaLabel="Schedule my 1-1 thyroid fat loss session"

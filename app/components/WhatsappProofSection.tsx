@@ -505,7 +505,7 @@ export default function WhatsappProofSection() {
           <SectionCta
             variant="primary"
             className="mx-auto mt-12 max-w-sm"
-            buttonClassName="w-full"
+            buttonClassName=""
             label="Schedule My 1-1 Thyroid Fat Loss Call"
             sublabel="Free · 60 minutes · one to one"
             ariaLabel="Schedule my 1-1 thyroid fat loss session"

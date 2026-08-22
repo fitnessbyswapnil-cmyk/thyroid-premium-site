@@ -26,8 +26,8 @@ export default function CallAgenda() {
       className="relative bg-[var(--bg-page)]"
       aria-labelledby="agenda-heading"
     >
-      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-6 py-14">
-        <header className="mb-11 text-center">
+      <div className="relative z-10 mx-auto w-full max-w-[1100px] px-4 py-9 md:px-6 md:py-12">
+        <header className="mb-7 text-center md:mb-10">
           <p className="section-label">What actually happens</p>
           <h2 id="agenda-heading" className="section-title mx-auto text-balance">
             Sixty minutes, and here is every one of them.
@@ -36,7 +36,7 @@ export default function CallAgenda() {
 
         <ol
           role="list"
-          className="relative grid grid-cols-2 gap-x-3 gap-y-9 sm:grid-cols-3 lg:grid-cols-6 lg:gap-[14px]"
+          className="relative grid grid-cols-2 gap-x-3 gap-y-5 md:grid-cols-3 lg:grid-cols-6 lg:gap-[14px]"
         >
           {/* Connector rail — desktop only, sits behind the discs. */}
           <div
@@ -48,7 +48,7 @@ export default function CallAgenda() {
           {AGENDA.map((row) => (
             <li
               key={row.when}
-              className="relative flex flex-col items-center gap-[10px] text-center"
+              className="relative flex flex-row items-start gap-[10px] text-left lg:flex-col lg:items-center lg:text-center"
               style={{ zIndex: 1 }}
             >
               <span
@@ -61,17 +61,19 @@ export default function CallAgenda() {
               >
                 {row.n}
               </span>
-              <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--gold-ink)]">
-                {row.when}
-              </span>
-              <span className="text-[13.5px] leading-[1.35] text-[#3a3528]">
-                {row.what}
+              <span>
+                <span className="mb-[2px] block text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--gold-ink)]">
+                  {row.when}
+                </span>
+                <span className="block text-[13.5px] leading-[1.35] text-[#3a3528]">
+                  {row.what}
+                </span>
               </span>
             </li>
           ))}
         </ol>
 
-        <p className="mx-auto mt-9 max-w-[62ch] text-center text-[15px] leading-[1.55] text-[var(--t3)]">
+        <p className="mx-auto mt-8 max-w-[62ch] text-center text-[13.5px] leading-[1.55] text-[var(--t3)] md:text-[15px]">
           Is this a sales call? No — it is a diagnosis. You leave knowing your
           blocker whether or not you ever work with me.
         </p>
@@ -82,7 +84,7 @@ export default function CallAgenda() {
         <SectionCta
           variant="primary"
           className="mx-auto mt-8 max-w-sm"
-          buttonClassName="w-full"
+          buttonClassName=""
           label="Schedule My 1-1 Thyroid Fat Loss Call"
           sublabel="Free · 60 minutes · one to one"
           trust="Bring your latest thyroid report. I read it before we speak."

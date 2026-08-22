@@ -26,7 +26,7 @@ const PILLARS = [
 export default function PillarsSection() {
   return (
     <section
-      className="relative bg-[var(--bg-elevated)] py-16"
+      className="relative bg-[var(--bg-elevated)] py-9 md:py-12"
       aria-labelledby="pillars-heading"
     >
       <div className="container-default relative z-10">
@@ -45,7 +45,7 @@ export default function PillarsSection() {
           {PILLARS.map((p) => (
             <article
               key={p.n}
-              className="rounded-2xl bg-[var(--bg-page)] p-7 text-center"
+              className="rounded-2xl bg-[var(--bg-page)] p-5 text-center md:p-7"
             >
               <span
                 aria-hidden="true"
@@ -62,7 +62,7 @@ export default function PillarsSection() {
           ))}
         </div>
 
-        <p className="mx-auto mt-7 max-w-[62ch] text-center text-[15px] leading-[1.55] text-[#3a3528]">
+        <p className="mx-auto mt-6 max-w-[62ch] text-center text-[13.5px] leading-[1.55] text-[#3a3528] md:text-[15px]">
           In every stuck case, one pillar is broken.{" "}
           <strong className="font-semibold text-[var(--t1)]">
             The consultation finds which one is yours.

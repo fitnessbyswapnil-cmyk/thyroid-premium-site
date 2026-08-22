@@ -19,7 +19,7 @@ const NOT_FOR_YOU = [
 export default function FitFilter() {
   return (
     <section
-      className="relative bg-[var(--bg-page)] py-14"
+      className="relative bg-[var(--bg-page)] py-9 md:py-12"
       aria-labelledby="fit-heading"
     >
       <div className="container-narrow relative z-10">
@@ -35,7 +35,7 @@ export default function FitFilter() {
         </header>
 
         <div className="mx-auto grid max-w-[900px] grid-cols-1 gap-5 sm:grid-cols-2">
-          <div className="rounded-2xl bg-white p-7">
+          <div className="rounded-2xl bg-white p-5 md:p-7">
             <p className="mb-4 text-[15px] font-extrabold text-[#1a7a3c]">
               This IS for you if
             </p>
@@ -51,7 +51,7 @@ export default function FitFilter() {
             </ul>
           </div>
 
-          <div className="rounded-2xl bg-white p-7">
+          <div className="rounded-2xl bg-white p-5 md:p-7">
             <p className="mb-4 text-[15px] font-extrabold text-[var(--red-cta)]">
               This is NOT for you if
             </p>

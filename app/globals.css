@@ -181,6 +181,7 @@ html {
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background: var(--bg-page);
   color: var(--t1);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -242,8 +243,8 @@ a {
 /* SECTION SPACING */
 
 .section-pad {
-  /* Design rhythm: 56px sections, 64px for the wider proof blocks. */
-  padding-block: clamp(2.75rem, 5vw, 3.5rem);
+  /* latest2: 36px mobile -> 48px desktop */
+  padding-block: clamp(2.25rem, 1.4rem + 2.4vw, 3rem);
 }
 
 /* A deliberate pause — used where the page changes what it is saying. */
@@ -276,7 +277,8 @@ a {
 /* TITLES */
 
 .section-title {
-  font-size: clamp(1.75rem, 1.2rem + 1.9vw, 2.25rem);
+  /* 24px mobile -> 34px desktop */
+  font-size: clamp(1.5rem, 0.95rem + 1.9vw, 2.125rem);
   line-height: 1.15;
   font-weight: 800;
   color: var(--t1);
@@ -433,7 +435,8 @@ a {
   /* 12px, per the design. */
   border-radius: 12px;
 
-  padding: 20px 36px;
+  padding: 18px 24px;
+  width: 100%;
 
   /* Red is the page's single action colour, and appears nowhere else. */
   background: var(--red-cta);
@@ -457,6 +460,13 @@ a {
   box-shadow: none;
 
   transition: all 0.2s ease;
+}
+
+@media (min-width: 760px) {
+  .cta-button {
+    padding: 20px 36px;
+    width: auto;
+  }
 }
 
 .cta-button:hover {

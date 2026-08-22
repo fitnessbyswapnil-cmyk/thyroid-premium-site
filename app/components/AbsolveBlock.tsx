@@ -14,8 +14,8 @@
 export default function AbsolveBlock() {
   return (
     <section className="relative bg-[var(--bg-page)]" aria-labelledby="absolve-heading">
-      <div className="relative z-10 mx-auto w-full max-w-[1000px] px-6 py-14">
-        <header className="mb-9 text-center">
+      <div className="relative z-10 mx-auto w-full max-w-[1000px] px-4 py-9 md:px-6 md:py-12">
+        <header className="mb-7 text-center md:mb-[30px]">
           <p className="section-label">Before you blame yourself again</p>
           <h2 id="absolve-heading" className="section-title mx-auto text-balance">
             You didn&rsquo;t fail. The plan did.
@@ -24,7 +24,7 @@ export default function AbsolveBlock() {
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div
-            className="rounded-2xl bg-white p-8"
+            className="rounded-2xl bg-white p-5 md:p-7"
             style={{ borderLeft: "4px solid var(--border-strong)" }}
           >
             <div className="mb-[10px] text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--t3)]">
@@ -36,7 +36,7 @@ export default function AbsolveBlock() {
           </div>
 
           <div
-            className="rounded-2xl bg-white p-8"
+            className="rounded-2xl bg-white p-5 md:p-7"
             style={{ borderLeft: "4px solid var(--red-cta)" }}
           >
             <div className="mb-[10px] text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--red-cta)]">
@@ -48,7 +48,7 @@ export default function AbsolveBlock() {
           </div>
         </div>
 
-        <p className="mx-auto mt-7 max-w-[640px] text-center text-[16px] leading-[1.55] text-[var(--t2)]">
+        <p className="mx-auto mt-6 max-w-[640px] text-center text-[14.5px] leading-[1.55] text-[var(--t2)] md:text-[15.5px]">
           Four failed attempts aren&rsquo;t four failures &mdash; they&rsquo;re four
           datasets telling you the same thing. The consultation starts from the
           opposite assumption. That&rsquo;s the whole difference.
