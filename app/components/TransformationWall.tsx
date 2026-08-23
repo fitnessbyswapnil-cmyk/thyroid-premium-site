@@ -38,7 +38,7 @@ const WALL = [
     name: "Surekha",
     stat: "−12 kg · 90 days",
     story: "Bloating and afternoon fatigue, gone.",
-    quote: "My clothes fit again. I finally feel like myself.",
+    quote: "",
     alt: "Surekha, before and after, lost 12 kg in 90 days",
   },
   {
@@ -54,7 +54,7 @@ const WALL = [
     name: "Heenal",
     stat: "−15 kg · 90 days",
     story: "IT professional, Bengaluru. Her blocker was in Pillar 1. The root, not her diet.",
-    quote: "Finally lost the weight thyroid stole from me for 4 years.",
+    quote: "",
     alt: "Heenal, before and after, lost 15 kg in 90 days",
   },
 ] as const;
