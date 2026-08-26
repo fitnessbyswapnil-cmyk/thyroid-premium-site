@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
+import Reveal from "./Reveal";
 
 // ── Video source paths (emoji filenames must be percent-encoded in URLs) ──────
 
@@ -84,21 +84,9 @@ const STORIES: Story[] = [
   },
 ];
 
-// ── Motion variants ───────────────────────────────────────────────────────────
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.62, ease: [0.16, 1, 0.3, 1] as const },
-  },
-};
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.13 } },
-};
+// Motion variants removed with framer-motion. The fade-up timing they
+// described now lives in the .reveal rule in globals.css, and the stagger is
+// a per-child transitionDelay passed to <Reveal delay={...}>.
 
 // ── VideoCard ─────────────────────────────────────────────────────────────────
 
@@ -188,10 +176,9 @@ function VideoCard({
   }, [playing, onPlay]);
 
   return (
-    <motion.article
-      variants={fadeUp}
-      whileHover={{ y: -4, transition: { duration: 0.3, ease: "easeOut" } }}
-      className="group relative flex flex-col overflow-hidden rounded-[28px]"
+    <Reveal
+      as="article"
+      className="vt-card group relative flex flex-col overflow-hidden rounded-[28px]"
       style={{
         background: "var(--bg-elevated)",
         border: story.featured
@@ -273,11 +260,8 @@ function VideoCard({
         {/* Play / pause overlay */}
         {!playing && !buffering && (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <motion.div
-              initial={{ scale: 0.88, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="flex h-[68px] w-[68px] items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 active:scale-95"
+            <div
+              className="vt-pop flex h-[68px] w-[68px] items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 active:scale-95"
               style={{
                 background: "rgba(163, 114, 32,0.35)",
                 border: "1.5px solid rgba(255,255,255,0.55)",
@@ -288,7 +272,7 @@ function VideoCard({
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M7.5 4.5l11 7.5-11 7.5V4.5z" fill="rgba(255,255,255,0.92)" />
               </svg>
-            </motion.div>
+            </div>
             <p className="mt-3 text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-white/45">
               Watch Story
             </p>
@@ -427,7 +411,7 @@ function VideoCard({
           </div>
         </div>
       </div>
-    </motion.article>
+    </Reveal>
   );
 }
 
@@ -457,34 +441,23 @@ export default function VideoTestimonial() {
       <div className="container-default relative z-10">
 
         {/* ── Section header ── */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
-          variants={stagger}
-          className="mb-12 text-center sm:mb-14"
-        >
-          <motion.p variants={fadeUp} className="section-label">
+        <div className="mb-12 text-center sm:mb-14">
+          <Reveal as="p" className="section-label">
             In Their Own Words
-          </motion.p>
-          <motion.h2
+          </Reveal>
+          <Reveal
+            as="h2"
             id="testimonial-heading"
-            variants={fadeUp}
+            delay={0.13}
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "22ch" }}
           >
             Watch their progress, on camera.
-          </motion.h2>
-        </motion.div>
+          </Reveal>
+        </div>
 
         {/* ── Video grid ── */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={stagger}
-          className="vt-rail grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3"
-        >
+        <div className="vt-rail grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {STORIES.map((story, i) => (
             <VideoCard
               key={story.id}
@@ -495,13 +468,13 @@ export default function VideoTestimonial() {
               onPlay={() => handlePlay(i)}
             />
           ))}
-        </motion.div>
+        </div>
 
         {/* ── CTA block ── */}
 
       </div>
 
-      <style>{`@keyframes vt-spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes vt-spin{to{transform:rotate(360deg)}}@keyframes vt-pop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}.vt-pop{animation:vt-pop .35s cubic-bezier(.16,1,.3,1)}.vt-card{transition:transform .3s ease-out}.vt-card:hover{transform:translateY(-4px)}@media(prefers-reduced-motion:reduce){.vt-pop{animation:none}.vt-card:hover{transform:none}}`}</style>
     </section>
   );
 }

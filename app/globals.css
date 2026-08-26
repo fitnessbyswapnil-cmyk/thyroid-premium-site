@@ -1587,3 +1587,21 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .cta-pulse, .tick-pop { animation: none; }
 }
+
+/* ── Reveal (replaces framer-motion on the landing route) ──────────────────
+   Matches the old fadeUp variant exactly: 28px rise, 0.62s, the same
+   cubic-bezier(0.16, 1, 0.3, 1) easing framer was configured with. */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.62s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.62s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}

@@ -343,6 +343,24 @@ export function trackSchedule(
   return eventId;
 }
 
+// Cal.com booker became visible and interactive.
+//
+// This is the mid-funnel signal the account has never actually had. The GTM
+// tag named "CalcomView" exists but is wired to an obsolete Case Studies page
+// trigger and has recorded zero events in 90 days; there was no dataLayer push
+// behind it. This supplies one.
+//
+// It is a browser-only signal — there is no server leg and no CAPI pair — so
+// unlike Schedule it carries a generated id rather than a deterministic one.
+// It must never reuse the schedule_<uid> namespace: that id belongs to the
+// dedup contract with /api/cal-webhook, and polluting it would break the
+// pairing that makes bookings count once instead of twice.
+export function trackCalcomView(pageType = "book_session") {
+  const event_id = generateEventId("calcom_view");
+  pushDL({ event: "calcom_view", event_id, page_type: pageType });
+  return event_id;
+}
+
 export function trackScrollDepth(depth: number, pageType = "landing") {
   pushDL({ event: "scroll_depth", depth, page_type: pageType });
 }

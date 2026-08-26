@@ -48,9 +48,9 @@ export default function Hero() {
           </p>
         </div>
 
-        {/* ── Right: the VSL, in the design's rounded frame ───────────── */}
+        {/* ── The VSL. Third on mobile, right column on desktop. ──────── */}
         <div
-          className="order-2 w-full overflow-hidden md:order-none md:col-start-2 md:row-start-1 md:row-span-2 md:self-center"
+          className="order-3 w-full overflow-hidden md:order-none md:col-start-2 md:row-start-1 md:row-span-2 md:self-center"
           style={{
             borderRadius: 20,
             boxShadow: "0 20px 48px rgba(0,0,0,0.14)",
@@ -59,8 +59,8 @@ export default function Hero() {
           <HeroVideo />
         </div>
 
-        {/* ── Left, lower: the ask ────────────────────────────────────── */}
-        <div className="order-3 md:col-start-1 md:row-start-2 md:self-start">
+        {/* ── The ask. Second on mobile so it lands inside the fold. ──── */}
+        <div className="order-2 md:col-start-1 md:row-start-2 md:self-start">
           <CtaButton
             variant="primary"
             className=""
