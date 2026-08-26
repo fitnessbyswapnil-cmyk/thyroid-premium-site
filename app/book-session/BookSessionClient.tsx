@@ -23,19 +23,20 @@ export default function BookSessionClient() {
   // Idempotency: Cal.com can emit bookingSuccessful more than once per booking.
   const redirected = useRef(false);
 
-  // Fired once, when the booker is genuinely on screen AND has mounted.
+  // Fired once, when the booker is genuinely on screen AND has rendered.
   //
-  // Two conditions, deliberately. The wrapper has ZERO height until Cal.com's
-  // iframe mounts inside it, and a zero-area element can never satisfy an
-  // IntersectionObserver threshold — so watching visibility alone means the
-  // event never fires. Watching the iframe alone is no better: it would count
-  // people who left before scrolling to it.
+  // Three conditions, and the third is the one that matters. The wrapper is
+  // zero-height until Cal.com's iframe mounts, so visibility alone never
+  // satisfies an IntersectionObserver. Watching for the iframe alone is not
+  // enough either: at the instant it is appended the wrapper is still ~0px,
+  // and every change after that happens INSIDE a cross-origin iframe where a
+  // MutationObserver cannot see it — so the observer fires once, too early,
+  // and never again.
   //
-  // So: IntersectionObserver tracks whether the wrapper is in view, a
-  // MutationObserver tracks whether the iframe has arrived, and the event
-  // fires on the first moment both are true. If Cal.com fails to load, no
-  // iframe ever appears and nothing fires — which is correct. A "booker
-  // viewed" count that includes broken embeds is worse than no count.
+  // ResizeObserver is the right primitive: the wrapper gaining real height IS
+  // the booker becoming visible. If Cal.com never loads, the wrapper never
+  // grows and nothing fires, which is correct — a "booker viewed" count that
+  // includes broken embeds is worse than no count at all.
   const calcomViewed = useRef(false);
   const bookerRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +45,8 @@ export default function BookSessionClient() {
     if (!el) return;
 
     let inView = false;
+    let io: IntersectionObserver | null = null;
+    let ro: ResizeObserver | null = null;
 
     const fireIfReady = () => {
       if (calcomViewed.current) return;
@@ -52,11 +55,11 @@ export default function BookSessionClient() {
       if (el.getBoundingClientRect().height < 40) return;
       calcomViewed.current = true;
       trackCalcomView("book_session");
-      io.disconnect();
-      mo.disconnect();
+      io?.disconnect();
+      ro?.disconnect();
     };
 
-    const io = new IntersectionObserver(
+    io = new IntersectionObserver(
       ([e]) => {
         inView = e.isIntersecting;
         fireIfReady();
@@ -65,12 +68,12 @@ export default function BookSessionClient() {
     );
     io.observe(el);
 
-    const mo = new MutationObserver(fireIfReady);
-    mo.observe(el, { childList: true, subtree: true });
+    ro = new ResizeObserver(fireIfReady);
+    ro.observe(el);
 
     return () => {
-      io.disconnect();
-      mo.disconnect();
+      io?.disconnect();
+      ro?.disconnect();
     };
   }, []);
 
