@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal'
 import SectionCta from './SectionCta'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -178,19 +178,8 @@ const REMOVED_FOR_LENGTH: ProofCard[] = [
 
 // ── Animation variants ────────────────────────────────────────────────────────
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
-  },
-}
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
-}
+// Motion variants removed with framer-motion — the fade-up now lives in the
+// .reveal rule in globals.css, the stagger is a per-child transitionDelay.
 
 // ── Violet brand accent constants ─────────────────────────────────────────────
 // Reuses the shared design tokens (--p400/--p500/--p600) so this section matches
@@ -440,25 +429,20 @@ export default function WhatsappProofSection() {
       <div className="relative z-10">
 
         {/* ── Section header ──────────────────────────────────────────────── */}
-        <motion.div
-          className="container-default mb-12 text-center"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
-          variants={stagger}
-        >
-          <motion.p variants={fadeUp} className="section-label">
+        <div className="container-default mb-12 text-center">
+          <Reveal as="p" className="section-label">
             Unedited Screenshots
-          </motion.p>
-          <motion.h2
+          </Reveal>
+          <Reveal
+            as="h2"
             id="whatsapp-proof-heading"
-            variants={fadeUp}
+            delay={0.12}
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "20ch" }}
           >
             Straight from their WhatsApp.
-          </motion.h2>
-        </motion.div>
+          </Reveal>
+        </div>
 
         <p className="container-default mb-10 text-center text-[0.7rem] leading-relaxed" style={{ color: 'var(--t4)' }}>
           {RESULTS_VARY}

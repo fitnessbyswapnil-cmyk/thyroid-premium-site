@@ -13,7 +13,7 @@
 
 import { useEffect, useRef } from "react";
 import Cal, { getCalApi } from "@calcom/embed-react";
-import { pushDL } from "@/app/lib/analytics";
+import { pushDL, trackCalcomView } from "@/app/lib/analytics";
 import { CAL_UI_CONFIG } from "@/lib/cal-theme";
 
 const INK1 = "#241f1a";
@@ -22,6 +22,57 @@ const INK2 = "#6b6157";
 export default function BookSessionClient() {
   // Idempotency: Cal.com can emit bookingSuccessful more than once per booking.
   const redirected = useRef(false);
+
+  // Fired once, when the booker is genuinely on screen AND has mounted.
+  //
+  // Two conditions, deliberately. The wrapper has ZERO height until Cal.com's
+  // iframe mounts inside it, and a zero-area element can never satisfy an
+  // IntersectionObserver threshold — so watching visibility alone means the
+  // event never fires. Watching the iframe alone is no better: it would count
+  // people who left before scrolling to it.
+  //
+  // So: IntersectionObserver tracks whether the wrapper is in view, a
+  // MutationObserver tracks whether the iframe has arrived, and the event
+  // fires on the first moment both are true. If Cal.com fails to load, no
+  // iframe ever appears and nothing fires — which is correct. A "booker
+  // viewed" count that includes broken embeds is worse than no count.
+  const calcomViewed = useRef(false);
+  const bookerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = bookerRef.current;
+    if (!el) return;
+
+    let inView = false;
+
+    const fireIfReady = () => {
+      if (calcomViewed.current) return;
+      if (!inView) return;
+      if (!el.querySelector("iframe")) return;
+      if (el.getBoundingClientRect().height < 40) return;
+      calcomViewed.current = true;
+      trackCalcomView("book_session");
+      io.disconnect();
+      mo.disconnect();
+    };
+
+    const io = new IntersectionObserver(
+      ([e]) => {
+        inView = e.isIntersecting;
+        fireIfReady();
+      },
+      { threshold: 0 },
+    );
+    io.observe(el);
+
+    const mo = new MutationObserver(fireIfReady);
+    mo.observe(el, { childList: true, subtree: true });
+
+    return () => {
+      io.disconnect();
+      mo.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -78,7 +129,7 @@ export default function BookSessionClient() {
           already knowing your case.
         </p>
 
-        <div style={{ borderRadius: 14, overflow: "hidden" }}>
+        <div ref={bookerRef} style={{ borderRadius: 14, overflow: "hidden" }}>
           <Cal
             namespace="60min"
             calLink="swapnilumbarkarfitness/60min"

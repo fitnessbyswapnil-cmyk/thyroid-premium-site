@@ -1,22 +1,39 @@
+import dynamic from "next/dynamic";
 import { ScrollDepthTracker } from "@/app/components/tracking/ScrollDepthTracker";
 import Hero from "@/app/components/Hero";
 import SymptomChips from "@/app/components/SymptomChips";
-import AbsolveBlock from "@/app/components/AbsolveBlock";
-import CallAgenda from "@/app/components/CallAgenda";
-import CertificationsSection from "@/app/components/CertificationsSection";
-import PillarsSection from "@/app/components/PillarsSection";
-import TransformationWall from "@/app/components/TransformationWall";
-import VideoTestimonial from "@/app/components/VideoTestimonial";
-import WhatsappProofSection from "@/app/components/WhatsappProofSection";
-import PostTestimonialCta from "@/app/components/PostTestimonialCta";
-import FitFilter from "@/app/components/FitFilter";
-import FAQSection from "@/app/components/FAQSection";
-import StickyBookingBar from "@/app/components/StickyBookingBar";
 
-// VSL-first strip-down: hero carries the pitch, proof carries the argument,
-// FAQ is the sole remaining objection-handler. The explanatory sections
-// (problem framing, method, session walkthrough, qualification, coach bio)
-// live in app/components/_archived/ — see its README for restore commands.
+/**
+ * VSL-first strip-down: hero carries the pitch, proof carries the argument,
+ * FAQ is the sole remaining objection-handler. The explanatory sections
+ * (problem framing, method, session walkthrough, qualification, coach bio)
+ * live in app/components/_archived/ — see its README for restore commands.
+ *
+ * ── Why everything below SymptomChips is dynamically imported ──────────────
+ * Measured: 59% of ad clicks reach this page, against 71% on a lighter route.
+ * Roughly four in ten people who were paid for never see the page at all, and
+ * the route was shipping 803 kB of JS to a mid-range Android on Indian 4G.
+ *
+ * These eleven sections are all below the fold. ssr:true keeps them in the
+ * server-rendered HTML — nothing changes for SEO, for scrapers, or for what
+ * the visitor sees before hydration — but their client JS is split out of the
+ * initial payload instead of blocking it.
+ *
+ * Hero and SymptomChips are deliberately NOT lazy: they are the fold, and
+ * deferring them would trade a bundle win for an LCP loss.
+ */
+const AbsolveBlock = dynamic(() => import("@/app/components/AbsolveBlock"));
+const CallAgenda = dynamic(() => import("@/app/components/CallAgenda"));
+const TransformationWall = dynamic(() => import("@/app/components/TransformationWall"));
+const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial"));
+const WhatsappProofSection = dynamic(() => import("@/app/components/WhatsappProofSection"));
+const PillarsSection = dynamic(() => import("@/app/components/PillarsSection"));
+const CertificationsSection = dynamic(() => import("@/app/components/CertificationsSection"));
+const PostTestimonialCta = dynamic(() => import("@/app/components/PostTestimonialCta"));
+const FitFilter = dynamic(() => import("@/app/components/FitFilter"));
+const FAQSection = dynamic(() => import("@/app/components/FAQSection"));
+const StickyBookingBar = dynamic(() => import("@/app/components/StickyBookingBar"));
+
 export default function Home() {
   return (
     <main>
