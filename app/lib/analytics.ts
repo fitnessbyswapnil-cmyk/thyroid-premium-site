@@ -1,4 +1,4 @@
-import { SESSION_PRICE } from "./pricing";
+import { FREE_CALL_VALUE, SESSION_PRICE } from "./pricing";
 
 type DLPayload = Record<string, unknown>;
 
@@ -49,7 +49,8 @@ export function generateEventId(eventName: string): string {
 const PRODUCT = {
   content_name: "Private Thyroid Strategy Session",
   content_category: "thyroid_coaching",
-  value: SESSION_PRICE,
+  // The consultation is free. See FREE_CALL_VALUE in app/lib/pricing.
+  value: FREE_CALL_VALUE,
   currency: "INR",
 } as const;
 
@@ -289,7 +290,9 @@ export function trackPurchase(userData?: UserData, eventId?: string, transaction
       event_id,
       content_type: "service",
       ...PRODUCT,
-      ...(value != null ? { value } : {}),
+      // A real Purchase reports the charged amount, never the free-call zero
+      // that PRODUCT now carries.
+      value: value ?? SESSION_PRICE,
       ...(transactionId ? { transaction_id: transactionId } : {}),
     },
     userData,
@@ -298,7 +301,7 @@ export function trackPurchase(userData?: UserData, eventId?: string, transaction
   // Browser leg, same event_id → collapses with the Cashfree webhook's CAPI
   // Purchase rather than arriving as a second, unmatched event.
   fbqTrack("Purchase", event_id, {
-    ...(value != null ? { value } : {}),
+    value: value ?? SESSION_PRICE,
     currency: "INR",
     ...(transactionId ? { order_id: transactionId } : {}),
   });
@@ -339,7 +342,7 @@ export function trackSchedule(
   pushDL(payload);
   // Browser leg, same event_id → Meta collapses this with the /api/cal-webhook
   // server leg instead of counting one unpaired event.
-  fbqTrack("Schedule", eventId, { ...(PRODUCT.value != null ? { value: PRODUCT.value } : {}), currency: "INR" });
+  fbqTrack("Schedule", eventId, { value: FREE_CALL_VALUE, currency: "INR" });
   return eventId;
 }
 

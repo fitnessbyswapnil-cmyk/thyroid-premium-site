@@ -31,7 +31,7 @@ import {
   getUserAgent,
   getCookieFromReq,
 } from '@/lib/server-tracking'
-import { SESSION_PRICE } from '@/app/lib/pricing'
+import { FREE_CALL_VALUE } from '@/app/lib/pricing'
 import crypto from 'crypto'
 
 const CAL_WEBHOOK_SECRET = process.env.CAL_WEBHOOK_SECRET
@@ -211,13 +211,13 @@ export async function POST(req: NextRequest) {
       eventId, // SAME id as the browser Pixel → Meta dedup
       sourceUrl: SOURCE_URL,
       userData,
-      // value/currency were missing here — Meta Events Manager flagged
-      // "Schedule events have formatting issues or missing values" as a
-      // High Priority ROAS-accuracy warning across all three diagnostics.
-      // SESSION_PRICE is the same single source of truth used everywhere
-      // else pricing is reported (Purchase custom_data, browser PRODUCT
-      // constant) — every Schedule now carries a value even before she pays.
-      customData: { content_name: 'thyroid_strategy_call', value: SESSION_PRICE, currency: 'INR' },
+      // value/currency are still sent so Meta does not flag "Schedule events
+      // have formatting issues or missing values". But the call is FREE, so the
+      // honest figure is zero. Reporting SESSION_PRICE here told Meta every
+      // booking earned Rs 299 that never existed — on the one event the ads
+      // optimise for. Mirrors the browser leg's PRODUCT.value exactly, so both
+      // legs of the dedup pair agree.
+      customData: { content_name: 'thyroid_strategy_call', value: FREE_CALL_VALUE, currency: 'INR' },
       testCode,
     })
 

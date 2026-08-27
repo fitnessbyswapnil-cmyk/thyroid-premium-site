@@ -245,7 +245,13 @@ export async function fetchCalBookingState(): Promise<{ state: CalState; status:
   try {
     const res = await timedFetch(`https://api.cal.com/v1/bookings?apiKey=${encodeURIComponent(apiKey)}`, {});
     if (!res.ok) {
-      status.error = `Cal.com API rejected the key (HTTP ${res.status}) — check CAL_API_KEY`;
+      // Cal.com decommissioned API v1 — it answers 410 to every request now, so
+      // this fallback can never succeed. Reporting "check CAL_API_KEY" for that
+      // sends you chasing a key that was never the problem.
+      status.error =
+        res.status === 410
+          ? "Cal.com v1 is decommissioned (HTTP 410) and the v2 lookup above failed — check the v2 error, not the key"
+          : `Cal.com API rejected the key (HTTP ${res.status}) — check CAL_API_KEY`;
       return { state, status };
     }
     const json = (await res.json()) as { bookings?: CalBooking[] };
