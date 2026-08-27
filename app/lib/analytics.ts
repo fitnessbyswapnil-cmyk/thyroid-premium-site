@@ -10,23 +10,16 @@ export function pushDL(payload: DLPayload) {
 }
 
 // ── Browser Pixel leg ───────────────────────────────────────────────────────
-// Everything on this site reaches Meta through dataLayer → GTM → server-side
-// container → CAPI, which arrives at Meta as "Server". That is a single leg, so
-// there is nothing for Meta to deduplicate against and the event carries only
-// the match keys the server could reconstruct.
+// Used by Purchase only. Do NOT add it to Schedule — see trackSchedule.
 //
-// Events Manager shows the consequence plainly: PageView reads "Deduplicated"
-// (two legs) while Schedule reads "Processed" (one). The browser pixel is
-// already loaded on the page — fbq exists and dataset 1004294955172584 is
-// configured — it is simply never asked to send this event.
-//
-// Firing it directly with the SAME event_id creates the pair. Meta collapses
-// them into one event and keeps the better match data: the browser leg carries
-// _fbp and _fbc natively, which the server leg can only pass along if they were
-// captured and forwarded correctly.
-//
-// Safe if GTM later adds its own browser tag for these: a third leg with the
-// same event_id is collapsed too. Deduplication is by event_id, not by count.
+// The original note here claimed the web GTM container never asks the browser
+// pixel to send these events, and that extra legs sharing one event_id are
+// collapsed anyway ("deduplication is by event_id, not by count"). A live test
+// booking disproved both. Test Events showed FOUR Schedule rows for one
+// booking, all carrying schedule_<uid>, and every one marked "Processed" —
+// none "Deduplicated". PageView, which has exactly two legs, does show
+// "Deduplicated". Meta pairs one browser leg with one server leg; it does not
+// fold four into one.
 type FbqParams = Record<string, string | number | undefined>;
 
 function fbqTrack(eventName: string, eventId: string, params?: FbqParams) {
@@ -340,9 +333,16 @@ export function trackSchedule(
     userData,
   );
   pushDL(payload);
-  // Browser leg, same event_id → Meta collapses this with the /api/cal-webhook
-  // server leg instead of counting one unpaired event.
-  fbqTrack("Schedule", eventId, { value: FREE_CALL_VALUE, currency: "INR" });
+  // No direct fbq here, deliberately. This pushDL already drives the browser
+  // leg: the web GTM container has its own Meta tag on the `schedule` event,
+  // and it fires with the same schedule_<uid>. Calling fbq as well produced a
+  // SECOND browser Schedule (identifiable in Test Events by carrying
+  // value/currency where the GTM tag carries page_location), which Meta counted
+  // rather than deduplicated.
+  //
+  // Intended shape, one pair: browser = web GTM Meta tag, server =
+  // /api/cal-webhook CAPI. The server leg is the reliable one — it fires from
+  // Cal.com's BOOKING_CREATED even if she closes the tab.
   return eventId;
 }
 
