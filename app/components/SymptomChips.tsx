@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import SectionCta from "./SectionCta";
-import { pushDL } from "@/app/lib/analytics";
+import { trackSymptomPattern } from "@/app/lib/analytics";
 
 // Symptom recognition, built to the supplied design.
 //
@@ -77,7 +77,7 @@ export default function SymptomChips() {
 
   // One dataLayer event where the pattern becomes meaningful, not per tap.
   useEffect(() => {
-    if (count === 3) pushDL({ event: "symptom_pattern_reached", symptom_count: 3 });
+    if (count === 3) trackSymptomPattern(3);
   }, [count]);
 
   return (

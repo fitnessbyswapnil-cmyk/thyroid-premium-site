@@ -343,6 +343,27 @@ export function trackSchedule(
   return eventId;
 }
 
+// She ticked three symptoms — the point where the checklist stops being a
+// widget and becomes self-identification. The strongest intent signal the
+// landing page produces, and until now it pushed a bare event with no
+// event_id and no user signals, so Meta could neither match nor dedupe it.
+//
+// Custom event, no server leg. It does NOT count toward the Schedule
+// learning phase — Meta optimises one event per ad set — but it enriches the
+// dataset and can seed a warm audience of people who self-identified.
+export function trackSymptomPattern(count: number) {
+  const event_id = generateEventId("symptom_pattern");
+  pushDL(
+    withUserSignals({
+      event: "symptom_pattern_reached",
+      event_id,
+      symptom_count: count,
+      page_type: "landing",
+    }),
+  );
+  return event_id;
+}
+
 // Cal.com booker became visible and interactive.
 //
 // This is the mid-funnel signal the account has never actually had. The GTM

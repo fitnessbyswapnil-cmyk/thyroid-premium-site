@@ -13,7 +13,7 @@
 
 import { useEffect, useRef } from "react";
 import Cal, { getCalApi } from "@calcom/embed-react";
-import { pushDL, trackCalcomView } from "@/app/lib/analytics";
+import { pushDL, trackCalcomView, trackViewContent } from "@/app/lib/analytics";
 import { CAL_UI_CONFIG } from "@/lib/cal-theme";
 
 const INK1 = "#241f1a";
@@ -22,6 +22,19 @@ const INK2 = "#6b6157";
 export default function BookSessionClient() {
   // Idempotency: Cal.com can emit bookingSuccessful more than once per booking.
   const redirected = useRef(false);
+
+  // Standard Meta ViewContent, fired once on arrival at the offer page.
+  //
+  // It used to live on /book with a deliberate note that it must NOT fire on
+  // the homepage, so the ViewContent audience stays qualified. /book now
+  // redirects here, which left the event firing on no route at all. Same
+  // intent, correct route.
+  const viewContentFired = useRef(false);
+  useEffect(() => {
+    if (viewContentFired.current) return;
+    viewContentFired.current = true;
+    trackViewContent("book_session");
+  }, []);
 
   // Fired once, when the booker is genuinely on screen AND has rendered.
   //
