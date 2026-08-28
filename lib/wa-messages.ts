@@ -9,6 +9,13 @@
  * Tab: "Messages", created on first write.
  *   A Timestamp (ISO) · B Phone (E.164 digits) · C Direction (in|out)
  *   D Text · E Message ID · F Name · G Read (Y|"")
+ *   H Media ID · I Media Type · J Media MIME · K Media Filename
+ *
+ * H-K were added later and are absent from older rows, which read back as "".
+ * They hold the WhatsApp media id, not the file: /api/admin/media exchanges
+ * that id for the bytes on demand. Media ids stay valid for about 30 days, so
+ * an old report will eventually stop opening — the id is kept anyway so the
+ * thread still records that a document arrived.
  *
  * Phone is the join key back to the Leads tab, so a thread can be shown beside
  * her Thyroid Score, blockers, budget and payment state — context no external
@@ -17,7 +24,7 @@
 import { google } from "googleapis";
 
 export const MESSAGES_SHEET = "Messages";
-const HEADER = ["Timestamp", "Phone", "Direction", "Text", "Message ID", "Name", "Read"];
+const HEADER = ["Timestamp", "Phone", "Direction", "Text", "Message ID", "Name", "Read", "Media ID", "Media Type", "Media MIME", "Media Filename"];
 
 export type WaMessage = {
   ts: string;
@@ -27,6 +34,13 @@ export type WaMessage = {
   messageId: string;
   name: string;
   read: boolean;
+  /** WhatsApp media id, exchanged for bytes by /api/admin/media. "" for text. */
+  mediaId: string;
+  /** image | document | audio | video | sticker */
+  mediaType: string;
+  mediaMime: string;
+  /** Original filename, documents only. */
+  mediaName: string;
 };
 
 function getSheets() {
@@ -62,7 +76,10 @@ async function ensureTab(sheets: ReturnType<typeof getSheets>["sheets"], spreads
  * Append one message. Throws on failure so the webhook can log it — a silently
  * dropped inbound message is a lost customer, so it must never fail quietly.
  */
-export async function appendMessage(m: Omit<WaMessage, "read"> & { read?: boolean }): Promise<void> {
+export async function appendMessage(
+  m: Omit<WaMessage, "read" | "mediaId" | "mediaType" | "mediaMime" | "mediaName"> &
+    Partial<Pick<WaMessage, "read" | "mediaId" | "mediaType" | "mediaMime" | "mediaName">>,
+): Promise<void> {
   const { sheets, spreadsheetId } = getSheets();
   await ensureTab(sheets, spreadsheetId);
   await sheets.spreadsheets.values.append({
@@ -81,6 +98,10 @@ export async function appendMessage(m: Omit<WaMessage, "read"> & { read?: boolea
         m.messageId,
         m.name,
         m.read ? "Y" : "",
+        m.mediaId ?? "",
+        m.mediaType ?? "",
+        m.mediaMime ?? "",
+        m.mediaName ?? "",
       ]],
     },
   });
@@ -93,7 +114,7 @@ export async function readMessages(): Promise<WaMessage[]> {
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${MESSAGES_SHEET}!A2:G`,
+      range: `${MESSAGES_SHEET}!A2:K`,
     });
     rows = (res.data.values as string[][]) ?? [];
   } catch {
@@ -109,6 +130,10 @@ export async function readMessages(): Promise<WaMessage[]> {
       messageId: String(r[4] ?? ""),
       name: String(r[5] ?? ""),
       read: String(r[6] ?? "").toUpperCase() === "Y",
+      mediaId: String(r[7] ?? ""),
+      mediaType: String(r[8] ?? ""),
+      mediaMime: String(r[9] ?? ""),
+      mediaName: String(r[10] ?? ""),
     }));
 }
 

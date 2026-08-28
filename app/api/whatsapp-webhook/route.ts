@@ -116,6 +116,8 @@ export async function GET(req: NextRequest) {
   return new NextResponse("forbidden", { status: 403 });
 }
 
+type WaMedia = { id?: string; mime_type?: string; filename?: string; caption?: string };
+
 type WaWebhook = {
   entry?: {
     changes?: {
@@ -129,6 +131,13 @@ type WaWebhook = {
           text?: { body?: string };
           button?: { text?: string };
           interactive?: { button_reply?: { title?: string }; list_reply?: { title?: string } };
+          // Media arrives as an id, never as bytes. Clients send their thyroid
+          // reports this way, so the id is what makes them openable later.
+          image?: WaMedia;
+          document?: WaMedia;
+          audio?: WaMedia;
+          video?: WaMedia;
+          sticker?: WaMedia;
         }[];
         statuses?: {
           id?: string;
@@ -142,13 +151,35 @@ type WaWebhook = {
   }[];
 };
 
+type WaInbound = NonNullable<
+  NonNullable<NonNullable<WaWebhook["entry"]>[0]["changes"]>[0]["value"]
+>["messages"] extends (infer T)[] | undefined
+  ? T
+  : never;
+
+/** The media attachment on a message, if it carries one. */
+function mediaOf(m: WaInbound): { media: WaMedia; kind: string } | null {
+  for (const kind of ["image", "document", "audio", "video", "sticker"] as const) {
+    const media = m[kind];
+    if (media?.id) return { media, kind };
+  }
+  return null;
+}
+
 /** Render non-text messages as something a human can act on, never as blank. */
-function describe(m: NonNullable<NonNullable<NonNullable<WaWebhook["entry"]>[0]["changes"]>[0]["value"]>["messages"] extends (infer T)[] | undefined ? T : never): string {
+function describe(m: WaInbound): string {
   if (m.text?.body) return m.text.body;
   if (m.button?.text) return `[tapped: ${m.button.text}]`;
   if (m.interactive?.button_reply?.title) return `[tapped: ${m.interactive.button_reply.title}]`;
   if (m.interactive?.list_reply?.title) return `[chose: ${m.interactive.list_reply.title}]`;
-  return `[${m.type || "unsupported"} message — open WhatsApp Manager to view]`;
+  // A caption is her own words about the file she sent — always better than a
+  // generic label. The attachment travels alongside on the media columns.
+  const found = mediaOf(m);
+  if (found) {
+    const label = found.media.filename || `${found.kind} attachment`;
+    return found.media.caption ? `${found.media.caption}` : `[${label}]`;
+  }
+  return `[${m.type || "unsupported"} message]`;
 }
 
 export async function POST(req: NextRequest) {
@@ -208,7 +239,14 @@ export async function POST(req: NextRequest) {
           if (!phone) continue;
           const ts = m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : new Date().toISOString();
           const text = describe(m);
-          await appendMessage({ ts, phone, direction: "in", text, messageId: m.id ?? "", name });
+          const found = mediaOf(m);
+          await appendMessage({
+            ts, phone, direction: "in", text, messageId: m.id ?? "", name,
+            mediaId: found?.media.id ?? "",
+            mediaType: found?.kind ?? "",
+            mediaMime: found?.media.mime_type ?? "",
+            mediaName: found?.media.filename ?? "",
+          });
           console.log(`[wa-webhook] inbound from ***${phone.slice(-4)} (${name || "unknown"}): ${text.slice(0, 80)}`);
 
           // Isolated: storing her message is the job that must not fail. An

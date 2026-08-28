@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey } from "../_lib";
 import { readMessages, appendMessage, markThreadRead, type WaMessage } from "@/lib/wa-messages";
 import { sendWhatsAppText, toWhatsAppNumber } from "@/lib/whatsapp";
+import { readTags } from "@/lib/wa-tags";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +30,17 @@ export type Thread = {
   unread: number;
   /** Minutes left to reply free-form; 0 once her window has closed. */
   windowMinutesLeft: number;
+  /** Contact tags, so the thread list can be filtered without a second call. */
+  tags: string[];
 };
 
 export async function GET(req: NextRequest) {
   if (!checkAdminKey(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const all = await readMessages();
+    // Tags are per contact, so they ride along with the threads rather than
+    // making the phone fetch them separately for every thread it renders.
+    const tagMap = await readTags().catch(() => new Map<string, string[]>());
     const byPhone = new Map<string, WaMessage[]>();
     for (const m of all) {
       const list = byPhone.get(m.phone) ?? [];
@@ -56,6 +62,7 @@ export async function GET(req: NextRequest) {
         lastTs: msgs[msgs.length - 1]?.ts ?? "",
         unread: msgs.filter((m) => m.direction === "in" && !m.read).length,
         windowMinutesLeft: Math.round(leftMs / 60000),
+        tags: tagMap.get(phone) ?? [],
       });
     }
     threads.sort((a, b) => (a.lastTs < b.lastTs ? 1 : -1));
