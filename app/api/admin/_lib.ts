@@ -54,6 +54,15 @@ export type LeadRow = {
   paid: boolean;
   paidAmount: number | null;
   score: number | null;
+  /**
+   * Where `score` came from. "intent" = her Cal.com qualifying answers scored
+   * for likelihood to buy (lib/lead-score). "severity" = the quiz funnel's
+   * symptom score from the sheet, which says how bad her thyroid is, not
+   * whether she will pay. Intent wins when both exist.
+   */
+  scoreBasis: "intent" | "severity" | null;
+  /** Qualifying questions answered, out of 10 — how much the intent score rests on. */
+  scoreAnswered: number;
   showed: string; // "Y" | "N" | ""
   closedAmt: number | null;
   meetLink: string;
@@ -96,11 +105,11 @@ type CalBooking = {
   metadata?: { videoCallUrl?: string };
   references?: { meetingUrl?: string }[];
   attendees?: { email?: string }[];
-  responses?: { email?: unknown };
+  responses?: Record<string, unknown>;
   // v2 (cal-api-version 2024-08-13)
   start?: string;
   meetingUrl?: string;
-  bookingFieldsResponses?: { email?: unknown };
+  bookingFieldsResponses?: Record<string, unknown>;
 };
 
 const isHttp = (v?: string) => !!v && /^https?:\/\//.test(v);
@@ -138,6 +147,14 @@ export type CalState = {
   meetLinks: Map<string, string>;
   active: Set<string>; // emails with a booking that is still going to happen
   cancelled: Set<string>; // emails whose booking was cancelled (minus rebookings)
+  /**
+   * Her qualifying answers, keyed by email — budget, decision-maker, urgency
+   * and the rest. These live only in Cal.com; the Leads sheet never receives
+   * them, which is why every Cal.com booking showed a blank score. Kept for
+   * cancelled bookings too: a cancelled call is still worth ranking for
+   * follow-up. See lib/lead-score.
+   */
+  answers: Map<string, Record<string, unknown>>;
 };
 
 /**
@@ -154,6 +171,13 @@ function collect(bookings: CalBooking[], state: CalState): number {
     const status = (b.status ?? "").toLowerCase();
     const emails = extractEmails(b).filter((e) => e && e !== PLACEHOLDER_EMAIL);
     if (!emails.length) continue;
+
+    // Captured before the status branches so a cancelled booking keeps its
+    // answers — she still needs ranking for follow-up.
+    const merged = { ...(b.bookingFieldsResponses ?? {}), ...(b.responses ?? {}) };
+    if (Object.keys(merged).length) {
+      for (const email of emails) if (!state.answers.has(email)) state.answers.set(email, merged);
+    }
 
     if (CANCELLED_STATUSES.has(status)) {
       for (const email of emails) state.cancelled.add(email);
@@ -208,7 +232,7 @@ async function fetchV2Page(apiKey: string, calStatus: "upcoming" | "cancelled"):
  */
 export async function fetchCalBookingState(): Promise<{ state: CalState; status: CalStatus }> {
   const apiKey = process.env.CAL_API_KEY;
-  const state: CalState = { meetLinks: new Map(), active: new Set(), cancelled: new Set() };
+  const state: CalState = { meetLinks: new Map(), active: new Set(), cancelled: new Set(), answers: new Map() };
   const status: CalStatus = { keySet: !!apiKey, source: "none", fetched: 0, matched: 0, cancelled: 0, error: "", sample: [] };
   if (!apiKey) {
     status.error = "CAL_API_KEY not set (add it in Vercel, then redeploy)";

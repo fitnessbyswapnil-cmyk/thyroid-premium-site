@@ -49,6 +49,15 @@ type Lead = {
   paid: boolean;
   paidAmount: number | null;
   score: number | null;
+  /**
+   * Where `score` came from. "intent" = her Cal.com qualifying answers scored
+   * for likelihood to buy (lib/lead-score). "severity" = the quiz funnel's
+   * symptom score from the sheet, which says how bad her thyroid is, not
+   * whether she will pay. Intent wins when both exist.
+   */
+  scoreBasis: "intent" | "severity" | null;
+  /** Qualifying questions answered, out of 10 — how much the intent score rests on. */
+  scoreAnswered: number;
   showed: string;
   closedAmt: number | null;
   meetLink: string;
@@ -205,8 +214,14 @@ const DEFAULT_PROOF = {
 // follow-up should actually be worked in order of.
 function budgetRank(b: string): number {
   const t = (b || "").toLowerCase();
+  // Quiz-funnel wording.
   if (t.includes("20,000 or more") || t.includes("20000 or more")) return 3;
   if (t.includes("10,000") && t.includes("20,000")) return 2;
+  // Cal.com qualifying wording: "I can invest Rs 50,000 / 30,000 / 15,000".
+  // 30k and 50k both clear the programme price; 15k sits under it, which is a
+  // real objection to prepare for rather than a near-miss to round up.
+  if (t.includes("50,000") || t.includes("50000") || t.includes("30,000") || t.includes("30000")) return 3;
+  if (t.includes("15,000") || t.includes("15000")) return 2;
   if (t.includes("under")) return 1;
   return 0; // "I'd want to see the plan first" — undecided, not unable
 }
@@ -2035,7 +2050,26 @@ export default function AdminDashboard() {
                           <span style={{ fontWeight: 400, fontSize: 10.5, color: MUTED }}>{l.city}</span>
                         </td>
                         <td style={{ padding: "8px" }}>
-                          <span style={{ color: scColor, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{l.score ?? "–"}</span>
+                          <span
+                            style={{ color: scColor, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+                            title={
+                              l.scoreBasis === "intent"
+                                ? `Buying intent, from ${l.scoreAnswered} of 10 qualifying answers. Weighted on budget, decision-maker and urgency.`
+                                : l.scoreBasis === "severity"
+                                  ? "Quiz symptom severity — how bad her thyroid is, not whether she will pay."
+                                  : "No qualifying answers yet."
+                            }
+                          >
+                            {l.score ?? "–"}
+                          </span>
+                          {/* Severity and intent are different questions, so the
+                              column says which one it is showing. */}
+                          {l.scoreBasis === "severity" && (
+                            <span style={{ fontSize: 9, color: MUTED }}> sev</span>
+                          )}
+                          {l.scoreBasis === "intent" && l.scoreAnswered < 6 && (
+                            <span style={{ fontSize: 9, color: WARN }}> {l.scoreAnswered}/10</span>
+                          )}
                           <span style={{ fontSize: 10, color: MUTED }}> {l.tier}</span>
                         </td>
                         <td style={{ padding: "8px", whiteSpace: "nowrap" }}>

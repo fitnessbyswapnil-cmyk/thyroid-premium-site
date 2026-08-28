@@ -19,6 +19,7 @@
  * it can never break the dashboard.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { budgetAnswer, scoreBooking } from "@/lib/lead-score";
 import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME, type LeadRow } from "../_lib";
 import { draftMessage, draftWaLink } from "@/lib/draft-message";
 
@@ -136,6 +137,12 @@ export async function GET(req: NextRequest) {
       // value stands unchanged.
       const calCancelled = !!emailKey && cal.state.cancelled.has(emailKey);
       const calActive = !!emailKey && cal.state.active.has(emailKey);
+      // Her Cal.com qualifying answers, when she booked through the live
+      // funnel. The sheet never receives these, so before this every Cal.com
+      // booking showed a blank score and a blank budget.
+      const calAnswers = emailKey ? cal.state.answers.get(emailKey) : undefined;
+      const intent = calAnswers ? scoreBooking(calAnswers) : null;
+      const sheetScore = num(cell(r, C.score));
       leads.push({
         row: i + 1,
         ts,
@@ -153,10 +160,14 @@ export async function GET(req: NextRequest) {
         amountSpent: cell(r, C.amountSpent),
         triedBefore: cell(r, C.triedBefore),
         challenge: cell(r, C.challenge),
-        budget: C.budget >= 0 ? cell(r, C.budget) : "",
+        budget: (C.budget >= 0 ? cell(r, C.budget) : "") || (calAnswers ? budgetAnswer(calAnswers) : ""),
         paid: C.paid >= 0 && cell(r, C.paid).toUpperCase() === "Y",
         paidAmount: C.paidAmount >= 0 ? num(cell(r, C.paidAmount)) : null,
-        score: num(cell(r, C.score)),
+        // Intent beats severity: a woman who can pay Rs 50,000 and decides
+        // alone is a better call than one with worse symptoms and no budget.
+        score: intent?.score ?? sheetScore,
+        scoreBasis: intent?.score != null ? "intent" : sheetScore != null ? "severity" : null,
+        scoreAnswered: intent?.answered ?? 0,
         showed: cell(r, C.showed).toUpperCase(),
         closedAmt: num(cell(r, C.closedAmt)),
         // Manual sheet value always wins; Cal.com only fills an empty slot.
