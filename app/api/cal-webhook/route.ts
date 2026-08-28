@@ -27,8 +27,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   sendCAPIEvent,
   buildUserData,
-  getClientIp,
-  getUserAgent,
   getCookieFromReq,
 } from '@/lib/server-tracking'
 import { FREE_CALL_VALUE } from '@/app/lib/pricing'
@@ -174,13 +172,25 @@ export async function POST(req: NextRequest) {
     // signals in booking metadata; we read them here (falling back to any cookie
     // that happens to ride along, then to the booking uid for external_id).
     const metadata = payload.metadata
-    const city = responseValue(payload.responses, 'city') || metaValue(metadata, 'city')
+    // The live Cal form's city question uses the slug "which-city"; the plain
+    // "city" key belongs to the old /book flow's metadata. Read both, so the
+    // ct match key stops silently dropping off every live booking.
+    const city =
+      responseValue(payload.responses, 'city') ||
+      responseValue(payload.responses, 'which-city') ||
+      metaValue(metadata, 'city')
     // SAME external_id the browser Schedule sends (visitor_id) so they match;
     // uid only as a last resort. event_id (schedule_<uid>) is unchanged either way.
     const externalId = metaValue(metadata, 'visitor_id') || uid
     const fbc = metaValue(metadata, 'fbc') || getCookieFromReq(req, '_fbc')
     const fbp = metaValue(metadata, 'fbp') || getCookieFromReq(req, '_fbp')
 
+    // clientIp / userAgent are deliberately ABSENT: this request is Cal.com's
+    // server calling ours, so getClientIp/getUserAgent would report Cal's
+    // datacenter egress IP and Cal's HTTP client as if they were the woman who
+    // booked — actively wrong signals that pollute matching. Her real browser
+    // identifiers arrive via metadata (fbc/fbp/visitor_id) when she booked
+    // through the site embed, and via the browser Schedule leg's own request.
     const userData = buildUserData({
       email,
       phone,
@@ -188,15 +198,29 @@ export async function POST(req: NextRequest) {
       lastName,
       city,
       externalId,
-      clientIp: getClientIp(req),
-      userAgent: getUserAgent(req),
       fbc,
       fbp,
       country: 'in',
     })
 
     const eventId = `schedule_${uid}`
-    const testCode = process.env.META_TEST_EVENT_CODE
+    // META_TEST_EVENT_CODE now applies ONLY to the owner's own test bookings.
+    //
+    // On 28 Aug a real client booked at 22:03 while a deployment built with
+    // TEST9290 was still live (deleting the env var does not touch the running
+    // deployment — only the next build picks it up). Her Schedule was routed to
+    // Test Events and permanently excluded from ads reporting: Events Manager
+    // showed it received at ~22:10 while the counted total never moved. This
+    // fence makes that class of accident impossible — a forgotten test code can
+    // only ever swallow the coach's own bookings, never a client's.
+    const testCodeRaw = process.env.META_TEST_EVENT_CODE
+    const isOwnerBooking = /swapnil/i.test(name) || /swapnil/i.test(email)
+    const testCode = testCodeRaw && isOwnerBooking ? testCodeRaw : undefined
+    if (testCodeRaw && !testCode) {
+      console.warn(
+        `[cal-webhook] META_TEST_EVENT_CODE is set but this is a REAL client booking — sending WITHOUT the test code so the conversion counts. Remove the env var and redeploy.`,
+      )
+    }
     // Names only, never values — confirms which match signals actually arrived
     // (esp. whether ct/fbc/fbp/external_id rode in via Cal booking metadata).
     const matchKeys = Object.keys(userData).filter((k) => userData[k as keyof typeof userData])

@@ -11,9 +11,10 @@
  * about tracking dedup changes.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { pushDL, trackCalcomView, trackViewContent } from "@/app/lib/analytics";
+import { getFbc, getFbclid, getFbp, getVisitorId } from "@/lib/tracking";
 import { CAL_UI_CONFIG } from "@/lib/cal-theme";
 
 const INK1 = "#241f1a";
@@ -22,6 +23,39 @@ const INK2 = "#6b6157";
 export default function BookSessionClient() {
   // Idempotency: Cal.com can emit bookingSuccessful more than once per booking.
   const redirected = useRef(false);
+
+  // Booking metadata → rides inside Cal.com's BOOKING_CREATED webhook, which is
+  // the only way the server Schedule CAPI can carry HER first-party signals
+  // (the webhook request itself is Cal's server calling ours — no cookies).
+  //
+  // This existed on the old /book page (QualifyingFlow) and was lost when the
+  // funnel moved to this page: the live embed sent NO metadata, so every real
+  // booking reached Meta with no fbc/fbp/visitor_id — un-attributable to the
+  // ad click that produced it. That is why Ads Manager showed 0 results while
+  // Cal.com showed real bookings.
+  //
+  // Computed in an effect, and the embed below only mounts once it is ready:
+  // the Cal component snapshots its config when IT mounts, so the metadata has
+  // to exist first — and lib/tracking's helpers touch localStorage, which this
+  // prerendered page must not do during render. If the _fbc cookie is missing
+  // but an fbclid is on record, fbc is reconstructed in Meta's documented
+  // fb.1.<ts>.<fbclid> format — Safari regularly drops the cookie while the
+  // middleware's _fbclid_raw survives.
+  const [calMetadata, setCalMetadata] = useState<Record<string, string> | null>(null);
+  useEffect(() => {
+    const m: Record<string, string> = {};
+    try {
+      const visitorId = getVisitorId();
+      const fbp = getFbp();
+      const fbclid = getFbclid();
+      const fbc = getFbc() || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : "");
+      if (visitorId) m.visitor_id = visitorId;
+      if (fbc) m.fbc = fbc;
+      if (fbp) m.fbp = fbp;
+    } catch { /* storage blocked — book without signals rather than not at all */ }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- cookie/storage reads are client-only; one deliberate pre-embed tick
+    setCalMetadata(m);
+  }, []);
 
   // Standard Meta ViewContent, fired once on arrival at the offer page.
   //
@@ -146,12 +180,14 @@ export default function BookSessionClient() {
         </p>
 
         <div ref={bookerRef} style={{ borderRadius: 14, overflow: "hidden" }}>
-          <Cal
-            namespace="60min"
-            calLink="swapnilumbarkarfitness/60min"
-            style={{ width: "100%", height: "100%", overflow: "scroll" }}
-            config={{ layout: "month_view" }}
-          />
+          {calMetadata !== null && (
+            <Cal
+              namespace="60min"
+              calLink="swapnilumbarkarfitness/60min"
+              style={{ width: "100%", height: "100%", overflow: "scroll" }}
+              config={{ layout: "month_view", ...(Object.keys(calMetadata).length ? { metadata: calMetadata } : {}) }}
+            />
+          )}
         </div>
       </div>
     </main>
