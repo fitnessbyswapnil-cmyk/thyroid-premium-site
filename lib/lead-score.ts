@@ -3,25 +3,33 @@
  *
  * This is NOT the quiz funnel's "Lead Score" column, which measures symptom
  * severity — how bad her thyroid situation is. Severity says nothing about
- * whether she will pay. A woman with brutal symptoms and Rs 15,000 to spend is
- * a worse commercial prospect than a milder case who is the sole decision-maker
- * with Rs 50,000 ready, even though the severity score ranks her far higher.
+ * whether she will pay. A woman with brutal symptoms who has never paid for
+ * help and is "just gathering information" is a worse commercial prospect than
+ * a milder case who decides alone and wants to start this week, even though the
+ * severity score ranks her far higher.
  *
  * So this scores one question only: how likely is she to buy a 3-month
  * programme at Rs 20,000-30,000? Everything is weighted against that.
  *
  * WEIGHTS, and why they are in this order:
  *
- *   30  Can invest       Ability and willingness to pay, stated outright. No
- *                        other answer predicts revenue nearly as well, and
- *                        Rs 15,000 sits below the programme price, so it is
- *                        scored as the real objection it is, not a near-miss.
+ *   26  Can invest       Stated ability to pay. Note what the form actually
+ *                        offers: Rs 50,000 / 30,000 / 15,000 — every option is
+ *                        a PAYING option, there is no "I cannot invest". So the
+ *                        three are much closer together than they look. Almost
+ *                        nobody ticks the top box on a form before a call, and
+ *                        Rs 15,000 is usually "I don't want to over-commit",
+ *                        not "this is my ceiling". She is a buyer with a gap to
+ *                        close, and is scored as one.
  *   18  Decision maker   "I need to discuss with my spouse" is the commonest
- *                        way a good call dies. Sole authority removes it.
+ *                        way a good call dies. A delay, though, not a refusal.
  *   16  When to start    Intent decays fast. "Just gathering information"
  *                        scores zero deliberately — it is a no with manners.
- *   12  Paid before      Someone who has already paid a coach has crossed the
- *                        line once. Free-advice-only has not.
+ *   16  Paid before      Behaviour beats intention. Someone who has actually
+ *                        handed money to a coach is proven to buy; even under
+ *                        Rs 10,000 counts, because paying at all is the line
+ *                        that matters. "Only free advice" is the real red flag
+ *                        here, not a small number.
  *    8  Diagnosis        Fit. Diagnosed and medicated is the core client.
  *    6  Weight to lose   Fit and pain size against the 10-15 kg promise.
  *    4  Stuck for        Pain duration.
@@ -77,25 +85,29 @@ const RULES: Rule[] = [
   {
     id: "budget",
     label: "Can invest",
-    max: 30,
+    max: 26,
     // "investment-level" is the current slug. Guard against the prior-spend
     // question, which also talks about money.
     match: (k) =>
       k.includes("investment-level") ||
       (has(k, "invest", "able-to-invest") && !has(k, "previous", "paid", "spent", "ever")),
+    // Every option on the form is a paying one, so the spread is deliberately
+    // narrow. Rs 15,000 is a buyer with a gap to close on the call, not a lost
+    // cause — treating her as one was costing real leads their ranking.
     points: (v) =>
-      has(v, "50,000", "50000", "50k") ? 30
-      : has(v, "30,000", "30000", "30k") ? 26
-      : has(v, "20,000 or more", "20000 or more") ? 26
-      : has(v, "15,000", "15000", "15k") ? 8
-      : 15,
+      has(v, "50,000", "50000", "50k") ? 26
+      : has(v, "30,000", "30000", "30k") ? 24
+      : has(v, "20,000 or more", "20000 or more") ? 24
+      : has(v, "15,000", "15000", "15k") ? 17
+      : 18,
   },
   {
     id: "decision",
     label: "Decision maker",
     max: 18,
     match: (k) => has(k, "decision"),
-    points: (v) => (has(v, "sole") || v.startsWith("yes") ? 18 : 5),
+    // Needing to ask a spouse delays a sale; it does not end one.
+    points: (v) => (has(v, "sole") || v.startsWith("yes") ? 18 : 7),
   },
   {
     id: "urgency",
@@ -104,22 +116,24 @@ const RULES: Rule[] = [
     match: (k) => has(k, "start", "timeline", "when-would", "when_would"),
     points: (v) =>
       has(v, "immediat") ? 16
-      : has(v, "next month", "within the next") ? 11
-      : has(v, "2 to 3", "2-3", "two to three") ? 4
+      : has(v, "next month", "within the next") ? 12
+      : has(v, "2 to 3", "2-3", "two to three") ? 5
       : has(v, "gathering", "information for now") ? 0
       : 8,
   },
   {
     id: "priorSpend",
     label: "Paid before",
-    max: 12,
+    max: 16,
     match: (k) => has(k, "paid", "previous", "spent", "tried-before"),
+    // Having paid ANY amount to a coach before is the signal; the size of it is
+    // secondary. Never having paid for help is the one answer that should hurt.
     points: (v) =>
-      has(v, "more than") && has(v, "25") ? 12
-      : has(v, "10,000", "10000") && has(v, "25,000", "25000") ? 9
-      : has(v, "under") ? 6
-      : has(v, "only tried free", "free advice", "no, i have") ? 2
-      : 6,
+      has(v, "more than") && has(v, "25") ? 16
+      : has(v, "10,000", "10000") && has(v, "25,000", "25000") ? 13
+      : has(v, "under") ? 9
+      : has(v, "only tried free", "free advice", "no, i have") ? 3
+      : 8,
   },
   {
     id: "diagnosis",
