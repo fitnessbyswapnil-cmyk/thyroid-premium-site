@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
-import { trackSchedule } from "../lib/analytics";
+import { claimScheduleOnce, trackSchedule } from "../lib/analytics";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 
 // ── Show-up commitment page ──────────────────────────────────────────────────
@@ -159,13 +159,10 @@ function BookingConfirmedInner() {
 
     // ── Schedule on load ──────────────────────────────────────────────────────
     if (!scheduleFiredRef.current && uid) {
-      const sessionKey = `schedule_fired_${uid}`;
-      let alreadyFired = false;
-      try { alreadyFired = !!sessionStorage.getItem(sessionKey); } catch { /* unavailable */ }
-
-      if (!alreadyFired) {
+      // Durable across tabs and restarts, and shared with /confirm-session so
+      // one booking cannot fire Schedule from both pages.
+      if (claimScheduleOnce(uid)) {
         scheduleFiredRef.current = true;
-        try { sessionStorage.setItem(sessionKey, "1"); } catch { /* non-critical */ }
 
         trackSchedule(
           { name, date, time },

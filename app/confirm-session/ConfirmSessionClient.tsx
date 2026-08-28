@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { pushDL, trackSchedule } from "@/app/lib/analytics";
+import { claimScheduleOnce, pushDL, trackSchedule } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 
 type Resolved = { leadId: string; name: string; phone: string; email?: string; city?: string; startTime: string };
@@ -106,12 +106,9 @@ export default function ConfirmSessionClient() {
             //
             // Guarded per uid across remounts so a refresh cannot re-fire it.
             if (!scheduleFiredRef.current) {
-              const key = `schedule_fired_${uid}`;
-              let already = false;
-              try { already = !!sessionStorage.getItem(key); } catch { /* storage unavailable */ }
-              if (!already) {
+              // Durable across tabs and restarts, not just this session.
+              if (claimScheduleOnce(uid)) {
                 scheduleFiredRef.current = true;
-                try { sessionStorage.setItem(key, "1"); } catch { /* non-critical */ }
                 const when = new Date(data.startTime);
                 const dated = !Number.isNaN(when.getTime());
                 trackSchedule(

@@ -301,6 +301,38 @@ export function trackPurchase(userData?: UserData, eventId?: string, transaction
   return event_id;
 }
 
+/**
+ * Claims the single Schedule allowed for a booking. Returns true exactly once
+ * per booking uid, per browser — every later call returns false.
+ *
+ * Two pages can fire Schedule: /confirm-session (the live funnel) and
+ * /booking-confirmed (the dormant pay-first flow). Both used to guard with
+ * sessionStorage, which only holds inside ONE tab. Reopening the confirmation
+ * link in a new tab started a fresh session, found no key, and fired a second
+ * Schedule for a booking Meta had already counted — and Meta does not collapse
+ * two browser events that share an event_id.
+ *
+ * localStorage survives new tabs and restarts. sessionStorage is kept as a
+ * fallback for browsers where localStorage throws (private mode, blocked site
+ * data); both are written so either one alone still blocks a repeat.
+ */
+export function claimScheduleOnce(uid: string): boolean {
+  if (!uid || typeof window === "undefined") return false;
+  const key = `schedule_fired_${uid}`;
+  const box = (kind: "localStorage" | "sessionStorage"): Storage | undefined => {
+    try { return window[kind]; } catch { return undefined; }
+  };
+  const seen = (s?: Storage) => { try { return !!s?.getItem(key); } catch { return false; } };
+  const mark = (s?: Storage) => { try { s?.setItem(key, "1"); } catch { /* non-critical */ } };
+
+  const local = box("localStorage");
+  const session = box("sessionStorage");
+  if (seen(local) || seen(session)) return false;
+  mark(local);
+  mark(session);
+  return true;
+}
+
 // Schedule = a confirmed Cal.com booking (the Meta optimization event).
 // eventId: pass the deterministic `schedule_<cal_booking_uid>` so the browser
 // Pixel and the Cal.com webhook CAPI share ONE id and Meta deduplicates to a
