@@ -28,11 +28,19 @@ export default function BookSessionClient() {
   // the only way the server Schedule CAPI can carry HER first-party signals
   // (the webhook request itself is Cal's server calling ours — no cookies).
   //
-  // This existed on the old /book page (QualifyingFlow) and was lost when the
-  // funnel moved to this page: the live embed sent NO metadata, so every real
-  // booking reached Meta with no fbc/fbp/visitor_id — un-attributable to the
-  // ad click that produced it. That is why Ads Manager showed 0 results while
-  // Cal.com showed real bookings.
+  // KEY FORMAT IS NOT OPTIONAL — flattened, bracketed, one entry per signal:
+  //
+  //     config={{ "metadata[fbc]": "fb.1...." }}   ✅ arrives as payload.metadata.fbc
+  //     config={{ metadata: { fbc: "fb.1...." } }} ❌ arrives as {"a":"[object Object]"}
+  //
+  // Cal.com's embed serialises `config` into the iframe's query string, so any
+  // NESTED value is String()-ed on the way out. Passing the object form is what
+  // every booking in this account did until 29 Aug 2026: 100 bookings checked
+  // via the Cal API, and not one carried fbc/fbp/visitor_id — they carried the
+  // literal corrupt pair {"a": "[object Object]"}. The server Schedule therefore
+  // reached Meta with no click identifier on any of them, which is why Cal.com
+  // showed real bookings while Ads Manager reported 0 results.
+  // Ref: https://cal.com/help/embedding/prefill-booking-form-embed
   //
   // Computed in an effect, and the embed below only mounts once it is ready:
   // the Cal component snapshots its config when IT mounts, so the metadata has
@@ -49,9 +57,10 @@ export default function BookSessionClient() {
       const fbp = getFbp();
       const fbclid = getFbclid();
       const fbc = getFbc() || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : "");
-      if (visitorId) m.visitor_id = visitorId;
-      if (fbc) m.fbc = fbc;
-      if (fbp) m.fbp = fbp;
+      // The bracketed key IS the key the webhook reads back off payload.metadata.
+      if (visitorId) m["metadata[visitor_id]"] = visitorId;
+      if (fbc) m["metadata[fbc]"] = fbc;
+      if (fbp) m["metadata[fbp]"] = fbp;
     } catch { /* storage blocked — book without signals rather than not at all */ }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- cookie/storage reads are client-only; one deliberate pre-embed tick
     setCalMetadata(m);
@@ -180,12 +189,14 @@ export default function BookSessionClient() {
         </p>
 
         <div ref={bookerRef} style={{ borderRadius: 14, overflow: "hidden" }}>
+          {/* calMetadata is ALREADY flattened to "metadata[<key>]" entries, so it
+              spreads straight into config. Never re-nest it under a `metadata` key. */}
           {calMetadata !== null && (
             <Cal
               namespace="60min"
               calLink="swapnilumbarkarfitness/60min"
               style={{ width: "100%", height: "100%", overflow: "scroll" }}
-              config={{ layout: "month_view", ...(Object.keys(calMetadata).length ? { metadata: calMetadata } : {}) }}
+              config={{ layout: "month_view", ...calMetadata }}
             />
           )}
         </div>
