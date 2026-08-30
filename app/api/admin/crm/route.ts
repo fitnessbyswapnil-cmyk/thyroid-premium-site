@@ -3,9 +3,11 @@
  *
  *   GET  → one record per booking (plus leads that never booked), with a stage
  *          and a next action DERIVED from four systems.
- *   POST → a coach correction. { bookingUid, fields } writes straight to the
- *          Calls row and stamps Reviewed=Y, which permanently protects that row
- *          from being overwritten by a later re-extraction.
+ *   POST → writes a Calls row. { bookingUid, fields, mode }.
+ *          mode "correction" (default) = the coach fixing the extraction; stamps
+ *          Reviewed=Y and is protected from every later automated write.
+ *          mode "ingest" = an automated extraction creating the row; writes the
+ *          full field set and deliberately does NOT stamp Reviewed.
  *
  * Auth: x-admin-key, same as the rest of /api/admin/*.
  *
@@ -270,13 +272,24 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * Coach correction. Writes the given fields to the Calls row and marks it
- * Reviewed so a later Fathom re-run cannot overwrite the correction.
+ * Two writers, one endpoint, distinguished by `mode`:
+ *
+ *   mode "correction" (default) — the coach fixing something the extraction got
+ *     wrong. Stamps Reviewed=Y, which permanently protects the row from being
+ *     overwritten by any later automated run.
+ *
+ *   mode "ingest" — an automated extraction writing a full row. Must NOT stamp
+ *     Reviewed: doing so would freeze the row against every future improvement,
+ *     including the Fathom webhook once it is switched on. An ingest is a
+ *     first draft, not a verdict.
+ *
+ * The split matters because the same endpoint serves a person and a machine, and
+ * only one of them is allowed to have the last word.
  */
 export async function POST(req: NextRequest) {
   if (!checkAdminKey(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  let body: { bookingUid?: string; fields?: Record<string, string> };
+  let body: { bookingUid?: string; fields?: Record<string, string>; mode?: string };
   try {
     body = await req.json();
   } catch {
@@ -286,9 +299,12 @@ export async function POST(req: NextRequest) {
   const bookingUid = String(body.bookingUid ?? "").trim();
   if (!bookingUid) return NextResponse.json({ error: "bookingUid required" }, { status: 400 });
 
+  const ingest = body.mode === "ingest";
   const incoming = body.fields ?? {};
-  const fields: CallFields = { bookingUid, reviewed: "Y" };
-  const allowed = [
+
+  // A correction may only touch the judgement fields. An ingest may write the
+  // whole row, because it is creating it.
+  const CORRECTABLE = [
     "attended",
     "pricePitched",
     "lowestPriceSaid",
@@ -300,14 +316,33 @@ export async function POST(req: NextRequest) {
     "agreedCallbackAt",
     "summary",
   ] as const;
+  const INGEST_ONLY = [
+    "occurredAt",
+    "name",
+    "email",
+    "phone",
+    "coachTalkPct",
+    "discountAt",
+    "scorecard",
+    "scorecardFailed",
+    "fathomUrl",
+    "extractedBy",
+  ] as const;
+
+  const fields: CallFields = { bookingUid };
+  if (!ingest) fields.reviewed = "Y";
+  else fields.writtenAt = new Date().toISOString();
+
+  const allowed: readonly string[] = ingest ? [...CORRECTABLE, ...INGEST_ONLY] : CORRECTABLE;
   for (const k of allowed) {
     if (typeof incoming[k] === "string") (fields as Record<string, string>)[k] = incoming[k];
   }
 
   try {
-    // force: a correction must land even though the row is (now) reviewed.
-    const plan = await writeCall(fields, { force: true });
-    return NextResponse.json({ ok: true, action: plan.action });
+    // A correction forces past the Reviewed guard (the coach is the authority).
+    // An ingest does not: a row the coach has already reviewed must survive it.
+    const plan = await writeCall(fields, { force: !ingest });
+    return NextResponse.json({ ok: true, action: plan.action, skipped: plan.skipReason ?? null });
   } catch (err) {
     console.error("[admin/crm] write failed:", err);
     return NextResponse.json({ error: "write_failed" }, { status: 502 });
