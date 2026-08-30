@@ -10,13 +10,15 @@
     "test": "node --test --experimental-strip-types \"lib/**/*.test.ts\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
     "@calcom/embed-react": "^1.5.3",
     "@cashfreepayments/cashfree-js": "^1.0.7",
     "framer-motion": "^12.38.0",
     "googleapis": "^172.0.0",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
