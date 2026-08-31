@@ -27,11 +27,16 @@ import { budgetAnswer, scoreBooking } from "@/lib/lead-score";
 import { fetchBookings, type CalBookingRecord } from "@/lib/cal-bookings";
 import { readCalls, writeCall, type CallRow, type CallFields } from "@/lib/crm-calls";
 import { deriveStage, nextAction, agreedButUnpaid, type Stage, type CallFacts } from "@/lib/crm-stage";
+import { milestonesFor, missingCount, withinDays, type Milestone, type MsEvent } from "@/lib/crm-milestones";
+import { readMessages } from "@/lib/wa-messages";
 
 export const dynamic = "force-dynamic";
 
 const norm = (s: string) => String(s ?? "").trim().toLowerCase();
 const isY = (s: string) => /^y(es)?$/i.test(String(s ?? "").trim());
+/** Indian numbers arrive with and without the 91 prefix — compare on the last 10. */
+const tail10 = (s: string) => String(s ?? "").replace(/\D/g, "").slice(-10);
+
 const num = (s: string): number | null => {
   const n = parseFloat(String(s ?? "").replace(/[^\d.-]/g, ""));
   return Number.isFinite(n) ? n : null;
@@ -107,6 +112,12 @@ export type CrmRecord = {
   nextAction: { label: string; urgency: string; reason: string };
   /** Set when the tape says she agreed and no payment ever arrived. */
   agreedButUnpaid: boolean;
+  /** What has and has not happened to her — three-state, see lib/crm-milestones. */
+  milestones: Milestone[];
+  /** How many milestones genuinely need action. Drives the row's urgency. */
+  missing: number;
+  /** Whether she falls inside the 3-day board window. */
+  recent: boolean;
   call: {
     attended: boolean;
     pricePitched: number | null;
@@ -156,7 +167,7 @@ export async function GET(req: NextRequest) {
   const warnings: string[] = [];
 
   // Each source degrades independently — one being down must not blank the page.
-  const [sheetRes, bookingRes, callRes] = await Promise.allSettled([
+  const [sheetRes, bookingRes, callRes, msgRes] = await Promise.allSettled([
     (async () => {
       const { sheets, sheetId } = await getSheetsClient();
       const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!A1:BC` });
@@ -164,6 +175,7 @@ export async function GET(req: NextRequest) {
     })(),
     fetchBookings(100),
     readCalls(),
+    readMessages(),
   ]);
 
   if (sheetRes.status === "fulfilled") leads = sheetRes.value;
@@ -172,6 +184,21 @@ export async function GET(req: NextRequest) {
   else warnings.push("cal.com unavailable");
   if (callRes.status === "fulfilled") calls = callRes.value;
   else warnings.push(`calls tab unavailable: ${String(callRes.reason).slice(0, 120)}`);
+
+  // One read, grouped by phone — milestones need her message history, and doing
+  // this per-lead would be a hundred reads of the same sheet.
+  const eventsByPhone = new Map<string, MsEvent[]>();
+  if (msgRes.status === "fulfilled") {
+    for (const m of msgRes.value) {
+      const k = tail10(m.phone);
+      if (!k) continue;
+      const list = eventsByPhone.get(k) ?? [];
+      list.push({ at: m.ts, kind: m.direction === "in" ? "message_in" : "message_out", mediaType: m.mediaType || "" });
+      eventsByPhone.set(k, list);
+    }
+  } else {
+    warnings.push("whatsapp history unavailable — milestones will be partial");
+  }
 
   const leadByEmail = new Map(leads.map((l) => [l.email, l]));
   const callByUid = new Map(calls.map((c) => [c.bookingUid, c]));
@@ -203,6 +230,26 @@ export async function GET(req: NextRequest) {
       agreedCallbackAt: c?.agreedCallbackAt || null,
     });
 
+    const evs = eventsByPhone.get(tail10(b.phone || lead?.phone || "")) ?? [];
+    const msInput = {
+      hasBooking: !b.cancelled,
+      cancelled: b.cancelled,
+      sessionStart: b.startIso || null,
+      call: c
+        ? {
+            attended: isY(c.attended),
+            pricePitched: num(c.pricePitched),
+            lowestPriceSaid: num(c.lowestPriceSaid),
+            occurredAt: c.occurredAt || b.startIso,
+          }
+        : null,
+      paid: lead?.paid ?? false,
+      paidAmount: lead?.paidAmount ?? null,
+      events: evs,
+      now,
+    };
+    const ms = milestonesFor(msInput);
+
     records.push({
       key: b.uid,
       bookingUid: b.uid,
@@ -220,6 +267,9 @@ export async function GET(req: NextRequest) {
       stage,
       nextAction: action,
       agreedButUnpaid: agreedButUnpaid(input),
+      milestones: ms,
+      missing: missingCount(ms),
+      recent: withinDays({ sessionStart: b.startIso || null, events: evs, now }, 3),
       call: c
         ? {
             attended: isY(c.attended),
@@ -247,6 +297,17 @@ export async function GET(req: NextRequest) {
     if (seenEmails.has(l.email)) continue;
     const input = { hasBooking: false, bookingCancelled: false, sessionStart: null, call: null, paid: l.paid, now };
     const stage = deriveStage(input);
+    const evs = eventsByPhone.get(tail10(l.phone)) ?? [];
+    const ms = milestonesFor({
+      hasBooking: false,
+      cancelled: false,
+      sessionStart: null,
+      call: null,
+      paid: l.paid,
+      paidAmount: l.paidAmount,
+      events: evs,
+      now,
+    });
     records.push({
       key: `lead:${l.email}`,
       bookingUid: "",
@@ -264,6 +325,9 @@ export async function GET(req: NextRequest) {
       stage,
       nextAction: nextAction(stage, input),
       agreedButUnpaid: false,
+      milestones: ms,
+      missing: missingCount(ms),
+      recent: withinDays({ sessionStart: null, events: evs, now }, 3),
       call: null,
     });
   }

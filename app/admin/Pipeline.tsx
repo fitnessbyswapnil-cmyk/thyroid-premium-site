@@ -78,6 +78,9 @@ export type Rec = {
   stage: Stage;
   nextAction: { label: string; urgency: string; reason: string };
   agreedButUnpaid: boolean;
+  milestones: Milestone[];
+  missing: number;
+  recent: boolean;
   call: {
     attended: boolean;
     pricePitched: number | null;
@@ -98,6 +101,9 @@ export type Rec = {
 };
 
 type Ev = { at: string; kind: string; title: string; body?: string; meta?: Record<string, string> };
+
+export type MilestoneState = "done" | "not_applicable" | "missing";
+export type Milestone = { id: string; label: string; state: MilestoneState; value: string; note?: string };
 
 const KEY_STORE = "admin_dash_key";
 const rupee = (n: number | null) => (n == null ? "—" : `₹${n.toLocaleString("en-IN")}`);
@@ -245,6 +251,116 @@ function ScorecardBars({ rows }: { rows: { k: string; failed: number; total: num
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Three states, three treatments — and only one of them is allowed to look
+ * urgent. If "not applicable" reads as failure, the board becomes a wall of red
+ * on day one and he stops trusting it by the end of the week.
+ */
+function cellStyle(state: MilestoneState): React.CSSProperties {
+  if (state === "done") return { background: "rgba(61,220,132,.10)", border: `1px solid ${STATUS.won}44`, color: INK1 };
+  if (state === "missing") return { background: "rgba(255,107,107,.12)", border: `1px solid ${STATUS.cancelled}66`, color: STATUS.cancelled };
+  // not_applicable: quiet, but NOT invisible. A fully blank cell reads as broken
+  // data rather than as "nothing was expected here" — on the first render of
+  // this board a booked-but-not-yet-called row was five blank boxes and looked
+  // like a bug. It gets a visible dashed edge and an em dash so the eye can tell
+  // deliberate silence from a hole.
+  return { background: "rgba(255,255,255,.02)", border: `1px dashed #3a3742`, color: "#6f6a78" };
+}
+
+/** Compact strip for a lead card — nine dots, no labels. */
+function MilestoneStrip({ ms }: { ms: Milestone[] }) {
+  return (
+    <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+      {ms.map((m) => (
+        <span
+          key={m.id}
+          title={`${m.label}: ${m.state === "done" ? m.value || "done" : m.state === "missing" ? "MISSING" : "not applicable"}${m.note ? ` — ${m.note}` : ""}`}
+          style={{
+            width: 16,
+            height: 5,
+            borderRadius: 99,
+            background: m.state === "done" ? STATUS.won : m.state === "missing" ? STATUS.cancelled : GRID,
+            opacity: m.state === "not_applicable" ? 0.7 : 1,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** The last-3-days board: rows are people, columns are the nine milestones. */
+function MilestoneBoard({ rows }: { rows: Rec[] }) {
+  if (!rows.length)
+    return <p style={{ color: MUTED, fontSize: 12.5, margin: 0 }}>Nobody has moved in the last 3 days.</p>;
+
+  const cols = rows[0].milestones;
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ borderCollapse: "separate", borderSpacing: "3px 4px", minWidth: 860, width: "100%" }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: "left", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: MUTED, fontWeight: 600, padding: "0 8px 4px 4px" }}>
+              Who
+            </th>
+            {cols.map((c) => (
+              <th key={c.id} style={{ textAlign: "left", fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", color: MUTED, fontWeight: 600, padding: "0 4px 4px", whiteSpace: "nowrap" }}>
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.key}>
+              <td style={{ padding: "4px 8px 4px 4px", whiteSpace: "nowrap" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                  <i style={{ width: 6, height: 6, borderRadius: 99, background: colorOf(r.stage), display: "inline-block" }} />
+                  <span style={{ fontSize: 12.5, color: INK1, fontWeight: 600 }}>{r.name || r.email || "Unknown"}</span>
+                  {r.missing > 0 ? (
+                    <span style={{ fontSize: 10, color: STATUS.cancelled, fontWeight: 700 }}>{r.missing}</span>
+                  ) : null}
+                </span>
+              </td>
+              {r.milestones.map((m) => (
+                <td key={m.id} style={{ padding: 0 }}>
+                  <div
+                    title={m.note || `${m.label}: ${m.state.replace("_", " ")}`}
+                    style={{
+                      ...cellStyle(m.state),
+                      borderRadius: 6,
+                      padding: "5px 7px",
+                      fontSize: 11,
+                      whiteSpace: "nowrap",
+                      minHeight: 26,
+                      display: "flex",
+                      alignItems: "center",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {m.state === "done" ? m.value || "✓" : m.state === "missing" ? m.value || "needs action" : "–"}
+                  </div>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+        {([
+          ["done", "Done"],
+          ["missing", "Needs action"],
+          ["not_applicable", "Not expected"],
+        ] as [MilestoneState, string][]).map(([st, label]) => (
+          <span key={st} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: MUTED }}>
+            <i style={{ width: 16, height: 12, borderRadius: 3, ...cellStyle(st), display: "inline-block" }} />
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -470,6 +586,12 @@ export default function Pipeline() {
       .slice(0, 5);
   }, [records]);
 
+  const recent = useMemo(() => {
+    const all = (records ?? []).filter((r) => r.recent);
+    // Most gaps first — the board is a to-do list, not a register.
+    return [...all].sort((a, b) => b.missing - a.missing).slice(0, 12);
+  }, [records]);
+
   const shown = useMemo(() => {
     const all = records ?? [];
     let list = stageFilter ? all.filter((r) => r.stage === stageFilter) : all;
@@ -550,6 +672,16 @@ export default function Pipeline() {
           ) : null}
         </div>
         <StageBar counts={counts} active={stageFilter} onPick={(s) => setStageFilter(stageFilter === s ? null : s)} />
+      </section>
+
+      {/* ── last 3 days board ── */}
+      <section style={{ background: CARD, border: `1px solid ${GRID}`, borderRadius: 12, padding: "15px 17px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+          <h3 style={{ margin: 0, fontSize: 13.5, color: INK1, fontWeight: 700 }}>Last 3 days</h3>
+          <span style={{ fontSize: 11.5, color: MUTED }}>every step, per customer — hover a cell for why</span>
+          <span style={{ marginLeft: "auto", fontSize: 11.5, color: MUTED }}>{recent.length} active</span>
+        </div>
+        <MilestoneBoard rows={recent} />
       </section>
 
       {/* ── funnel + scorecard ── */}
@@ -687,6 +819,14 @@ export default function Pipeline() {
                       {r.nextAction.urgency === "none" ? "next" : r.nextAction.urgency}
                     </span>
                     <span style={{ fontSize: 13.5, fontWeight: 600, color: INK1 }}>{r.nextAction.label}</span>
+                    {r.milestones?.length ? (
+                      <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        {r.missing > 0 ? (
+                          <span style={{ fontSize: 10.5, color: STATUS.cancelled, fontWeight: 700 }}>{r.missing} missing</span>
+                        ) : null}
+                        <MilestoneStrip ms={r.milestones} />
+                      </span>
+                    ) : null}
                   </div>
                 </button>
 
