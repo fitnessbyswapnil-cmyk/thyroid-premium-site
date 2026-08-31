@@ -42,7 +42,32 @@ const THYROID_OPTIONS = [
 
 type Form = { name: string; phone: string; thyroid: string };
 
-export default function ScheduleClient() {
+/**
+ * Copy overrides, added so /decode can reuse this exact payment leg instead of
+ * forking it. Every default below is the literal that was previously inline, so
+ * /schedule renders unchanged. `wrapper` exists because /decode already owns a
+ * <main> and nesting a second one is invalid.
+ */
+export type ScheduleClientProps = {
+  eyebrow?: string;
+  heading?: string;
+  subheading?: React.ReactNode;
+  ctaLabel?: string;
+  rationaleTitle?: string;
+  rationaleBody?: React.ReactNode;
+  wrapper?: "main" | "div";
+};
+
+export default function ScheduleClient({
+  eyebrow = "For women 30+ with hypothyroidism",
+  heading = "Schedule your 1-1 thyroid fat loss session",
+  subheading = "60 minutes, one to one with Swapnil. We find what is actually blocking your fat loss and what to do about it.",
+  ctaLabel,
+  rationaleTitle = `Why this session costs ₹${SESSION_PRICE}`,
+  rationaleBody = "So the woman in that slot actually turns up, and so I arrive having read your answers properly. It is adjusted against your plan if you decide to work with me.",
+  wrapper = "main",
+}: ScheduleClientProps = {}) {
+  const Wrapper = wrapper;
   const [f, setF] = useState<Form>({ name: "", phone: "", thyroid: "" });
   const [errs, setErrs] = useState<Partial<Record<keyof Form, string>>>({});
   const [formErr, setFormErr] = useState("");
@@ -235,27 +260,26 @@ export default function ScheduleClient() {
   };
 
   return (
-    <main style={{ background: BG, minHeight: "100vh", padding: "28px 18px 64px" }}>
+    <Wrapper style={{ background: BG, ...(wrapper === "main" ? { minHeight: "100vh" } : null), padding: "28px 18px 64px" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
         <p style={{
           fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase",
           color: TEAL, fontWeight: 700, textAlign: "center", marginBottom: 12,
         }}>
-          For women 30+ with hypothyroidism
+          {eyebrow}
         </p>
 
         <h1 style={{
           fontFamily: "var(--font-display), Georgia, serif", fontSize: "clamp(27px,6.6vw,38px)",
           lineHeight: 1.16, color: INK1, textAlign: "center", margin: "0 0 14px", fontWeight: 600,
         }}>
-          Schedule your 1-1 thyroid fat loss session
+          {heading}
         </h1>
 
         <p style={{
           fontSize: 16, lineHeight: 1.55, color: INK2, textAlign: "center", margin: "0 0 26px",
         }}>
-          60 minutes, one to one with Swapnil. We find what is actually blocking
-          your fat loss and what to do about it.
+          {subheading}
         </p>
 
         <div style={{
@@ -305,7 +329,7 @@ export default function ScheduleClient() {
               fontWeight: 700, cursor: busy ? "default" : "pointer",
             }}
           >
-            {busy ? "Opening secure checkout…" : `Schedule My Session — ₹${SESSION_PRICE}`}
+            {busy ? "Opening secure checkout…" : (ctaLabel ?? `Schedule My Session — ₹${SESSION_PRICE}`)}
           </button>
 
           {formErr && (
@@ -322,15 +346,13 @@ export default function ScheduleClient() {
           border: `1px solid ${GRID}`, borderRadius: 12,
         }}>
           <p style={{ fontSize: 14, fontWeight: 700, color: INK1, marginBottom: 6 }}>
-            Why this session costs ₹{SESSION_PRICE}
+            {rationaleTitle}
           </p>
           <p style={{ fontSize: 14, lineHeight: 1.55, color: INK2, margin: 0 }}>
-            So the woman in that slot actually turns up, and so I arrive having
-            read your answers properly. It is adjusted against your plan if you
-            decide to work with me.
+            {rationaleBody}
           </p>
         </div>
       </div>
-    </main>
+    </Wrapper>
   );
 }
