@@ -93,7 +93,17 @@ async function page(apiKey: string, query: string): Promise<PageResult> {
   const timer = setTimeout(() => controller.abort(), 25000);
   try {
     const res = await fetch(`https://api.cal.com/v2/bookings?${query}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, "cal-api-version": "2024-08-13" },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "cal-api-version": "2024-08-13",
+        // Cal.com sits behind Cloudflare, which rejects some non-browser clients
+        // outright (a python client got error 1010 from this same endpoint while
+        // curl with a browser UA succeeded). Serverless requests were timing out
+        // intermittently and emptying the whole pipeline; presenting as a browser
+        // is the cheap half of the fix.
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+        Accept: "application/json",
+      },
       cache: "no-store",
       signal: controller.signal,
     });
