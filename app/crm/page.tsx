@@ -1,27 +1,38 @@
 "use client";
 
 /**
- * /crm — the pipeline on a phone.
+ * /crm — the pipeline on a phone, standing up between calls.
  *
  * Renders the SAME component as the Pipeline tab of /admin rather than a second
- * implementation, so the two can never drift apart. The only difference is the
- * chrome: no tab bar, no analytics, just the pipeline on a dark full-height
- * page — which is what is wanted when this is opened between calls.
+ * implementation, so the two can never drift. Only the chrome differs: no tabs,
+ * no analytics, and the page surface comes from the same token set.
  */
 
+import { useEffect, useState } from "react";
 import Pipeline from "../admin/Pipeline";
+import { LIGHT, DARK, FONT, type Tokens } from "../admin/tokens";
 
 export default function CrmPage() {
+  const [dark, setDark] = useState(false);
+  const t: Tokens = dark ? (DARK as unknown as Tokens) : LIGHT;
+
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDark(localStorage.getItem("admin_theme") === "dark");
+    } catch {}
+  }, []);
+
   return (
-    <main style={{ background: "#0e0e11", minHeight: "100vh", color: "#f4f2f7", fontFamily: "system-ui, -apple-system, sans-serif", padding: "16px 14px 80px" }}>
+    <main style={{ background: t.paper, minHeight: "100vh", color: t.ink1, padding: "18px 14px 90px" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        <header style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 14 }}>
-          <h1 style={{ fontSize: 22, margin: 0, letterSpacing: "-.03em" }}>Pipeline</h1>
-          <a href="/admin" style={{ marginLeft: "auto", fontSize: 12, color: "#8a8494", textDecoration: "none" }}>
-            Full dashboard →
+        <header style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
+          <h1 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 26, letterSpacing: "-.015em" }}>Practice</h1>
+          <a href="/admin" style={{ marginLeft: "auto", fontFamily: FONT.sans, fontSize: 12.5, color: t.teal, textDecoration: "none" }}>
+            Full desk →
           </a>
         </header>
-        <Pipeline />
+        <Pipeline dark={dark} />
       </div>
     </main>
   );

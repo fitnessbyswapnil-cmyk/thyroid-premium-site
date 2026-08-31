@@ -3,66 +3,59 @@
 /**
  * The PIPELINE half of /admin — one lead, one story.
  *
- * Design (per the dataviz method, palette computed not eyeballed):
- *  - Stage is ORDINAL, not categorical, so the four progression stages use a
- *    single-hue purple ramp. On a dark surface the ramp ascends in lightness
- *    (dim -> bright) as the lead advances; the light->dark ramp used on the
- *    analytics tab inverts here, and its deepest step measured 2.49:1 against
- *    #17181c — invisible. These four steps are monotonic in lightness and clear
- *    3:1 (3.33 / 4.74 / 6.72 / 10.43).
- *  - Won / cancelled / no-show / lost are STATUS, never ramp steps, and every
- *    one ships with its text label so identity is never colour alone.
- *  - Every mark carries a direct label, so the stage bar needs no legend box.
+ * Set like a clinical case file rather than a product. The design decisions and
+ * their measured contrast live in app/admin/tokens.ts; three of them shape
+ * almost every component here:
  *
- * Rendered by app/admin/page.tsx (desktop command centre) and by /crm (the same
- * component on a phone) — one implementation, so the two can never drift.
+ *  - Stage is a SEQUENCE, so it is drawn as chevrons in one hue getting darker —
+ *    a single object moving forward, not four categories. The outcomes are
+ *    detached pills with different shapes, because Won/No-show/Cancelled/Lost
+ *    are not further steps.
+ *  - Among the outcomes only WON carries colour. A screen that scolds him every
+ *    morning stops getting opened.
+ *  - Clay red means exactly one thing: should have happened, didn't. Rationing
+ *    it to that is what keeps the board readable.
+ *
+ * Rendered by app/admin/page.tsx and by /crm — one implementation, so the phone
+ * and the desk can never drift.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { LIGHT, DARK, FONT, RADIUS, ELEV, stageRamp, type Tokens } from "./tokens";
 
-// ── surfaces & ink (shared with the analytics tab) ──────────────────────────
-const BG = "#0e0e11";
-const CARD = "#17181c";
-const RAISED = "#1d1e23";
-const GRID = "#26242c";
-const INK1 = "#f4f2f7";
-const INK2 = "#b9b3c4";
-const MUTED = "#8a8494";
+export type Stage = "new" | "booked" | "attended" | "pitched" | "won" | "no_show" | "cancelled" | "lost";
 
-// ── ordinal ramp: progression only, ascending lightness on dark ─────────────
-const RAMP = { new: "#7c5bab", booked: "#9670d8", attended: "#b48cf0", pitched: "#d4bbff" } as const;
-// ── status: reserved, never reused as a series colour ───────────────────────
-const STATUS = { won: "#3ddc84", cancelled: "#ff6b6b", no_show: "#fab219", lost: "#8a8494" } as const;
-
-export type Stage = keyof typeof RAMP | keyof typeof STATUS;
-
-const STAGE_META: { id: Stage; label: string; color: string; ordinal: boolean }[] = [
-  { id: "new", label: "New lead", color: RAMP.new, ordinal: true },
-  { id: "booked", label: "Booked", color: RAMP.booked, ordinal: true },
-  { id: "attended", label: "Attended", color: RAMP.attended, ordinal: true },
-  { id: "pitched", label: "Pitched", color: RAMP.pitched, ordinal: true },
-  { id: "won", label: "Won", color: STATUS.won, ordinal: false },
-  { id: "no_show", label: "No-show", color: STATUS.no_show, ordinal: false },
-  { id: "cancelled", label: "Cancelled", color: STATUS.cancelled, ordinal: false },
-  { id: "lost", label: "Lost", color: STATUS.lost, ordinal: false },
+/** The four ordinal steps, in order. Everything else is an outcome. */
+const SEQUENCE: { id: Stage; label: string }[] = [
+  { id: "new", label: "New lead" },
+  { id: "booked", label: "Booked" },
+  { id: "attended", label: "Attended" },
+  { id: "pitched", label: "Pitched" },
 ];
-const colorOf = (s: Stage) => STAGE_META.find((m) => m.id === s)?.color ?? MUTED;
-const labelOf = (s: Stage) => STAGE_META.find((m) => m.id === s)?.label ?? s;
+const OUTCOMES: { id: Stage; label: string; glyph: string }[] = [
+  { id: "won", label: "Won", glyph: "●" },
+  { id: "no_show", label: "No-show", glyph: "◐" },
+  { id: "cancelled", label: "Cancelled", glyph: "○" },
+  { id: "lost", label: "Lost", glyph: "✕" },
+];
 
 const SCORE_LABELS: Record<string, string> = {
-  past_spend_totalled: "Totalled her past spend before the price",
-  range_tested: "Tested what she could invest",
+  past_spend_totalled: "Totalled her past spend before naming the price",
+  range_tested: "Asked what she had tried and why it stopped",
   proof_shown_before_price: "Showed proof before the number",
-  decision_maker_found: "Found the real decision-maker",
-  price_said_cleanly: "Price said cleanly, with the guarantee",
-  silence_after_ask: "After the ask, the next voice was hers",
+  decision_maker_found: "Handled the husband objection with her, not for her",
+  price_said_cleanly: "Named the price cleanly, with the guarantee",
+  silence_after_ask: "Held the price in silence for ten seconds",
   total_held: "The total never went down",
-  results_gate_used: "Results gate, not a discount",
-  payment_on_screen: "Payment on screen, on the call",
-  ended_with_clock_time: "Ended with an amount and a time",
+  results_gate_used: "Used the results gate, not a discount",
+  payment_on_screen: "Asked for payment while she was still on the call",
+  ended_with_clock_time: "Set a decision date before ending the call",
 };
 
 type Check = { passed: boolean; evidence: string };
+export type MilestoneState = "done" | "not_applicable" | "missing";
+export type Milestone = { id: string; label: string; state: MilestoneState; value: string; note?: string };
+
 export type Rec = {
   key: string;
   bookingUid: string;
@@ -102,365 +95,454 @@ export type Rec = {
 
 type Ev = { at: string; kind: string; title: string; body?: string; meta?: Record<string, string> };
 
-export type MilestoneState = "done" | "not_applicable" | "missing";
-export type Milestone = { id: string; label: string; state: MilestoneState; value: string; note?: string };
-
 const KEY_STORE = "admin_dash_key";
 const rupee = (n: number | null) => (n == null ? "—" : `₹${n.toLocaleString("en-IN")}`);
 const initials = (n: string) =>
-  (n || "?")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("") || "?";
+  (n || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
 
-function fmt(iso: string): string {
-  if (!iso) return "";
+const fmt = (iso: string) => {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true });
-}
-function dayOnly(iso: string): string {
-  if (!iso) return "Undated";
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true });
+};
+const dayOnly = (iso: string) => {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "Undated";
-  return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-}
+  return Number.isNaN(d.getTime())
+    ? "Undated"
+    : d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
+};
 
-// ── tiny chart primitives ───────────────────────────────────────────────────
+// ── primitives ──────────────────────────────────────────────────────────────
 
-/** Horizontal ordinal stage bar. 2px surface gaps, every segment direct-labeled. */
-function StageBar({
-  counts,
-  onPick,
-  active,
-}: {
-  counts: { stage: Stage; n: number }[];
-  onPick: (s: Stage) => void;
-  active: Stage | null;
-}) {
-  const total = counts.reduce((s, c) => s + c.n, 0) || 1;
-  const [hover, setHover] = useState<Stage | null>(null);
+const micro = (t: Tokens): React.CSSProperties => ({
+  fontFamily: FONT.sans,
+  fontSize: 11,
+  letterSpacing: ".12em",
+  textTransform: "uppercase",
+  color: t.ink3,
+  fontWeight: 500,
+});
+const mono = (t: Tokens): React.CSSProperties => ({ fontFamily: FONT.mono, fontVariantNumeric: "tabular-nums", color: t.ink1 });
+
+function Card({ t, children, style }: { t: Tokens; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div>
-      <div style={{ display: "flex", gap: 2, height: 34, borderRadius: 7, overflow: "hidden" }}>
-        {counts
-          .filter((c) => c.n > 0)
-          .map((c) => {
-            const pct = (100 * c.n) / total;
-            const on = active === c.stage || hover === c.stage;
+    <section style={{ background: t.card, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.card, boxShadow: ELEV.e1, padding: "18px 20px", ...style }}>
+      {children}
+    </section>
+  );
+}
+
+function SectionTitle({ t, children, aside }: { t: Tokens; children: React.ReactNode; aside?: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+      <h3 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 22, color: t.ink1, letterSpacing: "-.01em" }}>{children}</h3>
+      {aside ? <span style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>{aside}</span> : null}
+    </div>
+  );
+}
+
+/** A sentence under a chart. Every chart here ends in one. */
+function Conclusion({ t, children }: { t: Tokens; children: React.ReactNode }) {
+  return (
+    <p style={{ margin: "12px 0 0", fontFamily: FONT.sans, fontSize: 12.5, lineHeight: 1.5, color: t.ink2 }}>{children}</p>
+  );
+}
+
+// ── stage: sequence vs outcome ──────────────────────────────────────────────
+
+function StageFlow({
+  t,
+  counts,
+  active,
+  onPick,
+}: {
+  t: Tokens;
+  counts: Record<Stage, number>;
+  active: Stage | null;
+  onPick: (s: Stage) => void;
+}) {
+  const ramp = stageRamp(t);
+  return (
+    <div style={{ display: "flex", gap: 28, flexWrap: "wrap", alignItems: "flex-start" }}>
+      <div style={{ flex: "1 1 420px", minWidth: 300 }}>
+        <div style={{ display: "flex" }}>
+          {SEQUENCE.map((s, i) => {
+            const on = active === s.id;
+            const fill = ramp[i];
+            // Counts sit UNDER the bar and names below them, so the segment
+            // colour only ever has to clear 3:1 against paper — it never has to
+            // carry text.
             return (
               <button
-                key={c.stage}
-                onClick={() => onPick(c.stage)}
-                onMouseEnter={() => setHover(c.stage)}
-                onMouseLeave={() => setHover(null)}
-                title={`${labelOf(c.stage)} — ${c.n} (${Math.round(pct)}%)`}
-                aria-label={`${labelOf(c.stage)}, ${c.n} leads`}
+                key={s.id}
+                onClick={() => onPick(s.id)}
+                aria-label={`${s.label}, ${counts[s.id] ?? 0}`}
                 style={{
-                  width: `${pct}%`,
-                  minWidth: 30,
-                  background: colorOf(c.stage),
+                  flex: 1,
+                  height: 30,
                   border: 0,
+                  padding: 0,
                   cursor: "pointer",
-                  opacity: active && active !== c.stage ? 0.38 : on ? 1 : 0.88,
-                  transition: "opacity .16s ease, filter .16s ease",
-                  filter: on ? "brightness(1.12)" : "none",
-                  color: "#12111a",
-                  fontWeight: 800,
+                  background: fill,
+                  opacity: active && !on ? 0.4 : 1,
+                  transition: "opacity .16s ease",
+                  // The first segment is flat on the left (nothing precedes it)
+                  // and the last is flat on the right (the sequence ends there).
+                  // Rounded ends would read as terminal; chevrons read as onward.
+                  clipPath:
+                    i === 0
+                      ? "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)"
+                      : i === SEQUENCE.length - 1
+                        ? "polygon(0 0, 100% 0, 100% 100%, 0 100%, 12px 50%)"
+                        : "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)",
+                  marginLeft: i === 0 ? 0 : -6,
+                  borderRadius: i === 0 ? `${RADIUS.cell}px 0 0 ${RADIUS.cell}px` : 0,
+                }}
+              />
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", marginTop: 7 }}>
+          {SEQUENCE.map((s, i) => (
+            <div key={s.id} style={{ flex: 1, paddingLeft: i === 0 ? 2 : 10 }}>
+              <div style={{ ...mono(t), fontSize: 15, color: active === s.id ? t.ink1 : t.ink2 }}>{counts[s.id] ?? 0}</div>
+              <div style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink3, marginTop: 1 }}>
+                {i + 1} · {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p style={{ ...micro(t), margin: "10px 0 0", fontSize: 10 }}>In progress — a sequence</p>
+      </div>
+
+      <div style={{ flex: "0 1 auto" }}>
+        <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+          {OUTCOMES.map((o) => {
+            const on = active === o.id;
+            const isWon = o.id === "won";
+            // Only Won is coloured. The three losses are neutral by design.
+            return (
+              <button
+                key={o.id}
+                onClick={() => onPick(o.id)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 12px",
+                  borderRadius: RADIUS.chip,
+                  cursor: "pointer",
+                  fontFamily: FONT.sans,
                   fontSize: 12,
-                  fontVariantNumeric: "tabular-nums",
+                  background: isWon ? t.won : on ? t.sunk : "transparent",
+                  color: isWon ? t.card : t.ink2,
+                  border: isWon ? "none" : o.id === "no_show" ? `1px solid ${t.ink3}` : o.id === "cancelled" ? `1px dashed ${t.ink3}` : `1px solid ${t.hairline}`,
+                  opacity: active && !on ? 0.5 : 1,
                 }}
               >
-                {c.n}
+                <span style={{ fontSize: 9 }}>{o.glyph}</span>
+                {o.label} {counts[o.id] ?? 0}
               </button>
             );
           })}
-      </div>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 9 }}>
-        {counts
-          .filter((c) => c.n > 0)
-          .map((c) => (
-            <span key={c.stage} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, color: active === c.stage ? INK1 : MUTED }}>
-              <i style={{ width: 8, height: 8, borderRadius: 2, background: colorOf(c.stage), display: "inline-block" }} />
-              {labelOf(c.stage)}
-            </span>
-          ))}
-      </div>
-    </div>
-  );
-}
-
-/** Conversion funnel. One series, so no legend — the title names it. */
-function Funnel({ steps }: { steps: { label: string; n: number }[] }) {
-  const max = Math.max(1, steps[0]?.n ?? 1);
-  return (
-    <div style={{ display: "grid", gap: 7 }}>
-      {steps.map((s, i) => {
-        const pct = (100 * s.n) / max;
-        const prev = i > 0 ? steps[i - 1].n : null;
-        const conv = prev && prev > 0 ? Math.round((100 * s.n) / prev) : null;
-        return (
-          <div key={s.label} style={{ display: "grid", gridTemplateColumns: "88px 1fr 64px", gap: 10, alignItems: "center" }}>
-            <span style={{ fontSize: 11.5, color: MUTED }}>{s.label}</span>
-            <div style={{ background: GRID, borderRadius: 4, height: 16, overflow: "hidden" }}>
-              <div
-                style={{
-                  width: `${Math.max(pct, s.n > 0 ? 3 : 0)}%`,
-                  height: "100%",
-                  background: RAMP.attended,
-                  borderRadius: "0 4px 4px 0",
-                  transition: "width .5s cubic-bezier(.16,1,.3,1)",
-                }}
-              />
-            </div>
-            <span style={{ fontSize: 12.5, color: INK1, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
-              {s.n}
-              {conv != null ? <em style={{ color: MUTED, fontStyle: "normal", fontSize: 10.5, display: "block" }}>{conv}%</em> : null}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Which of the ten checks fails most. Sequential magnitude → status colour by severity. */
-function ScorecardBars({ rows }: { rows: { k: string; failed: number; total: number; pct: number }[] }) {
-  if (!rows.length)
-    return <p style={{ color: MUTED, fontSize: 12.5, margin: 0 }}>No extracted calls yet. This fills in as calls are ingested.</p>;
-  return (
-    <div style={{ display: "grid", gap: 8 }}>
-      {rows.map((r) => (
-        <div key={r.k} style={{ display: "grid", gridTemplateColumns: "1fr 96px 58px", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 12.5, color: r.pct >= 60 ? INK1 : INK2 }}>{SCORE_LABELS[r.k] ?? r.k}</span>
-          <div style={{ background: GRID, height: 8, borderRadius: 4, overflow: "hidden" }}>
-            <div
-              style={{
-                width: `${r.pct}%`,
-                height: "100%",
-                background: r.pct >= 60 ? STATUS.cancelled : r.pct >= 30 ? STATUS.no_show : STATUS.won,
-                borderRadius: "0 4px 4px 0",
-                transition: "width .5s cubic-bezier(.16,1,.3,1)",
-              }}
-            />
-          </div>
-          <span style={{ fontSize: 11.5, color: MUTED, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-            {r.failed}/{r.total}
-          </span>
         </div>
-      ))}
+        <p style={{ ...micro(t), margin: "10px 0 0", fontSize: 10 }}>Closed — an outcome, not a step</p>
+      </div>
     </div>
   );
 }
+
+// ── milestones ──────────────────────────────────────────────────────────────
 
 /**
- * Three states, three treatments — and only one of them is allowed to look
- * urgent. If "not applicable" reads as failure, the board becomes a wall of red
- * on day one and he stops trusting it by the end of the week.
+ * Three states, three carriers each — so they survive colourblindness and a
+ * phone in sunlight. Done: a filled square marker plus the value. Missing: a
+ * tint, a ring, a full boundary and a word. Not applicable: a recessed
+ * half-step with one flat rule and no text at all, so it reads as "the page
+ * continues" rather than "you failed".
  */
-function cellStyle(state: MilestoneState): React.CSSProperties {
-  if (state === "done") return { background: "rgba(61,220,132,.10)", border: `1px solid ${STATUS.won}44`, color: INK1 };
-  if (state === "missing") return { background: "rgba(255,107,107,.12)", border: `1px solid ${STATUS.cancelled}66`, color: STATUS.cancelled };
-  // not_applicable: quiet, but NOT invisible. A fully blank cell reads as broken
-  // data rather than as "nothing was expected here" — on the first render of
-  // this board a booked-but-not-yet-called row was five blank boxes and looked
-  // like a bug. It gets a visible dashed edge and an em dash so the eye can tell
-  // deliberate silence from a hole.
-  return { background: "rgba(255,255,255,.02)", border: `1px dashed #3a3742`, color: "#6f6a78" };
+function cellStyle(t: Tokens, state: MilestoneState): React.CSSProperties {
+  if (state === "missing")
+    return { background: t.clayTint, border: `1px solid ${t.clay}`, color: t.clay, borderRadius: RADIUS.cell };
+  if (state === "not_applicable")
+    return { background: t.sunk, border: `1px solid transparent`, color: t.ink3, borderRadius: RADIUS.cell };
+  return { background: t.card, border: `1px solid ${t.hairline}`, color: t.ink1, borderRadius: RADIUS.cell };
 }
 
-/** Compact strip for a lead card — nine dots, no labels. */
-function MilestoneStrip({ ms }: { ms: Milestone[] }) {
+function MilestoneCell({ t, m }: { t: Tokens; m: Milestone }) {
+  const s = cellStyle(t, m.state);
   return (
-    <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+    <div
+      title={m.note || `${m.label}: ${m.state.replace("_", " ")}`}
+      style={{ ...s, padding: "7px 9px", minHeight: 32, display: "flex", alignItems: "center", gap: 6, fontFamily: FONT.mono, fontSize: 11.5, fontVariantNumeric: "tabular-nums", lineHeight: 1.25 }}
+    >
+      {m.state === "done" ? (
+        <>
+          <span style={{ width: 6, height: 6, background: t.ink1, flex: "none" }} />
+          <span>{m.value || "done"}</span>
+        </>
+      ) : m.state === "missing" ? (
+        <>
+          <span style={{ width: 7, height: 7, borderRadius: 99, border: `1.5px solid ${t.clay}`, flex: "none" }} />
+          <span>{m.value || "not done"}</span>
+        </>
+      ) : (
+        <span style={{ color: t.ink3 }}>—</span>
+      )}
+    </div>
+  );
+}
+
+/** Nine marks, left to right, same order as the board. */
+function MilestoneStrip({ t, ms }: { t: Tokens; ms: Milestone[] }) {
+  return (
+    <div style={{ display: "flex", gap: 3 }}>
       {ms.map((m) => (
         <span
           key={m.id}
-          title={`${m.label}: ${m.state === "done" ? m.value || "done" : m.state === "missing" ? "MISSING" : "not applicable"}${m.note ? ` — ${m.note}` : ""}`}
+          title={`${m.label}: ${m.state === "done" ? m.value || "done" : m.state === "missing" ? "MISSING" : "nothing owed"}${m.note ? ` — ${m.note}` : ""}`}
           style={{
-            width: 16,
-            height: 5,
-            borderRadius: 99,
-            background: m.state === "done" ? STATUS.won : m.state === "missing" ? STATUS.cancelled : GRID,
-            opacity: m.state === "not_applicable" ? 0.7 : 1,
+            width: 17,
+            height: 14,
+            borderRadius: 2,
+            display: "grid",
+            placeItems: "center",
+            fontSize: 9,
+            fontFamily: FONT.mono,
+            background: m.state === "done" ? t.ink1 : m.state === "missing" ? t.clayTint : "transparent",
+            border: m.state === "missing" ? `1px solid ${t.clay}` : m.state === "not_applicable" ? `1px solid ${t.hairline}` : "none",
+            color: m.state === "missing" ? t.clay : t.ink3,
           }}
-        />
+        >
+          {m.state === "missing" ? "!" : m.state === "not_applicable" ? "–" : ""}
+        </span>
       ))}
     </div>
   );
 }
 
-/** The last-3-days board: rows are people, columns are the nine milestones. */
-function MilestoneBoard({ rows }: { rows: Rec[] }) {
-  if (!rows.length)
-    return <p style={{ color: MUTED, fontSize: 12.5, margin: 0 }}>Nobody has moved in the last 3 days.</p>;
-
+function MilestoneBoard({ t, rows }: { t: Tokens; rows: Rec[] }) {
+  if (!rows.length) return <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3, margin: 0 }}>Nobody has moved in the last 3 days.</p>;
   const cols = rows[0].milestones;
+  const totalMissing = rows.reduce((s, r) => s + r.missing, 0);
+
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ borderCollapse: "separate", borderSpacing: "3px 4px", minWidth: 860, width: "100%" }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: "left", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: MUTED, fontWeight: 600, padding: "0 8px 4px 4px" }}>
-              Who
-            </th>
-            {cols.map((c) => (
-              <th key={c.id} style={{ textAlign: "left", fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", color: MUTED, fontWeight: 600, padding: "0 4px 4px", whiteSpace: "nowrap" }}>
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.key}>
-              <td style={{ padding: "4px 8px 4px 4px", whiteSpace: "nowrap" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                  <i style={{ width: 6, height: 6, borderRadius: 99, background: colorOf(r.stage), display: "inline-block" }} />
-                  <span style={{ fontSize: 12.5, color: INK1, fontWeight: 600 }}>{r.name || r.email || "Unknown"}</span>
-                  {r.missing > 0 ? (
-                    <span style={{ fontSize: 10, color: STATUS.cancelled, fontWeight: 700 }}>{r.missing}</span>
-                  ) : null}
-                </span>
-              </td>
-              {r.milestones.map((m) => (
-                <td key={m.id} style={{ padding: 0 }}>
-                  <div
-                    title={m.note || `${m.label}: ${m.state.replace("_", " ")}`}
-                    style={{
-                      ...cellStyle(m.state),
-                      borderRadius: 6,
-                      padding: "5px 7px",
-                      fontSize: 11,
-                      whiteSpace: "nowrap",
-                      minHeight: 26,
-                      display: "flex",
-                      alignItems: "center",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {m.state === "done" ? m.value || "✓" : m.state === "missing" ? m.value || "needs action" : "–"}
-                  </div>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+    <>
+      <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 12 }}>
         {([
-          ["done", "Done"],
-          ["missing", "Needs action"],
-          ["not_applicable", "Not expected"],
+          ["done", "Done — shows the value"],
+          ["not_applicable", "Not applicable — nothing owed"],
+          ["missing", "Missing — should have happened"],
         ] as [MilestoneState, string][]).map(([st, label]) => (
-          <span key={st} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: MUTED }}>
-            <i style={{ width: 16, height: 12, borderRadius: 3, ...cellStyle(st), display: "inline-block" }} />
+          <span key={st} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: FONT.sans, fontSize: 11.5, color: t.ink2 }}>
+            {st === "done" ? (
+              <span style={{ width: 7, height: 7, background: t.ink1 }} />
+            ) : st === "missing" ? (
+              <span style={{ width: 8, height: 8, borderRadius: 99, border: `1.5px solid ${t.clay}` }} />
+            ) : (
+              <span style={{ width: 9, height: 1, background: t.ink3 }} />
+            )}
             {label}
           </span>
         ))}
       </div>
+
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "separate", borderSpacing: "4px 5px", minWidth: 900, width: "100%" }}>
+          <thead>
+            <tr>
+              <th style={{ ...micro(t), textAlign: "left", padding: "0 10px 6px 2px", fontSize: 10 }}>Customer</th>
+              {cols.map((c, i) => (
+                <th key={c.id} style={{ ...micro(t), textAlign: "left", padding: "0 4px 6px", fontSize: 10, whiteSpace: "nowrap" }}>
+                  {i + 1} {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.key}>
+                <td style={{ padding: "0 10px 0 2px", whiteSpace: "nowrap", verticalAlign: "middle" }}>
+                  <div style={{ fontFamily: FONT.sans, fontSize: 13.5, fontWeight: 600, color: t.ink1 }}>{r.name || r.email || "Unknown"}</div>
+                  <div style={{ fontFamily: FONT.sans, fontSize: 11, color: t.ink3 }}>
+                    {[r.city, r.sessionStart ? dayOnly(r.sessionStart).toLowerCase() : ""].filter(Boolean).join(" · ")}
+                  </div>
+                </td>
+                {r.milestones.map((m) => (
+                  <td key={m.id} style={{ padding: 0 }}>
+                    <MilestoneCell t={t} m={m} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Conclusion t={t}>
+        {totalMissing === 0
+          ? "Nothing is owed on anyone here."
+          : `${totalMissing} thing${totalMissing === 1 ? "" : "s"} across ${rows.filter((r) => r.missing > 0).length} of these ${rows.length} women should have happened and hasn't.`}
+      </Conclusion>
+    </>
+  );
+}
+
+// ── charts ──────────────────────────────────────────────────────────────────
+
+function Funnel({ t, steps }: { t: Tokens; steps: { label: string; n: number }[] }) {
+  const max = Math.max(1, steps[0]?.n ?? 1);
+  let worst = { label: "", drop: 0, from: 0 };
+  steps.forEach((s, i) => {
+    if (i === 0) return;
+    const prev = steps[i - 1];
+    const drop = prev.n - s.n;
+    if (drop > worst.drop) worst = { label: s.label, drop, from: prev.n };
+  });
+
+  return (
+    <>
+      <div style={{ display: "grid", gap: 8 }}>
+        {steps.map((s, i) => {
+          const prev = i > 0 ? steps[i - 1] : null;
+          const conv = prev && prev.n > 0 ? Math.round((100 * s.n) / prev.n) : null;
+          return (
+            <div key={s.label} style={{ display: "grid", gridTemplateColumns: "76px 1fr 34px 42px", gap: 10, alignItems: "center" }}>
+              <span style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>{s.label}</span>
+              <div style={{ background: t.sunk, height: 14, borderRadius: 2 }}>
+                <div style={{ width: `${Math.max((100 * s.n) / max, s.n > 0 ? 2 : 0)}%`, height: "100%", background: t.teal, borderRadius: 2, transition: "width .5s cubic-bezier(.16,1,.3,1)" }} />
+              </div>
+              <span style={{ ...mono(t), fontSize: 12.5, textAlign: "right" }}>{s.n}</span>
+              <span style={{ ...mono(t), fontSize: 11, color: t.ink3, textAlign: "right" }}>{conv != null ? `${conv}%` : ""}</span>
+            </div>
+          );
+        })}
+      </div>
+      <Conclusion t={t}>
+        Percentages are of the step directly above, not of all leads.
+        {worst.drop > 0 ? (
+          <>
+            {" "}Biggest single loss: <strong style={{ color: t.ink1 }}>{worst.drop} of {worst.from}</strong> never reached {worst.label.toLowerCase()}.
+          </>
+        ) : null}
+      </Conclusion>
+    </>
+  );
+}
+
+function Scorecard({ t, rows }: { t: Tokens; rows: { k: string; failed: number; total: number; pct: number }[] }) {
+  if (!rows.length)
+    return <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3, margin: 0 }}>No recorded calls ingested yet — this fills in as calls are processed.</p>;
+  return (
+    <>
+      <div style={{ display: "grid", gap: 7 }}>
+        {rows.map((r, i) => (
+          <div key={r.k} style={{ display: "grid", gridTemplateColumns: "16px 1fr 92px 34px", gap: 10, alignItems: "center" }}>
+            <span style={{ ...mono(t), fontSize: 11, color: t.ink3 }}>{i + 1}</span>
+            <span style={{ fontFamily: FONT.sans, fontSize: 12.5, color: r.pct >= 60 ? t.ink1 : t.ink2 }}>{SCORE_LABELS[r.k] ?? r.k}</span>
+            <div style={{ background: t.sunk, height: 7, borderRadius: 2 }}>
+              <div style={{ width: `${r.pct}%`, height: "100%", background: r.pct >= 60 ? t.clay : t.ink1, borderRadius: 2, transition: "width .5s cubic-bezier(.16,1,.3,1)" }} />
+            </div>
+            <span style={{ ...mono(t), fontSize: 11, color: t.ink3, textAlign: "right" }}>{r.failed}/{r.total}</span>
+          </div>
+        ))}
+      </div>
+      <Conclusion t={t}>Ranked by failure rate across every recorded call. The top rows are the habit to fix first.</Conclusion>
+    </>
+  );
+}
+
+function Tile({ t, label, value, sub, bad, tone }: { t: Tokens; label: string; value: string; sub?: string; bad?: boolean; tone?: string }) {
+  return (
+    <div
+      style={{
+        background: bad ? t.amberTint : t.card,
+        border: `1px solid ${bad ? t.amber + "55" : t.hairline}`,
+        borderTop: bad ? `2px solid ${t.amber}` : `1px solid ${t.hairline}`,
+        borderRadius: RADIUS.card,
+        padding: "13px 15px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+        <span style={{ ...micro(t), fontSize: 10 }}>{label}</span>
+        {bad ? (
+          <span style={{ fontFamily: FONT.sans, fontSize: 9.5, color: t.amber, border: `1px solid ${t.amber}66`, borderRadius: RADIUS.chip, padding: "1px 6px" }}>high is bad</span>
+        ) : null}
+      </div>
+      <div style={{ ...mono(t), fontSize: 26, marginTop: 6, color: tone ?? t.ink1, letterSpacing: "-.02em" }}>{value}</div>
+      {sub ? <div style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink3, marginTop: 3, lineHeight: 1.35 }}>{sub}</div> : null}
     </div>
   );
 }
 
-function Tile({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
-  return (
-    <div style={{ background: CARD, border: `1px solid ${GRID}`, borderRadius: 11, padding: "13px 15px" }}>
-      <p style={{ margin: 0, fontSize: 10.5, letterSpacing: ".11em", textTransform: "uppercase", color: MUTED }}>{label}</p>
-      <p style={{ margin: "7px 0 0", fontSize: 26, fontWeight: 800, letterSpacing: "-.03em", color: tone ?? INK1, fontVariantNumeric: "tabular-nums" }}>{value}</p>
-      {sub ? <p style={{ margin: "3px 0 0", fontSize: 11.5, color: MUTED }}>{sub}</p> : null}
-    </div>
-  );
-}
+// ── timeline ────────────────────────────────────────────────────────────────
 
-const EV_STYLE: Record<string, { dot: string; icon: string }> = {
-  booked: { dot: RAMP.booked, icon: "📅" },
-  cancelled: { dot: STATUS.cancelled, icon: "✕" },
-  quiz: { dot: MUTED, icon: "❓" },
-  message_in: { dot: RAMP.attended, icon: "←" },
-  message_out: { dot: GRID, icon: "→" },
-  call: { dot: RAMP.pitched, icon: "🎙" },
-  payment: { dot: STATUS.won, icon: "₹" },
-};
-
-function Timeline({ events }: { events: Ev[] }) {
-  if (!events.length) return <p style={{ color: MUTED, fontSize: 12.5 }}>Nothing recorded yet.</p>;
+function Timeline({ t, events }: { t: Tokens; events: Ev[] }) {
+  if (!events.length) return <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>Nothing recorded yet.</p>;
+  const SRC: Record<string, string> = {
+    booked: "CAL.COM · BOOKING",
+    cancelled: "CAL.COM · CANCELLED",
+    quiz: "INTAKE FORM",
+    call: "RECORDED CALL",
+    payment: "PAYMENT GATEWAY",
+  };
   return (
-    <div style={{ display: "grid", gap: 0 }}>
+    <div>
       {events.map((e, i) => {
-        const st = EV_STYLE[e.kind] ?? { dot: MUTED, icon: "•" };
         const day = dayOnly(e.at);
-        // Derived from the previous event rather than a running variable — the
-        // map body must stay pure.
         const newDay = i === 0 || dayOnly(events[i - 1].at) !== day;
-        const outbound = e.kind === "message_out";
+        const isMsg = e.kind === "message_in" || e.kind === "message_out";
+        const out = e.kind === "message_out";
         return (
           <div key={i}>
-            {newDay ? (
-              <p style={{ margin: "12px 0 7px", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: MUTED }}>{day}</p>
-            ) : null}
-            <div style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: 11, alignItems: "start", paddingBottom: 11 }}>
-              <div style={{ display: "grid", justifyItems: "center", gap: 3 }}>
-                <span
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 99,
-                    background: outbound ? "transparent" : st.dot + "22",
-                    border: `1px solid ${st.dot}`,
-                    display: "grid",
-                    placeItems: "center",
-                    fontSize: 9.5,
-                    color: st.dot,
-                    lineHeight: 1,
-                  }}
-                >
-                  {st.icon}
-                </span>
-                {i < events.length - 1 ? <span style={{ width: 1, flex: 1, minHeight: 12, background: GRID }} /> : null}
-              </div>
+            {newDay ? <p style={{ ...micro(t), fontSize: 10, margin: "16px 0 8px" }}>{day}</p> : null}
+            <div style={{ display: "grid", gridTemplateColumns: "62px 1fr", gap: 12, paddingBottom: 12 }}>
+              <span style={{ ...mono(t), fontSize: 11, color: t.ink3, paddingTop: 2 }}>
+                {new Date(e.at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase()}
+              </span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", gap: 9, alignItems: "baseline", flexWrap: "wrap" }}>
-                  <strong style={{ fontSize: 13, fontWeight: 600, color: INK1 }}>{e.title}</strong>
-                  <span style={{ fontSize: 11, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{fmt(e.at)}</span>
-                </div>
-                {e.body ? (
-                  <p
-                    style={{
-                      margin: "4px 0 0",
-                      fontSize: 12.5,
-                      lineHeight: 1.5,
-                      color: INK2,
-                      whiteSpace: "pre-wrap",
-                      background: outbound ? "transparent" : RAISED,
-                      border: outbound ? `1px dashed ${GRID}` : `1px solid ${GRID}`,
-                      borderRadius: 8,
-                      padding: "8px 10px",
-                    }}
-                  >
-                    {e.body}
-                  </p>
-                ) : null}
-                {e.meta && Object.keys(e.meta).length ? (
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                    {Object.entries(e.meta).map(([k, v]) => (
-                      <span
-                        key={k}
+                {isMsg ? (
+                  <div style={{ display: "flex", justifyContent: out ? "flex-end" : "flex-start" }}>
+                    <div style={{ maxWidth: "82%" }}>
+                      <div style={{ ...micro(t), fontSize: 9.5, marginBottom: 3, textAlign: out ? "right" : "left" }}>{out ? "You →" : "← Her"}</div>
+                      <div
                         style={{
-                          fontSize: 11,
-                          color: k === "droppedTo" || k === "discountAt" ? STATUS.cancelled : INK2,
-                          border: `1px solid ${k === "droppedTo" || k === "discountAt" ? STATUS.cancelled + "55" : GRID}`,
-                          padding: "2px 7px",
-                          borderRadius: 99,
+                          background: out ? t.sunk : t.card,
+                          border: `1px solid ${t.hairline}`,
+                          borderRadius: RADIUS.card,
+                          padding: "9px 12px",
+                          fontFamily: FONT.sans,
+                          fontSize: 13,
+                          lineHeight: 1.5,
+                          color: t.ink1,
+                          whiteSpace: "pre-wrap",
                         }}
                       >
-                        {k}: {v}
-                      </span>
-                    ))}
+                        {e.body || e.title}
+                      </div>
+                    </div>
                   </div>
-                ) : null}
+                ) : (
+                  <>
+                    <div style={{ ...micro(t), fontSize: 9.5, marginBottom: 3 }}>{SRC[e.kind] ?? e.kind.toUpperCase()}</div>
+                    <div style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink1, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                      {e.body || e.title}
+                    </div>
+                    {e.meta && Object.keys(e.meta).length ? (
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                        {Object.entries(e.meta).map(([k, v]) => {
+                          const bad = k === "droppedTo" || k === "discountAt";
+                          return (
+                            <span key={k} style={{ fontFamily: FONT.mono, fontSize: 10.5, color: bad ? t.clay : t.ink2, border: `1px solid ${bad ? t.clay + "66" : t.hairline}`, borderRadius: RADIUS.chip, padding: "2px 8px" }}>
+                              {k}: {v}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -470,9 +552,11 @@ function Timeline({ events }: { events: Ev[] }) {
   );
 }
 
-// ── the page ────────────────────────────────────────────────────────────────
+// ── page ────────────────────────────────────────────────────────────────────
 
-export default function Pipeline() {
+export default function Pipeline({ dark = false }: { dark?: boolean }) {
+  const t: Tokens = dark ? (DARK as unknown as Tokens) : LIGHT;
+
   const [key, setKey] = useState<string | null>(null);
   const [entry, setEntry] = useState("");
   const [records, setRecords] = useState<Rec[] | null>(null);
@@ -521,39 +605,48 @@ export default function Pipeline() {
     async (r: Rec) => {
       const isOpen = open === r.key;
       setOpen(isOpen ? null : r.key);
-      if (isOpen || !key) return;
-      // Already fetched (or in flight) — a second open must not refetch.
-      if (timeline[r.key]) return;
-      setTimeline((t) => ({ ...t, [r.key]: "loading" }));
+      if (isOpen || !key || timeline[r.key]) return;
+      setTimeline((x) => ({ ...x, [r.key]: "loading" }));
       const qs = r.bookingUid ? `uid=${encodeURIComponent(r.bookingUid)}` : `phone=${encodeURIComponent(r.phone)}`;
       try {
         const res = await fetch(`/api/admin/crm/timeline?${qs}`, { headers: { "x-admin-key": key } });
         const json = (await res.json()) as { events: Ev[] };
-        setTimeline((t) => ({ ...t, [r.key]: json.events ?? [] }));
+        setTimeline((x) => ({ ...x, [r.key]: json.events ?? [] }));
       } catch {
-        setTimeline((t) => ({ ...t, [r.key]: [] }));
+        setTimeline((x) => ({ ...x, [r.key]: [] }));
       }
     },
     [open, key, timeline],
   );
 
   const counts = useMemo(() => {
-    const map = new Map<Stage, number>();
-    for (const r of records ?? []) map.set(r.stage, (map.get(r.stage) ?? 0) + 1);
-    return STAGE_META.map((m) => ({ stage: m.id, n: map.get(m.id) ?? 0 }));
+    const c = {} as Record<Stage, number>;
+    for (const r of records ?? []) c[r.stage] = (c[r.stage] ?? 0) + 1;
+    return c;
   }, [records]);
 
   const stats = useMemo(() => {
     const all = records ?? [];
     const won = all.filter((r) => r.stage === "won");
-    const revenue = won.reduce((s, r) => s + (r.paidAmount ?? 0), 0);
     const pitched = all.filter((r) => r.call?.pricePitched);
     const avgPitch = pitched.length ? Math.round(pitched.reduce((s, r) => s + (r.call!.pricePitched ?? 0), 0) / pitched.length) : null;
     const discounted = pitched.filter((r) => r.call?.discountOffered).length;
     const scored = all.filter((r) => r.call?.scorecardFailed != null);
     const avgFail = scored.length ? (scored.reduce((s, r) => s + (r.call!.scorecardFailed ?? 0), 0) / scored.length).toFixed(1) : null;
     const urgent = all.filter((r) => r.nextAction.urgency === "now" || r.agreedButUnpaid).length;
-    return { total: all.length, won: won.length, revenue, avgPitch, discounted, pitchedN: pitched.length, avgFail, urgent };
+    const overdue = all.filter((r) => r.agreedButUnpaid).length;
+    return {
+      total: all.length,
+      open: all.filter((r) => !["won", "lost"].includes(r.stage)).length,
+      won: won.length,
+      revenue: won.reduce((s, r) => s + (r.paidAmount ?? 0), 0),
+      avgPitch,
+      discounted,
+      pitchedN: pitched.length,
+      avgFail,
+      urgent,
+      overdue,
+    };
   }, [records]);
 
   const funnel = useMemo(() => {
@@ -583,14 +676,13 @@ export default function Pipeline() {
     return [...tally.entries()]
       .map(([k, v]) => ({ k, ...v, pct: Math.round((100 * v.failed) / v.total) }))
       .sort((a, b) => b.pct - a.pct)
-      .slice(0, 5);
+      .slice(0, 10);
   }, [records]);
 
-  const recent = useMemo(() => {
-    const all = (records ?? []).filter((r) => r.recent);
-    // Most gaps first — the board is a to-do list, not a register.
-    return [...all].sort((a, b) => b.missing - a.missing).slice(0, 12);
-  }, [records]);
+  const recent = useMemo(
+    () => [...(records ?? []).filter((r) => r.recent)].sort((a, b) => b.missing - a.missing).slice(0, 12),
+    [records],
+  );
 
   const shown = useMemo(() => {
     const all = records ?? [];
@@ -613,265 +705,276 @@ export default function Pipeline() {
             } catch {}
             setKey(k);
           }}
-          style={{ display: "grid", gap: 12, width: "min(360px,100%)" }}
+          style={{ display: "grid", gap: 12, width: "min(340px,100%)" }}
         >
-          <h2 style={{ fontSize: 20, margin: 0, color: INK1 }}>Pipeline</h2>
-          <p style={{ color: MUTED, fontSize: 13, margin: 0 }}>Enter the admin key.</p>
+          <h2 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 26, color: t.ink1 }}>Practice</h2>
+          <p style={{ margin: 0, fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>Enter the admin key.</p>
           <input
             type="password"
             value={entry}
             onChange={(e) => setEntry(e.target.value)}
-            style={{ background: CARD, border: `1px solid ${GRID}`, color: INK1, padding: "11px 13px", borderRadius: 9, fontSize: 15 }}
+            style={{ background: t.card, border: `1px solid ${t.hairline}`, color: t.ink1, padding: "11px 13px", borderRadius: RADIUS.card, fontSize: 15, fontFamily: FONT.sans }}
           />
-          <button type="submit" style={{ background: RAMP.pitched, color: "#1a1320", border: 0, padding: "11px", borderRadius: 9, fontWeight: 800, cursor: "pointer" }}>
+          <button type="submit" style={{ background: t.ink1, color: t.card, border: 0, padding: "11px", borderRadius: RADIUS.card, fontWeight: 600, fontFamily: FONT.sans, cursor: "pointer" }}>
             Unlock
           </button>
-          {err ? <p style={{ color: STATUS.cancelled, fontSize: 13, margin: 0 }}>{err}</p> : null}
+          {err ? <p style={{ color: t.clay, fontSize: 13, margin: 0, fontFamily: FONT.sans }}>{err}</p> : null}
         </form>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div style={{ display: "grid", gap: 14 }}>
       {warnings.length ? (
-        <div style={{ background: "#2a1d0d", border: `1px solid ${STATUS.no_show}55`, borderRadius: 9, padding: "10px 12px", fontSize: 12.5, color: "#f0d9a8" }}>
+        <div style={{ background: t.amberTint, border: `1px solid ${t.amber}55`, borderRadius: RADIUS.card, padding: "10px 13px", fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>
           {warnings.map((w) => (
             <div key={w}>{w}</div>
           ))}
         </div>
       ) : null}
 
-      {/* ── stat tiles ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
-        <Tile label="Needs you now" value={String(stats.urgent)} tone={stats.urgent ? STATUS.cancelled : INK1} sub="urgent or unpaid" />
-        <Tile label="In pipeline" value={String(stats.total)} sub="all leads" />
-        <Tile label="Won" value={String(stats.won)} tone={STATUS.won} sub={stats.revenue ? rupee(stats.revenue) : "no revenue yet"} />
-        <Tile label="Avg pitch" value={stats.avgPitch ? rupee(stats.avgPitch) : "—"} sub={`${stats.pitchedN} priced calls`} />
-        <Tile
-          label="Discounted"
-          value={stats.pitchedN ? `${stats.discounted}/${stats.pitchedN}` : "—"}
-          tone={stats.discounted ? STATUS.cancelled : INK1}
-          sub="calls where you came down"
-        />
-        <Tile label="Avg misses" value={stats.avgFail ? `${stats.avgFail}/10` : "—"} tone={STATUS.no_show} sub="scorecard failures" />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(158px,1fr))", gap: 10 }}>
+        <Tile t={t} label="Needs you now" value={String(stats.urgent)} tone={stats.urgent ? t.clay : t.ink1} sub={stats.overdue ? `${stats.overdue} agreed but never charged` : "nothing overdue"} />
+        <Tile t={t} label="In pipeline" value={String(stats.open)} sub="still open, not yet decided" />
+        <Tile t={t} label="Won" value={String(stats.won)} tone={t.won} sub={stats.revenue ? `${rupee(stats.revenue)} collected` : "nothing collected yet"} />
+        <Tile t={t} label="Avg price pitched" value={stats.avgPitch ? rupee(stats.avgPitch) : "—"} sub={`across ${stats.pitchedN} priced call${stats.pitchedN === 1 ? "" : "s"}`} />
+        <Tile t={t} label="Discounted" value={stats.pitchedN ? `${stats.discounted}/${stats.pitchedN}` : "—"} bad={stats.discounted > 0} tone={stats.discounted ? t.amber : t.ink1} sub="calls where you came down" />
+        <Tile t={t} label="Avg misses" value={stats.avgFail ? `${stats.avgFail}/10` : "—"} bad={!!stats.avgFail && parseFloat(stats.avgFail) >= 4} tone={stats.avgFail ? t.amber : t.ink1} sub="checks missed per call" />
       </div>
 
-      {/* ── stage bar ── */}
-      <section style={{ background: CARD, border: `1px solid ${GRID}`, borderRadius: 12, padding: "15px 17px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 13.5, color: INK1, fontWeight: 700 }}>Stages</h3>
-          <span style={{ fontSize: 11.5, color: MUTED }}>tap a band to filter</span>
-          {stageFilter ? (
-            <button
-              onClick={() => setStageFilter(null)}
-              style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${GRID}`, color: INK2, padding: "4px 10px", borderRadius: 99, fontSize: 11.5, cursor: "pointer" }}
-            >
-              Clear · {labelOf(stageFilter)}
-            </button>
-          ) : null}
-        </div>
-        <StageBar counts={counts} active={stageFilter} onPick={(s) => setStageFilter(stageFilter === s ? null : s)} />
-      </section>
-
-      {/* ── last 3 days board ── */}
-      <section style={{ background: CARD, border: `1px solid ${GRID}`, borderRadius: 12, padding: "15px 17px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-          <h3 style={{ margin: 0, fontSize: 13.5, color: INK1, fontWeight: 700 }}>Last 3 days</h3>
-          <span style={{ fontSize: 11.5, color: MUTED }}>every step, per customer — hover a cell for why</span>
-          <span style={{ marginLeft: "auto", fontSize: 11.5, color: MUTED }}>{recent.length} active</span>
-        </div>
-        <MilestoneBoard rows={recent} />
-      </section>
-
-      {/* ── funnel + scorecard ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 10 }}>
-        <section style={{ background: CARD, border: `1px solid ${GRID}`, borderRadius: 12, padding: "15px 17px" }}>
-          <h3 style={{ margin: "0 0 12px", fontSize: 13.5, color: INK1, fontWeight: 700 }}>Conversion</h3>
-          <Funnel steps={funnel} />
-        </section>
-        <section style={{ background: CARD, border: `1px solid ${GRID}`, borderRadius: 12, padding: "15px 17px" }}>
-          <h3 style={{ margin: "0 0 4px", fontSize: 13.5, color: INK1, fontWeight: 700 }}>What you fail most on calls</h3>
-          <p style={{ margin: "0 0 12px", fontSize: 11.5, color: MUTED }}>across every extracted call</p>
-          <ScorecardBars rows={weakest} />
-        </section>
-      </div>
-
-      {/* ── list ── */}
-      <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap" }}>
-        {(["urgent", "all"] as const).map((v) => (
+      <Card t={t}>
+        <SectionTitle t={t} aside={stageFilter ? undefined : "click a stage to filter the list"}>
+          Where everyone is
+        </SectionTitle>
+        {stageFilter ? (
           <button
-            key={v}
-            onClick={() => {
-              setView(v);
-              setStageFilter(null);
-            }}
-            style={{
-              background: view === v && !stageFilter ? RAMP.pitched + "22" : "transparent",
-              border: `1px solid ${view === v && !stageFilter ? RAMP.pitched + "88" : GRID}`,
-              color: view === v && !stageFilter ? INK1 : MUTED,
-              padding: "6px 13px",
-              borderRadius: 99,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
+            onClick={() => setStageFilter(null)}
+            style={{ float: "right", marginTop: -46, background: "transparent", border: `1px solid ${t.hairline}`, color: t.ink2, padding: "4px 11px", borderRadius: RADIUS.chip, fontSize: 11.5, fontFamily: FONT.sans, cursor: "pointer" }}
           >
-            {v === "urgent" ? "Needs you now" : "Everyone"}
+            Clear filter
           </button>
-        ))}
-        <span style={{ marginLeft: "auto", fontSize: 11.5, color: MUTED }}>{shown.length} shown</span>
-        <button
-          onClick={() => key && load(key)}
-          style={{ background: "transparent", border: `1px solid ${GRID}`, color: INK2, padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}
-        >
-          Refresh
-        </button>
+        ) : null}
+        <StageFlow t={t} counts={counts} active={stageFilter} onPick={(s) => setStageFilter(stageFilter === s ? null : s)} />
+      </Card>
+
+      <Card t={t}>
+        <SectionTitle t={t} aside={`${recent.length} women · hover a cell for why`}>Last 3 days</SectionTitle>
+        <MilestoneBoard t={t} rows={recent} />
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 12 }}>
+        <Card t={t}>
+          <SectionTitle t={t}>Where they fall out</SectionTitle>
+          <Funnel t={t} steps={funnel} />
+        </Card>
+        <Card t={t}>
+          <SectionTitle t={t}>What you fail most on calls</SectionTitle>
+          <Scorecard t={t} rows={weakest} />
+        </Card>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap", marginTop: 4 }}>
+        <span style={{ ...micro(t), fontSize: 10 }}>Your people · {shown.length} shown</span>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          {(["urgent", "all"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => {
+                setView(v);
+                setStageFilter(null);
+              }}
+              style={{
+                background: view === v && !stageFilter ? t.ink1 : "transparent",
+                color: view === v && !stageFilter ? t.card : t.ink2,
+                border: `1px solid ${view === v && !stageFilter ? t.ink1 : t.hairline}`,
+                padding: "5px 13px",
+                borderRadius: RADIUS.chip,
+                fontSize: 12,
+                fontFamily: FONT.sans,
+                cursor: "pointer",
+              }}
+            >
+              {v === "urgent" ? "Needs you first" : "Everyone"}
+            </button>
+          ))}
+          <button onClick={() => key && load(key)} style={{ background: "transparent", border: `1px solid ${t.hairline}`, color: t.ink2, padding: "5px 12px", borderRadius: RADIUS.chip, fontSize: 12, fontFamily: FONT.sans, cursor: "pointer" }}>
+            Refresh
+          </button>
+        </span>
       </div>
 
       {!records ? (
-        <p style={{ color: MUTED }}>Loading…</p>
+        <p style={{ fontFamily: FONT.sans, color: t.ink3 }}>Loading…</p>
       ) : shown.length === 0 ? (
-        <p style={{ color: MUTED }}>Nothing here — try “Everyone”.</p>
+        <p style={{ fontFamily: FONT.sans, color: t.ink3 }}>Nothing here — try “Everyone”.</p>
       ) : (
-        <div style={{ display: "grid", gap: 9 }}>
+        <div style={{ display: "grid", gap: 10 }}>
           {shown.map((r) => {
             const isOpen = open === r.key;
-            const c = colorOf(r.stage);
+            const severe = r.agreedButUnpaid;
+            const urg = r.nextAction.urgency;
             const tl = timeline[r.key];
+            const drop =
+              r.call?.pricePitched && r.call?.lowestPriceSaid && r.call.lowestPriceSaid < r.call.pricePitched
+                ? Math.round((100 * (r.call.pricePitched - r.call.lowestPriceSaid)) / r.call.pricePitched)
+                : null;
+
             return (
               <article
                 key={r.key}
                 style={{
-                  background: CARD,
-                  // Longhand on all four sides: mixing the `border` shorthand
-                  // with `borderLeft` makes React warn and mis-apply the rail
-                  // colour on rerender.
-                  borderTop: `1px solid ${isOpen ? c + "66" : GRID}`,
-                  borderRight: `1px solid ${isOpen ? c + "66" : GRID}`,
-                  borderBottom: `1px solid ${isOpen ? c + "66" : GRID}`,
-                  borderLeft: `3px solid ${c}`,
-                  borderRadius: 12,
+                  background: severe ? t.clayTint : t.card,
+                  border: `1px solid ${severe ? t.clay + "77" : t.hairline}`,
+                  borderRadius: RADIUS.card,
+                  boxShadow: ELEV.e1,
                   overflow: "hidden",
-                  transition: "border-color .16s ease",
                 }}
               >
-                <button
-                  onClick={() => void openLead(r)}
-                  style={{ width: "100%", textAlign: "left", background: "transparent", border: 0, padding: "13px 15px", cursor: "pointer", display: "grid", gap: 8 }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <span
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 99,
-                        background: c + "22",
-                        border: `1px solid ${c}66`,
-                        color: c,
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 12,
-                        fontWeight: 800,
-                        flex: "none",
-                      }}
-                    >
-                      {initials(r.name)}
-                    </span>
-                    <strong style={{ fontSize: 15.5, color: INK1, letterSpacing: "-.01em" }}>{r.name || r.email || "Unknown"}</strong>
-                    <span style={{ fontSize: 11, color: c, border: `1px solid ${c}55`, padding: "2px 8px", borderRadius: 99 }}>{labelOf(r.stage)}</span>
-                    {r.score != null ? <span style={{ fontSize: 11, color: MUTED }}>score {r.score}</span> : null}
-                    {r.city ? <span style={{ fontSize: 11, color: MUTED }}>{r.city}</span> : null}
-                    {r.agreedButUnpaid ? (
-                      <span style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 800, color: STATUS.cancelled, border: `1px solid ${STATUS.cancelled}66`, padding: "3px 9px", borderRadius: 99 }}>
-                        AGREED · NEVER CHARGED
-                      </span>
-                    ) : null}
+                {severe ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 16px", borderBottom: `1px solid ${t.clay}33`, flexWrap: "wrap" }}>
+                    <span style={{ background: t.clay, color: t.card, fontFamily: FONT.sans, fontSize: 9.5, fontWeight: 600, letterSpacing: ".1em", padding: "2px 7px", borderRadius: 2 }}>NOW</span>
+                    <span style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.clay, fontWeight: 600 }}>Agreed · never charged</span>
+                    <span style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>— she said yes on the call and no payment ever arrived.</span>
                   </div>
+                ) : null}
 
-                  <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12.5, color: INK2 }}>
-                    {r.sessionStart ? <span>{fmt(r.sessionStart)}</span> : null}
-                    {r.call?.pricePitched != null ? (
-                      <span>
-                        pitched <b style={{ color: INK1 }}>{rupee(r.call.pricePitched)}</b>
-                        {r.call.discountOffered && r.call.lowestPriceSaid != null && r.call.lowestPriceSaid < r.call.pricePitched ? (
-                          <b style={{ color: STATUS.cancelled }}> → {rupee(r.call.lowestPriceSaid)}</b>
+                <button onClick={() => void openLead(r)} style={{ width: "100%", textAlign: "left", background: "transparent", border: 0, padding: "14px 16px", cursor: "pointer", display: "grid", gap: 9 }}>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+                    <div style={{ flex: "1 1 380px", minWidth: 260, display: "grid", gap: 7 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        {!severe ? (
+                          <span
+                            style={{
+                              fontFamily: FONT.sans,
+                              fontSize: 9.5,
+                              fontWeight: 600,
+                              letterSpacing: ".1em",
+                              padding: "2px 7px",
+                              borderRadius: 2,
+                              color: urg === "today" ? t.amber : t.ink3,
+                              border: `1px solid ${urg === "today" ? t.amber : t.hairline}`,
+                            }}
+                          >
+                            {urg === "now" ? "NOW" : urg === "today" ? "TODAY" : "SOON"}
+                          </span>
                         ) : null}
-                      </span>
-                    ) : null}
-                    {r.budget ? <span style={{ color: MUTED }}>said: {r.budget}</span> : null}
-                    {r.paid ? <span style={{ color: STATUS.won }}>paid {rupee(r.paidAmount)}</span> : null}
-                    {r.call?.scorecardFailed != null ? (
-                      <span style={{ color: r.call.scorecardFailed >= 5 ? STATUS.cancelled : STATUS.no_show }}>{r.call.scorecardFailed}/10 missed</span>
-                    ) : null}
-                  </div>
+                        <span style={{ width: 30, height: 30, borderRadius: 99, background: t.sunk, border: `1px solid ${t.hairline}`, color: t.ink2, display: "grid", placeItems: "center", fontSize: 11, fontFamily: FONT.sans, fontWeight: 600 }}>
+                          {initials(r.name)}
+                        </span>
+                        <strong style={{ fontFamily: FONT.serif, fontWeight: 600, fontSize: 19, color: t.ink1, letterSpacing: "-.01em" }}>{r.name || r.email || "Unknown"}</strong>
+                        <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink2, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.chip, padding: "2px 9px" }}>
+                          {[...SEQUENCE, ...OUTCOMES].find((s) => s.id === r.stage)?.label ?? r.stage}
+                        </span>
+                        {r.score != null ? <span style={{ ...mono(t), fontSize: 11, color: t.ink3 }}>score {r.score}</span> : null}
+                      </div>
 
-                  {r.call?.objection ? <div style={{ fontSize: 12.5, color: INK2 }}>blocker: {r.call.objection}</div> : null}
-
-                  <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        letterSpacing: ".1em",
-                        textTransform: "uppercase",
-                        color: r.nextAction.urgency === "now" ? STATUS.cancelled : r.nextAction.urgency === "today" ? STATUS.no_show : MUTED,
-                      }}
-                    >
-                      {r.nextAction.urgency === "none" ? "next" : r.nextAction.urgency}
-                    </span>
-                    <span style={{ fontSize: 13.5, fontWeight: 600, color: INK1 }}>{r.nextAction.label}</span>
-                    {r.milestones?.length ? (
-                      <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        {r.missing > 0 ? (
-                          <span style={{ fontSize: 10.5, color: STATUS.cancelled, fontWeight: 700 }}>{r.missing} missing</span>
+                      <div style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2, display: "flex", gap: 14, flexWrap: "wrap" }}>
+                        {r.city ? <span>{r.city}</span> : null}
+                        {r.sessionStart ? <span>called {fmt(r.sessionStart)}</span> : null}
+                        {r.call?.pricePitched != null ? (
+                          <span style={mono(t)}>
+                            pitched {rupee(r.call.pricePitched)}
+                            {drop != null ? (
+                              <span style={{ color: t.clay }}> ↓ {rupee(r.call.lowestPriceSaid)} (you dropped {drop}%)</span>
+                            ) : null}
+                          </span>
                         ) : null}
-                        <MilestoneStrip ms={r.milestones} />
+                        {r.budget ? <span>she said {r.budget}</span> : null}
+                        {r.paid ? <span style={{ color: t.won, fontWeight: 600 }}>paid {rupee(r.paidAmount)}</span> : null}
+                        {r.call?.scorecardFailed != null ? (
+                          <span style={{ color: r.call.scorecardFailed >= 5 ? t.clay : t.ink2 }}>{r.call.scorecardFailed}/10 checks missed</span>
+                        ) : null}
+                      </div>
+
+                      {r.call?.objection ? (
+                        <div style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>
+                          <span style={{ ...micro(t), fontSize: 9.5, marginRight: 7 }}>Blocker</span>
+                          {r.call.objection}
+                        </div>
+                      ) : null}
+
+                      <div style={{ fontFamily: FONT.serif, fontSize: 17, color: t.ink1, marginTop: 2 }}>{r.nextAction.label}</div>
+                    </div>
+
+                    <div style={{ flex: "0 1 250px", display: "grid", gap: 6, justifyItems: "start" }}>
+                      <span style={{ ...micro(t), fontSize: 9.5 }}>
+                        Milestones {r.missing > 0 ? `· ${r.missing} missing` : "· nothing owed yet"}
                       </span>
-                    ) : null}
+                      <MilestoneStrip t={t} ms={r.milestones} />
+                      {r.missing > 0 ? (
+                        <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink2 }}>
+                          Missing:{" "}
+                          <span style={{ color: t.clay }}>{r.milestones.filter((m) => m.state === "missing").map((m) => m.label.toLowerCase()).join(", ")}</span>
+                        </span>
+                      ) : null}
+                      <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.teal }}>{isOpen ? "Collapse ▴" : "Expand ▾"}</span>
+                    </div>
                   </div>
                 </button>
 
                 {isOpen ? (
-                  <div style={{ borderTop: `1px solid ${GRID}`, padding: "14px 15px", display: "grid", gap: 13 }}>
-                    <p style={{ margin: 0, fontSize: 13, color: INK2, lineHeight: 1.5 }}>{r.nextAction.reason}</p>
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ borderTop: `1px solid ${t.hairline}`, background: t.card }}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "12px 16px", borderBottom: `1px solid ${t.hairline}` }}>
                       {r.phone ? (
-                        <a href={`https://wa.me/${r.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" style={btn}>
+                        <a href={`https://wa.me/${r.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" style={{ background: t.ink1, color: t.card, border: 0, padding: "7px 15px", borderRadius: RADIUS.card, fontSize: 12.5, fontFamily: FONT.sans, textDecoration: "none", fontWeight: 500 }}>
                           WhatsApp
                         </a>
                       ) : null}
                       {r.call?.fathomUrl ? (
-                        <a href={r.call.fathomUrl} target="_blank" rel="noreferrer" style={btn}>
-                          Recording
+                        <a href={r.call.fathomUrl} target="_blank" rel="noreferrer" style={ghost(t)}>
+                          Open recording
                         </a>
                       ) : null}
                       {r.email ? (
-                        <a href={`mailto:${r.email}`} style={btn}>
+                        <a href={`mailto:${r.email}`} style={ghost(t)}>
                           Email
                         </a>
                       ) : null}
                     </div>
 
-                    {r.call?.scorecard ? (
-                      <div>
-                        <p style={{ margin: "0 0 8px", fontSize: 10.5, letterSpacing: ".11em", textTransform: "uppercase", color: MUTED }}>The ten checks</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))", gap: "5px 16px" }}>
-                          {Object.entries(r.call.scorecard).map(([k, v]) => (
-                            <div key={k} style={{ display: "grid", gridTemplateColumns: "14px 1fr", gap: 8, fontSize: 12.5 }}>
-                              <span style={{ color: v.passed ? STATUS.won : STATUS.cancelled, fontWeight: 800 }}>{v.passed ? "✓" : "✕"}</span>
-                              <span style={{ color: v.passed ? MUTED : INK1 }}>
-                                {SCORE_LABELS[k] ?? k}
-                                {!v.passed && v.evidence ? <em style={{ display: "block", color: MUTED, fontStyle: "normal", fontSize: 11.5, marginTop: 2 }}>{v.evidence}</em> : null}
-                              </span>
-                            </div>
-                          ))}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(330px,1fr))" }}>
+                      <div style={{ padding: "16px 18px", borderRight: `1px solid ${t.hairline}` }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+                          <h4 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 19, color: t.ink1 }}>The ten checks</h4>
+                          {r.call?.scorecardFailed != null ? (
+                            <span style={{ fontFamily: FONT.sans, fontSize: 12, color: t.ink3 }}>
+                              {r.call.scorecardFailed} missed · {10 - r.call.scorecardFailed} held
+                            </span>
+                          ) : null}
                         </div>
+                        {r.call?.scorecard ? (
+                          <div style={{ display: "grid", gap: 0 }}>
+                            {Object.entries(r.call.scorecard)
+                              .sort((a, b) => Number(a[1].passed) - Number(b[1].passed))
+                              .map(([k, v]) => (
+                                <div key={k} style={{ display: "grid", gridTemplateColumns: "56px 1fr", gap: 10, padding: "9px 0", borderBottom: `1px solid ${t.hairline}` }}>
+                                  <span style={{ ...micro(t), fontSize: 9.5, color: v.passed ? t.ink3 : t.clay, paddingTop: 2 }}>{v.passed ? "Held" : "Missed"}</span>
+                                  <div>
+                                    <div style={{ fontFamily: FONT.sans, fontSize: 13, color: v.passed ? t.ink2 : t.ink1, lineHeight: 1.4 }}>{SCORE_LABELS[k] ?? k}</div>
+                                    {v.evidence ? (
+                                      <div style={{ marginTop: 3, fontFamily: FONT.serif, fontStyle: "italic", fontSize: 12.5, color: t.ink2, lineHeight: 1.45 }}>{v.evidence}</div>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>No recorded call ingested for her yet.</p>
+                        )}
                       </div>
-                    ) : null}
 
-                    <div>
-                      <p style={{ margin: "0 0 4px", fontSize: 10.5, letterSpacing: ".11em", textTransform: "uppercase", color: MUTED }}>Her whole story</p>
-                      {tl === "loading" ? <p style={{ color: MUTED, fontSize: 12.5 }}>Loading…</p> : <Timeline events={(tl as Ev[]) ?? []} />}
+                      <div style={{ padding: "16px 18px" }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+                          <h4 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 19, color: t.ink1 }}>Her whole story</h4>
+                          <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink3 }}>booking · intake · WhatsApp · call · payment</span>
+                        </div>
+                        {tl === "loading" ? (
+                          <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>Loading…</p>
+                        ) : (
+                          <Timeline t={t} events={(tl as Ev[]) ?? []} />
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : null}
@@ -884,15 +987,14 @@ export default function Pipeline() {
   );
 }
 
-const btn: React.CSSProperties = {
+const ghost = (t: Tokens): React.CSSProperties => ({
   background: "transparent",
-  border: `1px solid ${GRID}`,
-  color: INK2,
-  padding: "6px 13px",
-  borderRadius: 8,
-  fontSize: 12,
+  border: `1px solid ${t.hairline}`,
+  color: t.ink1,
+  padding: "7px 15px",
+  borderRadius: RADIUS.card,
+  fontSize: 12.5,
+  fontFamily: FONT.sans,
   textDecoration: "none",
   cursor: "pointer",
-};
-
-export { BG };
+});
