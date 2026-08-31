@@ -104,7 +104,7 @@ async function processMeeting(meeting: ReturnType<typeof normaliseMeeting>) {
   }
 
   // 2. Which booking is this? Email first, time second.
-  const { bookings } = await fetchBookings(100);
+  const { bookings } = await fetchBookings(50);
   const candidates: BookingCandidate[] = bookings.map((b) => ({
     uid: b.uid,
     email: b.email,

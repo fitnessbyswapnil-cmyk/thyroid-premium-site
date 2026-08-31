@@ -45,7 +45,7 @@ type Result = {
 };
 
 async function backfill(limit: number, force: boolean) {
-  const [meetings, bookingsRes, existing] = await Promise.all([listMeetings(), fetchBookings(100), readCalls()]);
+  const [meetings, bookingsRes, existing] = await Promise.all([listMeetings(), fetchBookings(50), readCalls()]);
   const bookings = bookingsRes.bookings;
   if (bookingsRes.error) console.warn(`[fathom-backfill] ${bookingsRes.error}`);
 

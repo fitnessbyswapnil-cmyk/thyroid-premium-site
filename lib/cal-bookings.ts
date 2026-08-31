@@ -82,13 +82,15 @@ type PageResult = { rows: RawBooking[]; error: string };
  * no warning anywhere. A silent zero is the worst possible failure mode for a
  * dashboard, because it is indistinguishable from a true zero.
  *
- * 15s, not 8s: a cold serverless invocation in Mumbai calling Cal for 100
- * bookings has been measured at 2.4s from a warm laptop, and the margin above
- * that should be generous rather than tight.
+ * The timeout has been raised twice and is now 25s, because the measurement that
+ * set it was taken from the wrong machine: 100 bookings came back in 2.4s from a
+ * warm laptop and still timed out from Vercel, which silently emptied the whole
+ * pipeline. The page size is also halved — 50 bookings is 77KB against 146KB and
+ * returns in a fifth of the time, and this account has around 30 real ones.
  */
 async function page(apiKey: string, query: string): Promise<PageResult> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), 25000);
   try {
     const res = await fetch(`https://api.cal.com/v2/bookings?${query}`, {
       headers: { Authorization: `Bearer ${apiKey}`, "cal-api-version": "2024-08-13" },
@@ -104,7 +106,7 @@ async function page(apiKey: string, query: string): Promise<PageResult> {
     return { rows, error: "" };
   } catch (err) {
     const aborted = err instanceof Error && err.name === "AbortError";
-    return { rows: [], error: aborted ? "cal.com timed out after 15s" : `cal.com request failed: ${String(err).slice(0, 120)}` };
+    return { rows: [], error: aborted ? "cal.com timed out after 25s" : `cal.com request failed: ${String(err).slice(0, 120)}` };
   } finally {
     clearTimeout(timer);
   }
@@ -119,7 +121,7 @@ async function page(apiKey: string, query: string): Promise<PageResult> {
  */
 export type BookingsResult = { bookings: CalBookingRecord[]; error: string; ownerTestsRemoved: number };
 
-export async function fetchBookings(take = 100): Promise<BookingsResult> {
+export async function fetchBookings(take = 50): Promise<BookingsResult> {
   const apiKey = process.env.CAL_API_KEY;
   if (!apiKey) return { bookings: [], error: "CAL_API_KEY is not set on this deployment", ownerTestsRemoved: 0 };
 

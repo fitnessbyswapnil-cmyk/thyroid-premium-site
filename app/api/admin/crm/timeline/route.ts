@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   if (!uid && !phoneParam) return NextResponse.json({ error: "uid or phone required" }, { status: 400 });
 
   const [bookingsR, callsR, messagesR, leadsR] = await Promise.allSettled([
-    fetchBookings(100),
+    fetchBookings(50),
     readCalls(),
     readMessages(),
     (async () => {

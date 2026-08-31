@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
       const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!A1:BC` });
       return parseLeads((r.data.values as string[][]) ?? []);
     })(),
-    fetchBookings(100),
+    fetchBookings(50),
     readCalls(),
     readMessages(),
   ]);
