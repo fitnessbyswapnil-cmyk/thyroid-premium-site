@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     })(),
   ]);
 
-  const bookings = bookingsR.status === "fulfilled" ? bookingsR.value : [];
+  const bookings = bookingsR.status === "fulfilled" ? bookingsR.value.bookings : [];
   const calls = callsR.status === "fulfilled" ? callsR.value : [];
   const messages = messagesR.status === "fulfilled" ? messagesR.value : [];
   const leadRows = leadsR.status === "fulfilled" ? leadsR.value : [];

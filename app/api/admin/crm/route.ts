@@ -180,8 +180,13 @@ export async function GET(req: NextRequest) {
 
   if (sheetRes.status === "fulfilled") leads = sheetRes.value;
   else warnings.push(`leads sheet unavailable: ${String(sheetRes.reason).slice(0, 120)}`);
-  if (bookingRes.status === "fulfilled") bookings = bookingRes.value;
-  else warnings.push("cal.com unavailable");
+  if (bookingRes.status === "fulfilled") {
+    bookings = bookingRes.value.bookings;
+    // A silent zero is indistinguishable from a true zero, so say why.
+    if (bookingRes.value.error) warnings.push(`No bookings loaded — ${bookingRes.value.error}`);
+  } else {
+    warnings.push(`cal.com unavailable: ${String(bookingRes.reason).slice(0, 120)}`);
+  }
   if (callRes.status === "fulfilled") calls = callRes.value;
   else warnings.push(`calls tab unavailable: ${String(callRes.reason).slice(0, 120)}`);
 

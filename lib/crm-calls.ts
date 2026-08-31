@@ -165,8 +165,17 @@ export function parseCallRows(values: string[][]): CallRow[] {
 async function client() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const rawKey = process.env.GOOGLE_PRIVATE_KEY;
-  const sheetId = process.env.LEADS_SHEET_ID || process.env.GOOGLE_SHEET_ID;
-  if (!email || !rawKey || !sheetId) throw new Error("sheets_not_configured");
+  // GOOGLE_SHEETS_ID — the same name app/api/admin/_lib.ts has always used.
+  // This module originally invented LEADS_SHEET_ID / GOOGLE_SHEET_ID, neither of
+  // which exists, so the Calls tab reported sheets_not_configured on a project
+  // where every other sheet read worked perfectly.
+  const sheetId = process.env.GOOGLE_SHEETS_ID;
+  if (!email || !rawKey || !sheetId) {
+    const missing = [!email && "GOOGLE_SERVICE_ACCOUNT_EMAIL", !rawKey && "GOOGLE_PRIVATE_KEY", !sheetId && "GOOGLE_SHEETS_ID"]
+      .filter(Boolean)
+      .join(", ");
+    throw new Error(`sheets_not_configured — missing ${missing}`);
+  }
   const auth = new google.auth.JWT({
     email,
     key: rawKey.replace(/\\n/g, "\n"),

@@ -69,20 +69,40 @@ export function normaliseBooking(b: RawBooking): CalBookingRecord | null {
   };
 }
 
-async function page(apiKey: string, query: string): Promise<RawBooking[]> {
+type PageResult = { rows: RawBooking[]; error: string };
+
+/**
+ * One page. NEVER throws — but it does report why it came back empty.
+ *
+ * The first version swallowed every failure into `[]`, which made a wrong API
+ * key, an expired token and a slow response all look identical to "this coach
+ * has no bookings" — and the pipeline duly showed 199 leads and 0 booked with
+ * no warning anywhere. A silent zero is the worst possible failure mode for a
+ * dashboard, because it is indistinguishable from a true zero.
+ *
+ * 15s, not 8s: a cold serverless invocation in Mumbai calling Cal for 100
+ * bookings has been measured at 2.4s from a warm laptop, and the margin above
+ * that should be generous rather than tight.
+ */
+async function page(apiKey: string, query: string): Promise<PageResult> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), 15000);
   try {
     const res = await fetch(`https://api.cal.com/v2/bookings?${query}`, {
       headers: { Authorization: `Bearer ${apiKey}`, "cal-api-version": "2024-08-13" },
       cache: "no-store",
       signal: controller.signal,
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return { rows: [], error: `cal.com returned ${res.status} ${body.slice(0, 120)}` };
+    }
     const json = (await res.json()) as { data?: RawBooking[] | { bookings?: RawBooking[] } };
-    return Array.isArray(json.data) ? json.data : (json.data?.bookings ?? []);
-  } catch {
-    return [];
+    const rows = Array.isArray(json.data) ? json.data : (json.data?.bookings ?? []);
+    return { rows, error: "" };
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === "AbortError";
+    return { rows: [], error: aborted ? "cal.com timed out after 15s" : `cal.com request failed: ${String(err).slice(0, 120)}` };
   } finally {
     clearTimeout(timer);
   }
@@ -95,18 +115,28 @@ async function page(apiKey: string, query: string): Promise<RawBooking[]> {
  * returns nothing once a call has happened, and every call this CRM cares about
  * is by definition in the past.
  */
-export async function fetchBookings(take = 100): Promise<CalBookingRecord[]> {
-  const apiKey = process.env.CAL_API_KEY;
-  if (!apiKey) return [];
+export type BookingsResult = { bookings: CalBookingRecord[]; error: string };
 
-  const raw = await page(apiKey, `take=${Math.min(take, 100)}&sortCreated=desc`);
+export async function fetchBookings(take = 100): Promise<BookingsResult> {
+  const apiKey = process.env.CAL_API_KEY;
+  if (!apiKey) return { bookings: [], error: "CAL_API_KEY is not set on this deployment" };
+
+  const { rows, error } = await page(apiKey, `take=${Math.min(take, 100)}&sortCreated=desc`);
+  if (error) return { bookings: [], error };
+
   const seen = new Set<string>();
   const out: CalBookingRecord[] = [];
-  for (const b of raw) {
+  for (const b of rows) {
     const rec = normaliseBooking(b);
-    if (!rec || seen.has(rec.uid)) continue;
+    if (!rec) continue;
+    if (seen.has(rec.uid)) continue;
     seen.add(rec.uid);
     out.push(rec);
   }
-  return out;
+  return {
+    bookings: out,
+    // Rows arriving but none surviving normalisation is its own distinct bug,
+    // and it should not look like "no bookings" either.
+    error: rows.length > 0 && out.length === 0 ? `cal.com returned ${rows.length} bookings but none had a uid` : "",
+  };
 }
