@@ -110,16 +110,16 @@ export default function DecodePage() {
               border: "1px solid var(--p-border)",
             }}
           >
-            Small plate. Same weight.
+            For women 30+ with a slow thyroid
           </p>
 
           <h1
             className="mx-auto max-w-[760px] text-balance text-[length:var(--text-xl)] font-bold leading-[1.12] text-[var(--t1)]"
             style={{ fontFamily: "var(--font-display), Georgia, serif" }}
           >
-            You eat less than everyone at your table.
+            Eating less. And still not losing weight.
             <span className="block" style={{ color: "var(--p600)" }}>
-              The scale still shows the same number.
+              You are not the problem. Your report will show why.
             </span>
           </h1>
 
