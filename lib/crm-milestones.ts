@@ -81,6 +81,8 @@ export type MilestoneInput = {
   paidAmount: number | null;
   /** Her whole story, chronological. */
   events: MsEvent[];
+  /** See crm-stage: false means nothing has ever looked for a recording. */
+  callDataAvailable?: boolean;
   now: Date;
 };
 
@@ -173,8 +175,10 @@ export function milestonesFor(input: MilestoneInput): Milestone[] {
     out.push(call.attended ? mk("attended", "done", "attended") : mk("attended", "missing", "no-show", "She did not join the call"));
   } else if (!input.hasBooking && !input.cancelled) {
     out.push(mk("attended", "not_applicable", "", "No call booked yet"));
-  } else if (callJudgeable) {
+  } else if (callJudgeable && input.callDataAvailable !== false) {
     out.push(mk("attended", "missing", "", "The slot has passed and no recording has been ingested"));
+  } else if (callJudgeable) {
+    out.push(mk("attended", "not_applicable", "", "Call ingestion has not run yet — attendance is unknown, not missed"));
   } else {
     out.push(mk("attended", "not_applicable", "", "The call has not happened yet"));
   }

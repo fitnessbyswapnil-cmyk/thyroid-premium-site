@@ -205,6 +205,13 @@ export async function GET(req: NextRequest) {
     warnings.push("whatsapp history unavailable — milestones will be partial");
   }
 
+  // If the Calls tab has no rows at all, ingestion has never run, so a missing
+  // recording says nothing about whether she turned up.
+  const callDataAvailable = calls.length > 0;
+  if (!callDataAvailable && bookings.length) {
+    warnings.push("No call recordings ingested yet — attendance, price and follow-up are unknown rather than missed.");
+  }
+
   const leadByEmail = new Map(leads.map((l) => [l.email, l]));
   const callByUid = new Map(calls.map((c) => [c.bookingUid, c]));
 
@@ -224,6 +231,7 @@ export async function GET(req: NextRequest) {
       bookingCancelled: b.cancelled,
       sessionStart: b.startIso || null,
       call: facts,
+      callDataAvailable,
       paid: lead?.paid ?? false,
       now,
     };
@@ -251,6 +259,7 @@ export async function GET(req: NextRequest) {
       paid: lead?.paid ?? false,
       paidAmount: lead?.paidAmount ?? null,
       events: evs,
+      callDataAvailable,
       now,
     };
     const ms = milestonesFor(msInput);

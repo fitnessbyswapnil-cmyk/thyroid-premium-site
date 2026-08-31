@@ -89,6 +89,16 @@ export type StageInput = {
   /** ISO start time of the Cal.com booking, if any. */
   sessionStart: string | null;
   call: CallFacts | null;
+  /**
+   * Whether call ingestion is producing data AT ALL (i.e. the Calls tab has any
+   * rows). Without this, "no recording exists" and "we have never looked for a
+   * recording" are the same input, and every past booking in an account whose
+   * Fathom ingest has not run yet is declared a no-show. On this account that
+   * misreported 51 women who had in fact attended.
+   *
+   * When false, absence proves nothing and she stays where the calendar put her.
+   */
+  callDataAvailable?: boolean;
   /** Cashfree truth. */
   paid: boolean;
   now: Date;
@@ -133,8 +143,11 @@ export function deriveStage(input: StageInput): Stage {
   const start = parse(input.sessionStart);
   if (!start) return "booked";
 
-  // Past its slot with no recording: only a no-show once Fathom has had time.
-  if (minutesBetween(input.now, start) > NO_SHOW_GRACE_MIN) return "no_show";
+  // Past its slot with no recording: a no-show only once Fathom has had time AND
+  // only when call ingestion is actually running. Absence of evidence is not
+  // evidence of absence when nothing has ever gone looking.
+  const ingesting = input.callDataAvailable !== false;
+  if (ingesting && minutesBetween(input.now, start) > NO_SHOW_GRACE_MIN) return "no_show";
   return "booked";
 }
 

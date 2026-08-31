@@ -82,6 +82,18 @@ test("pitched decays to lost only after the follow-up window", () => {
   assert.equal(deriveStage(expired), "lost");
 });
 
+test("absence of a recording is NOT a no-show when nothing has ever looked", () => {
+  // The live account had 51 women marked no-show purely because the Fathom
+  // ingest had never run. Absence of evidence is not evidence of absence.
+  const past = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN + 60)) });
+
+  assert.equal(deriveStage({ ...past, callDataAvailable: false }), "booked");
+  // Once ingestion IS producing rows, the same input does mean she never joined.
+  assert.equal(deriveStage({ ...past, callDataAvailable: true }), "no_show");
+  // Default (flag absent) stays strict, so existing callers are unchanged.
+  assert.equal(deriveStage(past), "no_show");
+});
+
 test("a recorded no-show wins over the calendar saying booked", () => {
   const s = base({ hasBooking: true, sessionStart: iso(30), call: call({ attended: false }) });
   assert.equal(deriveStage(s), "no_show");

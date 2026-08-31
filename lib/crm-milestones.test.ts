@@ -63,6 +63,16 @@ test("nothing is a failure before its time — attendance during the grace windo
   assert.equal(get(stale, "attended").state, "missing");
 });
 
+test("attendance is unknown, not missed, when ingestion has never run", () => {
+  const past = base({ sessionStart: hoursAgo(26), call: null });
+  const m = milestonesFor({ ...past, callDataAvailable: false });
+  assert.equal(get(m, "attended").state, "not_applicable");
+  assert.match(get(m, "attended").note ?? "", /unknown, not missed/i);
+
+  // With ingestion running, the same gap is a real one.
+  assert.equal(get(milestonesFor({ ...past, callDataAvailable: true }), "attended").state, "missing");
+});
+
 test("a future booking never reports a missing attendance", () => {
   const ms = milestonesFor(base({ sessionStart: new Date(NOW.getTime() + 3600000).toISOString() }));
   assert.equal(get(ms, "attended").state, "not_applicable");
