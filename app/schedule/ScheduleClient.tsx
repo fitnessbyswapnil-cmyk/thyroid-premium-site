@@ -57,6 +57,13 @@ export type ScheduleClientProps = {
   rationaleBody?: React.ReactNode;
   wrapper?: "main" | "div";
   /**
+   * Her thyroid answer, when something upstream already asked for it (the
+   * /decode quiz asks it as question 3). Supplying it removes the select
+   * entirely rather than pre-filling it — a field she has already answered is
+   * worse than no field, because re-asking reads as "you were not listening".
+   */
+  presetThyroid?: string;
+  /**
    * Answers already collected upstream (the /decode quiz). Merged into the
    * /api/quiz-lead post so they land in the SAME sheet columns the quiz funnel
    * has always written, rather than needing a second lead record or a schema
@@ -79,9 +86,10 @@ export default function ScheduleClient({
   rationaleBody = "So the woman in that slot actually turns up, and so I arrive having read your answers properly. It is adjusted against your plan if you decide to work with me.",
   wrapper = "main",
   extraAnswers,
+  presetThyroid,
 }: ScheduleClientProps = {}) {
   const Wrapper = wrapper;
-  const [f, setF] = useState<Form>({ name: "", phone: "", thyroid: "" });
+  const [f, setF] = useState<Form>({ name: "", phone: "", thyroid: presetThyroid ?? "" });
   const [errs, setErrs] = useState<Partial<Record<keyof Form, string>>>({});
   const [formErr, setFormErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -323,17 +331,19 @@ export default function ScheduleClient({
             </p>
           </div>
 
-          <div style={{ marginBottom: 22 }}>
-            <label style={labelCss} htmlFor="sch-thyroid">Your thyroid status</label>
-            <select
-              id="sch-thyroid" style={{ ...field, borderColor: errs.thyroid ? CORAL : GRID }}
-              value={f.thyroid} onChange={(ev) => set("thyroid", ev.target.value)}
-            >
-              <option value="">Select one</option>
-              {THYROID_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-            {errs.thyroid && <p style={{ color: CORAL, fontSize: 13, marginTop: 6 }}>{errs.thyroid}</p>}
-          </div>
+          {presetThyroid ? null : (
+            <div style={{ marginBottom: 22 }}>
+              <label style={labelCss} htmlFor="sch-thyroid">Your thyroid status</label>
+              <select
+                id="sch-thyroid" style={{ ...field, borderColor: errs.thyroid ? CORAL : GRID }}
+                value={f.thyroid} onChange={(ev) => set("thyroid", ev.target.value)}
+              >
+                <option value="">Select one</option>
+                {THYROID_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+              {errs.thyroid && <p style={{ color: CORAL, fontSize: 13, marginTop: 6 }}>{errs.thyroid}</p>}
+            </div>
+          )}
 
           <button
             type="button" onClick={submit} disabled={busy}

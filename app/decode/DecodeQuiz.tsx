@@ -36,6 +36,20 @@ type Q = { id: string; q: string; options: string[] };
 
 const QUESTIONS: Q[] = [
   { id: "age", q: "How old are you?", options: ["Under 30", "30 to 40", "41 to 50", "Over 50"] },
+  // Asked second, and early on purpose. She states the paradox in her own words
+  // before the page argues it — which is what makes the chart above land as her
+  // story rather than a claim. It also disqualifies nobody unfairly: a woman who
+  // never restricted is simply not who this session was built for.
+  {
+    id: "deficit",
+    q: "Have you eaten less on purpose for a month or more, and still not lost weight?",
+    options: [
+      "Yes, more than once",
+      "Yes, once",
+      "I ate less, but not for that long",
+      "No, I have not tried that",
+    ],
+  },
   {
     id: "diagnosis",
     q: "Has a doctor told you that you have a thyroid problem?",
@@ -62,19 +76,19 @@ const QUESTIONS: Q[] = [
     options: ["Less than 6 months", "6 months to 1 year", "1 to 3 years", "More than 3 years"],
   },
   {
-    id: "pattern",
-    q: "What happens when you try to lose weight?",
-    options: [
-      "A little comes off, then it stops",
-      "Nothing moves at all",
-      "It comes off, then comes back",
-      "I lose motivation on my own",
-    ],
-  },
-  {
     id: "tried",
     q: "Have you paid for a diet plan or a coach before?",
     options: ["No, never", "Yes, under ₹10,000", "Yes, ₹10,000 to ₹25,000", "Yes, more than ₹25,000"],
+  },
+  // Work status is a proxy for the same constraint the next question asks about
+  // directly. A homemaker is not a worse client, but she is a different CALL:
+  // the money conversation almost always involves someone who is not on it, and
+  // knowing that before he dials is the difference between preparing for it and
+  // being ambushed by it at minute sixty.
+  {
+    id: "work",
+    q: "What do you do?",
+    options: ["I look after the home", "I have a job", "I run my own business", "I am retired"],
   },
   {
     id: "decision",
@@ -88,24 +102,26 @@ const QUESTIONS: Q[] = [
   },
 ];
 
+
 type A = Record<string, string>;
 
 /** Her own answers, said back to her. Only lines that are actually true. */
 function readback(a: A): string[] {
   const out: string[] = [];
-  if (a.stuck === "More than 3 years" || a.stuck === "1 to 3 years")
-    out.push(`Your weight has not moved in ${a.stuck === "More than 3 years" ? "over 3 years" : "1 to 3 years"}.`);
+  if (a.deficit === "Yes, more than once")
+    out.push("You have eaten less for a month or more — more than once — and the weight still did not come off.");
+  else if (a.deficit === "Yes, once")
+    out.push("You have eaten less for a month or more, and the weight still did not come off.");
+  if (a.stuck === "More than 3 years") out.push("Your weight has not moved in over 3 years.");
+  else if (a.stuck === "1 to 3 years") out.push("Your weight has not moved in 1 to 3 years.");
   if (a.diagnosis?.startsWith("Yes, and I take"))
-    out.push("You take thyroid medicine every day, and the weight still will not move.");
+    out.push("You take thyroid medicine every day, and it still will not move.");
   else if (a.diagnosis === "Yes, but I do not take medicine")
     out.push("You have a thyroid diagnosis and you are not on medicine for it.");
   else if (a.diagnosis?.startsWith("I have not tested"))
     out.push("You have never been tested, so nothing has been ruled out yet.");
-  if (a.pattern === "A little comes off, then it stops")
-    out.push("A little comes off, then it stops. That is the pattern in the chart above.");
-  if (a.pattern === "Nothing moves at all") out.push("Nothing moves at all, even when you eat less.");
-  if (a.pattern === "It comes off, then comes back") out.push("It comes off, then it comes straight back.");
-  if (a.tried?.startsWith("Yes")) out.push("You have already paid for help once. So this is not about effort.");
+  if (a.tried?.startsWith("Yes"))
+    out.push("You have already paid for help once. So this was never about effort.");
   return out;
 }
 
@@ -136,7 +152,7 @@ export default function DecodeQuiz() {
       <Shell>
         <p className="section-label">Start here</p>
         <h2 className="section-title mx-auto text-balance">
-          Nine questions. About forty seconds.
+          Ten questions. About forty seconds.
         </h2>
         <p className="mx-auto mt-3 max-w-[540px] text-[15.5px] leading-[1.6] text-[var(--t2)]">
           No typing. Just tap. At the end I will tell you what your answers point
@@ -192,22 +208,26 @@ export default function DecodeQuiz() {
               <ScheduleClient
                 wrapper="div"
                 eyebrow="Last step"
-                heading="Book your report reading"
-                subheading="45 minutes with Swapnil, one to one. Your own blood report, read line by line."
+                heading="Get your report decoded"
+                subheading="Find the exact reason you are not losing weight, even though you eat less. 45 minutes with Swapnil, one to one, on your own blood report."
                 ctaLabel={"Read my report — ₹299"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I read your report before the call instead of seeing it for the first time in front of you. If you join the programme later, this ₹299 is taken off the fee."
+                presetThyroid={a.diagnosis}
                 extraAnswers={{
                   age: a.age ?? "",
                   diagnosis: a.diagnosis ?? "",
+                  onMedication: a.diagnosis ?? "",
                   struggleDuration: a.stuck ?? "",
                   goal: a.goal ?? "",
-                  biggestChallenge: a.pattern ?? "",
+                  biggestChallenge: a.deficit ?? "",
                   triedBefore: a.tried ?? "",
                   amountSpent: a.tried?.startsWith("Yes") ? a.tried.replace("Yes, ", "") : "",
                   timing: a.timing ?? "",
                   decisionMaker: a.decision ?? "",
-                  symptoms: `Report: ${a.report ?? ""}`,
+                  // No Profession column exists in the sheet, so work status
+                  // rides here rather than silently going nowhere.
+                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.work ?? "—"}`,
                 }}
               />
             </div>

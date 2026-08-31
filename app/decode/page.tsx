@@ -45,7 +45,7 @@ const CertificationsSection = dynamic(() => import("@/app/components/Certificati
 export const metadata: Metadata = {
   title: "Small plate, same weight | Thyroid report reading",
   description:
-    "You eat less and the scale still will not move. A 45-minute reading of your own thyroid blood report, to find the month your body started burning less.",
+    "Get your report decoded. Find the exact reason you are not losing weight even though you eat less — read from your own thyroid blood report, in 45 minutes.",
   // Ad traffic only. Indexing it would put it in competition with the main site.
   robots: { index: false, follow: false },
 };
@@ -126,7 +126,7 @@ export default function DecodePage() {
           <p className="mx-auto mt-5 max-w-[620px] text-[16px] leading-[1.62] text-[var(--t2)] md:text-[17.5px]">
             This is not about willpower. When you eat less for a long time, a
             slow thyroid makes your body burn less too. So the gap you made
-            closes. Your blood report usually shows when this happened
+            closes. <strong>Your blood report can show the exact reason</strong>
             &mdash; but almost nobody reads it that way.
           </p>
 
@@ -136,7 +136,7 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Find out why &mdash; 9 quick questions
+              Find the exact reason &mdash; 10 questions
               <span className="cta-sub">Free. Takes about 40 seconds.</span>
             </a>
             <p className="mt-3 text-[13px] text-[var(--t3)]">
@@ -240,7 +240,7 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Find out why &mdash; 9 quick questions
+              Find the exact reason &mdash; 10 questions
               <span className="cta-sub">Free. Takes about 40 seconds.</span>
             </a>
           </div>
