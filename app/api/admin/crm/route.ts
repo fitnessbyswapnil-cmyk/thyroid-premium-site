@@ -29,6 +29,7 @@ import { readCalls, writeCall, type CallRow, type CallFields } from "@/lib/crm-c
 import { deriveStage, nextAction, agreedButUnpaid, type Stage, type CallFacts } from "@/lib/crm-stage";
 import { milestonesFor, missingCount, withinDays, type Milestone, type MsEvent } from "@/lib/crm-milestones";
 import { readMessages } from "@/lib/wa-messages";
+import { isOwnerTest } from "@/lib/owner-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,8 @@ function parseLeads(values: string[][]): SheetLead[] {
     const get = (i: number) => (i >= 0 ? String(row[i] ?? "").trim() : "");
     const email = get(idx.email).toLowerCase();
     if (!email) continue;
+    // Same rule as the bookings: his own test submissions are not prospects.
+    if (isOwnerTest({ name: get(idx.name), email })) continue;
     out.push({
       row: r + 1,
       name: get(idx.name),
@@ -184,6 +187,10 @@ export async function GET(req: NextRequest) {
     bookings = bookingRes.value.bookings;
     // A silent zero is indistinguishable from a true zero, so say why.
     if (bookingRes.value.error) warnings.push(`No bookings loaded — ${bookingRes.value.error}`);
+    // Say what was removed rather than quietly shrinking the pipeline.
+    if (bookingRes.value.ownerTestsRemoved > 0) {
+      warnings.push(`${bookingRes.value.ownerTestsRemoved} of your own test bookings hidden.`);
+    }
   } else {
     warnings.push(`cal.com unavailable: ${String(bookingRes.reason).slice(0, 120)}`);
   }

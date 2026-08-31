@@ -1,3 +1,5 @@
+import { isOwnerTest } from "./owner-filter";
+
 /**
  * lib/cal-bookings.ts — booking records keyed by uid.
  *
@@ -115,28 +117,42 @@ async function page(apiKey: string, query: string): Promise<PageResult> {
  * returns nothing once a call has happened, and every call this CRM cares about
  * is by definition in the past.
  */
-export type BookingsResult = { bookings: CalBookingRecord[]; error: string };
+export type BookingsResult = { bookings: CalBookingRecord[]; error: string; ownerTestsRemoved: number };
 
 export async function fetchBookings(take = 100): Promise<BookingsResult> {
   const apiKey = process.env.CAL_API_KEY;
-  if (!apiKey) return { bookings: [], error: "CAL_API_KEY is not set on this deployment" };
+  if (!apiKey) return { bookings: [], error: "CAL_API_KEY is not set on this deployment", ownerTestsRemoved: 0 };
 
   const { rows, error } = await page(apiKey, `take=${Math.min(take, 100)}&sortCreated=desc`);
-  if (error) return { bookings: [], error };
+  if (error) return { bookings: [], error, ownerTestsRemoved: 0 };
 
   const seen = new Set<string>();
   const out: CalBookingRecord[] = [];
+  let ownerTests = 0;
   for (const b of rows) {
     const rec = normaliseBooking(b);
     if (!rec) continue;
     if (seen.has(rec.uid)) continue;
     seen.add(rec.uid);
+    // His own test bookings were 62 of 100 here and produced every "cancelled"
+    // row in the pipeline. Dropped at the source so nothing downstream — not the
+    // stage counts, not the funnel, and not the Fathom recording matcher — can
+    // ever treat one as a prospect.
+    if (isOwnerTest({ name: rec.name, email: rec.email })) {
+      ownerTests++;
+      continue;
+    }
     out.push(rec);
   }
   return {
     bookings: out,
-    // Rows arriving but none surviving normalisation is its own distinct bug,
-    // and it should not look like "no bookings" either.
-    error: rows.length > 0 && out.length === 0 ? `cal.com returned ${rows.length} bookings but none had a uid` : "",
+    ownerTestsRemoved: ownerTests,
+    // Rows arriving but none surviving is its own distinct bug and should not
+    // look like "no bookings". Owner tests are excluded from that judgement —
+    // an account of nothing but tests is not a fault.
+    error:
+      rows.length > 0 && out.length === 0 && ownerTests < rows.length
+        ? `cal.com returned ${rows.length} bookings but none had a uid`
+        : "",
   };
 }
