@@ -81,8 +81,8 @@ export type MilestoneInput = {
   paidAmount: number | null;
   /** Her whole story, chronological. */
   events: MsEvent[];
-  /** See crm-stage: false means nothing has ever looked for a recording. */
-  callDataAvailable?: boolean;
+  /** See crm-stage: the earliest call the ingest has covered, ISO. */
+  callDataSince?: string;
   now: Date;
 };
 
@@ -116,6 +116,9 @@ export function milestonesFor(input: MilestoneInput): Milestone[] {
 
   // The slot has passed by enough that Fathom would have produced a recording.
   const callJudgeable = !Number.isNaN(callMs) && nowMs - callMs > CALL_GRACE_MIN * 60000;
+  // ...and the ingest has actually looked back this far.
+  const sinceMs = t(input.callDataSince ?? "");
+  const coveredByIngest = !Number.isNaN(sinceMs) && !Number.isNaN(callMs) && callMs >= sinceMs;
 
   const mk = (id: MilestoneId, state: MilestoneState, value = "", note?: string): Milestone => ({
     id,
@@ -175,10 +178,10 @@ export function milestonesFor(input: MilestoneInput): Milestone[] {
     out.push(call.attended ? mk("attended", "done", "attended") : mk("attended", "missing", "no-show", "She did not join the call"));
   } else if (!input.hasBooking && !input.cancelled) {
     out.push(mk("attended", "not_applicable", "", "No call booked yet"));
-  } else if (callJudgeable && input.callDataAvailable !== false) {
+  } else if (callJudgeable && coveredByIngest) {
     out.push(mk("attended", "missing", "", "The slot has passed and no recording has been ingested"));
   } else if (callJudgeable) {
-    out.push(mk("attended", "not_applicable", "", "Call ingestion has not run yet — attendance is unknown, not missed"));
+    out.push(mk("attended", "not_applicable", "", "Older than the ingest has reached — attendance is unknown, not missed"));
   } else {
     out.push(mk("attended", "not_applicable", "", "The call has not happened yet"));
   }

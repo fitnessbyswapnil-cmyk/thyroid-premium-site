@@ -54,23 +54,30 @@ test("a document OR an image counts as her report — most women photograph the 
 });
 
 test("nothing is a failure before its time — attendance during the grace window", () => {
+  // Both assume the ingest has already searched this far back; the window rule
+  // is covered separately below.
+  const covered = hoursAgo(500);
+
   // Slot 10 minutes ago: Fathom has not had time to produce anything.
-  const fresh = milestonesFor(base({ sessionStart: hoursAgo(0.16), call: null }));
+  const fresh = milestonesFor(base({ sessionStart: hoursAgo(0.16), call: null, callDataSince: covered }));
   assert.equal(get(fresh, "attended").state, "not_applicable");
 
-  // Slot yesterday with still no recording: that IS a gap.
-  const stale = milestonesFor(base({ sessionStart: hoursAgo(26), call: null }));
+  // Slot yesterday, inside the searched window, still no recording: that IS a gap.
+  const stale = milestonesFor(base({ sessionStart: hoursAgo(26), call: null, callDataSince: covered }));
   assert.equal(get(stale, "attended").state, "missing");
 });
 
-test("attendance is unknown, not missed, when ingestion has never run", () => {
+test("attendance is unknown, not missed, outside the ingested window", () => {
   const past = base({ sessionStart: hoursAgo(26), call: null });
-  const m = milestonesFor({ ...past, callDataAvailable: false });
-  assert.equal(get(m, "attended").state, "not_applicable");
-  assert.match(get(m, "attended").note ?? "", /unknown, not missed/i);
 
-  // With ingestion running, the same gap is a real one.
-  assert.equal(get(milestonesFor({ ...past, callDataAvailable: true }), "attended").state, "missing");
+  // Nothing ingested, and ingested-but-only-since-later: both unknown.
+  assert.equal(get(milestonesFor(past), "attended").state, "not_applicable");
+  const partial = milestonesFor({ ...past, callDataSince: hoursAgo(2) });
+  assert.equal(get(partial, "attended").state, "not_applicable");
+  assert.match(get(partial, "attended").note ?? "", /unknown, not missed/i);
+
+  // Ingest covers her slot and found nothing — that is a real gap.
+  assert.equal(get(milestonesFor({ ...past, callDataSince: hoursAgo(200) }), "attended").state, "missing");
 });
 
 test("a future booking never reports a missing attendance", () => {

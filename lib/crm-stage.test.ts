@@ -50,12 +50,16 @@ test("a future booking is booked; a cancelled one is cancelled", () => {
 });
 
 test("a slot that just passed is NOT a no-show until Fathom has had time", () => {
+  // Both cases assume the ingest has already searched this far back; the window
+  // rule is covered separately below.
+  const covered = iso(-(NO_SHOW_GRACE_MIN + 600));
+
   // Inside the grace window: the call may still be running, or the transcript
   // may still be processing. Calling this a no-show sends the wrong message.
-  const justInside = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN - 5)) });
+  const justInside = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN - 5)), callDataSince: covered });
   assert.equal(deriveStage(justInside), "booked");
 
-  const past = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN + 5)) });
+  const past = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN + 5)), callDataSince: covered });
   assert.equal(deriveStage(past), "no_show");
 });
 
@@ -82,16 +86,20 @@ test("pitched decays to lost only after the follow-up window", () => {
   assert.equal(deriveStage(expired), "lost");
 });
 
-test("absence of a recording is NOT a no-show when nothing has ever looked", () => {
-  // The live account had 51 women marked no-show purely because the Fathom
-  // ingest had never run. Absence of evidence is not evidence of absence.
+test("no-show is only inferred inside the window the ingest has searched", () => {
   const past = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN + 60)) });
 
-  assert.equal(deriveStage({ ...past, callDataAvailable: false }), "booked");
-  // Once ingestion IS producing rows, the same input does mean she never joined.
-  assert.equal(deriveStage({ ...past, callDataAvailable: true }), "no_show");
-  // Default (flag absent) stays strict, so existing callers are unchanged.
-  assert.equal(deriveStage(past), "no_show");
+  // Nothing ingested at all: she stays where the calendar put her.
+  assert.equal(deriveStage(past), "booked");
+  assert.equal(deriveStage({ ...past, callDataSince: "" }), "booked");
+
+  // Ingest only reaches back to AFTER her call. This is the case that mislabelled
+  // 28 women the moment three recent calls were ingested: three calls covered is
+  // not thirty calls judged.
+  assert.equal(deriveStage({ ...past, callDataSince: iso(-10) }), "booked");
+
+  // Ingest covers her slot and found nothing — now it means she did not join.
+  assert.equal(deriveStage({ ...past, callDataSince: iso(-(NO_SHOW_GRACE_MIN + 600)) }), "no_show");
 });
 
 test("a recorded no-show wins over the calendar saying booked", () => {

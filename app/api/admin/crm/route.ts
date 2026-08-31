@@ -227,11 +227,22 @@ export async function GET(req: NextRequest) {
     warnings.push("whatsapp history unavailable — milestones will be partial");
   }
 
-  // If the Calls tab has no rows at all, ingestion has never run, so a missing
-  // recording says nothing about whether she turned up.
-  const callDataAvailable = calls.length > 0;
-  if (!callDataAvailable && bookings.length) {
+  // How far back the ingest has actually reached. Only bookings at or after this
+  // point can be judged for attendance; older ones are un-searched, not missed.
+  const ingestTimes = calls.map((c) => new Date(c.occurredAt).getTime()).filter((n) => !Number.isNaN(n));
+  const callDataSince = ingestTimes.length ? new Date(Math.min(...ingestTimes)).toISOString() : "";
+  if (!callDataSince && bookings.length) {
     warnings.push("No call recordings ingested yet — attendance, price and follow-up are unknown rather than missed.");
+  } else if (callDataSince) {
+    const older = bookings.filter((b) => {
+      const t0 = new Date(b.startIso).getTime();
+      return !Number.isNaN(t0) && t0 < new Date(callDataSince).getTime();
+    }).length;
+    if (older) {
+      warnings.push(
+        `${older} bookings are older than the earliest ingested call (${new Date(callDataSince).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}) — their attendance is unknown, not missed. Run the backfill to judge them.`,
+      );
+    }
   }
 
   const leadByEmail = new Map(leads.map((l) => [l.email, l]));
@@ -253,7 +264,7 @@ export async function GET(req: NextRequest) {
       bookingCancelled: b.cancelled,
       sessionStart: b.startIso || null,
       call: facts,
-      callDataAvailable,
+      callDataSince,
       paid: lead?.paid ?? false,
       now,
     };
@@ -281,7 +292,7 @@ export async function GET(req: NextRequest) {
       paid: lead?.paid ?? false,
       paidAmount: lead?.paidAmount ?? null,
       events: evs,
-      callDataAvailable,
+      callDataSince,
       now,
     };
     const ms = milestonesFor(msInput);

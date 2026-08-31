@@ -90,15 +90,19 @@ export type StageInput = {
   sessionStart: string | null;
   call: CallFacts | null;
   /**
-   * Whether call ingestion is producing data AT ALL (i.e. the Calls tab has any
-   * rows). Without this, "no recording exists" and "we have never looked for a
-   * recording" are the same input, and every past booking in an account whose
-   * Fathom ingest has not run yet is declared a no-show. On this account that
-   * misreported 51 women who had in fact attended.
+   * The EARLIEST call the ingest has produced, as an ISO timestamp — the point
+   * back to which recordings have actually been looked for. Absence of a
+   * recording only means "she did not join" for bookings at or after it.
    *
-   * When false, absence proves nothing and she stays where the calendar put her.
+   * A plain boolean was not enough. Once three recent calls were ingested, the
+   * flag flipped true and 28 women with older bookings were immediately declared
+   * no-shows — including four whose transcripts had been read on this very
+   * account. Three calls covered does not mean thirty calls judged.
+   *
+   * Undefined or empty means nothing has been ingested at all, and no booking
+   * can be called a no-show.
    */
-  callDataAvailable?: boolean;
+  callDataSince?: string;
   /** Cashfree truth. */
   paid: boolean;
   now: Date;
@@ -143,11 +147,12 @@ export function deriveStage(input: StageInput): Stage {
   const start = parse(input.sessionStart);
   if (!start) return "booked";
 
-  // Past its slot with no recording: a no-show only once Fathom has had time AND
-  // only when call ingestion is actually running. Absence of evidence is not
-  // evidence of absence when nothing has ever gone looking.
-  const ingesting = input.callDataAvailable !== false;
-  if (ingesting && minutesBetween(input.now, start) > NO_SHOW_GRACE_MIN) return "no_show";
+  // Past its slot with no recording: a no-show only once Fathom has had time,
+  // AND only if the ingest has actually covered this booking's date. Absence of
+  // evidence is not evidence of absence outside the window that was searched.
+  const since = parse(input.callDataSince ?? null);
+  const covered = !!since && start.getTime() >= since.getTime();
+  if (covered && minutesBetween(input.now, start) > NO_SHOW_GRACE_MIN) return "no_show";
   return "booked";
 }
 
