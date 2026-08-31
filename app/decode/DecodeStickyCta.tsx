@@ -15,6 +15,14 @@ import { useEffect, useState } from "react";
 
 export default function DecodeStickyCta() {
   const [visible, setVisible] = useState(false);
+  // Once she has finished the quiz the bar has nothing left to ask for — the
+  // real CTA is on screen — so it retires rather than repeating itself.
+  const [retired, setRetired] = useState(false);
+  useEffect(() => {
+    const off = () => setRetired(true);
+    window.addEventListener("decode-quiz-done", off);
+    return () => window.removeEventListener("decode-quiz-done", off);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -27,32 +35,34 @@ export default function DecodeStickyCta() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const show = visible && !retired;
+
   useEffect(() => {
-    document.body.style.paddingBottom = visible ? "84px" : "";
+    document.body.style.paddingBottom = show ? "84px" : "";
     return () => {
       document.body.style.paddingBottom = "";
     };
-  }, [visible]);
+  }, [show]);
 
   return (
     <div
-      aria-hidden={!visible}
+      aria-hidden={!show}
       className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pt-2.5 transition-transform duration-300"
       style={{
-        transform: visible ? "translateY(0)" : "translateY(110%)",
+        transform: show ? "translateY(0)" : "translateY(110%)",
         background: "rgba(255,255,255,0.94)",
         backdropFilter: "blur(8px)",
         borderTop: "1px solid var(--border-on-wash)",
       }}
     >
       <a
-        href="#book"
+        href="#quiz"
         className="cta-button mx-auto"
         style={{ maxWidth: "28rem", textDecoration: "none" }}
-        tabIndex={visible ? 0 : -1}
+        tabIndex={show ? 0 : -1}
       >
-        Get my report decoded &mdash; &#8377;299
-        <span className="cta-sub">45 minutes, one to one</span>
+        Find out why &mdash; 9 quick questions
+        <span className="cta-sub">Free. Takes about 40 seconds.</span>
       </a>
     </div>
   );

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import HeroProofStrip from "@/app/components/HeroProofStrip";
 import DeficitDiagram from "@/app/components/DeficitDiagram";
-import ScheduleClient from "@/app/schedule/ScheduleClient";
+import DecodeQuiz from "./DecodeQuiz";
 import DecodeStickyCta from "./DecodeStickyCta";
 
 /**
@@ -43,9 +43,9 @@ const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial
 const CertificationsSection = dynamic(() => import("@/app/components/CertificationsSection"));
 
 export const metadata: Metadata = {
-  title: "Why you are not losing weight on less food | Report decoding",
+  title: "Small plate, same weight | Thyroid report reading",
   description:
-    "You cut your calories and the scale stopped anyway. A 45-minute reading of your own thyroid and metabolic panel to find where your burn came down to meet you.",
+    "You eat less and the scale still will not move. A 45-minute reading of your own thyroid blood report, to find the month your body started burning less.",
   // Ad traffic only. Indexing it would put it in competition with the main site.
   robots: { index: false, follow: false },
 };
@@ -53,46 +53,46 @@ export const metadata: Metadata = {
 const AGENDA = [
   {
     n: "01",
-    h: "Your panel, read line by line",
-    p: "TSH, T3, T4 and the markers that usually get skipped. Not a glance at whether each one is in range — a look at where it sits inside that range, which is where the answer normally is.",
+    h: "Your report, read line by line",
+    p: "TSH, T3, T4 and the ones most labs skip. Not just a check of whether each number is inside the range — where it sits inside that range. That is usually where the answer is hiding.",
   },
   {
     n: "02",
-    h: "The month your burn stopped matching your effort",
-    p: "Placed from your own numbers and your own diet history, not from a template. You will see which cut it followed.",
+    h: "The month your body started burning less",
+    p: "Worked out from your own numbers and your own diet history — not a copy-paste answer. You will see which diet it came after.",
   },
   {
     n: "03",
-    h: "What is blocking it right now",
-    p: "Named specifically, in plain language, with the reasoning shown — so you can check it against anything you are told later.",
+    h: "What is stopping you right now",
+    p: "Told to you clearly, in simple words, with the reason shown — so you can check it against anything anyone tells you later.",
   },
   {
     n: "04",
     h: "What to do about it",
-    p: "Written down before we finish, whether or not you ever work with me.",
+    p: "Written down before we finish, whether you ever work with me or not.",
   },
 ];
 
 const FAQ = [
   {
     q: "Is ₹299 the whole cost?",
-    a: "It is the whole cost of this session. Nothing further is charged for it, and nothing is added at the end.",
+    a: "Yes. That is the full cost. Nothing extra is added at the end.",
   },
   {
-    q: "What if I don’t have a recent blood report?",
-    a: "Then this is not the right session for you yet, and you should not pay for it. Get a thyroid profile including T3, T4 and TSH done at any diagnostic lab, then book once you have it in hand.",
+    q: "I don’t have a blood report. Is this not for me?",
+    a: "You are still welcome — just answer the questions above. If you have no report, I will not take ₹299 to read one that does not exist. Instead you get a free call where I tell you exactly which tests to get and why. Do them, and then we read them together.",
   },
   {
     q: "Is this a sales call in disguise?",
-    a: "It is a reading of your report, and you get the reading whatever you decide afterwards. If a structured programme genuinely fits your case I will say so and show you what it involves — but you will not be asked to decide anything on the call.",
+    a: "No. You get the reading of your report either way. If a full programme really suits your case I will say so and show you what it looks like — but you will not be asked to decide anything on the call.",
   },
   {
     q: "I am already on thyroid medication. Does that change it?",
-    a: "No. Most people I see are. Bring your dose and how long you have been on it — both change how the numbers should be read.",
+    a: "No. Most women I see are on it. Just bring your dose and how long you have been taking it — both change how the numbers should be read.",
   },
   {
     q: "Who is actually on the call?",
-    a: "Me, not an assistant or a sales team. Forty-five minutes, one to one.",
+    a: "Me. Not an assistant, not a sales team. Forty-five minutes, one to one.",
   },
 ];
 
@@ -110,37 +110,37 @@ export default function DecodePage() {
               border: "1px solid var(--p-border)",
             }}
           >
-            Thyroid report decoding &middot; &#8377;299
+            Small plate. Same weight.
           </p>
 
           <h1
             className="mx-auto max-w-[760px] text-balance text-[length:var(--text-xl)] font-bold leading-[1.12] text-[var(--t1)]"
             style={{ fontFamily: "var(--font-display), Georgia, serif" }}
           >
-            You are eating less than everyone around you.
+            You eat less than everyone at your table.
             <span className="block" style={{ color: "var(--p600)" }}>
-              And the scale has not moved in months.
+              The scale still shows the same number.
             </span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-[620px] text-[16px] leading-[1.62] text-[var(--t2)] md:text-[17.5px]">
-            That is not willpower failing. When intake stays low for long
-            enough, an underactive thyroid brings your burn down to meet it
-            &mdash; and the blood work you already have will usually show where
-            that happened. Most reports simply never get read that way.
+            This is not about willpower. When you eat less for a long time, a
+            slow thyroid makes your body burn less too. So the gap you made
+            closes. Your blood report usually shows when this happened
+            &mdash; but almost nobody reads it that way.
           </p>
 
           <div className="mt-8 flex flex-col items-center">
             <a
-              href="#book"
+              href="#quiz"
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Get my report decoded &mdash; &#8377;299
-              <span className="cta-sub">45 minutes, one to one</span>
+              Find out why &mdash; 9 quick questions
+              <span className="cta-sub">Free. Takes about 40 seconds.</span>
             </a>
             <p className="mt-3 text-[13px] text-[var(--t3)]">
-              Bring your latest thyroid panel. That is the only thing you need.
+              No report yet? Answer anyway &mdash; I will tell you what to do next.
             </p>
           </div>
 
@@ -158,7 +158,7 @@ export default function DecodePage() {
       <section className="bg-[var(--bg-page)]" aria-labelledby="agenda-heading">
         <div className="mx-auto w-full max-w-[900px] px-4 py-10 md:px-6 md:py-14">
           <header className="mb-8 text-center">
-            <p className="section-label">No mystery about it</p>
+            <p className="section-label">No surprises</p>
             <h2 id="agenda-heading" className="section-title mx-auto text-balance">
               What happens in the 45 minutes
             </h2>
@@ -192,25 +192,17 @@ export default function DecodePage() {
             className="mx-auto mt-7 max-w-[680px] rounded-2xl px-5 py-4 text-center text-[14.5px] leading-[1.6] text-[var(--t2)]"
             style={{ background: "var(--p-tint)", border: "1px solid var(--p-border)" }}
           >
-            If a structured programme turns out to be the right next step for
-            your case, I will show you what it involves. You will not be asked
-            to decide on the call.
+            If a full programme turns out to be the right next step for you, I
+            will show you what it looks like. You will not be asked to decide
+            anything on the call.
           </p>
         </div>
       </section>
 
-      {/* ── Capture + Cashfree. Unchanged, already live-tested. ─────────── */}
-      <div id="book" style={{ scrollMarginTop: "16px" }}>
-        <ScheduleClient
-          wrapper="div"
-          eyebrow="Bring your latest thyroid panel"
-          heading="Book your report decoding"
-          subheading="45 minutes, one to one with Swapnil. Your own blood work, read line by line, and the point your burn stopped matching your effort."
-          ctaLabel={"Decode my report — ₹299"}
-          rationaleTitle="Why it costs ₹299"
-          rationaleBody="So the slot is held by someone who will turn up, and so I arrive having actually read your report rather than seeing it for the first time on the call. It is adjusted against your programme fee if you go on to work with me."
-        />
-      </div>
+      {/* Qualify, then sell. The quiz owns the checkout: it only shows the
+          Rs 299 form to someone who actually has a report to read, and hands
+          everyone else to the free call instead. */}
+      <DecodeQuiz />
 
       <VideoTestimonial />
       <CertificationsSection />
@@ -244,12 +236,12 @@ export default function DecodePage() {
 
           <div className="mt-9 text-center">
             <a
-              href="#book"
+              href="#quiz"
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Get my report decoded &mdash; &#8377;299
-              <span className="cta-sub">45 minutes, one to one</span>
+              Find out why &mdash; 9 quick questions
+              <span className="cta-sub">Free. Takes about 40 seconds.</span>
             </a>
           </div>
         </div>

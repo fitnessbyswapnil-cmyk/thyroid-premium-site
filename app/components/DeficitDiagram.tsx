@@ -37,19 +37,19 @@ const GAP =
 
 const STEPS = [
   {
-    when: "Month 0–2",
-    head: "You cut to 1,500. It works.",
-    body: "Three kilos come off. The deficit is real and the scale agrees with you. This part is not in your head.",
+    when: "First 2 months",
+    head: "You eat 1,500. It works.",
+    body: "Three kilos come off. This part is real. You are not imagining it, and you did nothing wrong.",
   },
   {
-    when: "Month 3–5",
-    head: "Your burn comes down to meet you.",
-    body: "Less fuel in, so less T4 is converted to active T3. Your body settles at a lower burn — and the gap you made closes on its own.",
+    when: "Month 3 to 5",
+    head: "Your body starts burning less.",
+    body: "Less food coming in, so your body makes less of the active thyroid hormone (T3). It slows the burn down to match. The gap you made closes by itself.",
   },
   {
-    when: "Month 6+",
-    head: "You cut again. Same ending.",
-    body: "Now it is 1,200 calories and the weight holds. Reverse T3 has climbed. And your TSH still comes back marked normal.",
+    when: "Month 6 and after",
+    head: "You eat even less. Same result.",
+    body: "Now you eat 1,200 and the weight still will not move. Your body has raised reverse T3, which blocks the active hormone. And your TSH report still says normal.",
   },
 ];
 
@@ -92,11 +92,11 @@ export default function DeficitDiagram() {
             id="deficit-heading"
             className="section-title mx-auto text-balance"
           >
-            Where your deficit went
+            Where did the gap go?
           </h2>
           <p className="mx-auto mt-3 max-w-[620px] text-[15px] leading-[1.6] text-[var(--t2)] md:text-[16px]">
-            You did create a deficit. Twice. It closed both times &mdash; and
-            not because you ate more.
+            You did make a gap between what you eat and what you burn. Twice.
+            Both times it closed on its own.
           </p>
         </header>
 
@@ -112,7 +112,7 @@ export default function DeficitDiagram() {
               viewBox="0 0 720 340"
               className={`block h-auto w-full min-w-[520px] dd${on ? " dd-on" : ""}`}
               role="img"
-              aria-label="A chart over nine months. Calories eaten step down twice, from 1,800 to 1,500 to 1,200. Calories burned start at 1,900 and fall to meet each new intake, so the gap between them opens at each cut and then closes again."
+              aria-label="A chart over nine months. The food you eat drops twice, from 1,800 calories to 1,500 to 1,200. What your body burns starts at 1,900 and falls each time to meet the new amount, so the gap opens when you cut and then closes again."
             >
               {/* grid */}
               {[44, 101, 158, 215, 272].map((y) => (
@@ -173,7 +173,7 @@ export default function DeficitDiagram() {
                     fontSize="11.5"
                     fill="var(--t3)"
                   >
-                    you cut again
+                    you eat less again
                   </text>
                 </g>
               ))}
@@ -269,10 +269,10 @@ export default function DeficitDiagram() {
               {/* Punchline, parked in the one large empty region of the plot. */}
               <g className="dd-note">
                 <text x="600" y="86" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--t1)">
-                  Same deficit.
+                  Same gap as before.
                 </text>
                 <text x="600" y="105" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--p600)">
-                  600 kcal less food.
+                  600 calories less food.
                 </text>
               </g>
 
@@ -284,12 +284,13 @@ export default function DeficitDiagram() {
               does not swipe still gets the whole argument from the three cards
               below, which is why they are worded to stand alone. */}
           <p className="mt-2 text-center text-[12px] text-[var(--t3)] md:hidden">
-            Swipe the chart sideways &rarr;
+            Swipe the chart to see it all &rarr;
           </p>
 
           <figcaption className="mt-3 text-center text-[12.5px] leading-[1.5] text-[var(--t5)]">
-            Illustrative of a documented pattern under sustained restriction.
-            Not a reading of any individual&rsquo;s report, and not a diagnosis.
+            This shows a known pattern that happens when you eat less for a
+            long time. It is not a reading of anyone&rsquo;s report, and it is
+            not a diagnosis.
           </figcaption>
         </figure>
 
@@ -318,10 +319,10 @@ export default function DeficitDiagram() {
         </ol>
 
         <p className="mx-auto mt-8 max-w-[660px] text-center text-[17px] font-semibold leading-[1.5] text-[var(--t1)] md:text-[19px]">
-          Every one of those steps leaves a mark on a blood test.
+          Every one of these steps leaves a mark on a blood test.
           <span className="block text-[var(--t2)] font-normal mt-1 text-[15px] md:text-[16px]">
-            That is the whole reason this session exists &mdash; to find which
-            of them already happened to you.
+            That is what this session is for &mdash; to find which ones have
+            already happened to you.
           </span>
         </p>
       </div>

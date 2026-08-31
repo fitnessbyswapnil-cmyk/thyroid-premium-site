@@ -56,6 +56,18 @@ export type ScheduleClientProps = {
   rationaleTitle?: string;
   rationaleBody?: React.ReactNode;
   wrapper?: "main" | "div";
+  /**
+   * Answers already collected upstream (the /decode quiz). Merged into the
+   * /api/quiz-lead post so they land in the SAME sheet columns the quiz funnel
+   * has always written, rather than needing a second lead record or a schema
+   * change. Fields not supplied keep posting "" so the mapping cannot shift.
+   */
+  extraAnswers?: Partial<Record<
+    | "age" | "diagnosis" | "onMedication" | "struggleDuration" | "symptoms"
+    | "biggestChallenge" | "triedBefore" | "amountSpent" | "goal"
+    | "commitment" | "timing" | "budget" | "decisionMaker" | "city",
+    string
+  >>;
 };
 
 export default function ScheduleClient({
@@ -66,6 +78,7 @@ export default function ScheduleClient({
   rationaleTitle = `Why this session costs ₹${SESSION_PRICE}`,
   rationaleBody = "So the woman in that slot actually turns up, and so I arrive having read your answers properly. It is adjusted against your plan if you decide to work with me.",
   wrapper = "main",
+  extraAnswers,
 }: ScheduleClientProps = {}) {
   const Wrapper = wrapper;
   const [f, setF] = useState<Form>({ name: "", phone: "", thyroid: "" });
@@ -176,7 +189,8 @@ export default function ScheduleClient({
         goal: "",
         commitment: "",
         timing: "",
-        source: "schedule_page",
+        ...(extraAnswers ?? {}),
+        source: extraAnswers ? "decode_quiz" : "schedule_page",
         utm_source: utms.utm_source,
         utm_medium: utms.utm_medium,
         utm_campaign: utms.utm_campaign,
