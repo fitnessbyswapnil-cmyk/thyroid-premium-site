@@ -29,7 +29,7 @@ import { readCalls, writeCall, type CallRow, type CallFields } from "@/lib/crm-c
 import { deriveStage, nextAction, agreedButUnpaid, type Stage, type CallFacts } from "@/lib/crm-stage";
 import { milestonesFor, missingCount, withinDays, type Milestone, type MsEvent } from "@/lib/crm-milestones";
 import { readMessages } from "@/lib/wa-messages";
-import { isOwnerTest } from "@/lib/owner-filter";
+import { isOwnerTest, canonicalEmail } from "@/lib/owner-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +76,10 @@ function parseLeads(values: string[][]): SheetLead[] {
   };
 
   const out: SheetLead[] = [];
+  // One woman who filled the form three times is one lead, not three. Later rows
+  // win, because the sheet is append-ordered and the newest submission carries
+  // the freshest phone number and payment state.
+  const byEmail = new Map<string, number>();
   for (let r = 1; r < values.length; r++) {
     const row = values[r] ?? [];
     const get = (i: number) => (i >= 0 ? String(row[i] ?? "").trim() : "");
@@ -83,7 +87,10 @@ function parseLeads(values: string[][]): SheetLead[] {
     if (!email) continue;
     // Same rule as the bookings: his own test submissions are not prospects.
     if (isOwnerTest({ name: get(idx.name), email })) continue;
-    out.push({
+
+    const canon = canonicalEmail(email);
+    const seenAt = byEmail.get(canon);
+    const lead = {
       row: r + 1,
       name: get(idx.name),
       email,
@@ -92,7 +99,15 @@ function parseLeads(values: string[][]): SheetLead[] {
       paid: isY(get(idx.paid)) || (num(get(idx.paidAmount)) ?? 0) > 0,
       paidAmount: num(get(idx.paidAmount)),
       timestamp: get(idx.ts),
-    });
+    };
+    if (seenAt === undefined) {
+      byEmail.set(canon, out.length);
+      out.push(lead);
+    } else {
+      // Keep whichever row actually paid — a later blank must never erase it.
+      const prev = out[seenAt];
+      out[seenAt] = prev.paid && !lead.paid ? { ...lead, paid: prev.paid, paidAmount: prev.paidAmount } : lead;
+    }
   }
   return out;
 }

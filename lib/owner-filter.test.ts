@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isOwnerTest, partitionOwnerTests } from "./owner-filter.ts";
+import { isOwnerTest, partitionOwnerTests, canonicalEmail } from "./owner-filter.ts";
 
 const OWNERS = ["swapnilumbarkar50@gmail.com", "fitnessbyswapnil@gmail.com", "support@swapnilumbarkarfitness.in"];
 
@@ -28,6 +28,19 @@ test("real clients are never removed", () => {
     { name: "Heena Shah", email: "heena.shah293@gmail.com" },
   ];
   for (const c of clients) assert.equal(isOwnerTest(c, OWNERS), false, c.name);
+});
+
+test("gmail plus-addressing and dots are the same inbox", () => {
+  // The live pipeline had fitnessbyswapnil+test01@gmail.com sitting in it as two
+  // separate leads, because an exact-match check does not know about aliases.
+  assert.equal(isOwnerTest({ name: "Test Lead One", email: "fitnessbyswapnil+test01@gmail.com" }, OWNERS), true);
+  assert.equal(isOwnerTest({ name: "", email: "fitness.by.swapnil@gmail.com" }, OWNERS), true);
+
+  assert.equal(canonicalEmail("A.B+tag@Gmail.com"), "ab@gmail.com");
+  // Dots are significant outside Gmail and must be preserved.
+  assert.equal(canonicalEmail("a.b+tag@company.co.in"), "a.b@company.co.in");
+  assert.equal(canonicalEmail("plain@example.com"), "plain@example.com");
+  assert.equal(canonicalEmail(""), "");
 });
 
 test("a name that merely contains the letters is not a match", () => {

@@ -31,6 +31,27 @@ const BUILT_IN_OWNER_EMAILS = [
 /** Name fragments that mean "this is him". */
 const OWNER_NAME = /\bswapnil\b/i;
 
+/**
+ * Canonical form of an address, for comparison only.
+ *
+ * Gmail treats `name+anything@gmail.com` and `n.a.m.e@gmail.com` as the same
+ * inbox, and his test leads use exactly that: fitnessbyswapnil+test01@gmail.com
+ * slipped past an exact-match check and sat in the pipeline as two live leads.
+ * Plus-addressing is stripped on every provider (it is near-universal); dots are
+ * stripped for Gmail only, because elsewhere they are significant.
+ */
+export function canonicalEmail(raw: string): string {
+  const e = (raw ?? "").trim().toLowerCase();
+  const at = e.lastIndexOf("@");
+  if (at < 1) return e;
+  let local = e.slice(0, at);
+  const domain = e.slice(at + 1);
+  const plus = local.indexOf("+");
+  if (plus > 0) local = local.slice(0, plus);
+  if (domain === "gmail.com" || domain === "googlemail.com") local = local.replace(/\./g, "");
+  return `${local}@${domain}`;
+}
+
 function configuredEmails(): string[] {
   const extra = (process.env.OWNER_TEST_EMAILS ?? "")
     .split(",")
@@ -44,8 +65,8 @@ export function isOwnerTest(
   /** Injected so the rule stays pure and testable. */
   ownerEmails: string[] = configuredEmails(),
 ): boolean {
-  const email = (who.email ?? "").trim().toLowerCase();
-  if (email && ownerEmails.some((o) => email === o)) return true;
+  const email = canonicalEmail(who.email ?? "");
+  if (email && ownerEmails.some((o) => canonicalEmail(o) === email)) return true;
 
   // Any address on his own domain is his, whatever the local part.
   if (/@swapnilumbarkarfitness\.in$/i.test(email)) return true;
