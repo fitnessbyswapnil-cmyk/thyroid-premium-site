@@ -17,7 +17,46 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean };
+type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean;
+  // /api/admin/messages has always returned these; the type simply never
+  // declared them, so a client's report showed here as the bare text
+  // "[report.pdf]" with no way to open it.
+  mediaId?: string; mediaType?: string; mediaMime?: string; mediaName?: string };
+/**
+ * One WhatsApp attachment. The admin key rides in the URL rather than a header
+ * because <img> and target=_blank cannot set one; /api/admin/media accepts ?k=
+ * for exactly this reason and never exposes the WhatsApp token to the browser.
+ */
+function Attachment({ m, apiKey }: { m: WaMsg; apiKey: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!m.mediaId) return null;
+  const src = `/api/admin/media?id=${encodeURIComponent(m.mediaId)}&k=${encodeURIComponent(apiKey)}`;
+
+  if (failed) {
+    return <div style={{ fontSize: 11, color: WARN }}>Attachment unavailable — WhatsApp deletes media after about 30 days.</div>;
+  }
+  if (m.mediaType === "image" || m.mediaType === "sticker") {
+    return (
+      <a href={src} target="_blank" rel="noopener noreferrer">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={m.mediaName || "attachment"} onError={() => setFailed(true)}
+          style={{ maxWidth: "100%", borderRadius: 9, display: "block", marginBottom: 5 }} />
+      </a>
+    );
+  }
+  if (m.mediaType === "audio") return <audio controls src={src} style={{ width: "100%", marginBottom: 5 }} />;
+  if (m.mediaType === "video") return <video controls src={src} style={{ maxWidth: "100%", borderRadius: 9, marginBottom: 5 }} />;
+  return (
+    <a href={src} target="_blank" rel="noopener noreferrer"
+      style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", marginBottom: 5,
+        background: "rgba(255,255,255,0.06)", borderRadius: 9, color: INK1, textDecoration: "none",
+        fontSize: 12, fontWeight: 600 }}>
+      <span style={{ fontSize: 15 }}>📄</span>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.mediaName || "Open document"}</span>
+    </a>
+  );
+}
+
 type Thread = { phone: string; name: string; messages: WaMsg[]; lastTs: string; unread: number; windowMinutesLeft: number };
 type WaStatus = {
   sending: "ok" | "not_configured";
@@ -1953,6 +1992,7 @@ export default function AnalyticsDashboard() {
                                 border: `1px solid ${m.direction === "out" ? "rgba(168,85,247,0.32)" : GRID}`,
                                 borderRadius: 12, padding: "8px 11px", fontSize: 12.5, color: INK1, whiteSpace: "pre-wrap", wordBreak: "break-word",
                               }}>
+                                {m.mediaId && key ? <Attachment m={m} apiKey={key} /> : null}
                                 {m.text}
                               </div>
                               <p style={{ fontSize: 9.5, color: MUTED, marginTop: 3, textAlign: m.direction === "out" ? "right" : "left" }}>
