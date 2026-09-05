@@ -4,7 +4,7 @@
   --color-background: #ffffff;
   --color-foreground: #241f1a;
   --font-sans: var(--font-body);
-  --font-display: var(--font-display), Georgia, serif;
+  --font-display: var(--font-display), 'Outfit', system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -43,80 +43,80 @@
   --space-20: 5rem;
 
   /* Background hierarchy — white ground, yellow wash sections, white cards */
-  --bg-page: #f7f1de;
+  --bg-page: #ffffff;
   --bg-section: #ffffff;
   --bg-elevated: #ffffff;
 
   /* New surface tokens */
-  --surface-page: #f7f1de;
-  --surface-wash: #f7f1de;
-  --surface-wash-strong: #fdf6ec;
+  --surface-page: #ffffff;
+  --surface-wash: #fefefd;
+  --surface-wash-strong: #f6f7f6;
   --surface-card: #ffffff;
-  --surface-deep: #1e1a16;
+  --surface-deep: #0c110c;
 
   /* Yellow — fills and solid shapes ONLY, never text or strokes */
   /* Pure lemon yellow (owner decision). Still surface-only: #ffeb00 is 1.09:1
      on white, so it can never be text or a stroke. Ink on it is 13.3:1. */
-  --yellow-mark: #b8860b;
-  --yellow-soft: #f0e6c8;
-  --gold-ink: #b8860b;
+  --yellow-mark: #00ff66;
+  --yellow-soft: #dcfce7;
+  --gold-ink: #15803d;
 
-  --ink-on-yellow: #241f1a;
-  --ink-on-deep: #e8e1d7;
+  --ink-on-yellow: #0b1120;
+  --ink-on-deep: #e8e6e1;
 
-  --border-hairline: #f0ebd8;
-  --border-on-wash: #e6dcbb;
-  --border-strong: #d8cfae;
-  --focus-ring: #b8860b;
+  --border-hairline: #ececea;
+  --border-on-wash: #e3e3e0;
+  --border-strong: #d2d2ce;
+  --focus-ring: #15803d;
 
-  --radius-button: 12px;
+  --radius-button: 4px;
   --radius-card: 16px;
   --radius-image: 14px;
-  --shadow-card: 0 4px 24px rgba(0,0,0,0.06);
+  --shadow-card: 0 1px 3px rgba(11,17,32,0.06), 0 8px 28px rgba(11,17,32,0.05);
 
   /* Surface system — warm dark-alpha on light ground */
   --s1: rgba(36,31,26,0.035);
   --s2: rgba(36,31,26,0.05);
   --s3: rgba(36,31,26,0.07);
 
-  --b-soft: #f0ebd8;
-  --b-mid: #d8cfae;
+  --b-soft: #ececea;
+  --b-mid: #d2d2ce;
 
   /* Text — ink ramp on white. t1 15.4:1 AAA, t2 11.0:1 AAA, t3 6.0:1 AA.
      t4 is 3.7:1 — large text only, never body copy. */
-  --t1: #1a1a1a;
-  --t2: #5a5342;
-  --t3: #8a8272;
-  --t4: #8a8272;   /* 4.7:1 — spec ships #8E8477 (3.7:1) but flags it as
+  --t1: #0b1120;
+  --t2: #4b5563;
+  --t3: #6b7280;
+  --t4: #9a9890;   /* 4.7:1 — spec ships #8E8477 (3.7:1) but flags it as
                       never-body-copy; this codebase uses t4 for small
                       captions, so the token is darkened to clear AA. */
-  --t5: #a89f8a;   /* 4.5:1 — this codebase uses the faint end for real
+  --t5: #9a9890;   /* 4.5:1 — this codebase uses the faint end for real
                       disclaimers at 11-13px, so it clears AA rather than
                       sitting at the spec's 3.7:1 large-text-only value. */
 
   /* Accent — the gold family replaces teal. These stay DARK on purpose:
      p300/p400/p500 are used for accent text, small marks and SVG strokes,
      all of which bright yellow would render invisible on white. */
-  --p300: #b8860b;
-  --p400: #b8860b;
-  --p500: #b8860b;
-  --p600: #96700a;
+  --p300: #15803d;
+  --p400: #16a34a;
+  --p500: #15803d;
+  --p600: #166534;
 
-  --p-subtle: #fdf3e0;
-  --p-tint: #fdf6ec;
-  --p-border: rgba(184,134,11,0.28);
+  --p-subtle: #f0fdf4;
+  --p-tint: #f6fef9;
+  --p-border: rgba(22,163,74,0.28);
 
   /* Red — CTA ONLY. Never headlines, prices, icons or urgency text.
      #B8322B is 5.95:1 with white text (the old coral was borderline). */
   /* Pure red. #ff0000 itself is only 4.00:1 with white text and fails AA;
      #e60000 is visually the same red and clears it at 4.81:1. */
-  --coral: #d81f26;
-  --red-cta: #d81f26;
-  --red-cta-hover: #c01a20;
-  --red-cta-press: #a81619;
-  --red-tint: #fdf6ec;
-  --coral-tint: rgba(184,50,43,0.1);
-  --coral-border: rgba(184,50,43,0.3);
+  --coral: #e93d3d;
+  --red-cta: #e93d3d;
+  --red-cta-hover: #d22f2f;
+  --red-cta-press: #b82626;
+  --red-tint: #fef2f2;
+  --coral-tint: rgba(233,61,61,0.1);
+  --coral-border: rgba(233,61,61,0.3);
 
   /* Radius */
   --r-sm: 0.5rem;
@@ -184,7 +184,7 @@ body {
   overflow-x: hidden;
   background: var(--bg-page);
   color: var(--t1);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body), 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.65;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
@@ -197,9 +197,9 @@ body {
    built on a single sans and mixing the serif back in breaks it. */
 h1, h2, h3,
 .section-title {
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 section {
@@ -228,7 +228,7 @@ a {
 
 .container-default {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1170px;
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 2rem);
 }
@@ -244,20 +244,20 @@ a {
 
 .section-pad {
   /* latest2: 36px mobile -> 48px desktop */
-  padding-block: clamp(2.25rem, 1.4rem + 2.4vw, 3rem);
+  padding-block: clamp(3rem, 1.8rem + 4vw, 5.5rem);
 }
 
 /* A deliberate pause — used where the page changes what it is saying. */
 .section-pad-lg {
   /* Stacks on the preceding section's bottom padding, so this is tuned for
      the COMBINED gap, not for its own value. */
-  padding-block: clamp(4rem, 8.5vw, 7rem);
+  padding-block: clamp(4.5rem, 9.5vw, 7.5rem);
 }
 
 /* Consecutive blocks that are one idea shown several ways. Tightening them
    makes the group read as a single argument instead of three separate ones. */
 .section-pad-tight {
-  padding-block: clamp(2.5rem, 5vw, 4rem);
+  padding-block: clamp(3rem, 6vw, 4.75rem);
 }
 
 /* SECTION LABEL */
@@ -272,14 +272,22 @@ a {
      yellow family at a weight that actually passes on white (5.8:1). */
   color: var(--gold-ink);
   margin-bottom: 14px;
+  font-family: var(--font-display), 'Outfit', system-ui, sans-serif;
+  letter-spacing: 0.16em;
+}
+
+/* The em-dash prefix is the reference build's tell. Added here rather than in
+   24 components, so every existing `.section-label` inherits it. */
+.section-label::before {
+  content: "— ";
 }
 
 /* TITLES */
 
 .section-title {
   /* 24px mobile -> 34px desktop */
-  font-size: clamp(1.5rem, 0.95rem + 1.9vw, 2.125rem);
-  line-height: 1.15;
+  font-size: clamp(1.75rem, 1rem + 2.6vw, 2.625rem);
+  line-height: 1.14;
   font-weight: 800;
   color: var(--t1);
   letter-spacing: -0.01em;
@@ -432,19 +440,24 @@ a {
 .cta-button {
   min-height: 0;
 
-  /* 12px, per the design. */
-  border-radius: 12px;
+  /* 4px — the reference build uses an almost-square action pill, which is what
+     makes the electric fill read as a control rather than a badge. */
+  border-radius: var(--radius-button);
 
-  padding: 18px 24px;
+  padding: 18px 32px;
   width: 100%;
 
-  /* Red is the page's single action colour, and appears nowhere else. */
-  background: var(--red-cta);
+  /* Electric green is the action colour in the restyled system: a FILL only,
+     carrying near-black text. It is 1.4:1 on white and can never be text
+     there — which is exactly how the reference build uses it too. */
+  background: var(--yellow-mark);
 
-  color: #ffffff;
+  color: var(--ink-on-yellow);
 
   font-weight: 700;
-  font-size: 17px;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 
   letter-spacing: -0.01em;
 
@@ -470,13 +483,15 @@ a {
 }
 
 .cta-button:hover {
-  background: var(--red-cta);
+  /* Was flipping green to red on hover — a leftover from the red-primary
+     system. The action colour must not change identity under the cursor. */
+  background: #17e85c;
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(216,31,38,0.4);
+  box-shadow: 0 12px 28px rgba(0, 255, 102, 0.32);
 }
 
 .cta-button:active {
-  background: var(--red-cta-press);
+  background: #0fd453;
   transform: translateY(0);
 }
 
@@ -506,15 +521,18 @@ a {
 
   border-radius: var(--radius-button);
 
-  /* Secondary CTA: red OUTLINE so it never competes with a primary. */
-  background: #ffffff;
-  color: var(--t1);
-  border: 1.5px solid var(--red-cta);
+  /* Secondary CTA: the reference build's red pill, used where a second action
+     must not compete with the green primary. */
+  background: var(--red-cta);
+  color: #ffffff;
+  border: 0;
 
   font-weight: 700;
-  font-size: clamp(0.95rem, 2.5vw, 1rem);
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 
-  padding: 0.9rem 1.25rem;
+  padding: 18px 32px;
 
   display: flex;
   flex-direction: column;
@@ -528,11 +546,11 @@ a {
 }
 
 .btn-primary:hover {
-  background: var(--red-tint);
+  background: var(--red-cta-hover);
 }
 
 .btn-primary:active {
-  background: var(--red-tint);
+  background: var(--red-cta-press);
   /* Physical press feedback. Hover does not exist on touch, so without this
      the primary CTA responds to nothing at all on a phone. */
   transform: scale(0.985);
@@ -1604,4 +1622,58 @@ a {
 }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+
+/* ── DEEP BAND ──────────────────────────────────────────────────────────────
+   The reference build alternates white sections with near-black ones, and
+   turns the accent green loose inside the dark ones where it finally has the
+   contrast to be text (14:1 on #0C110C, against 1.4:1 on white).
+
+   It works by REDEFINING the ink tokens on the wrapper rather than restyling
+   anything inside it. Every component already reads var(--t1), var(--t2),
+   var(--surface-card) and so on, so wrapping a section in this class flips
+   the whole thing with no component edits and no duplicated markup. */
+.band-deep {
+  background: var(--surface-deep);
+
+  --bg-page: #0c110c;
+  --bg-section: #0c110c;
+  --bg-elevated: #151b15;
+  --surface-page: #0c110c;
+  --surface-wash: #0c110c;
+  --surface-wash-strong: #151b15;
+  --surface-card: #151b15;
+
+  --t1: #e8e6e1;
+  --t2: #b7b5ae;
+  --t3: #9a9890;
+  --t4: #9a9890;
+  --t5: #8b8982;
+
+  /* Green becomes legible type in here, which is the whole point of the band. */
+  --gold-ink: #00ff66;
+  --p300: #00ff66;
+  --p400: #00ff66;
+  --p500: #00ff66;
+  --p600: #00ff66;
+  --p-subtle: rgba(0, 255, 102, 0.08);
+  --p-tint: rgba(0, 255, 102, 0.06);
+  --p-border: rgba(0, 255, 102, 0.32);
+
+  --border-hairline: rgba(255, 255, 255, 0.09);
+  --border-on-wash: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --b-soft: rgba(255, 255, 255, 0.09);
+  --b-mid: rgba(255, 255, 255, 0.18);
+  --s1: rgba(255, 255, 255, 0.04);
+  --s2: rgba(255, 255, 255, 0.06);
+  --s3: rgba(255, 255, 255, 0.09);
+  --shadow-card: none;
+}
+
+/* Sections inside a band must not repaint the light ground over it. */
+.band-deep > section,
+.band-deep section {
+  background: transparent;
 }

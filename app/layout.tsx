@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, Lora, Source_Sans_3 } from "next/font/google";
+import { Caveat, Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { ScarcityProvider } from "./context/ScarcityProvider";
 import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
@@ -7,24 +7,26 @@ import { RouteTracker } from "./components/tracking/RouteTracker";
 import { UserIdentityTracker } from "./components/tracking/UserIdentityTracker";
 // InputCookieCapture removed — lead data goes to Make webhook in BookingFlow.tsx
 
-// Lora replaces Fraunces: the display-cut Fraunces read as fashion-Didot
-// (hairline strokes vanish on a 40-year-old's phone). Lora is the warm,
-// moderate-contrast serif of premium wellness editorial — same authority,
-// double the legibility. Italic loads for the hero accent phrase.
-const lora = Lora({
-    subsets: ["latin"],
-    display: "swap",
-    variable: "--font-display",
-    style: ["normal", "italic"],
-});
-
-// Source Sans 3 replaces Inter for body: open apertures + tall x-height,
-// one of the most legible humanist sans faces for aging eyes, and warmer
-// than Inter's neutral-tech voice.
-const sourceSans = Source_Sans_3({
+// Inter + Outfit, matching the reference direct-response build the owner asked
+// this page to be restyled after. Inter carries every headline and all body
+// copy at 400/600/700/800/900; Outfit sets only the small tracked eyebrow
+// labels, where its wider forms hold up at 12px with 2px of letter-spacing.
+//
+// This replaces the previous Lora + Source Sans 3 pairing. The variable NAMES
+// are kept (--font-display / --font-body) so nothing downstream has to change:
+// every component reads the variable, not the family.
+const inter = Inter({
     subsets: ["latin"],
     display: "swap",
     variable: "--font-body",
+    weight: ["400", "600", "700", "800", "900"],
+});
+
+const outfit = Outfit({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-display",
+    weight: ["600", "700"],
 });
 
 // Handwritten annotation font (hero "Watch 45 Sec Video" note only).
@@ -71,7 +73,7 @@ export default function RootLayout({
     return (
           <html
                   lang="en"
-                  className={`${lora.variable} ${sourceSans.variable} ${caveat.variable} h-full antialiased`}
+                  className={`${outfit.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
                 >
                 <head>
                         <GTMScript />

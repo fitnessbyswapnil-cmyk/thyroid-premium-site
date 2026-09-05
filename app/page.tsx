@@ -51,10 +51,14 @@ export default function Home() {
       <SymptomChips />             {/* interactive: she describes herself before anyone sells to her */}
       <AbsolveBlock />             {/* lifts self-blame before the first real ask */}
       <CallAgenda />               {/* minute-by-minute + "is this a sales call?" */}
-      <TransformationWall />       {/* photo wall + verified story lines */}
+      <div className="band-deep">
+        <TransformationWall />
+      </div>       {/* photo wall + verified story lines */}
       <VideoTestimonial />         {/* video proof */}
       <WhatsappProofSection />     {/* WhatsApp proof + the stack CTA */}
-      <PillarsSection />           {/* the method: reassurance AFTER she has identified */}
+      <div className="band-deep">
+        <PillarsSection />
+      </div>           {/* the method: reassurance AFTER she has identified */}
       <CertificationsSection />    {/* supports the decision, does not cause it */}
       {/* SocialProof (named written testimonials) removed: the page already
           carries transformation photos, video testimonials and WhatsApp
