@@ -28,6 +28,11 @@ const WALL = [
   {
     src: "/transformations/Vaidehi 1.png",
     name: "Vaidehi",
+    // `tag` and `kg` are transcribed from the same composites and captions the
+    // rest of this file already uses. Nothing here is new information — the
+    // card anatomy changed, the facts did not.
+    tag: "72 kg → 60 kg",
+    kg: "12 kg",
     stat: "−12 kg · 90 days",
     story: "Balanced her thyroid naturally. Down from 72 kg to 60 kg.",
     quote: "",
@@ -36,6 +41,8 @@ const WALL = [
   {
     src: "/transformations/Surekha 3.png",
     name: "Surekha",
+    tag: "Bloating & fatigue",
+    kg: "12 kg",
     stat: "−12 kg · 90 days",
     story: "Bloating and afternoon fatigue, gone.",
     quote: "",
@@ -44,6 +51,8 @@ const WALL = [
   {
     src: "/transformations/Namrata 5.png",
     name: "Namrata",
+    tag: "Constant tiredness",
+    kg: "16 kg",
     stat: "−16 kg · 90 days",
     story: "16 kg down, and the all-day tiredness went with it.",
     quote: "",
@@ -52,6 +61,8 @@ const WALL = [
   {
     src: "/transformations/Heenal 7.png",
     name: "Heenal",
+    tag: "IT professional · Bengaluru",
+    kg: "15 kg",
     stat: "−15 kg · 90 days",
     story: "IT professional, Bengaluru. Her blocker was in Pillar 1. The root, not her diet.",
     quote: "",
@@ -66,46 +77,37 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
   return (
     <figure
       ref={ref}
-      className="wall-cell"
+      className="proof-card"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(14px)",
         transition: `opacity 0.55s var(--ease) ${index * 60}ms, transform 0.55s var(--ease) ${index * 60}ms`,
       }}
     >
-      <div className="relative aspect-[9/16] overflow-hidden rounded-[var(--r-lg)] border border-[var(--b-soft)] bg-[var(--bg-elevated)]">
+      <figcaption className="px-5 pt-6 text-center sm:px-6">
+        <span className="proof-tag">{entry.tag}</span>
+        <h3 className="mx-auto mt-4 max-w-[20ch] text-[19px] font-bold leading-[1.28] text-[var(--t1)] sm:text-[21px]">
+          Lost {entry.kg} in 90 days
+          <span className="block">
+            despite <span className="proof-cond">hypothyroidism</span>
+          </span>
+        </h3>
+        <p className="mx-auto mt-3 max-w-[30ch] text-[13.5px] leading-[1.55] text-[var(--t2)]">
+          {entry.name} &mdash; {entry.story}
+        </p>
+      </figcaption>
+
+      {/* The composites already carry their own Before/After labels burned in,
+          so no label chips are drawn over them — two sets would collide. */}
+      <div className="relative mt-5 aspect-[9/16] overflow-hidden">
         <Image
           src={entry.src}
           alt={entry.alt}
           fill
-          sizes="(max-width:640px) 78vw, (max-width:1024px) 46vw, 340px"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover"
-          loading="lazy"
-          fetchPriority={index < 2 ? "high" : "auto"}
         />
       </div>
-      {/* Caption anatomy: name + stat chip, then the story line — her
-          highlighted result in coral, her own words (where a real quote
-          exists) as a small teal serif quote. */}
-      <figcaption className="mt-2.5 px-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[length:var(--text-xs)] font-semibold text-[var(--t2)]">{entry.name}</span>
-          <span className="rounded-full border border-[var(--p-border)] bg-[var(--p-tint)] px-2.5 py-[3px] text-[length:var(--text-2xs)] font-bold tracking-[0.04em] text-[var(--p300)]">
-            {entry.stat}
-          </span>
-        </div>
-        <p className="mt-1.5 text-[length:var(--text-xs)] font-semibold leading-[1.5] text-[var(--t2)]">
-          {entry.story}
-        </p>
-        {entry.quote ? (
-          <p
-            className="mt-1 text-[length:var(--text-xs)] italic leading-[1.55] text-[var(--p300)]"
-            style={{ fontFamily: "var(--font-display), Georgia, serif" }}
-          >
-            &ldquo;{entry.quote}&rdquo;
-          </p>
-        ) : null}
-      </figcaption>
     </figure>
   );
 }
@@ -124,13 +126,14 @@ export default function TransformationWall() {
         {/* Direct claim as the title; every number is verified by the
             composites below it. */}
         <header className="section-header">
-          <p className="section-label">Real Clients · Real Results</p>
+          <p className="section-label">The Proof</p>
           <h2
             id="transformations-heading"
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "22ch" }}
           >
-            Real women. 12&ndash;16 kg down in 90 days.
+            Real women. Real reports.{" "}
+            <span className="hl">Real results.</span>
           </h2>
           <p className="mx-auto mt-3 max-w-[34ch] text-center text-[length:var(--text-sm)] leading-[1.6] text-[var(--t3)]">
             100+ Indian women with hypothyroidism coached, one to one.
@@ -146,7 +149,7 @@ export default function TransformationWall() {
             path. 2-up rather than 1-up on mobile because these are 9:16
             portraits — stacked full-width they would run ~2,700px and get
             abandoned, while 2x2 puts the whole wall on roughly one screen. */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:gap-7">
           {WALL.map((entry, i) => (
             <WallCell key={entry.src} entry={entry} index={i} />
           ))}

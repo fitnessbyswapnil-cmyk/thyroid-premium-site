@@ -1677,3 +1677,50 @@ a {
 .band-deep section {
   background: transparent;
 }
+
+
+/* ── PROOF CARD ─────────────────────────────────────────────────────────────
+   The reference build's result card: a hard-white panel sitting on the deep
+   band, so the before/after reads as a document rather than a slide.
+
+   It redefines the ink tokens back to their LIGHT values on itself — the exact
+   inverse of `.band-deep` — so the card's contents stay dark-on-white even
+   though everything around it has been flipped. Same one-wrapper technique,
+   no duplicated component. */
+.proof-card {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+
+  --t1: #0b1120;
+  --t2: #4b5563;
+  --t3: #6b7280;
+  --t5: #9a9890;
+  --surface-card: #ffffff;
+  --border-hairline: #ececea;
+  --b-soft: #ececea;
+  --gold-ink: #15803d;
+  --p500: #15803d;
+}
+
+/* The occupation/context pill. Amber on cream, as in the reference. */
+.proof-tag {
+  display: inline-block;
+  background: #fdf3d3;
+  border: 1px solid #f0d99a;
+  color: #6b4e0d;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* The condition phrase inside a result headline. Red carries "despite" — it
+   is the obstacle, not the outcome. */
+.proof-cond { color: var(--red-cta); }
+
+/* An accent phrase inside a headline. Resolves green on the deep band and the
+   AA-safe dark green on white, because both come from the same token. */
+.hl { color: var(--gold-ink); }

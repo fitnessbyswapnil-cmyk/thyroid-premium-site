@@ -443,7 +443,7 @@ export default function VideoTestimonial() {
         {/* ── Section header ── */}
         <div className="mb-12 text-center sm:mb-14">
           <Reveal as="p" className="section-label">
-            In Their Own Words
+            Don&rsquo;t take my word for it
           </Reveal>
           <Reveal
             as="h2"
@@ -452,7 +452,15 @@ export default function VideoTestimonial() {
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "22ch" }}
           >
-            Watch their progress, on camera.
+            When the method is right,{" "}
+            <span className="hl">the results speak.</span>
+          </Reveal>
+          <Reveal
+            as="p"
+            delay={0.2}
+            className="mx-auto mt-3 text-[13.5px] font-semibold tracking-[0.02em] text-[var(--t3)]"
+          >
+            &#127916; Video testimonials
           </Reveal>
         </div>
 

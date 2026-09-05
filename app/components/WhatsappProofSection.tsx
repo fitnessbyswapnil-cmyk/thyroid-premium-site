@@ -431,7 +431,7 @@ export default function WhatsappProofSection() {
         {/* ── Section header ──────────────────────────────────────────────── */}
         <div className="container-default mb-12 text-center">
           <Reveal as="p" className="section-label">
-            Unedited Screenshots
+            Unedited screenshots
           </Reveal>
           <Reveal
             as="h2"
@@ -440,7 +440,8 @@ export default function WhatsappProofSection() {
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "20ch" }}
           >
-            Straight from their WhatsApp.
+            Real feedback.{" "}
+            <span className="hl">Real results.</span>
           </Reveal>
         </div>
 
