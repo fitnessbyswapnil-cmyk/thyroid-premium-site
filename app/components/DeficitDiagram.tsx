@@ -278,6 +278,16 @@ export default function DeficitDiagram() {
 
             </svg>
           </div>
+          {/* Phones: the in-chart series tags collide with the lines once they are
+              enlarged, so the legend moves out of the SVG here. */}
+          <div className="mt-3 flex items-center justify-center gap-5 text-[13px] font-semibold sm:hidden" aria-hidden="true">
+            <span className="flex items-center gap-2" style={{ color: "var(--p600)" }}>
+              <span className="inline-block h-[3px] w-6 rounded" style={{ background: "var(--p500)" }} /> What you burn
+            </span>
+            <span className="flex items-center gap-2 text-[var(--t1)]">
+              <span className="inline-block h-[3px] w-6 rounded" style={{ background: "var(--t1)" }} /> What you eat
+            </span>
+          </div>
           <p className="mt-3 text-center text-[15px] font-semibold leading-[1.45] text-[var(--t1)] sm:hidden">
             Same gap as before. <span style={{ color: "var(--p600)" }}>600 calories less food.</span>
           </p>
@@ -341,9 +351,8 @@ export default function DeficitDiagram() {
            are enlarged so they survive the scale-down. The three cards below
            already carry the -400/-60/-330/-65 story in words. */
         @media (max-width: 639px) {
-          .dd .dd-cut, .dd .dd-measure, .dd .dd-note { display: none; }
+          .dd .dd-cut, .dd .dd-measure, .dd .dd-note, .dd .dd-tag { display: none; }
           .dd > text { font-size: 20px; }
-          .dd .dd-tag text { font-size: 24px; }
         }
         @media (prefers-reduced-motion: reduce) {
           .dd .dd-line { stroke-dashoffset: 0; }
