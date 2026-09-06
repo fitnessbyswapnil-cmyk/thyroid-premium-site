@@ -31,7 +31,10 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // payment made there never stamps Paid, never fires booking_confirmation,
 // and never fires Schedule — which is the event the live ad campaign is
 // currently optimising against.
-const IS_TEST_MODE = false;
+// 2026-09-07: flipped to TRUE at the owner's explicit request to test the new
+// /decode quiz -> pay -> book flow end to end. MUST be flipped back before any
+// ad is pointed at /decode: while true every real customer is charged Rs 1.
+const IS_TEST_MODE = true;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────

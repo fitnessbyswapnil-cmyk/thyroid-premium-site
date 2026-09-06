@@ -176,6 +176,10 @@ export default function DecodeQuiz() {
   const hasReport = a.report?.startsWith("Yes");
   const ms = done ? markers(a) : [];
   const hits = ms.filter((m) => m.hit).length;
+  // Out of 100, as asked. Seven equally-weighted markers; the list under the
+  // number shows exactly which taps produced it, so it never reads as a
+  // black box.
+  const score100 = Math.round((hits / 7) * 100);
   const lead = done ? scoreLead(toLeadAnswers(a)) : null;
 
   if (i === -1) {
@@ -210,8 +214,11 @@ export default function DecodeQuiz() {
           <div className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: "#00ff66" }}>
             Markers of a stalled thyroid metabolism
           </div>
-          <div className="mt-2 font-bold leading-none" style={{ fontSize: 56 }}>
-            {hits}<span className="text-[26px] font-semibold" style={{ color: "#9a9890" }}> of 7</span>
+          <div className="mt-2 font-bold leading-none" style={{ fontSize: 60 }}>
+            {score100}<span className="text-[26px] font-semibold" style={{ color: "#9a9890" }}> / 100</span>
+          </div>
+          <div className="mt-2 text-[13px]" style={{ color: "#9a9890" }}>
+            {hits} of 7 markers present
           </div>
           <ul className="mt-5 flex list-none flex-col gap-2 p-0 text-left">
             {ms.map((m) => (
@@ -226,14 +233,14 @@ export default function DecodeQuiz() {
         {hasReport ? (
           <>
             <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
-              {hits >= 4
+              {score100 >= 57
                 ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 45 minutes I read yours line by line and tell you <strong>which</strong> of these markers already happened, and <strong>when</strong>.</>
                 : <>Your report will show which of these are real and which are not. That is the whole job of the session &mdash; and if the answer is that you do not need me, you will hear that too.</>}
             </p>
             <div className="mt-8 text-left">
               <ScheduleClient
                 wrapper="div"
-                eyebrow={`Your score: ${hits} of 7`}
+                eyebrow={`Your score: ${score100} / 100`}
                 heading="Premium Thyroid Fat Loss Session"
                 subheading="45 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving."
                 ctaLabel={"Book my Premium Session — ₹299"}
@@ -254,7 +261,7 @@ export default function DecodeQuiz() {
                   decisionMaker: a.decision ?? "",
                   city: a.city ?? "",
                   // No Profession column in the sheet; it rides with the report answer.
-                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${hits}/7`,
+                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${score100}/100 (${hits}/7)`,
                   leadScore: lead?.score,
                   leadTier: lead?.tier,
                 }}
@@ -263,17 +270,45 @@ export default function DecodeQuiz() {
           </>
         ) : (
           <>
-            <h2 className="section-title mx-auto mt-7 text-balance">First, let&rsquo;s get your numbers</h2>
-            <p className="mx-auto mt-4 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
-              The Premium Session reads your blood report &mdash; and you do not have one yet. Paying ₹299 for it would be paying me to read a blank page, and I am not going to take that.
+            <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
+              You do not have a blood report yet &mdash; that is fine. In the Premium Session I tell you <strong>exactly which tests to get</strong> and why (the ones most labs leave out), and we work from your answers above until the report is in. Book it below, or take the free call first if you would rather.
             </p>
-            <p className="mx-auto mt-4 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
-              Do this instead. Book a <strong>free</strong>{" "}call. I will tell you exactly which tests to get and why &mdash; the ones most labs leave out. Get them done, and then we read them together.
+            <div className="mt-8 text-left">
+              <ScheduleClient
+                wrapper="div"
+                eyebrow={`Your score: ${score100} / 100`}
+                heading="Premium Thyroid Fat Loss Session"
+                subheading="45 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the exact plan to start on."
+                ctaLabel={"Book my Premium Session — ₹299"}
+                rationaleTitle="Why ₹299 and not free"
+                rationaleBody="So the slot is kept by someone who will come, and so I prepare from your answers before the call. If you join the programme later, this ₹299 is taken off the fee."
+                presetThyroid={a.diagnosis}
+                extraAnswers={{
+                  age: a.age ?? "",
+                  diagnosis: a.diagnosis ?? "",
+                  onMedication: a.diagnosis ?? "",
+                  struggleDuration: a.stuck ?? "",
+                  goal: a.goal ?? "",
+                  biggestChallenge: a.pattern ?? "",
+                  triedBefore: a.tried ?? "",
+                  amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
+                  budget: a.budget ?? "",
+                  timing: a.timing ?? "",
+                  decisionMaker: a.decision ?? "",
+                  city: a.city ?? "",
+                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${score100}/100 (${hits}/7)`,
+                  leadScore: lead?.score,
+                  leadTier: lead?.tier,
+                }}
+              />
+            </div>
+            <p className="mx-auto mt-6 max-w-[580px] text-[14.5px] leading-[1.6] text-[var(--t3)]">
+              Prefer to get tested first?{" "}
+              <a href="/book-session" className="underline text-[var(--t1)]" onClick={() => pushDL({ event: "decode_quiz_routed_free" })}>
+                Book a free call
+              </a>{" "}
+              and I will tell you what to test.
             </p>
-            <a href="/book-session" className="cta-button mx-auto mt-7" style={{ maxWidth: "24rem", textDecoration: "none" }} onClick={() => pushDL({ event: "decode_quiz_routed_free" })}>
-              Book my free call
-              <span className="cta-sub">No payment. I tell you what to test.</span>
-            </a>
           </>
         )}
       </Shell>

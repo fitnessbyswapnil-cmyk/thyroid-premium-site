@@ -320,11 +320,25 @@ export default function ScheduleClient({
 
           <div style={{ marginBottom: 18 }}>
             <label style={labelCss} htmlFor="sch-phone">WhatsApp number</label>
-            <input
-              id="sch-phone" style={{ ...field, borderColor: errs.phone ? CORAL : GRID }}
-              value={f.phone} onChange={(ev) => set("phone", ev.target.value)}
-              placeholder="10-digit mobile" inputMode="numeric" autoComplete="tel"
-            />
+            <div style={{ display: "flex", alignItems: "stretch" }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  ...field, width: "auto", flex: "0 0 auto", display: "flex", alignItems: "center",
+                  borderColor: errs.phone ? CORAL : GRID, borderRight: "none",
+                  borderTopRightRadius: 0, borderBottomRightRadius: 0,
+                  paddingRight: 10, color: INK2, userSelect: "none",
+                }}
+              >
+                +91
+              </span>
+              <input
+                id="sch-phone"
+                style={{ ...field, flex: 1, minWidth: 0, borderColor: errs.phone ? CORAL : GRID, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                value={f.phone} onChange={(ev) => set("phone", ev.target.value)}
+                placeholder="10-digit mobile" inputMode="numeric" autoComplete="tel"
+              />
+            </div>
             {errs.phone && <p style={{ color: CORAL, fontSize: 13, marginTop: 6 }}>{errs.phone}</p>}
             <p style={{ fontSize: 12.5, color: INK2, marginTop: 6 }}>
               Your session details and reminders come here.
