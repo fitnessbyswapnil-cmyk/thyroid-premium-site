@@ -43,8 +43,10 @@ export default function Hero() {
           </h1>
 
           <p className="m-0 mb-6 text-[15.5px] leading-[1.5] text-[var(--t2)] md:text-[17px]">
-            Watch me explain the one thing that is actually{" "}
-            <strong className="font-bold text-[var(--t1)]">blocking</strong> it.
+            Eating less has been making it{" "}
+            <strong className="font-bold text-[var(--t1)]">harder</strong>, not
+            easier. Your report can show exactly where &mdash; and almost nobody
+            reads it that way.
           </p>
         </div>
 

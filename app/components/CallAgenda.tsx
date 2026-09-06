@@ -78,6 +78,16 @@ export default function CallAgenda() {
           blocker whether or not you ever work with me.
         </p>
 
+        {/* Every recorded call that failed this month failed on someone who was
+            not on it. Asked here, at booking, instead of at minute sixty. */}
+        <p className="mx-auto mt-4 max-w-[62ch] text-center text-[13.5px] leading-[1.55] text-[var(--t2)] md:text-[15px]">
+          <strong className="font-semibold text-[var(--t1)]">One request.</strong>{" "}
+          If someone else is part of the money decision &mdash; your husband,
+          your family &mdash; bring them onto the call. It is a family decision,
+          and I would rather answer their questions myself than have you carry
+          mine home.
+        </p>
+
         {/* Kept deliberately. The design has no button in this section, but the
             ads are live and this is a tracked mid-page booking surface; taking
             it out mid-campaign is a funnel change, not a design change. */}

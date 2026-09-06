@@ -1,8 +1,10 @@
 // Qualification section — the page's lead-quality lever. Every "not for you"
 // line repels a low-intent lead AND makes the right one trust the page more:
 // refusing people is the most credible thing a page can do. The closing
-// "serious investment" line filters ₹500-diet-chart hunters without naming
-// the program price (which is quoted only on the call, after diagnosis).
+// The investment line now NAMES a floor. Without one, women arrived with a
+// blank price in their head and blank defaults to cheap — booking forms said
+// "I can invest Rs 15,000" against Rs 25,000-30,000 pitches. A floor costs a
+// few bookings that were never going to pay, and stops the low anchor.
 const FOR_YOU = [
   "You take thyroid medicine daily but the weight won't move",
   "Or your reports say “normal” while your body disagrees",
@@ -70,9 +72,10 @@ export default function FitFilter() {
 
         {/* Seriousness signal — filters on commitment without naming a price */}
         <p className="mx-auto mt-6 max-w-[70ch] text-center text-[14px] leading-[1.55] text-[var(--t2)]">
-          My 3-month programs are a{" "}
-          <strong className="font-semibold text-[var(--t2)]">serious investment</strong>,
-          quoted only on the call. Either way, the diagnosis is yours to keep.
+          My 3-month programmes{" "}
+          <strong className="font-semibold text-[var(--t1)]">start at &#8377;25,000</strong>.
+          The exact fee is quoted on the call, after the diagnosis &mdash; and
+          the diagnosis is yours to keep either way.
         </p>
       </div>
     </section>

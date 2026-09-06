@@ -28,6 +28,7 @@ const TransformationWall = dynamic(() => import("@/app/components/Transformation
 const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial"));
 const WhatsappProofSection = dynamic(() => import("@/app/components/WhatsappProofSection"));
 const PillarsSection = dynamic(() => import("@/app/components/PillarsSection"));
+const DeficitDiagram = dynamic(() => import("@/app/components/DeficitDiagram"));
 const CertificationsSection = dynamic(() => import("@/app/components/CertificationsSection"));
 const PostTestimonialCta = dynamic(() => import("@/app/components/PostTestimonialCta"));
 const FitFilter = dynamic(() => import("@/app/components/FitFilter"));
@@ -50,15 +51,20 @@ export default function Home() {
       <Hero />                     {/* hero + VSL: blocked-not-stuck, medicated hyperniche */}
       <SymptomChips />             {/* interactive: she describes herself before anyone sells to her */}
       <AbsolveBlock />             {/* lifts self-blame before the first real ask */}
+      {/* The explanation BEFORE the proof. She is buying the "why", not the
+          outcome — she has bought outcomes before and watched them reverse.
+          The diagram shows the mechanism; the pillars show what is done about
+          it. Proof then lands on a reader who knows what she is looking at. */}
+      <div className="band-deep">
+        <DeficitDiagram />
+        <PillarsSection />
+      </div>
       <CallAgenda />               {/* minute-by-minute + "is this a sales call?" */}
       <div className="band-deep">
         <TransformationWall />
       </div>       {/* photo wall + verified story lines */}
       <VideoTestimonial />         {/* video proof */}
       <WhatsappProofSection />     {/* WhatsApp proof + the stack CTA */}
-      <div className="band-deep">
-        <PillarsSection />
-      </div>           {/* the method: reassurance AFTER she has identified */}
       <CertificationsSection />    {/* supports the decision, does not cause it */}
       {/* SocialProof (named written testimonials) removed: the page already
           carries transformation photos, video testimonials and WhatsApp

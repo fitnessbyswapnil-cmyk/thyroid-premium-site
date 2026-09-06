@@ -20,6 +20,7 @@ import { trackSymptomPattern } from "@/app/lib/analytics";
 // The tally is written to sessionStorage so the booking step can open holding
 // her own answers instead of asking her to repeat them.
 const SYMPTOMS = [
+  "You eat less than everyone at your table, and the number still goes up.",
   "By 4pm you are finished. You just want to sit down.",
   "You wake up and your stomach is already bloated.",
   "Too much hair in the comb, every single morning.",
