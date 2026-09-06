@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import HeroProofStrip from "@/app/components/HeroProofStrip";
 import DeficitDiagram from "@/app/components/DeficitDiagram";
-import DecodeQuiz from "./DecodeQuiz";
 import DecodeStickyCta from "./DecodeStickyCta";
 
 /**
@@ -128,18 +127,18 @@ export default function DecodePage() {
           <p className="mx-auto mt-5 max-w-[620px] text-[16px] leading-[1.62] text-[var(--t2)] md:text-[17.5px]">
             This is not about willpower. When you eat less for a long time, a
             slow thyroid makes your body burn less too. So the gap you made
-            closes. <strong>Your blood report can show the exact reason</strong>
+            closes. <strong>Your blood report can show the exact reason</strong>{" "}
             &mdash; but almost nobody reads it that way.
           </p>
 
           <div className="mt-8 flex flex-col items-center">
             <a
-              href="#quiz"
+              href="/decode/quiz"
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Get my thyroid score &mdash; 12 taps
-              <span className="cta-sub">Free. Takes about 40 seconds.</span>
+              Get my thyroid score
+              <span className="cta-sub">12 taps &middot; free &middot; about 40 seconds</span>
             </a>
             <p className="mt-3 text-[13px] text-[var(--t3)]">
               No report yet? Answer anyway &mdash; I will tell you what to do next.
@@ -170,7 +169,7 @@ export default function DecodePage() {
             {AGENDA.map((a) => (
               <li
                 key={a.n}
-                className="rounded-2xl bg-white p-5 md:p-6"
+                className="rounded-2xl bg-white p-4 md:p-6"
                 style={{ boxShadow: "var(--shadow-card)" }}
               >
                 <div
@@ -201,10 +200,9 @@ export default function DecodePage() {
         </div>
       </section>
 
-      {/* Qualify, then sell. The quiz owns the checkout: it only shows the
-          Rs 299 form to someone who actually has a report to read, and hands
-          everyone else to the free call instead. */}
-      <DecodeQuiz />
+      {/* The quiz lives on its own page (/decode/quiz) so nothing on this one
+          competes with it once she has decided to start. Every CTA here goes
+          there. */}
 
       {/* Proof after the ask, in the reference build's order. The wall is
           CTA-free; the WhatsApp block drops its button here so it cannot hand
@@ -245,12 +243,12 @@ export default function DecodePage() {
 
           <div className="mt-9 text-center">
             <a
-              href="#quiz"
+              href="/decode/quiz"
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Get my thyroid score &mdash; 12 taps
-              <span className="cta-sub">Free. Takes about 40 seconds.</span>
+              Get my thyroid score
+              <span className="cta-sub">12 taps &middot; free &middot; about 40 seconds</span>
             </a>
           </div>
         </div>

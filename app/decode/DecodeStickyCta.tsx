@@ -56,13 +56,13 @@ export default function DecodeStickyCta() {
       }}
     >
       <a
-        href="#quiz"
+        href="/decode/quiz"
         className="cta-button mx-auto"
         style={{ maxWidth: "28rem", textDecoration: "none" }}
         tabIndex={show ? 0 : -1}
       >
-        Get my thyroid score &mdash; 12 taps
-        <span className="cta-sub">Free. Takes about 40 seconds.</span>
+        Get my thyroid score
+        <span className="cta-sub">12 taps &middot; free &middot; about 40 seconds</span>
       </a>
     </div>
   );

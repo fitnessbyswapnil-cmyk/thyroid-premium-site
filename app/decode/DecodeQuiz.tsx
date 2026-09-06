@@ -155,8 +155,13 @@ function toLeadAnswers(a: A) {
   };
 }
 
-export default function DecodeQuiz() {
-  const [i, setI] = useState(-1);
+/** `autostart`: begin at question 1. Used by /decode/quiz, where the CTA she
+ *  just tapped WAS the intro — a second "start" screen would be a second ask. */
+export default function DecodeQuiz({ autostart = false }: { autostart?: boolean } = {}) {
+  const [i, setI] = useState(autostart ? 0 : -1);
+  useEffect(() => {
+    if (autostart) pushDL({ event: "decode_quiz_start" });
+  }, [autostart]);
   const [a, setA] = useState<A>({});
 
   const pick = useCallback(

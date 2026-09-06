@@ -110,7 +110,7 @@ export default function DeficitDiagram() {
           >
             <svg
               viewBox="0 0 720 340"
-              className={`block h-auto w-full min-w-[520px] dd${on ? " dd-on" : ""}`}
+              className={`block h-auto w-full dd${on ? " dd-on" : ""}`}
               role="img"
               aria-label="A chart over nine months. The food you eat drops twice, from 1,800 calories to 1,500 to 1,200. What your body burns starts at 1,900 and falls each time to meet the new amount, so the gap opens when you cut and then closes again."
             >
@@ -278,13 +278,8 @@ export default function DeficitDiagram() {
 
             </svg>
           </div>
-
-          {/* The chart holds its native size and scrolls sideways rather than
-              shrinking: squeezed into 390px its labels land at ~7px. Anyone who
-              does not swipe still gets the whole argument from the three cards
-              below, which is why they are worded to stand alone. */}
-          <p className="mt-2 text-center text-[12px] text-[var(--t3)] md:hidden">
-            Swipe the chart to see it all &rarr;
+          <p className="mt-3 text-center text-[15px] font-semibold leading-[1.45] text-[var(--t1)] sm:hidden">
+            Same gap as before. <span style={{ color: "var(--p600)" }}>600 calories less food.</span>
           </p>
 
           <figcaption className="mt-3 text-center text-[12.5px] leading-[1.5] text-[var(--t5)]">
@@ -299,7 +294,7 @@ export default function DeficitDiagram() {
           {STEPS.map((s, i) => (
             <li
               key={s.when}
-              className="rounded-2xl bg-white p-5 md:p-6"
+              className="rounded-2xl bg-white p-4 md:p-6"
               style={{
                 borderLeft: `4px solid ${i === 2 ? "var(--p500)" : "var(--border-strong)"}`,
                 boxShadow: "var(--shadow-card)",
@@ -308,7 +303,7 @@ export default function DeficitDiagram() {
               <div className="mb-2 text-[11.5px] font-bold uppercase tracking-[0.08em] text-[var(--t3)]">
                 {s.when}
               </div>
-              <div className="mb-2 text-[17px] font-semibold leading-[1.35] text-[var(--t1)]">
+              <div className="mb-1.5 text-[16px] font-semibold leading-[1.35] text-[var(--t1)] md:text-[17px]">
                 {s.head}
               </div>
               <p className="m-0 text-[14.5px] leading-[1.6] text-[var(--t2)]">
@@ -339,6 +334,17 @@ export default function DeficitDiagram() {
         .dd-on .dd-note { animation: dd-fade 600ms ease 2000ms forwards; }
         @keyframes dd-draw { to { stroke-dashoffset: 0; } }
         @keyframes dd-fade { to { opacity: 1; } }
+        /* Phones: the 720-unit chart scales to ~340px, so 12px labels would
+           render at ~6px. The dense annotations (cut markers, the four
+           measures, the in-chart punchline) are hidden and the punchline is
+           restated in HTML under the chart; the series tags and axis labels
+           are enlarged so they survive the scale-down. The three cards below
+           already carry the -400/-60/-330/-65 story in words. */
+        @media (max-width: 639px) {
+          .dd .dd-cut, .dd .dd-measure, .dd .dd-note { display: none; }
+          .dd > text { font-size: 20px; }
+          .dd .dd-tag text { font-size: 24px; }
+        }
         @media (prefers-reduced-motion: reduce) {
           .dd .dd-line { stroke-dashoffset: 0; }
           .dd .dd-gap, .dd .dd-tag, .dd .dd-note, .dd .dd-cut, .dd .dd-measure { opacity: 1; }
