@@ -391,7 +391,13 @@ function ProofCard({
 
 // ── Section ───────────────────────────────────────────────────────────────────
 
-export default function WhatsappProofSection() {
+/**
+ * `hideCta`: the closing SectionCta routes to the FREE booking flow. /decode
+ * reuses this proof block but must not hand paid-intent traffic to that flow,
+ * so it renders the screenshots without the button. Default false — the home
+ * page is unchanged.
+ */
+export default function WhatsappProofSection({ hideCta = false }: { hideCta?: boolean } = {}) {
   return (
     // White is mandatory here: WhatsApp green against a yellow wash plus a red
     // CTA makes a red-yellow-green traffic light, on the calmest section of the
@@ -487,15 +493,17 @@ export default function WhatsappProofSection() {
             proof stack (moved here from the removed More Than Fat Loss
             section; hero + sticky bar are the other two touchpoints). */}
         <div className="container-default">
-          <SectionCta
-            variant="primary"
-            className="mx-auto mt-12 max-w-sm"
-            buttonClassName=""
-            label="Schedule My 1-1 Thyroid Fat Loss Call"
-            sublabel="Free · 60 minutes · one to one"
-            ariaLabel="Schedule my 1-1 thyroid fat loss session"
-            location="transformations"
-          />
+          {!hideCta && (
+            <SectionCta
+              variant="primary"
+              className="mx-auto mt-12 max-w-sm"
+              buttonClassName=""
+              label="Schedule My 1-1 Thyroid Fat Loss Call"
+              sublabel="Free · 60 minutes · one to one"
+              ariaLabel="Schedule my 1-1 thyroid fat loss session"
+              location="transformations"
+            />
+          )}
         </div>
 
       </div>

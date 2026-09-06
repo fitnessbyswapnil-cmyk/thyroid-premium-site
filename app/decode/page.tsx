@@ -41,6 +41,8 @@ import DecodeStickyCta from "./DecodeStickyCta";
 const AbsolveBlock = dynamic(() => import("@/app/components/AbsolveBlock"));
 const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial"));
 const CertificationsSection = dynamic(() => import("@/app/components/CertificationsSection"));
+const TransformationWall = dynamic(() => import("@/app/components/TransformationWall"));
+const WhatsappProofSection = dynamic(() => import("@/app/components/WhatsappProofSection"));
 
 export const metadata: Metadata = {
   title: "Small plate, same weight | Premium Thyroid Fat Loss Session",
@@ -204,6 +206,13 @@ export default function DecodePage() {
           everyone else to the free call instead. */}
       <DecodeQuiz />
 
+      {/* Proof after the ask, in the reference build's order. The wall is
+          CTA-free; the WhatsApp block drops its button here so it cannot hand
+          paid-intent traffic to the free booking flow. */}
+      <div className="band-deep">
+        <TransformationWall />
+      </div>
+      <WhatsappProofSection hideCta />
       <VideoTestimonial />
       <CertificationsSection />
 
