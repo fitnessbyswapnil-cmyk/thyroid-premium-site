@@ -137,8 +137,8 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Get my thyroid score
-              <span className="cta-sub">12 taps &middot; free &middot; about 40 seconds</span>
+              Schedule my 1-1 Thyroid Consultation
+              <span className="cta-sub">12 quick questions first &middot; then pick your slot</span>
             </a>
             <p className="mt-3 text-[13px] text-[var(--t3)]">
               No report yet? Answer anyway &mdash; I will tell you what to do next.
@@ -247,8 +247,8 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Get my thyroid score
-              <span className="cta-sub">12 taps &middot; free &middot; about 40 seconds</span>
+              Schedule my 1-1 Thyroid Consultation
+              <span className="cta-sub">12 quick questions first &middot; then pick your slot</span>
             </a>
           </div>
         </div>

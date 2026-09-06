@@ -29,6 +29,9 @@ export default function DecodeQuizPage() {
           Swapnil Umbarkar
         </span>
       </header>
+      <p className="mx-auto mt-6 max-w-[900px] px-4 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-[var(--t3)] md:px-6">
+        Scheduling your 1-1 Thyroid Consultation &mdash; step 1 of 2
+      </p>
       <DecodeQuiz autostart />
     </main>
   );

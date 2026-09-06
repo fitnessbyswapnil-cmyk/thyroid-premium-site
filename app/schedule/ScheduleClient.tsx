@@ -40,7 +40,7 @@ const THYROID_OPTIONS = [
   "Not diagnosed, but I suspect it",
 ];
 
-type Form = { name: string; phone: string; thyroid: string };
+type Form = { name: string; email: string; phone: string; thyroid: string };
 
 /**
  * Copy overrides, added so /decode can reuse this exact payment leg instead of
@@ -89,7 +89,7 @@ export default function ScheduleClient({
   presetThyroid,
 }: ScheduleClientProps = {}) {
   const Wrapper = wrapper;
-  const [f, setF] = useState<Form>({ name: "", phone: "", thyroid: presetThyroid ?? "" });
+  const [f, setF] = useState<Form>({ name: "", email: "", phone: "", thyroid: presetThyroid ?? "" });
   const [errs, setErrs] = useState<Partial<Record<keyof Form, string>>>({});
   const [formErr, setFormErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -122,6 +122,9 @@ export default function ScheduleClient({
 
     const e: Partial<Record<keyof Form, string>> = {};
     if (!f.name.trim()) e.name = "Please enter your name";
+    // Cal.com requires an email to book. Asking it here, once, is what lets
+    // the calendar step arrive with name, email and number already filled.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) e.email = "Please enter a valid email";
     const digits = f.phone.replace(/\D/g, "");
     if (digits.length < 10) e.phone = "Enter a 10-digit WhatsApp number";
     if (!f.thyroid) e.thyroid = "Please choose one";
@@ -138,9 +141,11 @@ export default function ScheduleClient({
     const lastName = f.name.trim().split(/\s+/).slice(1).join(" ");
     const phoneDigits = digits.length === 12 ? digits.slice(2) : digits;
 
+    const email = f.email.trim().toLowerCase();
     persistUserIdentity({
       ...(firstName && { first_name: firstName }),
       ...(phoneDigits && { phone: phoneDigits }),
+      ...(email && { email }),
     });
 
     // Same shared-id Lead pattern as the quiz: dataLayer + CAPI carry one id.
@@ -148,7 +153,7 @@ export default function ScheduleClient({
       ...(firstName && { first_name: firstName }),
       ...(lastName && { last_name: lastName }),
       phone: phoneDigits,
-      email: "",
+      email,
     });
     pushDL({ event: "schedule_lead_captured" });
 
@@ -174,6 +179,20 @@ export default function ScheduleClient({
 
     const leadId = `sched_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+    // /session-booked reads { step1: {name, phone, email}, leadId } from this key
+    // and hands it to the Cal.com embed as prefill. Without it the calendar
+    // asked for all three again, thirty seconds after she had typed them.
+    try {
+      const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
+      const prev = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({
+        ...prev,
+        step1: { name: f.name.trim(), phone: phoneDigits, email },
+        leadId,
+        startedAt: new Date().toISOString(),
+      }));
+    } catch { /* non-critical */ }
+
     // Same sheet contract as the quiz so the dashboard, cron and WhatsApp
     // sequences read identical headers. Unasked fields post as "" rather than
     // being omitted, so the column mapping can never shift.
@@ -184,7 +203,7 @@ export default function ScheduleClient({
         leadId,
         name: f.name.trim(),
         phone: phoneDigits,
-        email: "",
+        email,
         city: "",
         age: "",
         diagnosis: f.thyroid,
@@ -221,7 +240,7 @@ export default function ScheduleClient({
           leadId,
           customerPhone: phoneDigits,
           customerName: f.name.trim(),
-          customerEmail: "",
+          customerEmail: email,
           visitorId: getVisitorId(),
           fbc: getFbc(),
           fbp: getFbp(),
@@ -316,6 +335,19 @@ export default function ScheduleClient({
               placeholder="First name" autoComplete="given-name"
             />
             {errs.name && <p style={{ color: CORAL, fontSize: 13, marginTop: 6 }}>{errs.name}</p>}
+          </div>
+
+          <div style={{ marginBottom: 18 }}>
+            <label style={labelCss} htmlFor="sch-email">Email</label>
+            <input
+              id="sch-email" style={{ ...field, borderColor: errs.email ? CORAL : GRID }}
+              value={f.email} onChange={(ev) => set("email", ev.target.value)}
+              placeholder="you@example.com" inputMode="email" autoComplete="email"
+            />
+            {errs.email && <p style={{ color: CORAL, fontSize: 13, marginTop: 6 }}>{errs.email}</p>}
+            <p style={{ fontSize: 12.5, color: INK2, marginTop: 6 }}>
+              So you only type your details once &mdash; the calendar is filled in for you.
+            </p>
           </div>
 
           <div style={{ marginBottom: 18 }}>

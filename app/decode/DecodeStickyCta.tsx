@@ -61,8 +61,8 @@ export default function DecodeStickyCta() {
         style={{ maxWidth: "28rem", textDecoration: "none" }}
         tabIndex={show ? 0 : -1}
       >
-        Get my thyroid score
-        <span className="cta-sub">12 taps &middot; free &middot; about 40 seconds</span>
+        Schedule my 1-1 Thyroid Consultation
+        <span className="cta-sub">12 quick questions first &middot; then pick your slot</span>
       </a>
     </div>
   );

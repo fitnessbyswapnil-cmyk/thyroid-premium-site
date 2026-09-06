@@ -246,9 +246,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
               <ScheduleClient
                 wrapper="div"
                 eyebrow={`Your score: ${score100} / 100`}
-                heading="Premium Thyroid Fat Loss Session"
-                subheading="45 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving."
-                ctaLabel={"Book my Premium Session — ₹299"}
+                heading="Schedule your 1-1 Thyroid Consultation"
+                subheading="The Premium Thyroid Fat Loss Session — 45 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving. Pay, then pick your slot."
+                ctaLabel={"Pay ₹299 & pick my slot"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I read your report before the call instead of seeing it for the first time in front of you. If you join the programme later, this ₹299 is taken off the fee."
                 presetThyroid={a.diagnosis}
@@ -282,9 +282,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
               <ScheduleClient
                 wrapper="div"
                 eyebrow={`Your score: ${score100} / 100`}
-                heading="Premium Thyroid Fat Loss Session"
-                subheading="45 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the exact plan to start on."
-                ctaLabel={"Book my Premium Session — ₹299"}
+                heading="Schedule your 1-1 Thyroid Consultation"
+                subheading="The Premium Thyroid Fat Loss Session — 45 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the plan to start on. Pay, then pick your slot."
+                ctaLabel={"Pay ₹299 & pick my slot"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I prepare from your answers before the call. If you join the programme later, this ₹299 is taken off the fee."
                 presetThyroid={a.diagnosis}
