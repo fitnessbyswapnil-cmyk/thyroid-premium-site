@@ -74,7 +74,7 @@ export type ScheduleClientProps = {
     | "biggestChallenge" | "triedBefore" | "amountSpent" | "goal"
     | "commitment" | "timing" | "budget" | "decisionMaker" | "city",
     string
-  >>;
+  >> & { leadScore?: number; leadTier?: string };
 };
 
 export default function ScheduleClient({

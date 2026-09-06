@@ -1,62 +1,48 @@
 "use client";
 
 /**
- * The /decode qualifier. One question per screen, nine taps, no typing.
+ * The /decode qualifier — the owner's eleven Cal.com booking questions, asked
+ * one per screen with a tap for every answer, plus the blood-report question
+ * that ROUTES rather than filters. Twelve taps, no typing.
  *
- * WHY IT EXISTS AT ALL: nobody pays Rs 299 to decode something they do not yet
- * believe is broken. The quiz is what makes the gap specific enough to be worth
- * closing — the result screen names her own pattern back to her, and THAT is
- * what the price attaches to. A quiz in front of a FREE call is pure friction
- * (his "New_Stage1 Quiz Metros" campaign spent Rs 5,909 for zero bookings); in
- * front of a paid one it is the argument.
+ * Two scores come out of the same answers and go to different people:
  *
- * THE REPORT QUESTION IS A ROUTER, NOT A FILTER. A woman with no blood test is
- * not a worse lead — often the opposite, since nothing has been ruled out yet.
- * But this session reads a report, so selling it to her would be selling
- * something that cannot be delivered. So she is handed to the FREE consultation
- * instead, with a reason she can act on. Nobody is turned away, and the free
- * funnel (~Rs 1,000 a booking) keeps the traffic that would otherwise bounce.
+ *  - The PATTERN score is hers. "6 of 7 markers of a stalled metabolism" is
+ *    true from what she just tapped, is defensible from a coach (it is not a
+ *    diagnosis and does not sound like one), and is what the Rs 299 attaches
+ *    to: the session reads her report to find which markers already happened.
+ *  - The LEAD score is his. lib/lead-scoring's scoreLead() has fed the CRM for
+ *    months and expects its own option labels, so the answers are mapped into
+ *    those labels before scoring and the result rides to the sheet as
+ *    leadScore / leadTier through the existing /api/quiz-lead post.
  *
- * THE MONEY QUESTION IS DELIBERATELY ABSENT. The old form asked "how much can
- * you invest", and women answered Rs 15,000 against a Rs 25,000 programme —
- * anchoring themselves low before any value existed. On a Rs 299 offer it is
- * also simply incongruous. What replaced it is the decision-maker question,
- * which is the thing that actually killed the last three recorded calls.
+ * Free-text Cal questions ("in your own words", city, profession) are tap
+ * lists here on purpose — typing on a phone at question nine is where quizzes
+ * die. The four "what happens" options are the four patterns that appear in
+ * the recorded calls, and the first is a booking-form answer verbatim.
  *
- * Answers ride into the Leads sheet through ScheduleClient's existing
- * /api/quiz-lead post, so the dashboard, the cron and the WhatsApp sequences
- * read the same headers they always have.
+ * Pay-then-book, not book-then-pay: ScheduleClient captures the lead, takes the
+ * Rs 299, and only then opens the calendar. A free slot that is paid for later
+ * fires Schedule before any money moves, fills the calendar with people who
+ * never pay, and defeats the only reason the fee exists.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { pushDL } from "@/app/lib/analytics";
+import { scoreLead } from "@/lib/lead-scoring";
 import ScheduleClient from "@/app/schedule/ScheduleClient";
 
 type Q = { id: string; q: string; options: string[] };
 
 const QUESTIONS: Q[] = [
-  { id: "age", q: "How old are you?", options: ["Under 30", "30 to 40", "41 to 50", "Over 50"] },
-  // Asked second, and early on purpose. She states the paradox in her own words
-  // before the page argues it — which is what makes the chart above land as her
-  // story rather than a claim. It also disqualifies nobody unfairly: a woman who
-  // never restricted is simply not who this session was built for.
-  {
-    id: "deficit",
-    q: "Have you eaten less on purpose for a month or more, and still not lost weight?",
-    options: [
-      "Yes, more than once",
-      "Yes, once",
-      "I ate less, but not for that long",
-      "No, I have not tried that",
-    ],
-  },
+  { id: "age", q: "What is your age?", options: ["Under 30", "30 to 35", "36 to 40", "41 to 50", "Over 50"] },
   {
     id: "diagnosis",
     q: "Has a doctor told you that you have a thyroid problem?",
     options: [
-      "Yes, and I take medicine every day",
-      "Yes, but I do not take medicine",
-      "I have not tested, but I think so",
+      "Yes, hypothyroid and on medication",
+      "Yes, hypothyroid but not on medication",
+      "Not tested, but I think so",
       "No",
     ],
   },
@@ -68,7 +54,7 @@ const QUESTIONS: Q[] = [
   {
     id: "goal",
     q: "How much weight do you want to lose?",
-    options: ["Under 5 kg", "5 to 10 kg", "10 to 15 kg", "More than 15 kg"],
+    options: ["Under 5 kg", "5 to 10 kg", "10 to 15 kg", "15 to 20 kg", "More than 20 kg"],
   },
   {
     id: "stuck",
@@ -76,141 +62,181 @@ const QUESTIONS: Q[] = [
     options: ["Less than 6 months", "6 months to 1 year", "1 to 3 years", "More than 3 years"],
   },
   {
+    id: "pattern",
+    q: "What happens when you try to lose weight?",
+    options: [
+      "I eat less, and the weight still goes up",
+      "A little comes off, then it stops",
+      "It comes off, then comes straight back",
+      "I lose motivation on my own",
+    ],
+  },
+  {
     id: "tried",
-    q: "Have you paid for a diet plan or a coach before?",
+    q: "Have you ever paid a coach, dietitian or programme for this?",
     options: ["No, never", "Yes, under ₹10,000", "Yes, ₹10,000 to ₹25,000", "Yes, more than ₹25,000"],
   },
-  // Work status is a proxy for the same constraint the next question asks about
-  // directly. A homemaker is not a worse client, but she is a different CALL:
-  // the money conversation almost always involves someone who is not on it, and
-  // knowing that before he dials is the difference between preparing for it and
-  // being ambushed by it at minute sixty.
   {
-    id: "work",
-    q: "What do you do?",
-    options: ["I look after the home", "I have a job", "I run my own business", "I am retired"],
+    id: "budget",
+    q: "This is a paid programme. How much can you invest to fix this properly?",
+    options: ["I can invest ₹50,000", "I can invest ₹30,000", "I can invest ₹15,000", "I'll decide on the call"],
   },
   {
     id: "decision",
-    q: "If you decide to start, who decides about the money?",
-    options: ["I decide on my own", "My husband and I decide together", "Someone else decides"],
+    q: "If you decide to go ahead, are you the one who decides about the money?",
+    options: ["Yes, I decide on my own", "No, I need to discuss it with my spouse or family"],
   },
   {
     id: "timing",
-    q: "When do you want to start?",
-    options: ["Right away", "In a few weeks", "I am just looking for now"],
+    q: "If we find your blocker, when would you want to start?",
+    options: ["This week", "This month", "In a month or two", "Just exploring for now"],
+  },
+  {
+    id: "city",
+    q: "Which city do you live in?",
+    options: ["Delhi NCR", "Mumbai", "Bengaluru", "Hyderabad", "Pune", "Chennai", "Kerala", "Somewhere else"],
+  },
+  {
+    id: "profession",
+    q: "What do you do?",
+    options: [
+      "Homemaker",
+      "Corporate / IT professional",
+      "Business owner / entrepreneur",
+      "Doctor / healthcare",
+      "Teacher / educator",
+      "Something else",
+    ],
   },
 ];
 
-
 type A = Record<string, string>;
 
-/** Her own answers, said back to her. Only lines that are actually true. */
-function readback(a: A): string[] {
-  const out: string[] = [];
-  if (a.deficit === "Yes, more than once")
-    out.push("You have eaten less for a month or more — more than once — and the weight still did not come off.");
-  else if (a.deficit === "Yes, once")
-    out.push("You have eaten less for a month or more, and the weight still did not come off.");
-  if (a.stuck === "More than 3 years") out.push("Your weight has not moved in over 3 years.");
-  else if (a.stuck === "1 to 3 years") out.push("Your weight has not moved in 1 to 3 years.");
-  if (a.diagnosis?.startsWith("Yes, and I take"))
-    out.push("You take thyroid medicine every day, and it still will not move.");
-  else if (a.diagnosis === "Yes, but I do not take medicine")
-    out.push("You have a thyroid diagnosis and you are not on medicine for it.");
-  else if (a.diagnosis?.startsWith("I have not tested"))
-    out.push("You have never been tested, so nothing has been ruled out yet.");
-  if (a.tried?.startsWith("Yes"))
-    out.push("You have already paid for help once. So this was never about effort.");
-  return out;
+/** Her seven markers. Each is TRUE from a tap she made — nothing inferred. */
+function markers(a: A): { label: string; hit: boolean }[] {
+  const diagnosed = a.diagnosis?.startsWith("Yes");
+  const onMeds = a.diagnosis === "Yes, hypothyroid and on medication";
+  const stuckLong = a.stuck === "1 to 3 years" || a.stuck === "More than 3 years";
+  const eatLess = a.pattern === "I eat less, and the weight still goes up" || a.pattern === "A little comes off, then it stops";
+  const paid = !!a.tried && a.tried !== "No, never";
+  const big = a.goal === "10 to 15 kg" || a.goal === "15 to 20 kg" || a.goal === "More than 20 kg";
+  const forty = a.age === "41 to 50" || a.age === "Over 50";
+  return [
+    { label: "A thyroid diagnosis", hit: !!diagnosed },
+    { label: "Weight stuck even on the tablet", hit: onMeds },
+    { label: "Stuck for more than a year", hit: stuckLong },
+    { label: "Eating less did not move it", hit: eatLess },
+    { label: "Already paid for help that did not hold", hit: paid },
+    { label: "Ten kilos or more to lose", hit: big },
+    { label: "In the age band where thyroid and hormones shift together", hit: forty },
+  ];
+}
+
+/** Map the tap labels onto the labels lib/lead-scoring has always expected. */
+function toLeadAnswers(a: A) {
+  const diagnosis =
+    a.diagnosis?.startsWith("Yes") ? "Yes — hypothyroidism"
+    : a.diagnosis === "Not tested, but I think so" ? "Yes — not sure which type" : "No";
+  const duration =
+    a.stuck === "1 to 3 years" || a.stuck === "More than 3 years" ? "Over a year"
+    : a.stuck === "6 months to 1 year" ? "6–12 months" : "Under 6 months";
+  const challenge =
+    a.pattern === "I eat less, and the weight still goes up" || a.pattern === "A little comes off, then it stops"
+      ? "The weight won't move, no matter what I do" : a.pattern ?? "";
+  return {
+    investment: a.budget ?? "",
+    timing: a.timing ?? "",
+    diagnosis,
+    duration,
+    goal: "Lose the stubborn weight",
+    challenge,
+    tried: a.tried && a.tried !== "No, never" ? ["Paid coach or programme"] : [],
+    profession: a.profession ?? "",
+  };
 }
 
 export default function DecodeQuiz() {
-  const [i, setI] = useState(-1); // -1 = intro
+  const [i, setI] = useState(-1);
   const [a, setA] = useState<A>({});
 
   const pick = useCallback(
     (q: Q, value: string) => {
-      const next = { ...a, [q.id]: value };
-      setA(next);
+      setA((prev) => ({ ...prev, [q.id]: value }));
       pushDL({ event: "decode_quiz_answer", quiz_step: String(i + 1), quiz_question: q.id });
       setI((n) => n + 1);
     },
-    [a, i],
+    [i],
   );
 
   const done = i >= QUESTIONS.length;
   useEffect(() => {
     if (done) window.dispatchEvent(new Event("decode-quiz-done"));
   }, [done]);
-  const hasReport = a.report?.startsWith("Yes");
-  const lines = done ? readback(a) : [];
 
-  // ── intro ────────────────────────────────────────────────────────────────
+  const hasReport = a.report?.startsWith("Yes");
+  const ms = done ? markers(a) : [];
+  const hits = ms.filter((m) => m.hit).length;
+  const lead = done ? scoreLead(toLeadAnswers(a)) : null;
+
   if (i === -1) {
     return (
       <Shell>
         <p className="section-label">Start here</p>
-        <h2 className="section-title mx-auto text-balance">
-          Ten questions. About forty seconds.
-        </h2>
+        <h2 className="section-title mx-auto text-balance">Twelve questions. About forty seconds.</h2>
         <p className="mx-auto mt-3 max-w-[540px] text-[15.5px] leading-[1.6] text-[var(--t2)]">
-          No typing. Just tap. At the end I will tell you what your answers point
-          to, and what to do next.
+          No typing. Just tap. At the end you get your score, and I tell you what to do next.
         </p>
         <button
           type="button"
-          onClick={() => {
-            pushDL({ event: "decode_quiz_start" });
-            setI(0);
-          }}
+          onClick={() => { pushDL({ event: "decode_quiz_start" }); setI(0); }}
           className="cta-button mx-auto mt-7"
           style={{ maxWidth: "24rem" }}
         >
-          Start the questions
+          Get my score
           <span className="cta-sub">Free. Nothing to fill in.</span>
         </button>
       </Shell>
     );
   }
 
-  // ── result ───────────────────────────────────────────────────────────────
   if (done) {
     return (
       <Shell>
-        <p className="section-label">Your answers</p>
-        <h2 className="section-title mx-auto text-balance">
-          {hasReport ? "This is what you told me" : "First, let’s get your numbers"}
-        </h2>
-
-        {lines.length > 0 && (
-          <ul className="mx-auto mt-5 flex max-w-[560px] list-none flex-col gap-2.5 p-0 text-left">
-            {lines.map((l) => (
-              <li
-                key={l}
-                className="rounded-xl bg-white px-4 py-3 text-[15px] leading-[1.55] text-[var(--t1)]"
-                style={{ borderLeft: "4px solid var(--p500)", boxShadow: "var(--shadow-card)" }}
-              >
-                {l}
+        <p className="section-label">Your score</p>
+        <div
+          className="mx-auto mt-2 max-w-[560px] rounded-2xl px-6 py-7"
+          style={{ background: "#0b1120", color: "#fff" }}
+        >
+          <div className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: "#00ff66" }}>
+            Markers of a stalled thyroid metabolism
+          </div>
+          <div className="mt-2 font-bold leading-none" style={{ fontSize: 56 }}>
+            {hits}<span className="text-[26px] font-semibold" style={{ color: "#9a9890" }}> of 7</span>
+          </div>
+          <ul className="mt-5 flex list-none flex-col gap-2 p-0 text-left">
+            {ms.map((m) => (
+              <li key={m.label} className="flex items-start gap-3 text-[15px] leading-[1.45]" style={{ color: m.hit ? "#fff" : "#6b7280" }}>
+                <span aria-hidden="true" className="mt-[3px] inline-block h-4 w-4 flex-none rounded-full" style={{ background: m.hit ? "#00ff66" : "transparent", border: m.hit ? "0" : "1.5px solid #4b5563" }} />
+                {m.label}
               </li>
             ))}
           </ul>
-        )}
+        </div>
 
         {hasReport ? (
           <>
             <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
-              You have a blood report. That report can show <strong>which</strong> of
-              these already happened to you, and <strong>when</strong>. That is the
-              whole job of this session.
+              {hits >= 4
+                ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 45 minutes I read yours line by line and tell you <strong>which</strong> of these markers already happened, and <strong>when</strong>.</>
+                : <>Your report will show which of these are real and which are not. That is the whole job of the session &mdash; and if the answer is that you do not need me, you will hear that too.</>}
             </p>
             <div className="mt-8 text-left">
               <ScheduleClient
                 wrapper="div"
-                eyebrow="Last step"
-                heading="Get your report decoded"
-                subheading="Find the exact reason you are not losing weight, even though you eat less. 45 minutes with Swapnil, one to one, on your own blood report."
-                ctaLabel={"Read my report — ₹299"}
+                eyebrow={`Your score: ${hits} of 7`}
+                heading="Premium Thyroid Fat Loss Session"
+                subheading="45 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving."
+                ctaLabel={"Book my Premium Session — ₹299"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I read your report before the call instead of seeing it for the first time in front of you. If you join the programme later, this ₹299 is taken off the fee."
                 presetThyroid={a.diagnosis}
@@ -220,38 +246,31 @@ export default function DecodeQuiz() {
                   onMedication: a.diagnosis ?? "",
                   struggleDuration: a.stuck ?? "",
                   goal: a.goal ?? "",
-                  biggestChallenge: a.deficit ?? "",
+                  biggestChallenge: a.pattern ?? "",
                   triedBefore: a.tried ?? "",
-                  amountSpent: a.tried?.startsWith("Yes") ? a.tried.replace("Yes, ", "") : "",
+                  amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
+                  budget: a.budget ?? "",
                   timing: a.timing ?? "",
                   decisionMaker: a.decision ?? "",
-                  // No Profession column exists in the sheet, so work status
-                  // rides here rather than silently going nowhere.
-                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.work ?? "—"}`,
+                  city: a.city ?? "",
+                  // No Profession column in the sheet; it rides with the report answer.
+                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${hits}/7`,
+                  leadScore: lead?.score,
+                  leadTier: lead?.tier,
                 }}
               />
             </div>
           </>
         ) : (
           <>
-            {/* Honest, and commercially better than taking her money: there is
-                nothing to decode, so she goes to the free call instead. */}
-            <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
-              This session reads your blood report &mdash; and you do not have one
-              yet. So paying ₹299 for it would be paying me to read a blank page.
-              I am not going to take that.
+            <h2 className="section-title mx-auto mt-7 text-balance">First, let&rsquo;s get your numbers</h2>
+            <p className="mx-auto mt-4 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
+              The Premium Session reads your blood report &mdash; and you do not have one yet. Paying ₹299 for it would be paying me to read a blank page, and I am not going to take that.
             </p>
             <p className="mx-auto mt-4 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
-              Do this instead. Book a <strong>free</strong>{" "}call. I will tell you
-              exactly which tests to get and why &mdash; the ones most labs leave
-              out. Get them done, and then we read them together.
+              Do this instead. Book a <strong>free</strong>{" "}call. I will tell you exactly which tests to get and why &mdash; the ones most labs leave out. Get them done, and then we read them together.
             </p>
-            <a
-              href="/book-session"
-              className="cta-button mx-auto mt-7"
-              style={{ maxWidth: "24rem", textDecoration: "none" }}
-              onClick={() => pushDL({ event: "decode_quiz_routed_free" })}
-            >
+            <a href="/book-session" className="cta-button mx-auto mt-7" style={{ maxWidth: "24rem", textDecoration: "none" }} onClick={() => pushDL({ event: "decode_quiz_routed_free" })}>
               Book my free call
               <span className="cta-sub">No payment. I tell you what to test.</span>
             </a>
@@ -261,7 +280,6 @@ export default function DecodeQuiz() {
     );
   }
 
-  // ── one question ─────────────────────────────────────────────────────────
   const q = QUESTIONS[i];
   return (
     <Shell>
@@ -271,32 +289,23 @@ export default function DecodeQuiz() {
             Question {i + 1} of {QUESTIONS.length}
           </span>
           {i > 0 && (
-            <button
-              type="button"
-              onClick={() => setI((n) => n - 1)}
-              className="text-[13px] text-[var(--t3)] underline"
-            >
+            <button type="button" onClick={() => setI((n) => n - 1)} className="text-[13px] text-[var(--t3)] underline">
               Back
             </button>
           )}
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--border-hairline)" }}>
-          <div
-            className="h-full rounded-full transition-[width] duration-300"
-            style={{ width: `${((i + 1) / QUESTIONS.length) * 100}%`, background: "var(--p500)" }}
-          />
+          <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${((i + 1) / QUESTIONS.length) * 100}%`, background: "var(--p500)" }} />
         </div>
       </div>
-
       <h2 className="section-title mx-auto max-w-[600px] text-balance">{q.q}</h2>
-
       <div className="mx-auto mt-7 flex w-full max-w-[560px] flex-col gap-3">
         {q.options.map((o) => (
           <button
             key={o}
             type="button"
             onClick={() => pick(q, o)}
-            className="w-full rounded-2xl bg-white px-5 py-4 text-left text-[16px] font-medium leading-[1.4] text-[var(--t1)] transition-colors"
+            className="w-full rounded-lg bg-white px-5 py-4 text-left text-[16px] font-medium leading-[1.4] text-[var(--t1)] transition-colors"
             style={{ border: "1.5px solid var(--border-strong)" }}
           >
             {o}
@@ -310,9 +319,7 @@ export default function DecodeQuiz() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <section id="quiz" className="bg-[var(--bg-page)]" style={{ scrollMarginTop: 12 }}>
-      <div className="mx-auto w-full max-w-[900px] px-4 py-11 text-center md:px-6 md:py-14">
-        {children}
-      </div>
+      <div className="mx-auto w-full max-w-[900px] px-4 py-11 text-center md:px-6 md:py-14">{children}</div>
     </section>
   );
 }

@@ -43,9 +43,9 @@ const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial
 const CertificationsSection = dynamic(() => import("@/app/components/CertificationsSection"));
 
 export const metadata: Metadata = {
-  title: "Small plate, same weight | Thyroid report reading",
+  title: "Small plate, same weight | Premium Thyroid Fat Loss Session",
   description:
-    "Get your report decoded. Find the exact reason you are not losing weight even though you eat less — read from your own thyroid blood report, in 45 minutes.",
+    "Get your thyroid score in 12 taps, then a Premium Thyroid Fat Loss Session: your own blood report read line by line to find the exact reason you are not losing weight even though you eat less.",
   // Ad traffic only. Indexing it would put it in competition with the main site.
   robots: { index: false, follow: false },
 };
@@ -136,7 +136,7 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Find the exact reason &mdash; 10 questions
+              Get my thyroid score &mdash; 12 taps
               <span className="cta-sub">Free. Takes about 40 seconds.</span>
             </a>
             <p className="mt-3 text-[13px] text-[var(--t3)]">
@@ -240,7 +240,7 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Find the exact reason &mdash; 10 questions
+              Get my thyroid score &mdash; 12 taps
               <span className="cta-sub">Free. Takes about 40 seconds.</span>
             </a>
           </div>

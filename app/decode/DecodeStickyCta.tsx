@@ -61,7 +61,7 @@ export default function DecodeStickyCta() {
         style={{ maxWidth: "28rem", textDecoration: "none" }}
         tabIndex={show ? 0 : -1}
       >
-        Find the exact reason &mdash; 10 questions
+        Get my thyroid score &mdash; 12 taps
         <span className="cta-sub">Free. Takes about 40 seconds.</span>
       </a>
     </div>
