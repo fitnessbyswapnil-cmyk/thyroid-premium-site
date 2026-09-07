@@ -88,7 +88,13 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "bad_json" }, { status: 400 });
   }
-  if (!payload.name || !payload.phone || !payload.email) {
+  // Name and phone are always required. Email is required for the quiz-first
+  // paths that collect it, but NOT for the /decode phone gate or the checkout
+  // lead — they capture name + WhatsApp first and email only at payment. The
+  // old check rejected every one of those posts with 400, silently: no row,
+  // no welcome WhatsApp, no QuizComplete, while the page still showed a score.
+  const emailOptional = str(payload.source) === "decode_quiz" || str(payload.source) === "schedule_page";
+  if (!payload.name || !payload.phone || (!payload.email && !emailOptional)) {
     return NextResponse.json({ error: "missing_contact_fields" }, { status: 400 });
   }
 
