@@ -67,13 +67,13 @@ const LEADS_SHEET = "Leads";
 // button deep-links to /complete-payment?leadId=... instead of the quiz
 // intro (Meta 2026-08-18 approval). Submitted as a SEPARATE template so the
 // original keeps sending, untouched, while this one clears review.
-const TEMPLATE = "payment_reminder_link";
+const TEMPLATE = "payment_reminder_link_v2";
 
 const SENT_TITLE = "Reminder Sent";
 const AT_TITLE = "Reminder At";
 // Touch two of the payment sequence. Its own stamp columns, so touch one's
 // "Reminder Sent" can never suppress it and vice versa.
-const TEMPLATE2 = "payment_reminder_day2";
+const TEMPLATE2 = "payment_reminder_day2_v2";
 const SENT2_TITLE = "Reminder 2 Sent";
 const AT2_TITLE = "Reminder 2 At";
 
@@ -302,7 +302,7 @@ export async function GET(req: NextRequest) {
     const describePayment = (c: ReminderCandidate) => ({
       ...describe(c),
       leadId: c.leadId || "(none — would send old quiz-linked template)",
-      wouldUseTemplate: c.leadId ? TEMPLATE : "payment_reminder",
+      wouldUseTemplate: c.leadId ? TEMPLATE : "payment_reminder_v2",
     });
 
     /** Jobs that always send one known template, whatever the row holds. */
@@ -410,12 +410,12 @@ export async function GET(req: NextRequest) {
     // Sequential, not parallel. Meta rate-limits template sends per number, and
     // a batch arriving all at once is also a worse experience than a trickle.
     for (const c of PAID_FUNNEL_ACTIVE ? plan.candidates : []) {
-      let usedTemplate = c.leadId ? TEMPLATE : "payment_reminder";
+      let usedTemplate = c.leadId ? TEMPLATE : "payment_reminder_v2";
       let r = c.leadId
         ? await sendTryingLanguages((language) => sendPaymentReminderWithLink(c.phone, c.name, c.leadId!, language))
         // No leadId on this row (older data predating the column) — fall back
         // to the original template rather than sending a dead/empty button.
-        : await sendWhatsAppTemplate(c.phone, "payment_reminder", [firstNameOf(c.name)]);
+        : await sendWhatsAppTemplate(c.phone, "payment_reminder_v2", [firstNameOf(c.name)]);
 
       // Self-healing: payment_reminder_link may still not be Meta-approved, or
       // approved under some language variant sendTryingLanguages didn't cover.
@@ -431,7 +431,7 @@ export async function GET(req: NextRequest) {
       // which is why `template` is reported per row below.
       if (!r.sent && isTemplateMissing(r.error)) {
         usedTemplate = "payment_reminder (fallback)";
-        r = await sendWhatsAppTemplate(c.phone, "payment_reminder", [firstNameOf(c.name)]);
+        r = await sendWhatsAppTemplate(c.phone, "payment_reminder_v2", [firstNameOf(c.name)]);
       }
       results.push({
         job: "payment_reminder",

@@ -284,7 +284,7 @@ export async function sendWhatsAppTemplate(
  */
 export async function sendWelcomeLead(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'welcome_lead', [firstName])
+  return sendWhatsAppTemplate(phone, 'welcome_lead_v2', [firstName])
 }
 
 /**
@@ -321,7 +321,7 @@ export async function sendWelcomeLeadWithLink(
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(
     phone,
-    'welcome_lead_link',
+    'welcome_lead_link_v2',
     [firstName, personal.score, personal.symptom],
     languageOverride,
     leadId,
@@ -379,7 +379,7 @@ export async function sendBookingConfirmation(phone: string, fullName: string): 
  */
 export async function sendPaymentReminderWithLink(phone: string, fullName: string, leadId: string, languageOverride?: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'payment_reminder_link', [firstName], languageOverride, leadId)
+  return sendWhatsAppTemplate(phone, 'payment_reminder_link_v2', [firstName], languageOverride, leadId)
 }
 
 /**
