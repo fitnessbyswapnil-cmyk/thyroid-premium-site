@@ -36,7 +36,7 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // Rs 299, and the Purchase value Meta receives is 1. It MUST go back to false
 // before any ad points at the funnel: the last time it was left on it cost
 // roughly Rs 900/day uncollected.
-const IS_TEST_MODE = true;
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
