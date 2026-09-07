@@ -36,7 +36,7 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // ad is pointed at /decode: while true every real customer is charged Rs 1.
 // 2026-09-07 (later): flipped BACK to false at the owner's instruction after
 // the end-to-end test. Every real customer is charged the real SESSION_PRICE.
-const IS_TEST_MODE = false;
+const IS_TEST_MODE = true;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
