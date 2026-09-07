@@ -164,6 +164,30 @@ test("a phone already PAID on another row disqualifies her other rows", () => {
   assert.equal(plan.skipped.duplicatePhone, 1);
 });
 
+test("a payment settles only what came BEFORE it, not later abandonments", () => {
+  // The bug this locks out: settled phones were a time-blind Set, so one payment
+  // disqualified that number forever. A woman who bought a session and abandoned
+  // a fresh checkout weeks later could never be reminded — and neither could the
+  // owner testing on a number he had paid with once.
+  const rows = [
+    row({ ts: agoMin(900), phone: "9104393630", paid: "Y" }), // paid, long ago
+    row({ ts: agoMin(90), phone: "9104393630" }),             // abandoned AFTER
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates.length, 1, "a later abandonment is fresh unpaid intent");
+  assert.equal(plan.candidates[0].phone, "9104393630");
+});
+
+test("a payment still settles an attempt made BEFORE it", () => {
+  const rows = [
+    row({ ts: agoMin(90), phone: "9104393630" }),              // abandoned first
+    row({ ts: agoMin(60), phone: "9104393630", paid: "Y" }),   // then paid
+  ];
+  const plan = planReminders({ rows, cols: COLS, now: NOW });
+  assert.equal(plan.candidates.length, 0, "never ask a payer to pay again");
+  assert.equal(plan.skipped.duplicatePhone, 1);
+});
+
 test("a phone already reminded on one row still gets its own reminder on a genuinely different row", () => {
   // Owner decision 2026-08-18: REMINDED is per-row, not cross-row like PAID.
   // Row 1 is settled on ITS OWN stamp. Rows 2 and 3 are fresh retakes and are

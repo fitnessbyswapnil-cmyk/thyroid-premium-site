@@ -71,6 +71,10 @@ export type ReminderColumns = {
   reminderSent: number;
   /** Column B — "Lead ID", written by the quiz on create. -1 reads as "". */
   leadId: number;
+  /** "Paid At" — when a payment landed. Optional; -1/absent falls back to the
+   *  paid row's own created time, and an unreadable stamp settles forever,
+   *  which is exactly the behaviour this column replaced. */
+  paidAt?: number;
 };
 
 export const DEFAULT_MIN_AGE_MINUTES = 5;
@@ -170,12 +174,22 @@ export function planReminders(opts: {
   // below, so a literal double-submit in one sitting still isn't double
   // messaged — only reminders from genuinely separate cron runs are exempt
   // from blocking each other now.
-  const settledPhones = new Set<string>();
+  // A payment settles the attempts she had made UP TO THAT MOMENT — not every
+  // attempt she will ever make. Keyed as a Set this was time-blind, so one
+  // payment disqualified that phone forever: the owner could not receive a test
+  // reminder on a number he had once paid with, and a woman who bought a session
+  // in July and abandoned a fresh checkout in September was unreachable for good.
+  // Keep the latest settle per phone, so a second payment re-settles her.
+  const settledAt = new Map<string, number>();
   for (const r of rows) {
     const p = phoneKey(cell(r ?? [], cols.phone));
     if (!p) continue;
-    const isPaid = cell(r ?? [], cols.paid).toUpperCase() === "Y";
-    if (isPaid) settledPhones.add(p);
+    if (cell(r ?? [], cols.paid).toUpperCase() !== "Y") continue;
+    const when =
+      parseSheetTime(cell(r ?? [], cols.paidAt ?? -1)) ??
+      parseSheetTime(cell(r ?? [], cols.timestamp)) ??
+      Number.POSITIVE_INFINITY;
+    settledAt.set(p, Math.max(settledAt.get(p) ?? Number.NEGATIVE_INFINITY, when));
   }
 
   // Phones picked so far in this run, so three rows for one woman yield one
@@ -205,15 +219,20 @@ export function planReminders(opts: {
       continue;
     }
 
-    // She may be settled on a different row than this one.
-    if (settledPhones.has(phoneKey(phone))) {
-      skipped.duplicatePhone++;
-      continue;
-    }
-
     const created = parseSheetTime(cell(row, cols.timestamp));
     if (created === null) {
       skipped.unparseableTime++;
+      continue;
+    }
+
+    // She may be settled on a different row than this one — but a payment only
+    // settles what came before it. A checkout abandoned AFTER she paid for an
+    // earlier session is new, unpaid intent and earns its nudge. Equal stamps
+    // still count as settled, so a payment recorded in the same minute as the
+    // row it belongs to can never nudge her.
+    const settled = settledAt.get(phoneKey(phone));
+    if (settled !== undefined && settled >= created) {
+      skipped.duplicatePhone++;
       continue;
     }
 

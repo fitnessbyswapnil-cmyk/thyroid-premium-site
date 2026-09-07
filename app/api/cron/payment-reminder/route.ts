@@ -197,6 +197,7 @@ export async function GET(req: NextRequest) {
       name: 2,
       phone: 3,
       paid: findCol(header, "Paid"),
+      paidAt: findCol(header, "Paid At"),
       reminderSent: findCol(header, SENT_TITLE),
     };
 
