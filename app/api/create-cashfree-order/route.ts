@@ -31,11 +31,11 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // payment made there never stamps Paid, never fires booking_confirmation,
 // and never fires Schedule — which is the event the live ad campaign is
 // currently optimising against.
-// 2026-09-07: flipped to TRUE at the owner's explicit request to test the new
-// /decode quiz -> pay -> book flow end to end. MUST be flipped back before any
-// ad is pointed at /decode: while true every real customer is charged Rs 1.
-// 2026-09-07 (later): flipped BACK to false at the owner's instruction after
-// the end-to-end test. Every real customer is charged the real SESSION_PRICE.
+// TEST MODE — currently ON (2026-09-08, owner walking the funnel by hand).
+// While true, Cashfree charges Rs 1 while every visible price still reads
+// Rs 299, and the Purchase value Meta receives is 1. It MUST go back to false
+// before any ad points at the funnel: the last time it was left on it cost
+// roughly Rs 900/day uncollected.
 const IS_TEST_MODE = true;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
