@@ -205,7 +205,7 @@ export default function SymptomChips() {
           className="mx-auto max-w-sm"
           buttonClassName={count >= 5 ? "cta-pulse" : ""}
           label="Schedule My 1-1 Thyroid Consultation"
-          sublabel="₹299 · 45 minutes · one to one"
+          sublabel="₹299 · 60 minutes · one to one"
           ariaLabel="Schedule my 1-1 thyroid fat loss session"
           location="symptoms"
         />

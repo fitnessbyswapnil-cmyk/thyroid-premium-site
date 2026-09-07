@@ -87,7 +87,7 @@ export default function PostTestimonialCta() {
               style={{ maxWidth: "min(100%, 24rem)" }}
             >
               <span className="cta-label">Schedule My 1-1 Thyroid Consultation</span>
-              <span className="cta-sub">₹299 · 45 minutes · one to one</span>
+              <span className="cta-sub">₹299 · 60 minutes · one to one</span>
             </button>
           </div>
 

@@ -499,7 +499,7 @@ export default function WhatsappProofSection({ hideCta = false }: { hideCta?: bo
               className="mx-auto mt-12 max-w-sm"
               buttonClassName=""
               label="Schedule My 1-1 Thyroid Consultation"
-              sublabel="₹299 · 45 minutes · one to one"
+              sublabel="₹299 · 60 minutes · one to one"
               ariaLabel="Schedule my 1-1 thyroid fat loss session"
               location="transformations"
             />

@@ -340,7 +340,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           <>
             <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
               {score100 >= 57
-                ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 45 minutes I read yours line by line and tell you <strong>which</strong> of these markers already happened, and <strong>when</strong>.</>
+                ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 60 minutes I read yours line by line and tell you <strong>which</strong> of these markers already happened, and <strong>when</strong>.</>
                 : <>Your report will show which of these are real and which are not. That is the whole job of the session &mdash; and if the answer is that you do not need me, you will hear that too.</>}
             </p>
             <div className="mt-8 text-left">
@@ -348,7 +348,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 wrapper="div"
                 eyebrow={`Your score: ${score100} / 100`}
                 heading="Schedule your 1-1 Thyroid Consultation"
-                subheading="The Premium Thyroid Fat Loss Session — 45 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving. Pay, then pick your slot."
+                subheading="The Premium Thyroid Fat Loss Session — 60 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving. Pay, then pick your slot."
                 ctaLabel={"Pay ₹299 & pick my slot"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I read your report before the call instead of seeing it for the first time in front of you. If you join the programme later, this ₹299 is taken off the fee."
@@ -386,7 +386,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 wrapper="div"
                 eyebrow={`Your score: ${score100} / 100`}
                 heading="Schedule your 1-1 Thyroid Consultation"
-                subheading="The Premium Thyroid Fat Loss Session — 45 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the plan to start on. Pay, then pick your slot."
+                subheading="The Premium Thyroid Fat Loss Session — 60 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the plan to start on. Pay, then pick your slot."
                 ctaLabel={"Pay ₹299 & pick my slot"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I prepare from your answers before the call. If you join the programme later, this ₹299 is taken off the fee."

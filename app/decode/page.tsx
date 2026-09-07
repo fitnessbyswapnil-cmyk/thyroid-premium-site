@@ -93,7 +93,7 @@ const FAQ = [
   },
   {
     q: "Who is actually on the call?",
-    a: "Me. Not an assistant, not a sales team. Forty-five minutes, one to one.",
+    a: "Me. Not an assistant, not a sales team. Sixty minutes, one to one.",
   },
 ];
 
@@ -161,7 +161,7 @@ export default function DecodePage() {
           <header className="mb-8 text-center">
             <p className="section-label">No surprises</p>
             <h2 id="agenda-heading" className="section-title mx-auto text-balance">
-              What happens in the 45 minutes
+              What happens in the 60 minutes
             </h2>
           </header>
 

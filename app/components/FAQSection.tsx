@@ -184,7 +184,7 @@ export default function FAQSection() {
             buttonClassName="mx-auto w-full"
             style={{ maxWidth: 300 }}
             label="Schedule My 1-1 Thyroid Consultation"
-            sublabel="₹299 · 45 minutes · one to one"
+            sublabel="₹299 · 60 minutes · one to one"
             ariaLabel="Schedule my 1-1 thyroid fat loss session"
             location="faq"
           />

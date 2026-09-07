@@ -96,7 +96,7 @@ export default function CallAgenda() {
           className="mx-auto mt-8 max-w-sm"
           buttonClassName=""
           label="Schedule My 1-1 Thyroid Consultation"
-          sublabel="₹299 · 45 minutes · one to one"
+          sublabel="₹299 · 60 minutes · one to one"
           trust="Bring your latest thyroid report. I read it before we speak."
           ariaLabel="Schedule my 1-1 thyroid fat loss session"
           location="agenda"
