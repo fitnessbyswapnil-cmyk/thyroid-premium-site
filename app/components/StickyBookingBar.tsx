@@ -72,7 +72,7 @@ export default function StickyBookingBar() {
             Your 1-1 thyroid session
           </p>
           <p className="mt-0.5 text-[length:var(--text-2xs)] leading-snug text-[var(--t4)]">
-            Free · 60 minutes
+            ₹299 · 45 minutes
           </p>
         </div>
 

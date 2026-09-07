@@ -498,8 +498,8 @@ export default function WhatsappProofSection({ hideCta = false }: { hideCta?: bo
               variant="primary"
               className="mx-auto mt-12 max-w-sm"
               buttonClassName=""
-              label="Schedule My 1-1 Thyroid Fat Loss Call"
-              sublabel="Free · 60 minutes · one to one"
+              label="Schedule My 1-1 Thyroid Consultation"
+              sublabel="₹299 · 45 minutes · one to one"
               ariaLabel="Schedule my 1-1 thyroid fat loss session"
               location="transformations"
             />
