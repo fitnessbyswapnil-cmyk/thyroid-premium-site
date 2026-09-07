@@ -282,6 +282,34 @@ export async function GET(req: NextRequest) {
       skipped: plan.skipped,
       bookingNudgeSkipped: nudgePlan.skipped,
       whatsappConfigured: isWhatsAppConfigured(),
+      // ?debug=1 with ?dryRun=1 shows why rows fell out. The counts alone
+      // cannot distinguish "correctly gated free-funnel lead" from "paid-funnel
+      // lead whose phone the reader looked for in the wrong column", and those
+      // need opposite fixes. Phones are masked; nothing identifying leaves.
+      ...(dryRun && q.get("debug") === "1"
+        ? {
+            debug: {
+              header,
+              pinned: { timestamp: 0, leadId: 1, name: 2, phone: 3 },
+              resolved: {
+                Paid: findCol(header, "Paid"),
+                [SENT_TITLE]: findCol(header, SENT_TITLE),
+                Phone: findCol(header, "Phone"),
+                "Lead ID": findCol(header, "Lead ID"),
+              },
+              lastRows: rows.slice(-6).map((r, i) => ({
+                row: rows.length - 6 + i + 2,
+                leadId: String(r?.[1] ?? ""),
+                name: String(r?.[2] ?? ""),
+                phoneAtPinned3: String(r?.[3] ?? "").replace(/\d(?=\d{4})/g, "*"),
+                phoneAtHeaderCol: String(r?.[findCol(header, "Phone")] ?? "").replace(/\d(?=\d{4})/g, "*"),
+                paid: String(r?.[findCol(header, "Paid")] ?? ""),
+                reminderSent: String(r?.[findCol(header, SENT_TITLE)] ?? ""),
+                ts: String(r?.[0] ?? ""),
+              })),
+            },
+          }
+        : {}),
     };
 
     const describe = (c: ReminderCandidate) => ({
