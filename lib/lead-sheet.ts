@@ -212,9 +212,16 @@ export function findLeadRowNumber(opts: {
     }
   }
 
+  // Lead ID is unique, so scanning forward for it is unambiguous. Phone and
+  // email are not: a woman who comes back a second time has several rows, and
+  // scanning forward marked the OLDEST of them. Her payment then landed on a
+  // stale row while the row she had just created stayed unpaid — so the
+  // reminder cron saw an unpaid lead and asked a woman who had already paid to
+  // pay again. Scan backwards: the newest row carrying that number is the one
+  // she is transacting on now.
   const wantPhone = last10(opts.phone ?? "");
   if (wantPhone.length === 10) {
-    for (let i = 1; i < phones.length; i++) {
+    for (let i = phones.length - 1; i >= 1; i--) {
       if (last10(String(phones[i] ?? "")) === wantPhone) return i + 1;
     }
   }
@@ -222,7 +229,7 @@ export function findLeadRowNumber(opts: {
   const wantEmail = norm(opts.email ?? "");
   const placeholder = norm(opts.placeholderEmail ?? "");
   if (wantEmail && wantEmail !== placeholder) {
-    for (let i = 1; i < emails.length; i++) {
+    for (let i = emails.length - 1; i >= 1; i--) {
       if (norm(String(emails[i] ?? "")) === wantEmail) return i + 1;
     }
   }

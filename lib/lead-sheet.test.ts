@@ -213,6 +213,19 @@ test("findLeadRowNumber never matches on the placeholder email", () => {
   assert.equal(row, undefined, "the shared placeholder must not attach a payment to a random lead");
 });
 
+test("findLeadRowNumber picks the NEWEST row when a phone repeats", () => {
+  // A returning woman has two rows on one number. Her payment must mark the row
+  // she just created, not the one from her first visit — marking the old one
+  // leaves the new row unpaid and the reminder cron chases a paying customer.
+  const leadIds = ["Lead ID", "dq_old", "dq_new"];
+  const phones = ["Phone", "9104393630", "9104393630"];
+  const emails = ["Email", "a@b.com", "a@b.com"];
+  assert.equal(findLeadRowNumber({ leadIds, phones, emails, phone: "9104393630" }), 3);
+  assert.equal(findLeadRowNumber({ leadIds, phones, emails, email: "a@b.com" }), 3);
+  // An exact Lead ID still wins over the phone fallback.
+  assert.equal(findLeadRowNumber({ leadIds, phones, emails, leadId: "dq_old", phone: "9104393630" }), 2);
+});
+
 test("findLeadRowNumber returns undefined when nothing matches", () => {
   assert.equal(
     findLeadRowNumber({ leadIds: LEAD_IDS, phones: PHONES, emails: EMAILS, leadId: "nope", phone: "1112223334" }),
