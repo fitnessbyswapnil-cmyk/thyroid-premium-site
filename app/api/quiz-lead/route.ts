@@ -18,7 +18,7 @@
  * sequence picks up quiz leads exactly like native-form leads.
  */
 import { NextRequest, NextResponse, after } from "next/server";
-import { sendCAPIEvent, buildUserData } from "@/lib/server-tracking";
+import { sendCAPIEvent, buildUserData, getClientIp, getUserAgent } from "@/lib/server-tracking";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation, sendBookingConfirmedFree } from "@/lib/whatsapp";
 
@@ -63,6 +63,8 @@ type QuizLeadPayload = {
     utm_content?: string;
     utm_term?: string;
     fbclid?: string;
+    fbc?: string;
+    fbp?: string;
     visitor_id?: string;
   };
 };
@@ -82,6 +84,10 @@ const FALLBACK: Record<string, number> = {
 const str = (v?: string) => (v ?? "").toString().trim().slice(0, 500);
 
 export async function POST(req: NextRequest) {
+  // Captured here because after() runs once the response has gone and the
+  // request object is no longer safe to read.
+  const clientIp = getClientIp(req);
+  const userAgent = getUserAgent(req);
   let payload: QuizLeadPayload;
   try {
     payload = (await req.json()) as QuizLeadPayload;
@@ -264,11 +270,13 @@ export async function POST(req: NextRequest) {
         if (str(payload.source) === "decode_quiz" && typeof payload.patternScore === "number" && leadId) {
           try {
             const at = payload.attribution ?? {};
-            const fbc = at.fbclid ? `fb.1.${Date.now()}.${at.fbclid}` : undefined;
+            // Prefer the real cookie the middleware wrote on landing; only
+            // synthesise from fbclid when the cookie never made it here.
+            const fbc = at.fbc || (at.fbclid ? `fb.1.${Date.now()}.${at.fbclid}` : undefined);
             const r = await sendCAPIEvent("QuizComplete", {
               eventId: `quiz_${leadId}`,
               sourceUrl: "https://www.swapnilumbarkarfitness.in/decode/quiz",
-              userData: buildUserData({ phone, firstName: name.split(" ")[0] || "", email: str(payload.email), externalId: at.visitor_id || undefined, fbc, country: "in" }),
+              userData: buildUserData({ phone, firstName: name.split(" ")[0] || "", email: str(payload.email), externalId: at.visitor_id || undefined, fbc, fbp: at.fbp || undefined, clientIp, userAgent, country: "in" }),
               customData: { score: payload.patternScore, tier: str(payload.leadTier), decides_alone: payload.decidesAlone ? 1 : 0 },
             });
             console.log(`[quiz-lead] QuizComplete → Meta leadId=${leadId} score=${payload.patternScore} result=${JSON.stringify(r).slice(0, 160)}`);

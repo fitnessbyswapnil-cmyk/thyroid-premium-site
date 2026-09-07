@@ -30,7 +30,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
-import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
+import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import { scoreLead } from "@/lib/lead-scoring";
 import ScheduleClient from "@/app/schedule/ScheduleClient";
 
@@ -234,7 +234,12 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     persistUserIdentity({ first_name: firstName, phone: phone10 });
     trackLead({ first_name: firstName, phone: phone10, email: "" });
     pushDL({ event: "decode_gate_submitted" });
+    // The real _fbc / _fbp cookies, not just fbclid. QuizComplete scored 4.8
+    // on Event Match Quality against Lead's 9.3 because it was reaching Meta
+    // with four keys instead of nine — no click id, no browser id, no IP, no
+    // user agent. Those last two the server adds; these two only exist here.
     const utms = getUtmParams(); const fbclid = getFbclid(); const visitorId = getVisitorId();
+    const fbcCookie = getFbc(); const fbpCookie = getFbp();
     try {
       await fetch("/api/quiz-lead", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -248,7 +253,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           leadScore: leadNow.score, leadTier: leadNow.tier,
           patternScore: scoreNow, decidesAlone: a.decision === "Yes, I decide on my own",
           source: "decode_quiz",
-          attribution: { ...utms, ...(fbclid && { fbclid }), ...(visitorId && { visitor_id: visitorId }) },
+          attribution: { ...utms, ...(fbclid && { fbclid }), ...(visitorId && { visitor_id: visitorId }), ...(fbcCookie && { fbc: fbcCookie }), ...(fbpCookie && { fbp: fbpCookie }) },
         }),
       });
     } catch { /* score is shown regardless; the row write is best-effort */ }
