@@ -363,7 +363,7 @@ export async function sendBookingConfirmedFree(phone: string, fullName: string):
 
 export async function sendBookingConfirmation(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'booking_confirmation', [firstName])
+  return sendWhatsAppTemplate(phone, 'payment_confirmed_v2', [firstName])
 }
 
 /**
