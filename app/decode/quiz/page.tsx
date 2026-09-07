@@ -14,7 +14,7 @@ import DecodeQuiz from "../DecodeQuiz";
  * is noindex like the other funnel steps.
  */
 export const metadata: Metadata = {
-  title: "Your thyroid score | Swapnil Umbarkar",
+  title: "Book your consultation · Step 1 of 2 | Swapnil Umbarkar",
   robots: { index: false, follow: false },
 };
 

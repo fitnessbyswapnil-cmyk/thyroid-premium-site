@@ -44,9 +44,9 @@ const TransformationWall = dynamic(() => import("@/app/components/Transformation
 const WhatsappProofSection = dynamic(() => import("@/app/components/WhatsappProofSection"));
 
 export const metadata: Metadata = {
-  title: "Small plate, same weight | Premium Thyroid Fat Loss Session",
+  title: "Book your 1-1 Thyroid Consultation | Swapnil Umbarkar",
   description:
-    "Get your thyroid score in 12 taps, then a Premium Thyroid Fat Loss Session: your own blood report read line by line to find the exact reason you are not losing weight even though you eat less.",
+    "Book a 1-1 Thyroid Fat Loss Consultation for ₹299. Your own blood report read line by line to find the exact reason you are not losing weight even though you eat less.",
   // Ad traffic only. Indexing it would put it in competition with the main site.
   robots: { index: false, follow: false },
 };
@@ -137,8 +137,8 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Schedule my 1-1 Thyroid Consultation
-              <span className="cta-sub">12 quick questions first &middot; then pick your slot</span>
+              Book my 1-1 Thyroid Consultation
+              <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
             </a>
             <p className="mt-3 text-[13px] text-[var(--t3)]">
               No report yet? Answer anyway &mdash; I will tell you what to do next.
@@ -247,8 +247,8 @@ export default function DecodePage() {
               className="cta-button"
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
-              Schedule my 1-1 Thyroid Consultation
-              <span className="cta-sub">12 quick questions first &middot; then pick your slot</span>
+              Book my 1-1 Thyroid Consultation
+              <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
             </a>
           </div>
         </div>
