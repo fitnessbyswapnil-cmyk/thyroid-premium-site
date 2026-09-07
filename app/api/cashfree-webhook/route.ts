@@ -150,14 +150,26 @@ async function recordPaymentInSheet(data: {
     // second webhook for the same payment (e.g. the gateway AND the link
     // channel both firing) must not re-send Purchase to Meta.
     const paidIndex = plan.indexes['Paid']
+    const refIndex = plan.indexes['Payment Ref']
     const existing = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: `${LEADS_SHEET_NAME}!${rowNumber}:${rowNumber}`,
     })
     const existingRow = (existing.data.values?.[0] ?? []).map((c) => String(c ?? ''))
-    if ((existingRow[paidIndex] ?? '').trim().toUpperCase() === 'Y') {
-      console.log(`[cashfree-webhook] Lead row ${rowNumber} already marked Paid — not re-recording (ref=${data.refId})`)
+    const storedRef = (existingRow[refIndex] ?? '').trim()
+    // Compare the stored reference, not just the Paid flag. Keying on the flag
+    // alone meant any later payment on an already-paid lead was dropped before
+    // the Purchase send — so a woman who arrives back through the WhatsApp
+    // recovery link on a lead that was paid once never reached Meta at all, and
+    // ad optimisation lost the sale. A blank stored ref keeps the old, cautious
+    // behaviour: rows written before this column existed still dedupe on Paid.
+    if ((existingRow[paidIndex] ?? '').trim().toUpperCase() === 'Y'
+        && (!storedRef || storedRef === data.refId)) {
+      console.log(`[cashfree-webhook] Lead row ${rowNumber} already paid on this reference — not re-recording (ref=${data.refId})`)
       return 'already_paid'
+    }
+    if ((existingRow[paidIndex] ?? '').trim().toUpperCase() === 'Y') {
+      console.log(`[cashfree-webhook] Lead row ${rowNumber} was paid on ${storedRef}, now paying on ${data.refId} — recording as a new payment`)
     }
 
     const cells: { index: number; value: string }[] = [
