@@ -48,7 +48,10 @@ export const CONSULTATION_FORM_URL =
 
 export function ScarcityProvider({ children }: { children: ReactNode }) {
   const goToCta = useCallback(() => {
-    window.location.href = "/book-session";
+    // The free consultation is retired (owner decision, 2026-09-08). Every CTA
+    // on the landing page now enters the paid funnel at the quiz, which is the
+    // only qualifier left now that the Cal.com booking form has no questions.
+    window.location.href = "/decode/quiz";
   }, []);
 
   const value: ScarcityContextValue = {

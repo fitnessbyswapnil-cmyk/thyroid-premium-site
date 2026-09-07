@@ -198,6 +198,10 @@ export default function ScheduleClient({
         ...prev,
         step1: { name: f.name.trim(), phone: phoneDigits, email },
         leadId,
+        // Carried to the Cal.com embed as metadata so the booking webhook can
+        // fire QualifiedSchedule. Cal's own form has no questions any more, so
+        // this is the only route the score has to the webhook.
+        qscore: extraAnswers?.leadScore,
         startedAt: new Date().toISOString(),
       }));
     } catch { /* non-critical */ }

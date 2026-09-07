@@ -273,18 +273,24 @@ export async function POST(req: NextRequest) {
 
     // ── QualifiedSchedule (additive; never affects the Schedule send above) ──
     try {
-      const qScore = qualifiedScore(payload.responses)
+      // Cal.com's booking form no longer carries questions (owner removed them
+      // 2026-09-08), so `responses` is empty and the value scan returns 0. The
+      // quiz's lead score now rides in as metadata and is the primary signal;
+      // the response scan stays as a fallback for older bookings.
+      const metaScore = Number(metaValue(metadata, 'qscore'))
+      const fromMeta = Number.isFinite(metaScore) && metaScore > 0
+      const qScore = fromMeta ? (metaScore >= 45 ? 3 : 0) : qualifiedScore(payload.responses)
       if (qScore >= 3) {
         const q = await sendCAPIEvent('QualifiedSchedule', {
           eventId: `qsched_${uid}`,
           sourceUrl: SOURCE_URL,
           userData,
-          customData: { score: qScore },
+          customData: { score: fromMeta ? metaScore : qScore },
           ...(testCode ? { testCode } : {}),
         })
-        console.log(`[cal-webhook] QualifiedSchedule uid=${uid} score=${qScore}/4 result=${JSON.stringify(q).slice(0, 160)}`)
+        console.log(`[cal-webhook] QualifiedSchedule uid=${uid} source=${fromMeta ? 'quiz' : 'form'} score=${fromMeta ? metaScore : qScore} result=${JSON.stringify(q).slice(0, 160)}`)
       } else {
-        console.log(`[cal-webhook] Schedule not qualified uid=${uid} score=${qScore}/4`)
+        console.log(`[cal-webhook] Schedule not qualified uid=${uid} source=${fromMeta ? 'quiz' : 'form'} score=${fromMeta ? metaScore : qScore}`)
       }
     } catch (qErr) {
       console.error('[cal-webhook] QualifiedSchedule failed (swallowed):', qErr instanceof Error ? qErr.message : String(qErr))

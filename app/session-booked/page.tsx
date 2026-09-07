@@ -89,6 +89,7 @@ function CalcomStep({
   prefillPhone = "",
   leadId = "",
   orderId = "",
+  qscore = "",
 }: {
   onBooked: (date: string, time: string, uid: string) => void;
   prefillName?: string;
@@ -96,6 +97,7 @@ function CalcomStep({
   prefillPhone?: string;
   leadId?: string;
   orderId?: string;
+  qscore?: string;
 }) {
   // Idempotency: redirect fires AT MOST once per mount, even if Cal.com emits
   // bookingSuccessful more than once.
@@ -209,8 +211,8 @@ function CalcomStep({
             // Additive metadata only — ties the booking (and the BOOKING_CREATED
             // webhook) back to the lead/payment. Does NOT affect the event_id
             // (still schedule_<uid>) or the bookingSuccessful handling.
-            ...((leadId || orderId)
-              ? { metadata: { ...(leadId ? { leadId } : {}), ...(orderId ? { orderId } : {}) } }
+            ...((leadId || orderId || qscore)
+              ? { metadata: { ...(leadId ? { leadId } : {}), ...(orderId ? { orderId } : {}), ...(qscore ? { qscore } : {}) } }
               : {}),
           }}
         />
@@ -233,6 +235,7 @@ export default function SessionBooked() {
   // BOOKING_CREATED webhook can tie a booking back to the right lead/payment.
   const [leadId, setLeadId] = useState("");
   const [orderId, setOrderId] = useState("");
+  const [qscore, setQscore] = useState("");
   const submittedRef = useRef(false);     // guards the booking redirect (once)
   const purchaseFiredRef = useRef(false); // guards the page-load Purchase (once)
 
@@ -251,9 +254,10 @@ export default function SessionBooked() {
     try {
       const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
       if (raw) {
-        const stored = JSON.parse(raw) as { step1: Step1Data; startedAt: string; leadId?: string; orderId?: string };
+        const stored = JSON.parse(raw) as { step1: Step1Data; startedAt: string; leadId?: string; orderId?: string; qscore?: number };
         if (stored.leadId) setLeadId(stored.leadId);
         if (stored.orderId) setOrderId(stored.orderId);
+        if (typeof stored.qscore === "number") setQscore(String(stored.qscore));
         if (stored.step1) {
           setStep1Data(stored.step1);
           foundInStorage = true;
@@ -590,6 +594,7 @@ export default function SessionBooked() {
               prefillPhone={step1Data?.phone || ""}
               leadId={leadId}
               orderId={orderId}
+              qscore={qscore}
             />
           </motion.div>
           )}

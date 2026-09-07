@@ -374,7 +374,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
         ) : (
           <>
             <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
-              You do not have a blood report yet &mdash; that is fine. In the Premium Session I tell you <strong>exactly which tests to get</strong> and why (the ones most labs leave out), and we work from your answers above until the report is in. Book it below, or take the free call first if you would rather.
+              You do not have a blood report yet &mdash; that is fine. In the session I tell you <strong>exactly which tests to get</strong> and why (the ones most labs leave out), and we work from your answers above until the results are in.
             </p>
             <div className="mt-8 text-left">
               <ScheduleClient
@@ -407,13 +407,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 }}
               />
             </div>
-            <p className="mx-auto mt-6 max-w-[580px] text-[14.5px] leading-[1.6] text-[var(--t3)]">
-              Prefer to get tested first?{" "}
-              <a href="/book-session" className="underline text-[var(--t1)]" onClick={() => pushDL({ event: "decode_quiz_routed_free" })}>
-                Book a free call
-              </a>{" "}
-              and I will tell you what to test.
-            </p>
+
           </>
         )}
       </Shell>
