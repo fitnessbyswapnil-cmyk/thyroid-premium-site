@@ -31,6 +31,7 @@ import { useCallback, useEffect, useState } from "react";
 import { pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
+import InAppBrowserNotice from "@/app/components/InAppBrowserNotice";
 import { scoreLead } from "@/lib/lead-scoring";
 import ScheduleClient from "@/app/schedule/ScheduleClient";
 
@@ -251,7 +252,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           goal: a.goal ?? "", budget: a.budget ?? "", timing: a.timing ?? "", decisionMaker: a.decision ?? "",
           symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${scoreNow}/100 (${hitsNow}/7)`,
           leadScore: leadNow.score, leadTier: leadNow.tier,
-          patternScore: scoreNow, decidesAlone: a.decision === "Yes, I decide on my own",
+          patternScore: scoreNow, markersHit: hitsNow, decidesAlone: a.decision === "Yes, I decide on my own",
           source: "decode_quiz",
           attribution: { ...utms, ...(fbclid && { fbclid }), ...(visitorId && { visitor_id: visitorId }), ...(fbcCookie && { fbc: fbcCookie }), ...(fbpCookie && { fbp: fbpCookie }) },
         }),
@@ -344,6 +345,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 : <>Your report will show which of these are real and which are not. That is the whole job of the session &mdash; and if the answer is that you do not need me, you will hear that too.</>}
             </p>
             <div className="mt-8 text-left">
+              <InAppBrowserNotice />
               <ScheduleClient
                 wrapper="div"
                 eyebrow={`Your score: ${score100} / 100`}

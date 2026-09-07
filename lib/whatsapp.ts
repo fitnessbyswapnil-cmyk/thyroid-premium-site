@@ -315,14 +315,14 @@ export async function sendWelcomeLeadWithLink(
    * REQUIRED. Callers that cannot supply them must send plain welcome_lead
    * instead — sending the wrong count fails the whole message (132000).
    */
-  personal: { score: string; symptom: string },
+  personal: { score: string; markers: string },
   languageOverride?: string,
 ): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(
     phone,
-    'welcome_lead_link_v2',
-    [firstName, personal.score, personal.symptom],
+    'welcome_lead_score_v2',
+    [firstName, personal.score, personal.markers],
     languageOverride,
     leadId,
   )

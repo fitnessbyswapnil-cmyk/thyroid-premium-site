@@ -55,6 +55,7 @@ type QuizLeadPayload = {
   leadTier?: string;
   /** Pattern score 0-100 from the /decode quiz. Numeric only — sent to Meta. */
   patternScore?: number;
+  markersHit?: number;
   decidesAlone?: boolean;
   attribution?: {
     utm_source?: string;
@@ -338,25 +339,23 @@ export async function POST(req: NextRequest) {
         // Her symptoms arrive comma-joined ("Tired by 4pm, Hair in the
         // comb"). Only the FIRST is used: it is the one she picked first and
         // reads naturally mid-sentence, where a full list would not.
-        const topSymptom = str(payload.symptoms).split(",")[0].trim();
-        const score = typeof payload.leadScore === "number" ? String(payload.leadScore) : "";
+        // The page shows patternScore — markers out of 7, rendered as N/100.
+        // leadScore is a separate internal lead-quality number, and sending it
+        // made the WhatsApp contradict the score she had just read on screen.
+        // symptoms is pipe-delimited ("Report: Yes | Work: …"), so splitting it
+        // on a comma returned the whole string and dropped it into a slot that
+        // reads "… bothers you most". The decode quiz never asks for a symptom;
+        // it counts blockers, so the message now says how many are present.
+        const score = typeof payload.patternScore === "number" ? String(payload.patternScore) : "";
+        const markers = typeof payload.markersHit === "number" ? String(payload.markersHit) : "";
 
-        // welcome_lead_link declares three body params. If ANY value is
-        // missing the count would be wrong and Meta would reject the whole
-        // send (132000), so fall straight through to the plain template
-        // rather than sending something guaranteed to fail.
-        const canPersonalise = !!(leadId && topSymptom && score);
-        const personal = {
-          score,
-          // Lowercase the first letter so it sits inside a sentence: "the one
-          // you told me bothers you most is tired by 4pm".
-          symptom: topSymptom.charAt(0).toLowerCase() + topSymptom.slice(1),
-        };
+        const canPersonalise = !!(leadId && score && markers);
+        const personal = { score, markers };
 
         let r = canPersonalise
           ? await sendTryingLanguages((language) => sendWelcomeLeadWithLink(phone, name, leadId, personal, language))
           : await sendWelcomeLead(phone, name);
-        let usedTemplate = canPersonalise ? "welcome_lead_link" : "welcome_lead";
+        let usedTemplate = canPersonalise ? "welcome_lead_score_v2" : "welcome_lead_v2";
 
         // Config-level failure (template absent, or param count wrong) keeps
         // failing until a human intervenes, so fall back to the template that
@@ -364,7 +363,7 @@ export async function POST(req: NextRequest) {
         // back — retrying it here would send the quiz-linked message for a
         // problem that may have resolved by the next attempt.
         if (!r.sent && isTemplateConfigError(r.error)) {
-          usedTemplate = "welcome_lead (fallback)";
+          usedTemplate = "welcome_lead_v2 (fallback)";
           r = await sendWelcomeLead(phone, name);
         }
 
