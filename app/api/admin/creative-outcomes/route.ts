@@ -14,15 +14,19 @@ export const dynamic = "force-dynamic";
 
 type Row = { creative: string; spend: number; leads: number; booked: number; showed: number; clients: number; revenue: number };
 
-async function windsorSpendByAd(apiKey: string): Promise<Map<string, number>> {
-  const url = `https://connectors.windsor.ai/facebook?api_key=${encodeURIComponent(apiKey)}&date_preset=last_90d&fields=ad_name,spend`;
+async function windsorSpendByAd(apiKey: string): Promise<Map<string, { name: string; spend: number }>> {
+  const url = `https://connectors.windsor.ai/facebook?api_key=${encodeURIComponent(apiKey)}&date_preset=last_90d&fields=ad_id,ad_name,spend`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`windsor ${res.status}`);
-  const json = (await res.json()) as { data?: Array<{ ad_name?: string; spend?: string | number }> };
-  const out = new Map<string, number>();
+  const json = (await res.json()) as { data?: Array<{ ad_id?: string; ad_name?: string; spend?: string | number }> };
+  // Keyed by BOTH ad_id and ad_name: this account's ad URLs put the Meta ad id
+  // in utm_content, and a few older ones the name.
+  const out = new Map<string, { name: string; spend: number }>();
   for (const r of json.data ?? []) {
-    const k = String(r.ad_name ?? "").trim(); if (!k) continue;
-    out.set(k, (out.get(k) ?? 0) + (parseFloat(String(r.spend ?? "0")) || 0));
+    const id = String(r.ad_id ?? "").trim(); const name = String(r.ad_name ?? "").trim();
+    const amt = parseFloat(String(r.spend ?? "0")) || 0;
+    const key = id || name; if (!key) continue;
+    const e = out.get(key) ?? { name: name || id, spend: 0 }; e.spend += amt; out.set(key, e);
   }
   return out;
 }
@@ -55,10 +59,10 @@ export async function GET(req: NextRequest) {
     const key = process.env.WINDSOR_API_KEY;
     if (key) {
       const spend = await windsorSpendByAd(key);
-      for (const [name, amt] of spend) {
-        const hit = [...byCreative.keys()].find((k) => k.toLowerCase() === name.toLowerCase() || name.toLowerCase().includes(k.toLowerCase()));
-        if (hit) byCreative.get(hit)!.spend += amt;
-        else byCreative.set(name, { creative: name, spend: amt, leads: 0, booked: 0, showed: 0, clients: 0, revenue: 0 });
+      for (const [id, { name, spend: amt }] of spend) {
+        const hit = [...byCreative.keys()].find((k) => k === id || k.toLowerCase() === name.toLowerCase());
+        if (hit) { const e = byCreative.get(hit)!; e.spend += amt; if (e.creative === id && name) e.creative = `${name} (${id})`; }
+        else byCreative.set(id, { creative: name ? `${name} (${id})` : id, spend: amt, leads: 0, booked: 0, showed: 0, clients: 0, revenue: 0 });
       }
     } else spendNote = "WINDSOR_API_KEY not set — spend omitted";
   } catch (e) { spendNote = `spend unavailable: ${e instanceof Error ? e.message : String(e)}`; }
