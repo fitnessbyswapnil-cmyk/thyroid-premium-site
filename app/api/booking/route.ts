@@ -116,6 +116,16 @@ async function appendToSheet(payload: BookingPayload) {
 
   const row = [
     new Date().toISOString(),                                                     // Timestamp
+    // Column B is "Lead ID" in the sheet, and this route never wrote it — it put
+    // the name there, so every row it appended sat one column left of the header
+    // from here down: the name landed under Lead ID, the phone under Name, the
+    // email under Phone. The payment-reminder cron reads leadId at 1 and phone at
+    // 3, and gates on the id starting "dq_"/"sched_", so those rows were read as
+    // free-funnel leads, had their phone blanked, and could never be reminded.
+    // (A second, stale Lead ID further down the array is left alone: the tail of
+    // this row has diverged from the header independently and correcting it is a
+    // separate job from getting Lead ID, Name and Phone into the right columns.)
+    str(payload.leadId),                                                          // Lead ID
     str(step1.name),                                                              // Name
     str(step1.phone),                                                             // Phone
     str(step1.email),                                                             // Email
