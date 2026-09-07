@@ -31,6 +31,8 @@ import {
   type BookingCandidate,
 } from "@/lib/fathom";
 import { fetchBookings } from "@/lib/cal-bookings";
+import { sendCAPIEvent, buildUserData } from "@/lib/server-tracking";
+import { isOwnerTest } from "@/lib/owner-filter";
 import { extractCall, failedCount, EXTRACT_MODEL } from "@/lib/call-extract";
 import { writeCall, type CallFields } from "@/lib/crm-calls";
 
@@ -90,6 +92,31 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ received: true, recordingId: meeting.recordingId });
+}
+
+
+/**
+ * CallHeld → Meta. The call is the richest signal in the business and Meta
+ * never saw it. Fired only when the extractor says she attended, keyed to the
+ * booking uid so a re-run cannot double count. `partner_present` is whether a
+ * second non-owner attendee was on the recording — the number that will settle
+ * whether the absent decision-maker is the leak it looks like.
+ */
+async function fireCallHeld(args: { uid: string; name: string; email: string; phone: string; attended: boolean; emails: string[]; startedAt: string }) {
+  if (!args.attended) return;
+  try {
+    const others = args.emails.filter((e) => e && e.toLowerCase() !== args.email.toLowerCase() && !isOwnerTest({ email: e }));
+    const r = await sendCAPIEvent("CallHeld", {
+      eventId: `call_${args.uid}`,
+      userData: buildUserData({ email: args.email, phone: args.phone, firstName: args.name.split(" ")[0] || "", country: "in" }),
+      customData: { partner_present: others.length > 0 ? 1 : 0 },
+      actionSource: "phone_call",
+      ...(args.startedAt ? { eventTime: Math.floor(new Date(args.startedAt).getTime() / 1000) } : {}),
+    });
+    console.log(`[fathom] CallHeld uid=${args.uid} partner_present=${others.length > 0 ? 1 : 0} result=${JSON.stringify(r).slice(0, 160)}`);
+  } catch (e) {
+    console.error("[fathom] CallHeld failed (swallowed):", e instanceof Error ? e.message : String(e));
+  }
 }
 
 async function processMeeting(meeting: ReturnType<typeof normaliseMeeting>) {
@@ -166,4 +193,5 @@ async function processMeeting(meeting: ReturnType<typeof normaliseMeeting>) {
 
   const plan = await writeCall(fields);
   console.log(`[fathom-webhook] Calls row ${plan.action}${plan.skipReason ? ` (${plan.skipReason})` : ""} uid=${match.uid}`);
+  await fireCallHeld({ uid: match.uid, name: fields.name ?? "", email: fields.email ?? "", phone: fields.phone ?? "", attended: x.attended, emails: meeting.emails, startedAt: meeting.startedAt });
 }

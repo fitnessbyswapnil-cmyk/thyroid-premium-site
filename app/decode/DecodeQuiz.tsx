@@ -28,7 +28,9 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { pushDL } from "@/app/lib/analytics";
+import { pushDL, trackLead } from "@/app/lib/analytics";
+import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
+import { getUtmParams, getFbclid, getVisitorId } from "@/lib/tracking";
 import { scoreLead } from "@/lib/lead-scoring";
 import ScheduleClient from "@/app/schedule/ScheduleClient";
 
@@ -159,6 +161,35 @@ function toLeadAnswers(a: A) {
  *  just tapped WAS the intro — a second "start" screen would be a second ask. */
 export default function DecodeQuiz({ autostart = false }: { autostart?: boolean } = {}) {
   const [i, setI] = useState(autostart ? 0 : -1);
+  // The gate: name + WhatsApp number after the last question and BEFORE the
+  // score. Every completer becomes a lead the WhatsApp sequence can reach and a
+  // Lead event Meta can learn from; before this, a woman who saw her score and
+  // left was invisible.
+  const [gate, setGate] = useState<{ name: string; phone: string }>({ name: "", phone: "" });
+  const [gateErr, setGateErr] = useState("");
+  const [gateBusy, setGateBusy] = useState(false);
+  const [leadId, setLeadId] = useState("");
+  const [resumeScore, setResumeScore] = useState<number | null>(null);
+  const [resumeInit, setResumeInit] = useState<{ name?: string; phone?: string; email?: string } | undefined>(undefined);
+
+  // Resume link from WhatsApp: /decode/quiz?leadId=<id>&s=<score> reopens the
+  // checkout prefilled with the score shown — nothing asked twice.
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const id = q.get("leadId") || q.get("lead") || "";
+      if (!id) return;
+      const sc = Number(q.get("s"));
+      setLeadId(id);
+      if (Number.isFinite(sc) && sc >= 0 && sc <= 100) setResumeScore(sc);
+      fetch(`/api/leads/${encodeURIComponent(id)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { name?: string; phone?: string; email?: string } | null) => { if (d) setResumeInit({ name: d.name, phone: d.phone, email: d.email }); })
+        .catch(() => {});
+      setA((prev) => ({ ...prev, report: "Yes, from the last 6 months" }));
+      setI(QUESTIONS.length + 1);
+    } catch { /* no window */ }
+  }, []);
   useEffect(() => {
     if (autostart) pushDL({ event: "decode_quiz_start" });
   }, [autostart]);
@@ -173,7 +204,8 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     [i],
   );
 
-  const done = i >= QUESTIONS.length;
+  const atGate = i === QUESTIONS.length; // answered everything, number not yet given
+  const done = i > QUESTIONS.length;      // gate passed, or resumed
   useEffect(() => {
     if (done) window.dispatchEvent(new Event("decode-quiz-done"));
   }, [done]);
@@ -184,8 +216,44 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   // Out of 100, as asked. Seven equally-weighted markers; the list under the
   // number shows exactly which taps produced it, so it never reads as a
   // black box.
-  const score100 = Math.round((hits / 7) * 100);
+  const score100 = resumeScore ?? Math.round((hits / 7) * 100);
   const lead = done ? scoreLead(toLeadAnswers(a)) : null;
+
+  const submitGate = useCallback(async () => {
+    if (gateBusy) return;
+    const digits = gate.phone.replace(/\D/g, "");
+    const phone10 = digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits;
+    if (!gate.name.trim()) { setGateErr("Please enter your name"); return; }
+    if (phone10.length !== 10) { setGateErr("Enter a 10-digit WhatsApp number"); return; }
+    setGateErr(""); setGateBusy(true);
+    const id = `dq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const firstName = gate.name.trim().split(/\s+/)[0] || "";
+    const msNow = markers(a); const hitsNow = msNow.filter((m) => m.hit).length;
+    const scoreNow = Math.round((hitsNow / 7) * 100);
+    const leadNow = scoreLead(toLeadAnswers(a));
+    persistUserIdentity({ first_name: firstName, phone: phone10 });
+    trackLead({ first_name: firstName, phone: phone10, email: "" });
+    pushDL({ event: "decode_gate_submitted" });
+    const utms = getUtmParams(); const fbclid = getFbclid(); const visitorId = getVisitorId();
+    try {
+      await fetch("/api/quiz-lead", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: id, name: gate.name.trim(), phone: phone10, email: "",
+          city: a.city ?? "", age: a.age ?? "", diagnosis: a.diagnosis ?? "", onMedication: a.diagnosis ?? "",
+          struggleDuration: a.stuck ?? "", biggestChallenge: a.pattern ?? "", triedBefore: a.tried ?? "",
+          amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
+          goal: a.goal ?? "", budget: a.budget ?? "", timing: a.timing ?? "", decisionMaker: a.decision ?? "",
+          symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${scoreNow}/100 (${hitsNow}/7)`,
+          leadScore: leadNow.score, leadTier: leadNow.tier,
+          patternScore: scoreNow, decidesAlone: a.decision === "Yes, I decide on my own",
+          source: "decode_quiz",
+          attribution: { ...utms, ...(fbclid && { fbclid }), ...(visitorId && { visitor_id: visitorId }) },
+        }),
+      });
+    } catch { /* score is shown regardless; the row write is best-effort */ }
+    setLeadId(id); setGateBusy(false); setI((n) => n + 1);
+  }, [a, gate, gateBusy]);
 
   if (i === -1) {
     return (
@@ -208,6 +276,34 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     );
   }
 
+  if (atGate) {
+    return (
+      <Shell>
+        <p className="section-label">Last step before your score</p>
+        <h2 className="section-title mx-auto text-balance">Where should I send it?</h2>
+        <p className="mx-auto mt-3 max-w-[520px] text-[15.5px] leading-[1.6] text-[var(--t2)]">
+          Your score shows here now, and I WhatsApp it to you so you keep it &mdash; with the one thing to do next.
+        </p>
+        <div className="mx-auto mt-6 w-full max-w-[420px] text-left">
+          <label className="block text-[13px] font-semibold text-[var(--t1)]" htmlFor="gate-name">Your name</label>
+          <input id="gate-name" value={gate.name} onChange={(e) => setGate((g) => ({ ...g, name: e.target.value }))} placeholder="First name" autoComplete="given-name"
+            className="mt-1 w-full rounded-lg bg-white px-4 py-3 text-[16px] text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }} />
+          <label className="mt-4 block text-[13px] font-semibold text-[var(--t1)]" htmlFor="gate-phone">WhatsApp number</label>
+          <div className="mt-1 flex">
+            <span aria-hidden="true" className="flex items-center rounded-l-lg bg-white px-3 text-[15px] text-[var(--t2)]" style={{ border: "1.5px solid var(--border-strong)", borderRight: 0 }}>+91</span>
+            <input id="gate-phone" value={gate.phone} onChange={(e) => setGate((g) => ({ ...g, phone: e.target.value }))} placeholder="10-digit mobile" inputMode="numeric" autoComplete="tel"
+              className="w-full rounded-r-lg bg-white px-4 py-3 text-[16px] text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }} />
+          </div>
+          {gateErr && <p className="mt-2 text-[13px]" style={{ color: "var(--red-cta)" }}>{gateErr}</p>}
+          <button type="button" onClick={submitGate} disabled={gateBusy} className="cta-button mt-5 w-full" style={{ opacity: gateBusy ? 0.7 : 1 }}>
+            {gateBusy ? "One moment…" : "Show my score"}
+            <span className="cta-sub">I&rsquo;ll WhatsApp your score. No spam &mdash; reply stop any time.</span>
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
   if (done) {
     return (
       <Shell>
@@ -225,14 +321,14 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           <div className="mt-2 text-[13px]" style={{ color: "#9a9890" }}>
             {hits} of 7 markers present
           </div>
-          <ul className="mt-5 flex list-none flex-col gap-2 p-0 text-left">
+          {resumeScore == null && (<ul className="mt-5 flex list-none flex-col gap-2 p-0 text-left">
             {ms.map((m) => (
               <li key={m.label} className="flex items-start gap-3 text-[15px] leading-[1.45]" style={{ color: m.hit ? "#fff" : "#6b7280" }}>
                 <span aria-hidden="true" className="mt-[3px] inline-block h-4 w-4 flex-none rounded-full" style={{ background: m.hit ? "#00ff66" : "transparent", border: m.hit ? "0" : "1.5px solid #4b5563" }} />
                 {m.label}
               </li>
             ))}
-          </ul>
+          </ul>)}
         </div>
 
         {hasReport ? (
@@ -251,7 +347,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 ctaLabel={"Pay ₹299 & pick my slot"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I read your report before the call instead of seeing it for the first time in front of you. If you join the programme later, this ₹299 is taken off the fee."
-                presetThyroid={a.diagnosis}
+                presetThyroid={a.diagnosis || "Yes, hypothyroid and on medication"}
+                existingLeadId={leadId || undefined}
+                initial={resumeInit ?? { name: gate.name, phone: gate.phone }}
                 extraAnswers={{
                   age: a.age ?? "",
                   diagnosis: a.diagnosis ?? "",
@@ -287,7 +385,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 ctaLabel={"Pay ₹299 & pick my slot"}
                 rationaleTitle="Why ₹299 and not free"
                 rationaleBody="So the slot is kept by someone who will come, and so I prepare from your answers before the call. If you join the programme later, this ₹299 is taken off the fee."
-                presetThyroid={a.diagnosis}
+                presetThyroid={a.diagnosis || "Yes, hypothyroid and on medication"}
+                existingLeadId={leadId || undefined}
+                initial={resumeInit ?? { name: gate.name, phone: gate.phone }}
                 extraAnswers={{
                   age: a.age ?? "",
                   diagnosis: a.diagnosis ?? "",

@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
   if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  let body: { row?: number; field?: string; value?: string };
+  let body: { row?: number; field?: string; value?: string; rail?: string; paidAt?: string };
   try {
     body = await req.json();
   } catch {
@@ -269,6 +269,26 @@ export async function POST(req: NextRequest) {
     // A closed win is the highest-value signal the business produces. Send it.
     let meta: { status: string; detail?: ProgramConversionResult } | undefined;
     const amount = field === "closed" ? parseFloat(value) : NaN;
+    // A recorded win IS a payment. Stamp the columns the CRM and dashboard read
+    // for revenue, so UPI and bank-transfer fees stop being invisible. Rail and
+    // date are optional; absent, the rail is "manual" and the date is now.
+    if (field === "closed" && Number.isFinite(amount) && amount > 0) {
+      try {
+        const rail = (body.rail ?? "manual").toString().slice(0, 24);
+        const paidAt = body.paidAt && !Number.isNaN(Date.parse(body.paidAt)) ? new Date(body.paidAt).toISOString() : new Date().toISOString();
+        const writes: Array<[string, string]> = [["Paid", "Y"], ["Paid Amount", String(amount)], ["Paid At", paidAt], ["Rail", rail]];
+        for (const [title, v] of writes) {
+          const idx = await resolveOrAppendColumn(sheets, sheetId, title);
+          if (idx == null) continue;
+          await sheets.spreadsheets.values.update({
+            spreadsheetId: sheetId, range: `${SHEET_NAME}!${numToCol(idx)}${row}`, valueInputOption: "RAW",
+            requestBody: { values: [[v]] },
+          });
+        }
+      } catch (payErr) {
+        console.error("[admin/mark] paid stamp failed (swallowed):", payErr instanceof Error ? payErr.message : String(payErr));
+      }
+    }
     if (field === "closed" && Number.isFinite(amount) && amount > 0) {
       try {
         meta = await sendWinToMeta(sheets, sheetId, row, amount);

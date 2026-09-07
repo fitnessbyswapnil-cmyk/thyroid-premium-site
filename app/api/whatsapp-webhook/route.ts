@@ -17,6 +17,8 @@
  * protect one bad row is a terrible trade.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
+import { sendCAPIEvent, buildUserData } from "@/lib/server-tracking";
 import { appendMessage, readMessages } from "@/lib/wa-messages";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { routeReply } from "@/lib/wa-autoreply";
@@ -248,6 +250,25 @@ export async function POST(req: NextRequest) {
             mediaName: found?.media.filename ?? "",
           });
           console.log(`[wa-webhook] inbound from ***${phone.slice(-4)} (${name || "unknown"}): ${text.slice(0, 80)}`);
+          // ReportReceived → Meta. A woman who sends her report before the call
+          // is materially more likely to close; nobody else in the category
+          // captures it. Phone is the match key; one event per number per day.
+          if (found && (found.kind === "image" || found.kind === "document")) {
+            const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+            after(async () => {
+              try {
+                const r = await sendCAPIEvent("ReportReceived", {
+                  eventId: `report_${phone.slice(-10)}_${day}`,
+                  userData: buildUserData({ phone, country: "in" }),
+                  customData: { content_type: found.kind },
+                  actionSource: "business_messaging",
+                });
+                console.log(`[wa-webhook] ReportReceived → Meta ***${phone.slice(-4)} result=${JSON.stringify(r).slice(0, 160)}`);
+              } catch (e) {
+                console.error("[wa-webhook] ReportReceived failed (swallowed):", e instanceof Error ? e.message : String(e));
+              }
+            });
+          }
 
           // Isolated: storing her message is the job that must not fail. An
           // auto-reply is a bonus, and a Meta hiccup on the way out must never

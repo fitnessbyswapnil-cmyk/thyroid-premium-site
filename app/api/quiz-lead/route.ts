@@ -18,6 +18,7 @@
  * sequence picks up quiz leads exactly like native-form leads.
  */
 import { NextRequest, NextResponse, after } from "next/server";
+import { sendCAPIEvent, buildUserData } from "@/lib/server-tracking";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation, sendBookingConfirmedFree } from "@/lib/whatsapp";
 
@@ -52,6 +53,9 @@ type QuizLeadPayload = {
   decisionMaker?: string; // whether she signs off alone — sales signal, never scored
   leadScore?: number;
   leadTier?: string;
+  /** Pattern score 0-100 from the /decode quiz. Numeric only — sent to Meta. */
+  patternScore?: number;
+  decidesAlone?: boolean;
   attribution?: {
     utm_source?: string;
     utm_medium?: string;
@@ -246,6 +250,26 @@ export async function POST(req: NextRequest) {
         const phone = str(payload.phone);
         const name = str(payload.name);
         const leadId = str(payload.leadId);
+
+        // QuizComplete → Meta, server-side. The score is what the Rs 299
+        // attaches to and what the /decode campaign will optimise on. Only the
+        // numeric score, tier and a decision flag travel — never a diagnosis,
+        // medication or symptom.
+        if (str(payload.source) === "decode_quiz" && typeof payload.patternScore === "number" && leadId) {
+          try {
+            const at = payload.attribution ?? {};
+            const fbc = at.fbclid ? `fb.1.${Date.now()}.${at.fbclid}` : undefined;
+            const r = await sendCAPIEvent("QuizComplete", {
+              eventId: `quiz_${leadId}`,
+              sourceUrl: "https://www.swapnilumbarkarfitness.in/decode/quiz",
+              userData: buildUserData({ phone, firstName: name.split(" ")[0] || "", email: str(payload.email), externalId: at.visitor_id || undefined, fbc, country: "in" }),
+              customData: { score: payload.patternScore, tier: str(payload.leadTier), decides_alone: payload.decidesAlone ? 1 : 0 },
+            });
+            console.log(`[quiz-lead] QuizComplete → Meta leadId=${leadId} score=${payload.patternScore} result=${JSON.stringify(r).slice(0, 160)}`);
+          } catch (e) {
+            console.error("[quiz-lead] QuizComplete failed (swallowed):", e instanceof Error ? e.message : String(e));
+          }
+        }
 
         // A Cal.com booking is not a quiz completion, and /api/booking-payment
         // routes through here to reuse the sheet contract. Without this branch

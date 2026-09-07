@@ -34,7 +34,9 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // 2026-09-07: flipped to TRUE at the owner's explicit request to test the new
 // /decode quiz -> pay -> book flow end to end. MUST be flipped back before any
 // ad is pointed at /decode: while true every real customer is charged Rs 1.
-const IS_TEST_MODE = true;
+// 2026-09-07 (later): flipped BACK to false at the owner's instruction after
+// the end-to-end test. Every real customer is charged the real SESSION_PRICE.
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────

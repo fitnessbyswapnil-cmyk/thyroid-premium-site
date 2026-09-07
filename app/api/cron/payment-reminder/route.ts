@@ -103,7 +103,19 @@ const BOOKING_TEMPLATE_FALLBACK = "booking_confirmation";
 //
 // Gated rather than deleted. The plans still compute, so the logs still show
 // what WOULD have matched, and turning payment back on is one boolean.
-const PAID_FUNNEL_ACTIVE = false;
+// 2026-09-07: back ON — but only for leads that entered through a paid path.
+// Free-consultation leads must never be asked for money they do not owe, so
+// rows from any other source have their phone blanked in a mapped COPY before
+// planning (index-preserving, so per-row stamping still lands on the right row).
+const PAID_FUNNEL_ACTIVE = true;
+const PAID_LEAD_ID_PREFIXES = ["sched_", "dq_"];
+function paidFunnelRowsOnly(rows: string[][], cols: { leadId: number; phone: number }): string[][] {
+  return rows.map((r) => {
+    const id = String(r?.[cols.leadId] ?? "");
+    if (PAID_LEAD_ID_PREFIXES.some((p) => id.startsWith(p))) return r;
+    const copy = [...(r ?? [])]; copy[cols.phone] = ""; return copy;
+  });
+}
 
 const NUDGE_SENT_TITLE = "Booking Nudge Sent";
 const NUDGE_AT_TITLE = "Booking Nudge At";
@@ -188,13 +200,14 @@ export async function GET(req: NextRequest) {
       reminderSent: findCol(header, SENT_TITLE),
     };
 
-    const plan = planReminders({ rows, cols, now: Date.now(), minAgeMinutes, maxAgeHours, limit });
+    const paidRows = paidFunnelRowsOnly(rows, cols);
+    const plan = planReminders({ rows: paidRows, cols, now: Date.now(), minAgeMinutes, maxAgeHours, limit });
 
     // Second payment touch, a day later, stamped in its OWN column so it can
     // never be confused with touch one. Everything else — phone dedup, paid
     // exclusion, per-row stamping — is the same tested planner.
     const plan2 = planReminders({
-      rows,
+      rows: paidRows,
       cols: { ...cols, reminderSent: findCol(header, SENT2_TITLE) },
       now: Date.now(),
       minAgeMinutes: REMINDER2_MIN_AGE_MINUTES,

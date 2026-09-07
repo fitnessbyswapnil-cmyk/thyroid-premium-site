@@ -63,6 +63,12 @@ export type ScheduleClientProps = {
    * worse than no field, because re-asking reads as "you were not listening".
    */
   presetThyroid?: string;
+  /** Lead already minted upstream (the /decode phone gate). When present this
+   *  component posts no second lead row and fires no second Lead event; it
+   *  reuses the id for the Cashfree order and the Cal.com handoff. */
+  existingLeadId?: string;
+  /** Prefill for a resumed checkout (the WhatsApp link). */
+  initial?: { name?: string; phone?: string; email?: string };
   /**
    * Answers already collected upstream (the /decode quiz). Merged into the
    * /api/quiz-lead post so they land in the SAME sheet columns the quiz funnel
@@ -87,9 +93,11 @@ export default function ScheduleClient({
   wrapper = "main",
   extraAnswers,
   presetThyroid,
+  existingLeadId,
+  initial,
 }: ScheduleClientProps = {}) {
   const Wrapper = wrapper;
-  const [f, setF] = useState<Form>({ name: "", email: "", phone: "", thyroid: presetThyroid ?? "" });
+  const [f, setF] = useState<Form>({ name: initial?.name ?? "", email: initial?.email ?? "", phone: initial?.phone ?? "", thyroid: presetThyroid ?? "" });
   const [errs, setErrs] = useState<Partial<Record<keyof Form, string>>>({});
   const [formErr, setFormErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -149,7 +157,8 @@ export default function ScheduleClient({
     });
 
     // Same shared-id Lead pattern as the quiz: dataLayer + CAPI carry one id.
-    const leadEventId = trackLead({
+    // If the phone gate already created the lead, Lead has already fired.
+    const leadEventId = existingLeadId ? "" : trackLead({
       ...(firstName && { first_name: firstName }),
       ...(lastName && { last_name: lastName }),
       phone: phoneDigits,
@@ -161,7 +170,7 @@ export default function ScheduleClient({
     const fbclid = getFbclid();
     const visitorId = getVisitorId();
 
-    fetch("/api/events", {
+    if (!existingLeadId) fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -177,7 +186,7 @@ export default function ScheduleClient({
       }),
     }).catch(() => {});
 
-    const leadId = `sched_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const leadId = existingLeadId || `sched_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     // /session-booked reads { step1: {name, phone, email}, leadId } from this key
     // and hands it to the Cal.com embed as prefill. Without it the calendar
@@ -196,7 +205,7 @@ export default function ScheduleClient({
     // Same sheet contract as the quiz so the dashboard, cron and WhatsApp
     // sequences read identical headers. Unasked fields post as "" rather than
     // being omitted, so the column mapping can never shift.
-    fetch("/api/quiz-lead", {
+    if (!existingLeadId) fetch("/api/quiz-lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

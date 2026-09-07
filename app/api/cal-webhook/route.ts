@@ -94,6 +94,32 @@ function metaValue(metadata: Record<string, unknown> | undefined, key: string): 
   return typeof v === 'string' ? v : ''
 }
 
+
+/**
+ * QualifiedSchedule — fired ALONGSIDE Schedule when the booking-form answers
+ * clear a bar, so the account can report (and one day optimise on) bookings
+ * that look like buyers rather than bookings. Key-agnostic on purpose: Cal.com
+ * slugs its question labels, so this scans every answer VALUE instead of
+ * guessing keys. Scoring uses only what the form asks today.
+ */
+function qualifiedScore(responses: Record<string, { value?: unknown } | undefined> | undefined): number {
+  const vals = Object.values(responses ?? {})
+    .map((r) => (typeof r?.value === 'string' ? r.value : Array.isArray(r?.value) ? r!.value.join(' ') : ''))
+    .join(' | ')
+  const onMeds = /on medication|hypothyroid and on|take(s)? (thyroid )?medic/i.test(vals) && !/not on medication/i.test(vals)
+  const diagnosed = /hypothyroid|hashimoto|diagnosed/i.test(vals)
+  const stuck = /more than 3 years|more than 2 years|over 2 years|1\s*[-–]\s*3 years|2\s*[-–]\s*3 years|over a year/i.test(vals)
+  const decidesAlone = /sole financial decision/i.test(vals)
+  const startsSoon = /immediately|within the next month|this month|this week/i.test(vals)
+  const budgetOk = /₹\s?(15|20|25|30|50),?000|15,000|20,000|25,000|30,000|50,000/i.test(vals) && !/decide on the call/i.test(vals)
+  let n = 0
+  if (onMeds || diagnosed) n++
+  if (stuck) n++
+  if (decidesAlone || (startsSoon && budgetOk)) n++
+  if (startsSoon) n++
+  return n
+}
+
 export async function POST(req: NextRequest) {
   // ── 1. Read the raw body ONCE — required to HMAC the exact signed bytes ──
   let rawBody: string
@@ -244,6 +270,25 @@ export async function POST(req: NextRequest) {
       customData: { content_name: 'thyroid_strategy_call', value: FREE_CALL_VALUE, currency: 'INR' },
       testCode,
     })
+
+    // ── QualifiedSchedule (additive; never affects the Schedule send above) ──
+    try {
+      const qScore = qualifiedScore(payload.responses)
+      if (qScore >= 3) {
+        const q = await sendCAPIEvent('QualifiedSchedule', {
+          eventId: `qsched_${uid}`,
+          sourceUrl: SOURCE_URL,
+          userData,
+          customData: { score: qScore },
+          ...(testCode ? { testCode } : {}),
+        })
+        console.log(`[cal-webhook] QualifiedSchedule uid=${uid} score=${qScore}/4 result=${JSON.stringify(q).slice(0, 160)}`)
+      } else {
+        console.log(`[cal-webhook] Schedule not qualified uid=${uid} score=${qScore}/4`)
+      }
+    } catch (qErr) {
+      console.error('[cal-webhook] QualifiedSchedule failed (swallowed):', qErr instanceof Error ? qErr.message : String(qErr))
+    }
 
     // Full Meta CAPI response (status implied by success + the raw body), so the
     // Vercel logs show whether the Schedule was accepted by Meta.

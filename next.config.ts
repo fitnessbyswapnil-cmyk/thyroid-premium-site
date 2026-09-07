@@ -5,7 +5,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/schedule", destination: "/book-session", permanent: false },
       { source: "/assessment", destination: "/book-session", permanent: false },
-      { source: "/complete-payment", destination: "/book-session", permanent: false },
+      // The approved WhatsApp templates deep-link here with ?leadId=. Only paid-
+      // funnel leads receive those messages, so this resumes the Rs 299 checkout
+      // (query string is preserved by Next redirects).
+      { source: "/complete-payment", destination: "/decode/quiz", permanent: false },
       { source: "/payment", destination: "/book-session", permanent: false },
       { source: "/how-it-works", destination: "/book-session", permanent: false },
       { source: "/book", destination: "/book-session", permanent: false },

@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import CreativeOutcomes from "./CreativeOutcomes";
 
 type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean;
   // /api/admin/messages has always returned these; the type simply never
@@ -2250,6 +2251,7 @@ export default function AnalyticsDashboard() {
           </>
         )}
       </div>
+      <CreativeOutcomes />
     </main>
   );
 }
