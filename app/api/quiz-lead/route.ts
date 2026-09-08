@@ -199,12 +199,62 @@ export async function POST(req: NextRequest) {
     const width = cells.size ? Math.max(...cells.keys()) + 1 : 0;
     const row = Array.from({ length: width }, (_, i) => cells.get(i) ?? "");
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A1`,
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [row] },
-    });
+    // Update the lead's existing row if it has one, and only append when it
+    // does not. This route used to append unconditionally, so a second post
+    // carrying the same Lead ID — the resume link reopening checkout, the
+    // Cal.com pay-at-end path, a retried request — produced a SECOND row for
+    // one woman. The payment then marked one row and the reminder cron read
+    // the other, which is how a woman who had just paid received "your
+    // consultation is still open" eight minutes later.
+    //
+    // Values are merged rather than written over: a later post carries fewer
+    // fields than the gate did, and a blind overwrite would erase the answers
+    // she gave first. Only non-empty incoming cells win.
+    const leadId = str(payload.leadId);
+    let targetRow = 0;
+    if (leadId) {
+      try {
+        const col = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range: `${SHEET_NAME}!B:B`,
+        });
+        const ids = (col.data.values ?? []).map((r) => String(r?.[0] ?? "").trim());
+        // Skip the header, and take the FIRST match: if duplicates already
+        // exist from before this fix, the oldest is the one a payment would
+        // have matched, so converge on it rather than minting a third.
+        for (let i = 1; i < ids.length; i++) {
+          if (ids[i] === leadId) { targetRow = i + 1; break; }
+        }
+      } catch (lookupErr) {
+        console.error("[quiz-lead] lead lookup failed, appending:", lookupErr instanceof Error ? lookupErr.message : String(lookupErr));
+      }
+    }
+
+    if (targetRow) {
+      const existingRes = await sheets.spreadsheets.values.get({
+        spreadsheetId: sheetId,
+        range: `${SHEET_NAME}!${targetRow}:${targetRow}`,
+      });
+      const existing = ((existingRes.data.values?.[0] as string[]) ?? []).map((c) => String(c ?? ""));
+      const merged = Array.from(
+        { length: Math.max(existing.length, row.length) },
+        (_, i) => (row[i] ?? "") !== "" ? row[i] : (existing[i] ?? ""),
+      );
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `${SHEET_NAME}!A${targetRow}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [merged] },
+      });
+      console.log(`[quiz-lead] merged into existing row ${targetRow} for ${leadId}`);
+    } else {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: sheetId,
+        range: `${SHEET_NAME}!A1`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [row] },
+      });
+    }
   } catch (err) {
     console.error("[quiz-lead] sheet write failed:", err instanceof Error ? err.message : String(err));
     return NextResponse.json({ error: "sheet_write_failed" }, { status: 500 });

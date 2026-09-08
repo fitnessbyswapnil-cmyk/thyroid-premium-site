@@ -172,6 +172,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   const [leadId, setLeadId] = useState("");
   const [resumeScore, setResumeScore] = useState<number | null>(null);
   const [resumeInit, setResumeInit] = useState<{ name?: string; phone?: string; email?: string } | undefined>(undefined);
+  // What the resume link needs to know before it offers to sell her anything
+  // again: she may have already paid, and may already hold a slot.
+  const [already, setAlready] = useState<{ paid: boolean; booked: boolean; sessionDate: string } | null>(null);
 
   // Resume link from WhatsApp: /decode/quiz?leadId=<id>&s=<score> reopens the
   // checkout prefilled with the score shown — nothing asked twice.
@@ -186,6 +189,17 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       fetch(`/api/leads/${encodeURIComponent(id)}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((d: { name?: string; phone?: string; email?: string } | null) => { if (d) setResumeInit({ name: d.name, phone: d.phone, email: d.email }); })
+        .catch(() => {});
+      // Paid and booked already? Then the checkout must not be shown again.
+      // Failure is silent on purpose: an unknown state falls through to the
+      // normal checkout rather than telling her something wrong.
+      fetch(`/api/lead-status?leadId=${encodeURIComponent(id)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { paid?: boolean; booked?: boolean; sessionDate?: string } | null) => {
+          if (d && (d.paid || d.booked)) {
+            setAlready({ paid: !!d.paid, booked: !!d.booked, sessionDate: d.sessionDate ?? "" });
+          }
+        })
         .catch(() => {});
       setA((prev) => ({ ...prev, report: "Yes, from the last 6 months" }));
       setI(QUESTIONS.length + 1);
@@ -337,7 +351,44 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           </ul>)}
         </div>
 
-        {hasReport ? (
+        {already ? (
+          <div className="mx-auto mt-8 max-w-[560px] rounded-2xl p-6 text-left"
+               style={{ background: "var(--p-subtle)", border: "1.5px solid var(--p-border)" }}>
+            <p className="text-[19px] font-bold text-[var(--t1)]">
+              {already.booked
+                ? "You are already booked."
+                : "Your payment is already received."}
+            </p>
+            {already.booked ? (
+              <>
+                <p className="mt-2 text-[15px] leading-[1.6] text-[var(--t2)]">
+                  Your 1-1 Thyroid Consultation is confirmed &mdash; 60 minutes, one to one with Swapnil.
+                  {already.sessionDate ? <> Your slot: <strong>{already.sessionDate}</strong>.</> : null}
+                </p>
+                <p className="mt-3 text-[15px] leading-[1.6] text-[var(--t2)]">
+                  Nothing more to pay and nothing more to book. Before we speak, send your latest
+                  thyroid report (TSH, T3, T4) on WhatsApp &mdash; I read every report before the call.
+                </p>
+                <a href="https://cal.com/swapnilumbarkarfitness/60min"
+                   className="mt-5 inline-block text-[14px] font-bold underline"
+                   style={{ color: "var(--p500)" }}>
+                  Change or cancel your slot
+                </a>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-[15px] leading-[1.6] text-[var(--t2)]">
+                  We have your ₹299. The only step left is choosing your time &mdash; do not pay again.
+                </p>
+                <a href="https://cal.com/swapnilumbarkarfitness/60min"
+                   className="cta-button mt-5"
+                   style={{ maxWidth: "22rem", textDecoration: "none" }}>
+                  Pick my call time
+                </a>
+              </>
+            )}
+          </div>
+        ) : hasReport ? (
           <>
             <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
               {score100 >= 57
