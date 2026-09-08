@@ -19,6 +19,9 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import { after } from "next/server";
+import { sendBookingConfirmedFree } from "@/lib/whatsapp";
+import { getSheetsClient } from "../admin/_lib";
 
 const SHEET_NAME = "Leads"; // must match the exact tab name in your spreadsheet
 
@@ -175,6 +178,61 @@ export async function POST(req: NextRequest) {
     await appendToSheet(payload);
 
     console.log("[booking] Row appended successfully for:", payload.step1?.name || "unknown");
+
+    // Confirm the slot on WhatsApp. Nothing did this in the /decode funnel: the
+    // only sender was /api/booking-payment, reached from /confirm-session, which
+    // belongs to the retired free-booking flow. So a woman who paid Rs 299 and
+    // chose a time received a payment receipt and then silence — no confirmation
+    // that the slot was hers, and no request for the blood report the call is
+    // built around.
+    //
+    // Cal.com lets her type any number, and she may not type the one the funnel
+    // has been messaging. When they differ, both are told: the booking number is
+    // where she expects call reminders, and the quiz number is where the rest of
+    // the conversation already lives.
+    after(async () => {
+      try {
+        const name = String(payload.step1?.name ?? "").trim();
+        const bookingPhone = String(payload.step1?.phone ?? "").replace(/\D/g, "").slice(-10);
+        const leadId = String(payload.leadId ?? "").trim();
+        if (!bookingPhone && !leadId) return;
+
+        const targets = new Set<string>();
+        if (bookingPhone.length === 10) targets.add(bookingPhone);
+
+        if (leadId) {
+          try {
+            const { sheets, sheetId } = await getSheetsClient();
+            const res = await sheets.spreadsheets.values.get({
+              spreadsheetId: sheetId,
+              range: `${SHEET_NAME}!A1:E`,
+            });
+            const rows = (res.data.values as string[][]) ?? [];
+            for (let i = 1; i < rows.length; i++) {
+              if (String(rows[i]?.[1] ?? "").trim() !== leadId) continue;
+              const p = String(rows[i]?.[3] ?? "").replace(/\D/g, "").slice(-10);
+              if (p.length === 10) targets.add(p);
+            }
+          } catch (lookupErr) {
+            console.error("[booking] lead phone lookup failed:", lookupErr instanceof Error ? lookupErr.message : String(lookupErr));
+          }
+        }
+
+        for (const phone of targets) {
+          const r = await sendBookingConfirmedFree(phone, name);
+          console.log(
+            `[booking] booking_confirmed_free_v2 → ***${phone.slice(-4)} sent=${r.sent}` +
+              (r.skipped ? ` skipped=${r.skipped}` : "") +
+              (r.error ? ` error=${r.error}` : ""),
+          );
+        }
+        if (targets.size > 1) {
+          console.warn(`[booking] leadId=${leadId} booked on a different number than the funnel holds — confirmed to both`);
+        }
+      } catch (waErr) {
+        console.error("[booking] confirmation threw (swallowed):", waErr instanceof Error ? waErr.message : String(waErr));
+      }
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

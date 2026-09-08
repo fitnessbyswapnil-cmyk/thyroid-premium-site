@@ -196,6 +196,23 @@ function CalcomStep({
             "0 24px 70px rgba(36, 31, 26,0.14), inset 0 0 0 1px rgba(163, 114, 32,0.09)",
         }}
       >
+        {prefillPhone ? (
+          // Cal.com prefills the number but lets her type over it, and a woman
+          // who does gets her confirmation on a phone the funnel has never
+          // messaged. The embed has no read-only option, so the next best thing
+          // is to make an override deliberate rather than accidental — and
+          // /api/booking now confirms to both numbers when they differ.
+          <p
+            className="mb-3 text-center text-[13px] leading-relaxed"
+            style={{ color: "var(--t3)" }}
+          >
+            Your confirmation and call reminders go to{" "}
+            <strong style={{ color: "var(--t2)" }}>
+              +91 {String(prefillPhone).replace(/\D/g, "").slice(-10)}
+            </strong>
+            . Change the number below only if you want them somewhere else.
+          </p>
+        ) : null}
         <Cal
           namespace="60min"
           calLink="swapnilumbarkarfitness/60min"
