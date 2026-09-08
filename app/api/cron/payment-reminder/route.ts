@@ -85,7 +85,7 @@ const AT2_TITLE = "Reminder 2 At";
 // Stage 1 now uses a purpose-written template rather than re-sending the
 // payment receipt. booking_confirmation stays as the fallback so this is safe
 // to deploy before Meta approves booking_nudge_1h.
-const BOOKING_TEMPLATE = "booking_nudge_1h";
+const BOOKING_TEMPLATE = "booking_nudge_1h_v2";
 const BOOKING_TEMPLATE_FALLBACK = "booking_confirmation";
 
 // ── Paid-funnel reminders: retired ──────────────────────────────────────────
@@ -121,7 +121,7 @@ const NUDGE_SENT_TITLE = "Booking Nudge Sent";
 const NUDGE_AT_TITLE = "Booking Nudge At";
 
 // Stage 2, three days after payment, for anyone stage 1 did not move.
-const BOOKING_TEMPLATE2 = "booking_nudge_day3";
+const BOOKING_TEMPLATE2 = "booking_nudge_day3_v2";
 const NUDGE2_SENT_TITLE = "Booking Nudge 2 Sent";
 const NUDGE2_AT_TITLE = "Booking Nudge 2 At";
 

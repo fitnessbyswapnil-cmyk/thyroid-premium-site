@@ -361,9 +361,32 @@ export async function sendBookingConfirmedFree(phone: string, fullName: string):
   return sendWhatsAppTemplate(phone, 'booking_confirmed_free_v2', [firstName])
 }
 
-export async function sendBookingConfirmation(phone: string, fullName: string): Promise<WhatsAppResult> {
+/**
+ * The receipt after Cashfree confirms payment — the one message she must
+ * receive, because it carries the slot picker and about half of payers used to
+ * stop here.
+ *
+ * It goes out as payment_receipt_v2, which Meta approved as UTILITY. That
+ * matters more than the wording: MARKETING templates are subject to a
+ * per-recipient frequency cap, and a capped send fails as #131049 with a
+ * message id still returned — the API looks successful and nothing arrives.
+ * Meta reclassified two earlier attempts at this template to MARKETING because
+ * they carried a call-to-action button; payment_receipt_v2 keeps the Cal.com
+ * link in the body instead, and cleared review as utility.
+ *
+ * It declares an order reference as {{2}}, so callers must pass one. Without it
+ * the send would fail on parameter count, so fall back to the marketing
+ * template rather than send nothing.
+ */
+export async function sendBookingConfirmation(
+  phone: string,
+  fullName: string,
+  orderRef?: string,
+): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'payment_confirmed_v2', [firstName])
+  const ref = (orderRef || '').trim()
+  if (!ref) return sendWhatsAppTemplate(phone, 'payment_confirmed_v2', [firstName])
+  return sendWhatsAppTemplate(phone, 'payment_receipt_v2', [firstName, ref])
 }
 
 /**

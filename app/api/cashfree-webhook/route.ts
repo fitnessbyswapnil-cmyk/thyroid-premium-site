@@ -383,7 +383,7 @@ export async function POST(req: NextRequest) {
     // Guarded by sheetResult so a duplicate webhook can never double-message her
     // — the 'already_paid' branch above returns before reaching this point.
     try {
-      const waResult = await sendBookingConfirmation(payment.phone, payment.name)
+      const waResult = await sendBookingConfirmation(payment.phone, payment.name, payment.refId)
       console.log(
         `[cashfree-webhook] booking_confirmation ${source} ref=${payment.refId} sent=${waResult.sent}` +
           (waResult.skipped ? ` skipped=${waResult.skipped}` : '') +
