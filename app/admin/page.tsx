@@ -19,27 +19,34 @@
 
 import { useEffect, useState } from "react";
 import AnalyticsDashboard from "./AnalyticsDashboard";
+import Today from "./Today";
 import Pipeline from "./Pipeline";
 import { LIGHT, DARK, FONT, RADIUS, type Tokens } from "./tokens";
 
-type Tab = "pipeline" | "analytics";
+type Tab = "today" | "pipeline" | "analytics";
+// Same sessionStorage slot the pipeline already uses, so entering the key once
+// unlocks every tab rather than asking again per screen.
+const KEY_STORE = "admin_dash_key";
 const THEME_STORE = "admin_theme";
 
 export default function AdminShell() {
-  const [tab, setTab] = useState<Tab>("pipeline");
+  const [tab, setTab] = useState<Tab>("today");
+  const [adminKey, setAdminKey] = useState("");
   const [dark, setDark] = useState(false);
   const t: Tokens = dark ? (DARK as unknown as Tokens) : LIGHT;
 
   useEffect(() => {
     const read = () => {
       const h = (window.location.hash || "").replace("#", "");
-      setTab(h === "analytics" ? "analytics" : "pipeline");
+      setTab(h === "analytics" ? "analytics" : h === "pipeline" ? "pipeline" : "today");
     };
     read();
     window.addEventListener("hashchange", read);
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDark(localStorage.getItem(THEME_STORE) === "dark");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAdminKey(sessionStorage.getItem(KEY_STORE) ?? "");
     } catch {}
     return () => window.removeEventListener("hashchange", read);
   }, []);
@@ -64,9 +71,11 @@ export default function AdminShell() {
   // The analytics tab is its own dark instrument panel and always sits on its
   // own ground, so the page surface follows the pipeline's theme only.
   const onPipeline = tab === "pipeline";
+  // Today carries its own Nocturne ground, like analytics.
+  const onLight = onPipeline;
 
   return (
-    <main style={{ background: onPipeline ? t.paper : "#0e0e11", minHeight: "100vh", color: t.ink1 }}>
+    <main style={{ background: onLight ? t.paper : tab === "today" ? "#0B0E14" : "#0e0e11", minHeight: "100vh", color: t.ink1 }}>
       <header
         style={{
           position: "sticky",
@@ -83,6 +92,7 @@ export default function AdminShell() {
 
           <nav style={{ display: "flex", gap: 18 }}>
             {([
+              { id: "today" as const, label: "Today" },
               { id: "pipeline" as const, label: "Pipeline" },
               { id: "analytics" as const, label: "Analytics" },
             ]).map((x) => {
@@ -131,6 +141,13 @@ export default function AdminShell() {
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 18px 90px" }}>
         {/* Both mount; only one is shown. The analytics tab holds a lot of fetched
             state and re-mounting it on every tab switch would re-run every call. */}
+        <div style={{ display: tab === "today" ? "block" : "none" }}>
+          {adminKey
+            ? <Today adminKey={adminKey} />
+            : <p style={{ color: "#8A93A6", fontSize: 14, padding: "24px 0" }}>
+                Open the Pipeline tab once to enter your admin key — Today reads the same key.
+              </p>}
+        </div>
         <div style={{ display: onPipeline ? "block" : "none" }}>
           <Pipeline dark={dark} />
         </div>
