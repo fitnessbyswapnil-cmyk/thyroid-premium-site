@@ -28,6 +28,7 @@ import { readMessages } from "@/lib/wa-messages";
 import { isOwnerTest } from "@/lib/owner-filter";
 import { readCalls } from "@/lib/crm-calls";
 import { fetchBookings } from "@/lib/cal-bookings";
+import { draftMessage, draftWaLink } from "@/lib/draft-message";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -91,6 +92,12 @@ export async function GET(req: NextRequest) {
     programmeValue: col(header, "Programme Value"),
     programmeCollected: col(header, "Programme Collected"),
     programmeClosedAt: col(header, "Programme Closed At"),
+    goal: col(header, "Main Goal"),
+    challenge: col(header, "Biggest Challenge"),
+    diagnosis: col(header, "Diagnosis"),
+    medication: col(header, "On Medication"),
+    duration: col(header, "Struggle Duration"),
+    tried: col(header, "Tried Before"),
     city: col(header, "City"),
     budget: col(header, "Investment Ability"),
   };
@@ -143,7 +150,7 @@ export async function GET(req: NextRequest) {
   // ── Queue ─────────────────────────────────────────────────────────────────
   type QRow = {
     name: string; phone: string; reason: string; kind: string;
-    risk: number; when: string; leadId: string;
+    risk: number; when: string; leadId: string; wa: string;
   };
   const queue: QRow[] = [];
   const todayEnd = now + 86400000;
@@ -163,14 +170,28 @@ export async function GET(req: NextRequest) {
     const created = parseWhen(cell(r, C.ts));
     const score = num(cell(r, C.score));
 
+    // The tap opens WhatsApp with the message already written, built from her
+    // own answers and carrying the link back to her unpaid checkout. Typing it
+    // fresh each time is the reason a queue stops getting worked.
+    const wa = draftWaLink(phone, draftMessage({
+      name, leadId,
+      score: Number(cell(r, C.score)) || null,
+      goal: cell(r, C.goal),
+      challenge: cell(r, C.challenge),
+      diagnosis: cell(r, C.diagnosis),
+      medication: cell(r, C.medication),
+      duration: cell(r, C.duration),
+      tried: cell(r, C.tried),
+    })) || `https://wa.me/91${phone}`;
+
     if (booked && session! >= now && session! <= todayEnd) {
-      queue.push({ name, phone, leadId, kind: "call_today", risk: 30000,
+      queue.push({ name, phone, leadId, kind: "call_today", wa, risk: 30000,
         reason: "Call today", when: new Date(session!).toISOString() });
     } else if (paid && !booked) {
-      queue.push({ name, phone, leadId, kind: "paid_not_booked", risk: 20000,
+      queue.push({ name, phone, leadId, kind: "paid_not_booked", wa, risk: 20000,
         reason: "Paid, no slot chosen", when: cell(r, C.paidAt) });
     } else if (!paid && created !== null && now - created < 3 * 86400000 && score >= 57) {
-      queue.push({ name, phone, leadId, kind: "hot_abandon", risk: 5000,
+      queue.push({ name, phone, leadId, kind: "hot_abandon", wa, risk: 5000,
         reason: `Abandoned checkout · score ${Math.round(score)}`, when: cell(r, C.ts) });
     }
   }

@@ -67,6 +67,9 @@ export async function GET(req: NextRequest) {
       sessionDate: col("Session Date", 19),
       tier: col("Lead Tier", 36),
       city: col("City", 37),
+      goal: col("Main Goal", -1),
+      // The score SHE saw on screen, out of 100 — not the intent score.
+      patternScore: col("Lead Score (/100)", -1),
       challenge: col("Biggest Challenge", 39),
       triedBefore: col("Tried Before", 44),
       // Quiz answers the draft message is built from. -1 when the sheet
@@ -104,6 +107,10 @@ export async function GET(req: NextRequest) {
       if (alreadyPaid) return { draftMessage: "", draftWa: "" };
       const message = draftMessage({
         name: cell(r, cols.name),
+        leadId: cell(r, 1),
+        score: cols.patternScore >= 0 ? Number(cell(r, cols.patternScore)) || null : null,
+        markers: null,
+        goal: cols.goal >= 0 ? cell(r, cols.goal) : "",
         challenge: cell(r, cols.challenge),
         diagnosis: cols.diagnosis >= 0 ? cell(r, cols.diagnosis) : "",
         medication: cols.medication >= 0 ? cell(r, cols.medication) : "",

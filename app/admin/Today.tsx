@@ -42,7 +42,7 @@ type Data = {
     contracted: number; collected: number; costPerConsultPayer: number | null;
     costPerProgrammeClient: number | null; spendAvailable: boolean;
   };
-  queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string }[];
+  queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number }[];
   health: { sent24: number; failed24: number; byTemplate: { name: string; sent: number; last: string }[] };
   capacity: { closed: number; ceiling: number };
@@ -190,7 +190,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
                   <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name}</div>
                   <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>{q.reason}</div>
                 </div>
-                <a href={`https://wa.me/91${q.phone}`} target="_blank" rel="noreferrer"
+                <a href={q.wa || `https://wa.me/91${q.phone}`} target="_blank" rel="noreferrer"
                   style={{ flex: "none", background: accent, color: "#0B0E14", borderRadius: 999,
                     padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
                   WhatsApp

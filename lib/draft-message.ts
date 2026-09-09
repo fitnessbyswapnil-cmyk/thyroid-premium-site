@@ -43,8 +43,23 @@
 export const GUIDE_URL =
   "https://drive.google.com/file/d/1kCbCKxmvEC3kHQGKwUyZjsAxUdfn-HbD/view";
 
+/** Where a lead who finished the quiz resumes — her score and details are
+ *  already filled in, so the link lands her on checkout and nothing is asked
+ *  twice. */
+export const RESUME_BASE = "https://www.swapnilumbarkarfitness.in/decode/quiz?leadId=";
+
 export type DraftLead = {
   name?: string;
+  /** Lead ID. A "dq_"/"sched_" id means she came through the paid quiz funnel,
+   *  which changes the entire message: there is an offer to complete, not a
+   *  guide to hand out. */
+  leadId?: string;
+  /** Thyroid Fat Loss Score out of 100, as SHE was shown it on screen. */
+  score?: number | null;
+  /** How many of the 7 blockers her answers flagged. */
+  markers?: number | null;
+  /** "Main Goal" — how much she wants to lose. */
+  goal?: string;
   /** "Biggest Challenge" — her symptoms, comma-separated. */
   challenge?: string;
   /** "Diagnosis" — hypothyroid / Hashimoto's / TSH normal / undiagnosed. */
@@ -171,6 +186,29 @@ export function draftMessage(lead: DraftLead): string {
   // ASCII + em-dash only: two rounds of real-send testing (see
   // app/admin/page.tsx) showed emoji — pictographic AND plain BMP symbols —
   // arriving corrupted through the wa.me ?text= pipeline.
+  // A woman who finished the quiz has already seen her score and reached the
+  // checkout. Sending her the free guide restarts a conversation she is past
+  // and drops the one thing that converts — the link back to her own unpaid
+  // checkout, which reopens with her details already filled in.
+  const isQuizFunnel = /^(dq_|sched_)/.test(String(lead.leadId ?? ""));
+  if (isQuizFunnel && typeof lead.score === "number") {
+    const resume = `${RESUME_BASE}${encodeURIComponent(String(lead.leadId))}`;
+    const blockers = typeof lead.markers === "number" && lead.markers > 0
+      ? `${lead.markers} of the 7 blockers showed up in your answers.`
+      : "";
+    const goalLine = lead.goal ? ` You said you want to lose ${lead.goal.toLowerCase()}.` : "";
+    return [
+      `Hi ${name}, Swapnil here.`,
+      `You finished the thyroid quiz — your score came out ${lead.score}/100. ${blockers}`.trim(),
+      detail
+        ? `I read your answers properly. ${detail.charAt(0).toUpperCase() + detail.slice(1)} stood out.${goalLine}`
+        : `I read your answers properly.${goalLine}`,
+      hookFor(segmentOf(lead)),
+      `The next step is your 1-1 Thyroid Fat Loss Consultation — 60 minutes, one to one with me. I read your blood report line by line and tell you which of those blockers is actually holding your weight.\n\nIt is Rs 299 to hold the slot, and it comes off the programme fee if you go ahead.\n\nYour checkout is still open here:\n${resume}`,
+      `Any question before you book, just reply here.`,
+    ].join("\n\n");
+  }
+
   return [
     `Hi ${name}, Swapnil here.`,
     detail ? `I read your thyroid form — ${detail} stood out.` : `I read your thyroid form properly.`,
