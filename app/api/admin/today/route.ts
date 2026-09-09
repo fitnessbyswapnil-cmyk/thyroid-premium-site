@@ -25,6 +25,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { readMessages } from "@/lib/wa-messages";
+import { isOwnerTest } from "@/lib/owner-filter";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -84,6 +85,10 @@ export async function GET(req: NextRequest) {
     sessionDate: col(header, "Session Date"),
     showed: col(header, "Showed"),
     score: col(header, "Lead Score (/100)"),
+    email: col(header, "Email"),
+    programmeValue: col(header, "Programme Value"),
+    programmeCollected: col(header, "Programme Collected"),
+    programmeClosedAt: col(header, "Programme Closed At"),
     city: col(header, "City"),
     budget: col(header, "Investment Ability"),
   };
@@ -100,16 +105,33 @@ export async function GET(req: NextRequest) {
   const monthStart = new Date();
   monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
 
+  let collected = 0;
+  let heuristicUsed = false;
   for (const r of rows) {
+    if (isOwnerTest({ name: cell(r, C.name), email: cell(r, C.email) })) continue;
     if (cell(r, C.paid).toUpperCase() !== "Y") continue;
-    const when = parseWhen(cell(r, C.paidAt)) ?? parseWhen(cell(r, C.ts));
-    const amt = num(cell(r, C.paidAmount));
-    const isProgramme = amt >= 5000;
-    if (when !== null && when >= since) {
-      consultPayers++;
-      if (isProgramme) { programmeCloses++; contracted += amt; }
+
+    const paidWhen = parseWhen(cell(r, C.paidAt)) ?? parseWhen(cell(r, C.ts));
+
+    // Prefer the dedicated programme columns. Fall back to "a payment of 5,000
+    // or more is a programme" only for rows written before those columns
+    // existed — and say so on the page rather than presenting a guess as fact.
+    const pv = num(cell(r, C.programmeValue));
+    const pc = num(cell(r, C.programmeCollected));
+    const pAt = parseWhen(cell(r, C.programmeClosedAt));
+    const legacyAmt = num(cell(r, C.paidAmount));
+    const isProgramme = pv > 0 || legacyAmt >= 5000;
+    if (pv === 0 && legacyAmt >= 5000) heuristicUsed = true;
+
+    const progValue = pv > 0 ? pv : legacyAmt;
+    const progCollected = pc > 0 ? pc : progValue;
+    const progWhen = pAt ?? paidWhen;
+
+    if (paidWhen !== null && paidWhen >= since) consultPayers++;
+    if (isProgramme && progWhen !== null && progWhen >= since) {
+      programmeCloses++; contracted += progValue; collected += progCollected;
     }
-    if (isProgramme && when !== null && when >= monthStart.getTime()) monthCloses++;
+    if (isProgramme && progWhen !== null && progWhen >= monthStart.getTime()) monthCloses++;
   }
 
   const spend = await windsorSpend(new Date(since), new Date(now));
@@ -128,6 +150,10 @@ export async function GET(req: NextRequest) {
     const name = cell(r, C.name);
     const phone = digits10(cell(r, C.phone));
     if (!name || phone.length !== 10) continue;
+    // His own test rows would otherwise dominate a queue sorted by money at
+    // risk, and a queue you have to mentally filter is one you stop reading.
+    if (isOwnerTest({ name, email: cell(r, C.email) })) continue;
+    if (/^(9{6,}|1234|0000)/.test(phone)) continue;
     const leadId = cell(r, C.leadId);
     const paid = cell(r, C.paid).toUpperCase() === "Y";
     const session = parseWhen(cell(r, C.sessionDate));
@@ -177,7 +203,7 @@ export async function GET(req: NextRequest) {
     generatedAt: new Date(now).toISOString(),
     window: { days, since: new Date(since).toISOString() },
     acquisition: {
-      spend, consultPayers, programmeCloses, contracted,
+      spend, consultPayers, programmeCloses, contracted, collected,
       costPerConsultPayer: cpp, costPerProgrammeClient: cppc,
       spendAvailable: spend !== null,
     },
@@ -186,7 +212,9 @@ export async function GET(req: NextRequest) {
     capacity: { closed: monthCloses, ceiling: CEILING },
     caveats: [
       spend === null ? "WINDSOR_API_KEY is not set, so no spend and no cost-per figures." : null,
-      "A payment of Rs 5,000 or more is counted as a programme close; the sheet does not yet separate consult fees from programme revenue.",
+      heuristicUsed
+        ? "Some older rows have no Programme Value, so a payment of Rs 5,000 or more was read as a programme close for those."
+        : null,
     ].filter(Boolean),
   });
 }

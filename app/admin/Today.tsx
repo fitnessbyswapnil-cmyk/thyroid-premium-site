@@ -39,7 +39,7 @@ type Data = {
   window: { days: number };
   acquisition: {
     spend: number | null; consultPayers: number; programmeCloses: number;
-    contracted: number; costPerConsultPayer: number | null;
+    contracted: number; collected: number; costPerConsultPayer: number | null;
     costPerProgrammeClient: number | null; spendAvailable: boolean;
   };
   queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string }[];
@@ -132,6 +132,8 @@ export default function Today({ adminKey }: { adminKey: string }) {
             </div>
             <div style={{ fontSize: 12, color: N.dim, marginTop: 6 }}>
               {a?.programmeCloses ?? 0} closes · {inr(a?.contracted ?? 0)} contracted
+              {(a?.collected ?? 0) > 0 && (a?.collected ?? 0) !== (a?.contracted ?? 0)
+                ? ` · ${inr(a?.collected ?? 0)} collected` : ""}
             </div>
             <div style={{ height: 1, background: N.line, margin: "10px 0" }} />
             <div style={{ fontSize: 11, color: N.dim }}>

@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
   if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  let body: { row?: number; field?: string; value?: string; rail?: string; paidAt?: string };
+  let body: { row?: number; field?: string; value?: string; rail?: string; paidAt?: string; /** What she actually paid today, when the close is on instalments. */ collected?: number | string };
   try {
     body = await req.json();
   } catch {
@@ -276,7 +276,27 @@ export async function POST(req: NextRequest) {
       try {
         const rail = (body.rail ?? "manual").toString().slice(0, 24);
         const paidAt = body.paidAt && !Number.isNaN(Date.parse(body.paidAt)) ? new Date(body.paidAt).toISOString() : new Date().toISOString();
-        const writes: Array<[string, string]> = [["Paid", "Y"], ["Paid Amount", String(amount)], ["Paid At", paidAt], ["Rail", rail]];
+        // Paid / Paid Amount stay as they are so the CRM, dashboard and digest
+        // keep reading what they always read. But those columns were carrying
+        // BOTH the Rs299 consult fee and a Rs15,000-30,000 programme close, so
+        // a woman who paid both ended up with only the larger number and the
+        // consult payment vanished. Revenue per ad was wrong by whichever one
+        // got overwritten.
+        //
+        // The programme now also lands in columns of its own, and instalments
+        // are recorded as contracted vs collected rather than one figure: a
+        // client on 20k now plus 20k at day 21 is 40,000 contracted and 20,000
+        // collected, and reporting either alone is a lie in one direction.
+        const collected = Number.isFinite(Number(body.collected)) && Number(body.collected) > 0
+          ? Number(body.collected)
+          : amount;
+        const writes: Array<[string, string]> = [
+          ["Paid", "Y"], ["Paid Amount", String(amount)], ["Paid At", paidAt], ["Rail", rail],
+          ["Programme Value", String(amount)],
+          ["Programme Collected", String(collected)],
+          ["Programme Closed At", paidAt],
+          ["Payment Plan", collected < amount ? "instalments" : "full"],
+        ];
         for (const [title, v] of writes) {
           const idx = await resolveOrAppendColumn(sheets, sheetId, title);
           if (idx == null) continue;
