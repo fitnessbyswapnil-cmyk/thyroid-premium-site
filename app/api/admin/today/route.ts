@@ -27,6 +27,7 @@ import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { readMessages } from "@/lib/wa-messages";
 import { isOwnerTest } from "@/lib/owner-filter";
 import { readCalls } from "@/lib/crm-calls";
+import { fetchBookings } from "@/lib/cal-bookings";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -212,38 +213,56 @@ export async function GET(req: NextRequest) {
   };
   const decide: Decide[] = [];
   try {
-    const calls = await readCalls();
-    const byPhone = new Map<string, (typeof calls)[number]>();
-    const byEmail = new Map<string, (typeof calls)[number]>();
-    for (const c of calls) {
-      if (String(c.attended ?? "").trim() !== "1") continue;
-      const p = digits10(String(c.phone ?? ""));
-      const e = String(c.email ?? "").trim().toLowerCase();
-      if (p.length === 10) byPhone.set(p, c);
-      if (e) byEmail.set(e, c);
-    }
+    // The Calls tab carries a bookingUid and no contact details, so the join
+    // runs uid -> Cal.com booking -> attendee email/phone -> lead row. Matching
+    // on name instead would be one collision away from recording a Rs 25,000
+    // payment against the wrong woman.
+    const [calls, bookingsRes] = await Promise.all([readCalls(), fetchBookings(100)]);
+    const bookingByUid = new Map(bookingsRes.bookings.map((b) => [b.uid, b]));
+
     const closedCol = col(header, "Closed \u20b9");
+    const leadByPhone = new Map<string, number>();
+    const leadByEmail = new Map<string, number>();
     rows.forEach((r, i) => {
-      const name = cell(r, C.name);
-      const email = cell(r, C.email);
-      const phone = digits10(cell(r, C.phone));
-      if (!name || isOwnerTest({ name, email })) return;
-      const c = byPhone.get(phone) ?? (email ? byEmail.get(email.toLowerCase()) : undefined);
-      if (!c) return;
-      // Already settled — either marked closed, or a programme value recorded.
-      if (num(cell(r, closedCol)) > 0 || num(cell(r, C.programmeValue)) > 0) return;
-      const occurredAt = String(c.occurredAt ?? "");
+      const p = digits10(cell(r, C.phone));
+      const e = cell(r, C.email).toLowerCase();
+      if (p.length === 10 && !leadByPhone.has(p)) leadByPhone.set(p, i);
+      if (e && !leadByEmail.has(e)) leadByEmail.set(e, i);
+    });
+
+    const truthy = (v: unknown) => /^(1|y|yes|true)$/i.test(String(v ?? "").trim());
+
+    for (const c of calls) {
+      if (!truthy(c.attended)) continue;
+      const uid = String(c.bookingUid ?? "").trim();
+      const b = uid ? bookingByUid.get(uid) : undefined;
+      const email = String(b?.email ?? c.email ?? "").trim().toLowerCase();
+      const phone = digits10(String(b?.phone ?? c.phone ?? ""));
+      const idx = (phone.length === 10 ? leadByPhone.get(phone) : undefined)
+        ?? (email ? leadByEmail.get(email) : undefined);
+      if (idx === undefined) continue;
+
+      const r = rows[idx] ?? [];
+      const name = cell(r, C.name) || String(b?.name ?? c.name ?? "");
+      if (isOwnerTest({ name, email: cell(r, C.email) })) continue;
+      // Already settled — money recorded either way.
+      if (num(cell(r, closedCol)) > 0 || num(cell(r, C.programmeValue)) > 0) continue;
+
+      const occurredAt = String(c.occurredAt ?? b?.startIso ?? "");
       const when = parseWhen(occurredAt);
       decide.push({
-        row: i + 2, name, phone, email,
+        row: idx + 2, name, phone: digits10(cell(r, C.phone)) || phone,
+        email: cell(r, C.email) || email,
         pitched: num(String(c.pricePitched ?? "")),
         objection: String(c.objection ?? ""),
         occurredAt,
         daysSince: when === null ? 0 : Math.floor((now - when) / 86400000),
       });
-    });
-    decide.sort((a, b) => a.daysSince - b.daysSince);
-  } catch { /* no Calls tab yet — the rest of the page stands */ }
+    }
+    decide.sort((a, b2) => a.daysSince - b2.daysSince);
+  } catch (e) {
+    console.error("[today] decide list failed (swallowed):", e instanceof Error ? e.message : String(e));
+  }
 
   const health = [...byTemplate.entries()]
     .map(([name, v]) => ({ name, sent: v.sent, last: v.last }))
