@@ -43,6 +43,7 @@ type Data = {
     costPerProgrammeClient: number | null; spendAvailable: boolean;
   };
   queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string }[];
+  decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number }[];
   health: { sent24: number; failed24: number; byTemplate: { name: string; sent: number; last: string }[] };
   capacity: { closed: number; ceiling: number };
   caveats: string[];
@@ -68,6 +69,25 @@ export default function Today({ adminKey }: { adminKey: string }) {
   }, [days, adminKey]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // The only write this screen makes. field "closed" stamps the programme
+  // columns and fires the Purchase to Meta, so one tap both records the money
+  // and teaches the algorithm what a real buyer looks like.
+  const [saving, setSaving] = useState<number | null>(null);
+  const markClosed = useCallback(async (row: number, amount: number, collected?: number) => {
+    setSaving(row);
+    try {
+      const r = await fetch("/api/admin/mark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ row, field: "closed", value: String(amount), ...(collected ? { collected } : {}) }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setSaving(null); }
+  }, [adminKey, load]);
 
   const wrap: React.CSSProperties = { background: N.bg, color: N.text, minHeight: "100vh", padding: "0 0 48px", fontFamily: "Inter, system-ui, sans-serif" };
   const inner: React.CSSProperties = { maxWidth: 620, margin: "0 auto", padding: "0 16px" };
@@ -179,6 +199,66 @@ export default function Today({ adminKey }: { adminKey: string }) {
             );
           })}
         </div>
+
+        {/* 2b — Decide: the only manual step in the whole system */}
+        {d && d.decide.length > 0 && (
+          <>
+            <div style={h6}>Did she pay? · {d.decide.length}</div>
+            <div style={{ fontSize: 12, color: N.dim, marginBottom: 8, lineHeight: 1.5 }}>
+              The one thing no webhook can see. Everything else came off the call recording.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {d.decide.map((p) => {
+                const amounts = p.pitched > 0 ? [p.pitched] : [15000, 20000, 25000, 30000];
+                return (
+                  <div key={p.row} style={{ ...card, padding: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{p.name}</div>
+                        <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
+                          {p.pitched > 0 ? `Pitched ${inr(p.pitched)}` : "No price captured"}
+                          {" · "}{p.daysSince === 0 ? "today" : `${p.daysSince}d ago`}
+                        </div>
+                        {p.objection && (
+                          <div style={{ fontSize: 12, color: N.warn, marginTop: 4 }}>{p.objection.slice(0, 70)}</div>
+                        )}
+                      </div>
+                      <a href={`https://wa.me/91${p.phone}`} target="_blank" rel="noreferrer"
+                        style={{ flex: "none", alignSelf: "flex-start", color: N.accent, fontSize: 12.5, textDecoration: "none" }}>
+                        WhatsApp →
+                      </a>
+                    </div>
+                    <div style={{ display: "flex", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
+                      {amounts.map((amt) => (
+                        <button key={amt} disabled={saving === p.row}
+                          onClick={() => void markClosed(p.row, amt)}
+                          style={{ background: N.good, color: "#06210f", border: 0, borderRadius: 999,
+                            padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                          Paid {inr(amt)}
+                        </button>
+                      ))}
+                      <button disabled={saving === p.row}
+                        onClick={() => {
+                          const v = window.prompt("Total agreed (₹)", p.pitched ? String(p.pitched) : "");
+                          if (!v) return;
+                          const total = Number(v.replace(/[^\d]/g, ""));
+                          if (!total) return;
+                          const c = window.prompt(`Received now (₹) — leave as ${total} if paid in full`, String(total));
+                          const got = Number(String(c ?? total).replace(/[^\d]/g, "")) || total;
+                          void markClosed(p.row, total, got);
+                        }}
+                        style={{ background: "transparent", color: N.dim, border: `1px solid ${N.line}`,
+                          borderRadius: 999, padding: "7px 14px", fontSize: 12.5, cursor: "pointer" }}>
+                        Part payment…
+                      </button>
+                      {saving === p.row && <span style={{ fontSize: 12, color: N.dim, alignSelf: "center" }}>Saving…</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* 3 — Automation health */}
         <div style={h6}>Automation health · 24h</div>

@@ -26,6 +26,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { readMessages } from "@/lib/wa-messages";
 import { isOwnerTest } from "@/lib/owner-filter";
+import { readCalls } from "@/lib/crm-calls";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -195,6 +196,55 @@ export async function GET(req: NextRequest) {
     }
   } catch { /* health degrades, page does not */ }
 
+  // ── Decide ────────────────────────────────────────────────────────────────
+  // The ONE thing no webhook can know: whether the programme money arrived.
+  // It comes by UPI or bank transfer after the call, outside Cashfree, so
+  // nothing fires. Everything else about the call — attendance, the price he
+  // said, the real objection — Fathom already extracted, so this list carries
+  // those forward and asks for the single missing fact.
+  //
+  // Marking it stamps the programme columns AND sends the Purchase to Meta,
+  // which is what teaches the algorithm who an actual buyer looks like. A close
+  // left unmarked is a lookalike seed thrown away.
+  type Decide = {
+    row: number; name: string; phone: string; email: string;
+    pitched: number; objection: string; occurredAt: string; daysSince: number;
+  };
+  const decide: Decide[] = [];
+  try {
+    const calls = await readCalls();
+    const byPhone = new Map<string, (typeof calls)[number]>();
+    const byEmail = new Map<string, (typeof calls)[number]>();
+    for (const c of calls) {
+      if (String(c.attended ?? "").trim() !== "1") continue;
+      const p = digits10(String(c.phone ?? ""));
+      const e = String(c.email ?? "").trim().toLowerCase();
+      if (p.length === 10) byPhone.set(p, c);
+      if (e) byEmail.set(e, c);
+    }
+    const closedCol = col(header, "Closed \u20b9");
+    rows.forEach((r, i) => {
+      const name = cell(r, C.name);
+      const email = cell(r, C.email);
+      const phone = digits10(cell(r, C.phone));
+      if (!name || isOwnerTest({ name, email })) return;
+      const c = byPhone.get(phone) ?? (email ? byEmail.get(email.toLowerCase()) : undefined);
+      if (!c) return;
+      // Already settled — either marked closed, or a programme value recorded.
+      if (num(cell(r, closedCol)) > 0 || num(cell(r, C.programmeValue)) > 0) return;
+      const occurredAt = String(c.occurredAt ?? "");
+      const when = parseWhen(occurredAt);
+      decide.push({
+        row: i + 2, name, phone, email,
+        pitched: num(String(c.pricePitched ?? "")),
+        objection: String(c.objection ?? ""),
+        occurredAt,
+        daysSince: when === null ? 0 : Math.floor((now - when) / 86400000),
+      });
+    });
+    decide.sort((a, b) => a.daysSince - b.daysSince);
+  } catch { /* no Calls tab yet — the rest of the page stands */ }
+
   const health = [...byTemplate.entries()]
     .map(([name, v]) => ({ name, sent: v.sent, last: v.last }))
     .sort((a, b) => (a.last < b.last ? 1 : -1));
@@ -208,6 +258,7 @@ export async function GET(req: NextRequest) {
       spendAvailable: spend !== null,
     },
     queue: queue.slice(0, 25),
+    decide: decide.slice(0, 20),
     health: { sent24, failed24, byTemplate: health },
     capacity: { closed: monthCloses, ceiling: CEILING },
     caveats: [
