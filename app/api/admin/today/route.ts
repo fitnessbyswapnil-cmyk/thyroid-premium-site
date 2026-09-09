@@ -212,12 +212,18 @@ export async function GET(req: NextRequest) {
     pitched: number; objection: string; occurredAt: string; daysSince: number;
   };
   const decide: Decide[] = [];
+  // Counts at each hop, returned as decideDebug. A join that silently produces
+  // nothing is indistinguishable from "nothing to do", and this one already
+  // failed twice that way.
+  const dbg = { calls: 0, attended: 0, bookings: 0, uidHit: 0, leadHit: 0, settled: 0, ownerTest: 0, error: "" };
   try {
     // The Calls tab carries a bookingUid and no contact details, so the join
     // runs uid -> Cal.com booking -> attendee email/phone -> lead row. Matching
     // on name instead would be one collision away from recording a Rs 25,000
     // payment against the wrong woman.
     const [calls, bookingsRes] = await Promise.all([readCalls(), fetchBookings(100)]);
+    dbg.calls = calls.length; dbg.bookings = bookingsRes.bookings.length;
+    if (bookingsRes.error) dbg.error = String(bookingsRes.error).slice(0, 120);
     const bookingByUid = new Map(bookingsRes.bookings.map((b) => [b.uid, b]));
 
     const closedCol = col(header, "Closed \u20b9");
@@ -234,19 +240,22 @@ export async function GET(req: NextRequest) {
 
     for (const c of calls) {
       if (!truthy(c.attended)) continue;
+      dbg.attended++;
       const uid = String(c.bookingUid ?? "").trim();
       const b = uid ? bookingByUid.get(uid) : undefined;
+      if (b) dbg.uidHit++;
       const email = String(b?.email ?? c.email ?? "").trim().toLowerCase();
       const phone = digits10(String(b?.phone ?? c.phone ?? ""));
       const idx = (phone.length === 10 ? leadByPhone.get(phone) : undefined)
         ?? (email ? leadByEmail.get(email) : undefined);
       if (idx === undefined) continue;
+      dbg.leadHit++;
 
       const r = rows[idx] ?? [];
       const name = cell(r, C.name) || String(b?.name ?? c.name ?? "");
-      if (isOwnerTest({ name, email: cell(r, C.email) })) continue;
+      if (isOwnerTest({ name, email: cell(r, C.email) })) { dbg.ownerTest++; continue; }
       // Already settled — money recorded either way.
-      if (num(cell(r, closedCol)) > 0 || num(cell(r, C.programmeValue)) > 0) continue;
+      if (num(cell(r, closedCol)) > 0 || num(cell(r, C.programmeValue)) > 0) { dbg.settled++; continue; }
 
       const occurredAt = String(c.occurredAt ?? b?.startIso ?? "");
       const when = parseWhen(occurredAt);
@@ -261,7 +270,8 @@ export async function GET(req: NextRequest) {
     }
     decide.sort((a, b2) => a.daysSince - b2.daysSince);
   } catch (e) {
-    console.error("[today] decide list failed (swallowed):", e instanceof Error ? e.message : String(e));
+    dbg.error = e instanceof Error ? e.message : String(e);
+    console.error("[today] decide list failed (swallowed):", dbg.error);
   }
 
   const health = [...byTemplate.entries()]
@@ -278,6 +288,7 @@ export async function GET(req: NextRequest) {
     },
     queue: queue.slice(0, 25),
     decide: decide.slice(0, 20),
+    decideDebug: dbg,
     health: { sent24, failed24, byTemplate: health },
     capacity: { closed: monthCloses, ceiling: CEILING },
     caveats: [
