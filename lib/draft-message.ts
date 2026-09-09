@@ -200,9 +200,14 @@ export function draftMessage(lead: DraftLead): string {
     return [
       `Hi ${name}, Swapnil here.`,
       `You finished the thyroid quiz — your score came out ${lead.score}/100. ${blockers}`.trim(),
-      detail
-        ? `I read your answers properly. ${detail.charAt(0).toUpperCase() + detail.slice(1)} stood out.${goalLine}`
-        : `I read your answers properly.${goalLine}`,
+      // symptomPhrase returns a clause ("it comes off and then comes straight
+      // back"), so it has to be quoted rather than dropped into a noun slot —
+      // "the it comes off ... stood out" was the result of treating it as one.
+      symptoms
+        ? `What stood out: "${symptoms}".${goalLine}`
+        : detail
+          ? `I read your answers properly — ${detail}.${goalLine}`
+          : `I read your answers properly.${goalLine}`,
       hookFor(segmentOf(lead)),
       `The next step is your 1-1 Thyroid Fat Loss Consultation — 60 minutes, one to one with me. I read your blood report line by line and tell you which of those blockers is actually holding your weight.\n\nIt is Rs 299 to hold the slot, and it comes off the programme fee if you go ahead.\n\nYour checkout is still open here:\n${resume}`,
       `Any question before you book, just reply here.`,

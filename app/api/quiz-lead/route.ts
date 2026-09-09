@@ -195,6 +195,12 @@ export async function POST(req: NextRequest) {
     set("UTM Content", str(payload.attribution?.utm_content));
     set("UTM Term", str(payload.attribution?.utm_term));
     if (typeof payload.leadScore === "number") set("Lead Score", String(payload.leadScore));
+    // The number SHE saw on screen, and how many of the seven blockers her
+    // answers flagged. Both existed only inside the Weight Struggles sentence
+    // and in the Meta payload, so nothing could read them back as numbers —
+    // which is why her follow-up message could not quote her own score.
+    if (typeof payload.patternScore === "number") set("Thyroid Score", String(payload.patternScore));
+    if (typeof payload.markersHit === "number") set("Blockers", String(payload.markersHit));
 
     const width = cells.size ? Math.max(...cells.keys()) + 1 : 0;
     const row = Array.from({ length: width }, (_, i) => cells.get(i) ?? "");

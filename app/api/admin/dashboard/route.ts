@@ -69,7 +69,11 @@ export async function GET(req: NextRequest) {
       city: col("City", 37),
       goal: col("Main Goal", -1),
       // The score SHE saw on screen, out of 100 — not the intent score.
-      patternScore: col("Lead Score (/100)", -1),
+      patternScore: col("Thyroid Score", -1),
+      blockers: col("Blockers", -1),
+      // Rows written before those columns carry both inside the Weight
+      // Struggles sentence: "... | Pattern score: 86/100 (6/7)".
+      struggles: col("Weight Struggles", 7),
       challenge: col("Biggest Challenge", 39),
       triedBefore: col("Tried Before", 44),
       // Quiz answers the draft message is built from. -1 when the sheet
@@ -108,8 +112,18 @@ export async function GET(req: NextRequest) {
       const message = draftMessage({
         name: cell(r, cols.name),
         leadId: cell(r, 1),
-        score: cols.patternScore >= 0 ? Number(cell(r, cols.patternScore)) || null : null,
-        markers: null,
+        score: (() => {
+          const direct = cols.patternScore >= 0 ? Number(cell(r, cols.patternScore)) : NaN;
+          if (Number.isFinite(direct) && direct > 0) return direct;
+          const m = cell(r, cols.struggles).match(/Pattern score:\s*(\d{1,3})\s*\/\s*100/i);
+          return m ? Number(m[1]) : null;
+        })(),
+        markers: (() => {
+          const direct = cols.blockers >= 0 ? Number(cell(r, cols.blockers)) : NaN;
+          if (Number.isFinite(direct) && direct > 0) return direct;
+          const m = cell(r, cols.struggles).match(/\((\d)\s*\/\s*7\)/);
+          return m ? Number(m[1]) : null;
+        })(),
         goal: cols.goal >= 0 ? cell(r, cols.goal) : "",
         challenge: cell(r, cols.challenge),
         diagnosis: cols.diagnosis >= 0 ? cell(r, cols.diagnosis) : "",

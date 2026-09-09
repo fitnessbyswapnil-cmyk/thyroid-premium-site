@@ -93,6 +93,9 @@ export async function GET(req: NextRequest) {
     programmeCollected: col(header, "Programme Collected"),
     programmeClosedAt: col(header, "Programme Closed At"),
     goal: col(header, "Main Goal"),
+    thyroidScore: col(header, "Thyroid Score"),
+    blockers: col(header, "Blockers"),
+    struggles: col(header, "Weight Struggles"),
     challenge: col(header, "Biggest Challenge"),
     diagnosis: col(header, "Diagnosis"),
     medication: col(header, "On Medication"),
@@ -175,7 +178,10 @@ export async function GET(req: NextRequest) {
     // fresh each time is the reason a queue stops getting worked.
     const wa = draftWaLink(phone, draftMessage({
       name, leadId,
-      score: Number(cell(r, C.score)) || null,
+      score: (Number(cell(r, C.thyroidScore)) || null)
+        ?? (Number(cell(r, C.struggles).match(/Pattern score:\s*(\d{1,3})/i)?.[1]) || null),
+      markers: (Number(cell(r, C.blockers)) || null)
+        ?? (Number(cell(r, C.struggles).match(/\((\d)\s*\/\s*7\)/)?.[1]) || null),
       goal: cell(r, C.goal),
       challenge: cell(r, C.challenge),
       diagnosis: cell(r, C.diagnosis),
