@@ -356,6 +356,31 @@ export async function sendWelcomeLeadWithLink(
  * structure. More than that reads as spam on a utility message, which is the
  * category Meta already reclassified once in this account.
  */
+/**
+ * The abandoned-checkout nudge, sent within a minute of her leaving.
+ *
+ * payment_reminder_link_v2 says the same thing but is MARKETING, and marketing
+ * templates carry a per-recipient frequency cap. The welcome message lands two
+ * seconds after the quiz, so a reminder minutes later is the SECOND marketing
+ * template that person has received — and Meta drops it as #131026/#131049
+ * after returning a message id, which makes the send look successful while
+ * nothing arrives. A test on a fresh number reproduced it exactly: welcome
+ * delivered, reminder nine minutes later blocked.
+ *
+ * checkout_pending_v2 carries the same link under UTILITY, which is uncapped.
+ * It declares the lead id as {{2}} — used both as the printed reference and
+ * inside the resume URL — so callers must pass one.
+ */
+export async function sendCheckoutPending(
+  phone: string,
+  fullName: string,
+  leadId: string,
+  languageOverride?: string,
+): Promise<WhatsAppResult> {
+  const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
+  return sendWhatsAppTemplate(phone, 'checkout_pending_v2', [firstName, leadId], languageOverride)
+}
+
 export async function sendBookingConfirmedFree(phone: string, fullName: string): Promise<WhatsAppResult> {
   const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
   return sendWhatsAppTemplate(phone, 'booking_confirmed_free_v2', [firstName])

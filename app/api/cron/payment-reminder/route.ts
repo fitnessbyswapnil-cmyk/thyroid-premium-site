@@ -34,6 +34,7 @@ import { checkAdminKey } from "../../admin/_lib";
 import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
 import {
   sendWhatsAppTemplate,
+  sendCheckoutPending,
   sendPaymentReminderWithLink,
   sendTryingLanguages,
   isTemplateMissing,
@@ -67,7 +68,10 @@ const LEADS_SHEET = "Leads";
 // button deep-links to /complete-payment?leadId=... instead of the quiz
 // intro (Meta 2026-08-18 approval). Submitted as a SEPARATE template so the
 // original keeps sending, untouched, while this one clears review.
-const TEMPLATE = "payment_reminder_link_v2";
+const TEMPLATE = "checkout_pending_v2";
+// Kept as the fallback until checkout_pending_v2 clears review: a config-level
+// failure must not mean she hears nothing at all.
+const TEMPLATE_FALLBACK = "payment_reminder_link_v2";
 
 const SENT_TITLE = "Reminder Sent";
 const AT_TITLE = "Reminder At";
@@ -441,7 +445,7 @@ export async function GET(req: NextRequest) {
     for (const c of PAID_FUNNEL_ACTIVE ? plan.candidates : []) {
       let usedTemplate = c.leadId ? TEMPLATE : "payment_reminder_v2";
       let r = c.leadId
-        ? await sendTryingLanguages((language) => sendPaymentReminderWithLink(c.phone, c.name, c.leadId!, language))
+        ? await sendTryingLanguages((language) => sendCheckoutPending(c.phone, c.name, c.leadId!, language))
         // No leadId on this row (older data predating the column) — fall back
         // to the original template rather than sending a dead/empty button.
         : await sendWhatsAppTemplate(c.phone, "payment_reminder_v2", [firstNameOf(c.name)]);
@@ -458,8 +462,14 @@ export async function GET(req: NextRequest) {
       // link. It is the lesser evil versus sending nothing, but every time it
       // fires it is a signal that payment_reminder_link is not resolving —
       // which is why `template` is reported per row below.
+      if (!r.sent && c.leadId && isTemplateMissing(r.error)) {
+        // checkout_pending_v2 has not cleared review yet — use the marketing
+        // link template, which at least carries the same resume URL.
+        usedTemplate = `${TEMPLATE_FALLBACK} (fallback)`;
+        r = await sendTryingLanguages((language) => sendPaymentReminderWithLink(c.phone, c.name, c.leadId!, language));
+      }
       if (!r.sent && isTemplateMissing(r.error)) {
-        usedTemplate = "payment_reminder (fallback)";
+        usedTemplate = "payment_reminder_v2 (fallback)";
         r = await sendWhatsAppTemplate(c.phone, "payment_reminder_v2", [firstNameOf(c.name)]);
       }
       results.push({

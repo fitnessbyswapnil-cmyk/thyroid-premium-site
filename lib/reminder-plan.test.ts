@@ -71,7 +71,10 @@ test("a lead already reminded is not reminded twice", () => {
 });
 
 test("someone still mid-checkout is left alone", () => {
-  const plan = planReminders({ rows: [row({ ts: agoMin(2) })], cols: COLS, now: NOW });
+  // The floor is one minute, not five: the nudge is UTILITY now, so it can go
+  // out immediately without hitting Meta's cap on a second marketing template.
+  // A floor still exists so a row cannot be messaged before it is even written.
+  const plan = planReminders({ rows: [row({ ts: agoMin(0.5) })], cols: COLS, now: NOW });
   assert.equal(plan.candidates.length, 0);
   assert.equal(plan.skipped.tooNew, 1);
 });

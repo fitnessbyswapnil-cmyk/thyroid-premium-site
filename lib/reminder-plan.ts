@@ -77,7 +77,11 @@ export type ReminderColumns = {
   paidAt?: number;
 };
 
-export const DEFAULT_MIN_AGE_MINUTES = 5;
+// One minute. Five put the nudge inside the window where Meta caps a second
+// marketing template to the same person, so it never arrived at all — the
+// welcome message lands two seconds after the quiz. checkout_pending_v2 is
+// UTILITY and uncapped, so it can go out immediately.
+export const DEFAULT_MIN_AGE_MINUTES = 1;
 export const DEFAULT_MAX_AGE_HOURS = 24;
 export const DEFAULT_LIMIT = 25;
 
