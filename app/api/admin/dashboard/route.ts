@@ -87,12 +87,16 @@ export async function GET(req: NextRequest) {
       paid: col("Paid", -1),
       paidAmount: col("Paid Amount", -1),
       score: col("Lead Score", 52),
-      showed: col("Showed", 53),
-      closedAmt: col("Closed ₹", 54),
-      meetLink: col("Meet Link", 55),
-      msg1: col("Msg1 Sent", 56),
-      msg2: col("Msg2 Sent", 57),
-      msg3: col("Msg3 Sent", 58),
+      // Outcome columns have NO positional fallback. Their old slots (BB–BG)
+      // now hold Paid / Paid Amount / Budget / Paid At…, so falling back there
+      // showed every ₹299 payer as "showed, closed ₹299" before her call.
+      // Absent header → -1 → blank, which is the truth.
+      showed: col("Showed", -1),
+      closedAmt: col("Closed ₹", -1),
+      meetLink: col("Meet Link", -1),
+      msg1: col("Msg1 Sent", -1),
+      msg2: col("Msg2 Sent", -1),
+      msg3: col("Msg3 Sent", -1),
     };
 
     const cell = (r: string[], i: number) => (r[i] ?? "").toString().trim();

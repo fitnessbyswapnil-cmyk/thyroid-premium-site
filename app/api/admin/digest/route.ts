@@ -72,8 +72,8 @@ export async function GET(req: NextRequest) {
       commitment: col("Commitment (1-10)", 46),
       phone: col("Phone", 3),
       score: col("Lead Score", 52),
-      showed: col("Showed", 53),
-      msg1: col("Msg1 Sent", 56),
+      showed: col("Showed", -1),
+      msg1: col("Msg1 Sent", -1),
     };
     const cell = (r: string[], i: number) => (r[i] ?? "").toString().trim();
 
