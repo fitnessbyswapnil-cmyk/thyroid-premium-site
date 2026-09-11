@@ -20,13 +20,16 @@ import { after } from "next/server";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 import { WEBINAR_WHEN_LONG } from "@/lib/webinar";
+import { getClientIp } from "@/lib/server-tracking";
+import { checkTurnstile, turnstileConfig, findOrAddColumn, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
+import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
 
 export const dynamic = "force-dynamic";
 
 const str = (v: unknown) => String(v ?? "").trim();
 
 export async function POST(req: NextRequest) {
-  let body: { name?: string; phone?: string; medication?: string };
+  let body: { name?: string; phone?: string; medication?: string; turnstileToken?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "bad_json" }, { status: 400 }); }
 
   const name = str(body.name).slice(0, 80);
@@ -37,6 +40,20 @@ export async function POST(req: NextRequest) {
   if (!name || phone.length !== 10) {
     return NextResponse.json({ error: "need_name_and_phone" }, { status: 400 });
   }
+
+  // Bot check (Cloudflare Turnstile); the policy lives in lib/turnstile.ts.
+  // Off until both keys are set. A refused token writes and sends nothing. A
+  // missing one still saves her seat, marked, without the paid WhatsApp.
+  const bot = await checkTurnstile({
+    config: turnstileConfig(),
+    token: body.turnstileToken,
+    remoteIp: getClientIp(req),
+  });
+  if (bot.verdict === "reject") {
+    console.warn(`[webinar-register] bot check REJECTED (${bot.reason}): nothing written, nothing sent`);
+    return NextResponse.json({ error: "bot_check_failed" }, { status: 403 });
+  }
+  const unverified = bot.verdict === "unverified";
 
   const leadId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -59,6 +76,32 @@ export async function POST(req: NextRequest) {
     put("Diagnosis", medication);
     put("UTM Source", "webinar");
 
+    // Bot check marker, only on an unverified registration. Same column and
+    // value the quiz uses, so one filter covers both.
+    if (unverified) {
+      const botIdx = await findOrAddColumn({
+        known: hdr,
+        title: BOT_CHECK_HEADER,
+        readFullHeader: async () => {
+          const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1` });
+          return ((r.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? ""));
+        },
+        writeHeaderCell: async (i, title) => {
+          // The Leads grid is fixed-width; widen it first or the write fails.
+          await ensureGridColumns(sheets, sheetId, SHEET_NAME, i);
+          await sheets.spreadsheets.values.update({
+            spreadsheetId: sheetId,
+            range: `${SHEET_NAME}!${colLetter(i)}1`,
+            valueInputOption: "RAW",
+            requestBody: { values: [[title]] },
+          });
+        },
+      });
+      if (botIdx >= 0) cells.set(botIdx, UNVERIFIED);
+      else console.error("[webinar-register] could not place the Bot Check marker; registration saved unmarked");
+      console.warn(`[webinar-register] bot check UNVERIFIED (${bot.reason}) leadId=${leadId}: saved and marked; WhatsApp skipped`);
+    }
+
     const width = Math.max(...cells.keys()) + 1;
     const row = Array.from({ length: width }, (_, i) => cells.get(i) ?? "");
     await sheets.spreadsheets.values.append({
@@ -70,7 +113,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "sheet_write_failed" }, { status: 500 });
   }
 
-  after(async () => {
+  // Unverified: no paid WhatsApp. The coach can still reach her from the sheet.
+  if (!unverified) after(async () => {
     try {
       const first = name.split(/\s+/)[0] || "there";
       const r = await sendWhatsAppTemplate(phone, "webinar_confirmed_v1", [first, WEBINAR_WHEN_LONG]);
@@ -80,5 +124,5 @@ export async function POST(req: NextRequest) {
     }
   });
 
-  return NextResponse.json({ ok: true, leadId });
+  return NextResponse.json(unverified ? { ok: true, leadId, botCheck: UNVERIFIED } : { ok: true, leadId });
 }

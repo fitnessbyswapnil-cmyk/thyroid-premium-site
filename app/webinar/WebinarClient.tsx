@@ -19,6 +19,7 @@
 
 import { useState } from "react";
 import { WEBINAR_WHEN_SHORT, WEBINAR_WHEN_LONG } from "@/lib/webinar";
+import { useTurnstile, TurnstileBox, postWithBotCheck } from "@/app/components/TurnstileWidget";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
@@ -127,6 +128,9 @@ export default function WebinarClient() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState("");
+  // Bot check on registration: each one sends a paid WhatsApp. Inert unless
+  // NEXT_PUBLIC_TURNSTILE_SITE_KEY was set at build time.
+  const bot = useTurnstile("webinar_register");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -135,10 +139,7 @@ export default function WebinarClient() {
     if (digits.length !== 10) { setErr("Enter a 10-digit WhatsApp number"); return; }
     setErr(""); setBusy(true);
     try {
-      const r = await fetch("/api/webinar-register", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), phone: digits, medication: med }),
-      });
+      const r = await postWithBotCheck(bot, "/api/webinar-register", { name: name.trim(), phone: digits, medication: med });
       if (!r.ok) throw new Error("failed");
       setDone(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -211,6 +212,8 @@ export default function WebinarClient() {
               {busy ? "Saving your seat…" : "Reserve my free seat →"}
             </button>
           </div>
+          {/* Outside the grid so the invisible widget adds no gap. */}
+          <TurnstileBox bot={bot} hint="One quick check. Tap the box and your seat is saved." hintColor="#6B6355" />
           <p style={{ fontSize: 12.5, color: "#6B6355", textAlign: "center", margin: "14px 0 0", lineHeight: 1.5 }}>
             Taught to 100+ women with a slow thyroid. No spam — reply stop any time.
           </p>

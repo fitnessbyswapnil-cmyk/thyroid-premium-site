@@ -21,6 +21,8 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { sendCAPIEvent, buildUserData, getClientIp, getUserAgent } from "@/lib/server-tracking";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation, sendBookingConfirmedFree } from "@/lib/whatsapp";
+import { checkTurnstile, turnstileConfig, isInternalLeadCall, findOrAddColumn, INTERNAL_LEAD_HEADER, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
+import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -57,6 +59,8 @@ type QuizLeadPayload = {
   patternScore?: number;
   markersHit?: number;
   decidesAlone?: boolean;
+  /** Cloudflare Turnstile token from the browser. Verified, never stored. */
+  turnstileToken?: unknown;
   attribution?: {
     utm_source?: string;
     utm_medium?: string;
@@ -103,6 +107,30 @@ export async function POST(req: NextRequest) {
   const emailOptional = str(payload.source) === "decode_quiz" || str(payload.source) === "schedule_page";
   if (!payload.name || !payload.phone || (!payload.email && !emailOptional)) {
     return NextResponse.json({ error: "missing_contact_fields" }, { status: 400 });
+  }
+
+  // Bot check (Cloudflare Turnstile); the policy lives in lib/turnstile.ts.
+  // Off until both keys are set. Then: a refused token writes and sends
+  // nothing; a MISSING token still saves her (the widget may not have loaded
+  // in her browser) but marks the row and skips every paid or ad-signal side
+  // effect. /api/booking-payment calls in from the server, where there is no
+  // browser to produce a token, so it signs the call instead.
+  const turnstile = turnstileConfig();
+  const bot = await checkTurnstile({
+    config: turnstile,
+    token: payload.turnstileToken,
+    remoteIp: clientIp,
+    internal:
+      turnstile.enabled &&
+      isInternalLeadCall(turnstile.secret, str(payload.leadId), req.headers.get(INTERNAL_LEAD_HEADER)),
+  });
+  if (bot.verdict === "reject") {
+    console.warn(`[quiz-lead] bot check REJECTED (${bot.reason}) leadId=${str(payload.leadId) || "(none)"}: nothing written, nothing sent`);
+    return NextResponse.json({ error: "bot_check_failed" }, { status: 403 });
+  }
+  const unverified = bot.verdict === "unverified";
+  if (unverified) {
+    console.warn(`[quiz-lead] bot check UNVERIFIED (${bot.reason}) leadId=${str(payload.leadId) || "(none)"}: lead saved and marked; WhatsApp, Meta and Make skipped`);
   }
 
   try {
@@ -202,6 +230,33 @@ export async function POST(req: NextRequest) {
     if (typeof payload.patternScore === "number") set("Thyroid Score", String(payload.patternScore));
     if (typeof payload.markersHit === "number") set("Blockers", String(payload.markersHit));
 
+    // Bot check marker. Written ONLY for an unverified submission, so an
+    // accepted row is exactly what it was before Turnstile existed. Found by
+    // header name; added once, after the true last column, if the sheet has
+    // none. Losing the marker is tolerated — losing the lead is not.
+    if (unverified) {
+      const botIdx = await findOrAddColumn({
+        known: hdr,
+        title: BOT_CHECK_HEADER,
+        readFullHeader: async () => {
+          const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1` });
+          return ((r.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? ""));
+        },
+        writeHeaderCell: async (i, title) => {
+          // The Leads grid is fixed-width; widen it first or the write fails.
+          await ensureGridColumns(sheets, sheetId, SHEET_NAME, i);
+          await sheets.spreadsheets.values.update({
+            spreadsheetId: sheetId,
+            range: `${SHEET_NAME}!${colLetter(i)}1`,
+            valueInputOption: "RAW",
+            requestBody: { values: [[title]] },
+          });
+        },
+      });
+      if (botIdx >= 0) cells.set(botIdx, UNVERIFIED);
+      else console.error("[quiz-lead] could not place the Bot Check marker; lead saved unmarked");
+    }
+
     const width = cells.size ? Math.max(...cells.keys()) + 1 : 0;
     const row = Array.from({ length: width }, (_, i) => cells.get(i) ?? "");
 
@@ -272,7 +327,10 @@ export async function POST(req: NextRequest) {
   // Vercel the serverless invocation can freeze the moment the response is
   // returned, killing any still-in-flight fetch. after() is the framework's
   // supported way to keep post-response work alive to completion.
-  after(async () => {
+  //
+  // Skipped for an unverified submission: it starts an automated sequence,
+  // and the coach follows those leads up by hand from the sheet.
+  if (!unverified) after(async () => {
     try {
       await fetch(MAKE_WEBHOOK_URL, {
         method: "POST",
@@ -313,7 +371,11 @@ export async function POST(req: NextRequest) {
   // execution context was gone. after() keeps the invocation alive until the
   // send finishes, and the result is now logged either way so a silent
   // failure can never look like a success again.
-  if (str(payload.phone)) {
+  //
+  // Bot check: an unverified submission gets neither the paid WhatsApp nor
+  // QuizComplete. Paying Meta per message for a bot, or teaching the ad
+  // account that a bot is a customer, is exactly what Turnstile is here to stop.
+  if (str(payload.phone) && !unverified) {
     after(async () => {
       try {
         const phone = str(payload.phone);
@@ -434,5 +496,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ ok: true });
+  // An accepted submission gets exactly the reply it always got. The browser
+  // reads botCheck only to hold back its own Meta Lead event.
+  return NextResponse.json(unverified ? { ok: true, botCheck: UNVERIFIED } : { ok: true });
 }

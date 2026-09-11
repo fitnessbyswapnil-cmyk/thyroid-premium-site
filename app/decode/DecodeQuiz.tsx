@@ -32,6 +32,7 @@ import { pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import InAppBrowserNotice from "@/app/components/InAppBrowserNotice";
+import { useTurnstile, TurnstileBox, postWithBotCheck, leadCounted, loadTurnstile } from "@/app/components/TurnstileWidget";
 import { scoreLead } from "@/lib/lead-scoring";
 import ScheduleClient from "@/app/schedule/ScheduleClient";
 
@@ -208,6 +209,12 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   useEffect(() => {
     if (autostart) pushDL({ event: "decode_quiz_start" });
   }, [autostart]);
+  // Bot check on the gate. Inert unless NEXT_PUBLIC_TURNSTILE_SITE_KEY was set
+  // at build time. The script starts loading with the quiz so the invisible
+  // check has finished long before she reaches the gate; the widget itself
+  // mounts only on the gate screen.
+  const bot = useTurnstile("decode_gate");
+  useEffect(() => { void loadTurnstile(); }, []);
   const [a, setA] = useState<A>({});
 
   const pick = useCallback(
@@ -247,7 +254,11 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     const scoreNow = Math.round((hitsNow / 7) * 100);
     const leadNow = scoreLead(toLeadAnswers(a));
     persistUserIdentity({ first_name: firstName, phone: phone10 });
-    trackLead({ first_name: firstName, phone: phone10, email: "" });
+    // Bot check off: Lead fires here, exactly as it always has. Bot check on:
+    // Lead waits for the server's verdict below, because a submission the
+    // server could not verify must not reach Meta as a Lead.
+    const leadUser = { first_name: firstName, phone: phone10, email: "" };
+    if (!bot.enabled) trackLead(leadUser);
     pushDL({ event: "decode_gate_submitted" });
     // The real _fbc / _fbp cookies, not just fbclid. QuizComplete scored 4.8
     // on Event Match Quality against Lead's 9.3 because it was reaching Meta
@@ -255,25 +266,26 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     // user agent. Those last two the server adds; these two only exist here.
     const utms = getUtmParams(); const fbclid = getFbclid(); const visitorId = getVisitorId();
     const fbcCookie = getFbc(); const fbpCookie = getFbp();
+    let counted = true;
     try {
-      await fetch("/api/quiz-lead", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId: id, name: gate.name.trim(), phone: phone10, email: "",
-          city: a.city ?? "", age: a.age ?? "", diagnosis: a.diagnosis ?? "", onMedication: a.diagnosis ?? "",
-          struggleDuration: a.stuck ?? "", biggestChallenge: a.pattern ?? "", triedBefore: a.tried ?? "",
-          amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
-          goal: a.goal ?? "", budget: a.budget ?? "", timing: a.timing ?? "", decisionMaker: a.decision ?? "",
-          symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${scoreNow}/100 (${hitsNow}/7)`,
-          leadScore: leadNow.score, leadTier: leadNow.tier,
-          patternScore: scoreNow, markersHit: hitsNow, decidesAlone: a.decision === "Yes, I decide on my own",
-          source: "decode_quiz",
-          attribution: { ...utms, ...(fbclid && { fbclid }), ...(visitorId && { visitor_id: visitorId }), ...(fbcCookie && { fbc: fbcCookie }), ...(fbpCookie && { fbp: fbpCookie }) },
-        }),
+      // With the bot check off this is the same single fetch, byte for byte.
+      const res = await postWithBotCheck(bot, "/api/quiz-lead", {
+        leadId: id, name: gate.name.trim(), phone: phone10, email: "",
+        city: a.city ?? "", age: a.age ?? "", diagnosis: a.diagnosis ?? "", onMedication: a.diagnosis ?? "",
+        struggleDuration: a.stuck ?? "", biggestChallenge: a.pattern ?? "", triedBefore: a.tried ?? "",
+        amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
+        goal: a.goal ?? "", budget: a.budget ?? "", timing: a.timing ?? "", decisionMaker: a.decision ?? "",
+        symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${scoreNow}/100 (${hitsNow}/7)`,
+        leadScore: leadNow.score, leadTier: leadNow.tier,
+        patternScore: scoreNow, markersHit: hitsNow, decidesAlone: a.decision === "Yes, I decide on my own",
+        source: "decode_quiz",
+        attribution: { ...utms, ...(fbclid && { fbclid }), ...(visitorId && { visitor_id: visitorId }), ...(fbcCookie && { fbc: fbcCookie }), ...(fbpCookie && { fbp: fbpCookie }) },
       });
+      if (bot.enabled) counted = await leadCounted(res);
     } catch { /* score is shown regardless; the row write is best-effort */ }
+    if (bot.enabled && counted) trackLead(leadUser);
     setLeadId(id); setGateBusy(false); setI((n) => n + 1);
-  }, [a, gate, gateBusy]);
+  }, [a, gate, gateBusy, bot]);
 
   if (i === -1) {
     return (
@@ -315,6 +327,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
               className="w-full rounded-r-lg bg-white px-4 py-3 text-[16px] text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }} />
           </div>
           {gateErr && <p className="mt-2 text-[13px]" style={{ color: "var(--red-cta)" }}>{gateErr}</p>}
+          <TurnstileBox bot={bot} hint="One quick check. Tap the box to see your score." hintColor="var(--t2)" />
           <button type="button" onClick={submitGate} disabled={gateBusy} className="cta-button mt-5 w-full" style={{ opacity: gateBusy ? 0.7 : 1 }}>
             {gateBusy ? "One moment…" : "Show my score"}
             <span className="cta-sub">I&rsquo;ll WhatsApp your score. No spam &mdash; reply stop any time.</span>
