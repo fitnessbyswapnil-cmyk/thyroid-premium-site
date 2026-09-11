@@ -16,7 +16,10 @@ const nextConfig: NextConfig = {
       { source: "/payment", destination: "/book-session", permanent: false },
       { source: "/how-it-works", destination: "/decode", permanent: false },
       { source: "/book", destination: "/decode", permanent: false },
-      { source: "/payment-success", destination: "/book-session", permanent: false },
+      // /payment-success is NOT redirected. On phones the Cashfree checkout runs
+      // full-page ("_self") and returns here, and this page is what carries her
+      // leadId + order_id on to /session-booked to pick a slot and fire Purchase.
+      // Redirecting it sent every mobile payer back to the landing page.
     ];
   },
   images: {
