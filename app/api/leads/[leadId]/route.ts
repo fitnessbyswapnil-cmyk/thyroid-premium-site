@@ -16,6 +16,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import { googleClientOptions } from "@/lib/google-fetch";
 import { phoneKey } from "@/lib/reminder-plan";
 
 export async function GET(
@@ -40,6 +41,7 @@ export async function GET(
 
   try {
     const auth = new google.auth.GoogleAuth({
+      clientOptions: googleClientOptions,
       credentials: { client_email: email, private_key: key },
       scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
     });

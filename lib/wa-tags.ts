@@ -14,6 +14,7 @@
  * A handful of suggestions are offered in the UI and can be ignored.
  */
 import { google } from "googleapis";
+import { googleClientOptions } from "./google-fetch.ts";
 
 export const TAGS_SHEET = "Tags";
 const HEADER = ["Phone", "Tags", "Updated"];
@@ -36,6 +37,7 @@ function getSheets() {
   const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
   if (!email || !key || !spreadsheetId) throw new Error("Missing Google Sheets env vars");
   const auth = new google.auth.GoogleAuth({
+    clientOptions: googleClientOptions,
     credentials: { client_email: email, private_key: key },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });

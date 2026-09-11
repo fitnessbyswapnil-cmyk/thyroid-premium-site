@@ -17,6 +17,7 @@
  */
 import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
+import { googleTransporterOptions } from '@/lib/google-fetch'
 
 export async function GET() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
@@ -45,6 +46,7 @@ export async function GET() {
 
   try {
     const auth = new google.auth.JWT({
+      transporterOptions: googleTransporterOptions,
       email,
       key,
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],

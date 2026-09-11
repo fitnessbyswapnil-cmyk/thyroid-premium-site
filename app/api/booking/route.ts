@@ -19,6 +19,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import { googleClientOptions } from "@/lib/google-fetch";
 import { after } from "next/server";
 import { sendBookingConfirmedFree } from "@/lib/whatsapp";
 import { getSheetsClient } from "../admin/_lib";
@@ -106,6 +107,7 @@ async function appendToSheet(payload: BookingPayload) {
   }
 
   const auth = new google.auth.GoogleAuth({
+    clientOptions: googleClientOptions,
     credentials: {
       client_email: email,
       private_key: key,

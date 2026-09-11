@@ -30,6 +30,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import { googleClientOptions } from "@/lib/google-fetch";
 import { checkAdminKey } from "../../admin/_lib";
 import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
 import {
@@ -159,6 +160,7 @@ function getSheets() {
     throw new Error("Missing Google Sheets env vars");
   }
   const auth = new google.auth.GoogleAuth({
+    clientOptions: googleClientOptions,
     credentials: { client_email, private_key },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });

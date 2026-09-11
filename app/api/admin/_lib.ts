@@ -7,6 +7,7 @@
  */
 import { NextRequest } from "next/server";
 import { google } from "googleapis";
+import { googleClientOptions } from "@/lib/google-fetch";
 
 export const SHEET_NAME = "Leads";
 
@@ -23,6 +24,7 @@ export async function getSheetsClient() {
   const sheetId = process.env.GOOGLE_SHEETS_ID;
   if (!email || !key || !sheetId) throw new Error("Missing Google Sheets env vars");
   const auth = new google.auth.GoogleAuth({
+    clientOptions: googleClientOptions,
     credentials: { client_email: email, private_key: key },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });

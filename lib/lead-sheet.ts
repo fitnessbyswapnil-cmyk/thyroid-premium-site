@@ -20,6 +20,7 @@
  *    reserved/booking/flag columns); new email appends a fresh row.
  */
 import { google } from "googleapis";
+import { googleClientOptions } from "./google-fetch.ts";
 
 export const SHEET_NAME = "Leads";
 
@@ -288,6 +289,7 @@ function getSheets() {
     throw new Error("Missing Google Sheets env vars (GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_PRIVATE_KEY / GOOGLE_SHEETS_ID)");
   }
   const auth = new google.auth.GoogleAuth({
+    clientOptions: googleClientOptions,
     credentials: { client_email, private_key },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });

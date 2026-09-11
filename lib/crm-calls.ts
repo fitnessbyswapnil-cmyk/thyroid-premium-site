@@ -18,6 +18,7 @@
  * a re-extraction never clobbers a row he has already reviewed.
  */
 import { google } from "googleapis";
+import { googleTransporterOptions } from "./google-fetch.ts";
 
 export const CALLS_SHEET = "Calls";
 
@@ -177,6 +178,7 @@ async function client() {
     throw new Error(`sheets_not_configured — missing ${missing}`);
   }
   const auth = new google.auth.JWT({
+    transporterOptions: googleTransporterOptions,
     email,
     key: rawKey.replace(/\\n/g, "\n"),
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],

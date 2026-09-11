@@ -39,6 +39,7 @@ import {
   RESERVED_INDEXES,
 } from '@/lib/lead-sheet'
 import { google } from 'googleapis'
+import { googleClientOptions } from '@/lib/google-fetch'
 
 const CASHFREE_SECRET = process.env.CASHFREE_WEBHOOK_SECRET || ''
 // Cashfree registers Payment Gateway, Payment Link and Payment Form webhooks on
@@ -89,6 +90,7 @@ async function recordPaymentInSheet(data: {
   }
 
   const auth = new google.auth.GoogleAuth({
+    clientOptions: googleClientOptions,
     credentials: { client_email: svcEmail, private_key: key },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   })
