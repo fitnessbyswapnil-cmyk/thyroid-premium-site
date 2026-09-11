@@ -54,6 +54,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "bot_check_failed" }, { status: 403 });
   }
   const unverified = bot.verdict === "unverified";
+  // Logged here, before the sheet, so it is visible even if the write fails.
+  if (unverified) {
+    console.warn(`[webinar-register] bot check UNVERIFIED (${bot.reason}): saving and marking; WhatsApp skipped`);
+  }
 
   const leadId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -99,7 +103,6 @@ export async function POST(req: NextRequest) {
       });
       if (botIdx >= 0) cells.set(botIdx, UNVERIFIED);
       else console.error("[webinar-register] could not place the Bot Check marker; registration saved unmarked");
-      console.warn(`[webinar-register] bot check UNVERIFIED (${bot.reason}) leadId=${leadId}: saved and marked; WhatsApp skipped`);
     }
 
     const width = Math.max(...cells.keys()) + 1;
