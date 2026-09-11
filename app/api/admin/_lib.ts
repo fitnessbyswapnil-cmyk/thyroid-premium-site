@@ -1,17 +1,18 @@
 /**
  * Shared helpers for the /api/admin/* routes (not a route itself).
- * Auth is a single shared key: ADMIN_DASH_KEY env var, with a baked-in
- * fallback so the dashboard works before the env var is set. Override it
- * in Vercel → Settings → Environment Variables for a private passcode.
+ * Auth is a single shared key: the ADMIN_DASH_KEY env var. There is NO
+ * fallback — the repo is public, so any key written here is a key anyone can
+ * read, and these routes expose client health data and send WhatsApp. When the
+ * env var is missing (a fresh host, a typo) every request is refused.
  */
 import { NextRequest } from "next/server";
 import { google } from "googleapis";
 
 export const SHEET_NAME = "Leads";
-const FALLBACK_KEY = "SWAP-THYROID-2026";
 
 export function checkAdminKey(req: NextRequest): boolean {
-  const expected = process.env.ADMIN_DASH_KEY || FALLBACK_KEY;
+  const expected = process.env.ADMIN_DASH_KEY;
+  if (!expected) return false;
   const got = req.headers.get("x-admin-key") || "";
   return got.length > 0 && got === expected;
 }
