@@ -12,6 +12,16 @@
  */
 
 import crypto from 'crypto'
+// Explicit .ts extension: `node --experimental-strip-types` (the test runner)
+// resolves ESM paths literally. ledger.ts loads nothing Cloudflare-specific at
+// import time, so this stays safe to import from unit tests.
+import {
+  getLedgerDb,
+  getMetaEventState,
+  isDuplicateSend,
+  isLedgerable,
+  recordMetaSend,
+} from './ledger.ts'
 
 // Placeholder email Cashfree requires when the customer gave none. It must
 // NEVER be sent to Meta CAPI — a uniform fake email hash across all buyers
@@ -150,6 +160,11 @@ export type CAPIResult = {
   events_received?: number
   error?: string
   raw?: unknown
+  /**
+   * True when the D1 ledger showed this event_id had already reached Meta, so
+   * no request was made (success is true, events_received 0). Absent otherwise.
+   */
+  duplicate?: boolean
 }
 
 export async function sendToCAPI(
@@ -215,7 +230,43 @@ export async function sendCAPIEvent(
     ...(opts.customData ? { custom_data: opts.customData } : {}),
   }
 
-  return sendToCAPI([event], opts.testCode)
+  return sendWithLedger(event, opts.testCode)
+}
+
+/**
+ * sendToCAPI wrapped in the D1 ledger (lib/ledger.ts). Every existing caller
+ * gets the same result shape it always did, plus two behaviours:
+ *
+ *  - EXACTLY ONCE: an event_id the ledger already shows as having reached Meta
+ *    is not sent again. The caller gets a success-shaped result with
+ *    `duplicate: true` and events_received 0, since nothing went out this time.
+ *  - NOT LOST: a failed send is recorded 'failed' with a retry time, and
+ *    /api/cron/meta-retry resends it with its original event_id and event_time.
+ *
+ * Off Cloudflare (Vercel, `next dev`, tests), or for an id that must not be
+ * stored (one embedding a phone number), this is the plain send it always was.
+ * The ledger calls never throw and give up after 2s, so they cannot fail or
+ * stall a send. A failed ledger READ means "not known to be sent", so the
+ * event goes out.
+ *
+ * Batch sends through sendToCAPI directly are not ledgered; no caller makes one.
+ */
+async function sendWithLedger(event: CAPIEvent, testCode?: string): Promise<CAPIResult> {
+  const db = isLedgerable(event.event_id) ? await getLedgerDb() : null
+  if (!db) return sendToCAPI([event], testCode)
+
+  const previous = await getMetaEventState(db, event.event_id)
+  if (isDuplicateSend(previous, testCode)) {
+    console.log(
+      `[CAPI] ${event.event_name} ${event.event_id} already reached Meta (ledger) — duplicate, not sent again` +
+        (testCode ? ' [test]' : ''),
+    )
+    return { success: true, events_received: 0, duplicate: true }
+  }
+
+  const result = await sendToCAPI([event], testCode)
+  await recordMetaSend(db, { event, testCode, result, previous })
+  return result
 }
 
 // ── IP extraction from Request ───────────────────────────────────
