@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "thyroid-funnel",
+  "account_id": "d531de7791cdc9c2aa990c44d9901610",
+  // custom-worker.js wraps the OpenNext build and adds the cron handler.
+  "main": "custom-worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "thyroid-funnel"
+    }
+  ],
+  // next/image resizing. Free plan: 5,000 unique transformations a month;
+  // past that new sizes error rather than bill.
+  "images": {
+    "binding": "IMAGES"
+  },
+  // Formerly vercel.json crons (UTC). Keep in sync with CRON_ROUTES in custom-worker.js.
+  // EMPTY until the domain cuts over: while Vercel still serves the site its own
+  // crons run, and a second copy here would double the digest and reminders.
+  // At cutover set: ["30 2 * * *", "50 23 * * *"]
+  "triggers": {
+    "crons": []
+  },
+  // Workers Logs: request + console logs kept for days, not Vercel Hobby's one hour.
+  "observability": {
+    "enabled": true
+  }
+}

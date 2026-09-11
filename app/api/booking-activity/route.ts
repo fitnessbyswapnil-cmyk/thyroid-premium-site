@@ -26,12 +26,17 @@ import { NextResponse } from 'next/server'
 
 const CAL_API_KEY = process.env.CAL_API_KEY
 
-// Cached at the edge: the number moves slowly and Cal.com should not be hit
-// on every pageview.
-export const revalidate = 900
+// Dynamic, not ISR: on Cloudflare the page cache is read-only build output, so
+// `revalidate` would freeze this at whatever the build saw (0, with no key at
+// build time). Instead each worker instance remembers the count for 15 minutes
+// — the number moves slowly and Cal.com should not be hit on every pageview.
+export const dynamic = 'force-dynamic'
+const TTL_MS = 15 * 60 * 1000
+let cached: { count: number; at: number } | null = null
 
 export async function GET() {
   if (!CAL_API_KEY) return NextResponse.json({ count: 0 })
+  if (cached && Date.now() - cached.at < TTL_MS) return NextResponse.json({ count: cached.count })
 
   try {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -42,7 +47,7 @@ export async function GET() {
           Authorization: `Bearer ${CAL_API_KEY}`,
           'cal-api-version': '2024-08-13',
         },
-        next: { revalidate: 900 },
+        cache: 'no-store',
       },
     )
     if (!res.ok) {
@@ -63,6 +68,8 @@ export async function GET() {
       return status !== 'cancelled' && status !== 'rejected'
     }).length
 
+    // Only a real answer is remembered; failures above retry on the next call.
+    cached = { count, at: Date.now() }
     return NextResponse.json({ count })
   } catch (err) {
     console.warn('[booking-activity] threw — returning 0', err)
