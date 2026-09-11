@@ -4,6 +4,10 @@
   "account_id": "d531de7791cdc9c2aa990c44d9901610",
   // custom-worker.js wraps the OpenNext build and adds the cron handler.
   "main": "custom-worker.js",
+  // Keep the *.workers.dev address alive alongside the routes: it is how a new
+  // version is checked before real traffic sees it. (Wrangler turns it off by
+  // default as soon as routes exist.)
+  "workers_dev": true,
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
