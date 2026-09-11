@@ -17,6 +17,7 @@ import { default as handler } from "./.open-next/worker.js";
 const CRON_ROUTES = {
   "30 2 * * *": "/api/admin/digest", // 08:00 IST daily digest
   "50 23 * * *": "/api/cron/payment-reminder", // daily safety net; cron-job.org polls every 5 min
+  "*/15 * * * *": "/api/cron/meta-retry", // resend failed Meta CAPI events recorded in the D1 ledger
 };
 
 /** The bare domain answers only with a redirect to www, exactly as Vercel did. */

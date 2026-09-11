@@ -20,7 +20,8 @@
  *  - Purchase CAPI fires even with browser tracking blocked
  *  - Enables Meta to optimize for paying leads, not just form fills
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { getLedgerDb, recordPayment } from '@/lib/ledger'
 import {
   sendCAPIEvent,
   buildUserData,
@@ -351,6 +352,29 @@ export async function POST(req: NextRequest) {
     } catch (sheetsErr) {
       // Fail OPEN: a Sheets outage must never cost us a Purchase event.
       console.error('[cashfree-webhook] Sheets payment record failed:', sheetsErr instanceof Error ? sheetsErr.message : String(sheetsErr))
+    }
+
+    // Payments ledger (D1): next to the sheet write, never instead of it.
+    // Recorded after the response so a ledger outage can neither delay
+    // Cashfree's 200 nor touch the Purchase send. order_ref is the primary key,
+    // so a replayed webhook is a no-op. The binding is resolved here, inside
+    // the request; it is null off Cloudflare and the whole block is skipped.
+    const ledgerDb = await getLedgerDb()
+    if (ledgerDb) {
+      const ledgerRow = {
+        orderRef: payment.refId,
+        leadId,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: sheetResult === 'already_paid' ? ('duplicate' as const) : ('paid' as const),
+        source,
+        sheetResult,
+        paidAtMs: Date.now(),
+      }
+      after(async () => {
+        const written = await recordPayment(ledgerDb, ledgerRow)
+        console.log(`[cashfree-webhook] ledger payment ref=${ledgerRow.orderRef} status=${ledgerRow.status} → ${written}`)
+      })
     }
 
     if (sheetResult === 'already_paid') {

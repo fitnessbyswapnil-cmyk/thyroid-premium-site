@@ -27,9 +27,21 @@
   },
   // Formerly vercel.json crons (UTC). Keep in sync with CRON_ROUTES in custom-worker.js.
   // Live from the domain switch on; vercel.json is gone so they never run twice.
+  // "*/15 * * * *" resends failed Meta CAPI events from the ledger (/api/cron/meta-retry).
   "triggers": {
-    "crons": ["30 2 * * *", "50 23 * * *"]
+    "crons": ["30 2 * * *", "50 23 * * *", "*/15 * * * *"]
   },
+  // Payment + Meta event ledger (lib/ledger.ts; schema in migrations/). Only the
+  // worker has this binding: on Vercel, in `next dev` and in tests every ledger
+  // call is a no-op. Holds ids, amounts, statuses and hashed user_data only.
+  "d1_databases": [
+    {
+      "binding": "LEDGER",
+      "database_name": "thyroid-ledger",
+      "database_id": "5ab963c5-270c-474a-9d2c-86733d7bfff1",
+      "migrations_dir": "migrations"
+    }
+  ],
   // Routes, not Custom Domains: the @ and www DNS records stay as they are and
   // the switch happens when they are set to Proxied (orange cloud). Rolling
   // back to Vercel is setting them to DNS only again — no records to recreate.
