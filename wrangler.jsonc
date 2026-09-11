@@ -22,12 +22,18 @@
     "binding": "IMAGES"
   },
   // Formerly vercel.json crons (UTC). Keep in sync with CRON_ROUTES in custom-worker.js.
-  // EMPTY until the domain cuts over: while Vercel still serves the site its own
-  // crons run, and a second copy here would double the digest and reminders.
-  // At cutover set: ["30 2 * * *", "50 23 * * *"]
+  // Live from the domain switch on; vercel.json is gone so they never run twice.
   "triggers": {
-    "crons": []
+    "crons": ["30 2 * * *", "50 23 * * *"]
   },
+  // Routes, not Custom Domains: the @ and www DNS records stay as they are and
+  // the switch happens when they are set to Proxied (orange cloud). Rolling
+  // back to Vercel is setting them to DNS only again — no records to recreate.
+  // The worker answers the bare domain with a 307 to www (custom-worker.js).
+  "routes": [
+    { "pattern": "www.swapnilumbarkarfitness.in/*", "zone_name": "swapnilumbarkarfitness.in" },
+    { "pattern": "swapnilumbarkarfitness.in/*", "zone_name": "swapnilumbarkarfitness.in" }
+  ],
   // Workers Logs: request + console logs kept for days, not Vercel Hobby's one hour.
   "observability": {
     "enabled": true
