@@ -32,3 +32,21 @@ Two things from it that bite hardest:
   promise dies when the serverless invocation freezes, and logs nothing.
 - **Never hardcode an index derived from a list.** A hardcoded question index
   silently discarded the last quiz answer when a question was added.
+
+# Hosting and deploys (since 2026-09-11)
+
+- Production is **Cloudflare Workers** (worker `thyroid-funnel`, built with
+  OpenNext): `wrangler.jsonc`, `custom-worker.js`, `open-next.config.ts`. Vercel
+  still builds `main` as a rollback copy that receives no traffic.
+- **A push to `main` deploys automatically** through Cloudflare Workers Builds
+  (`npx opennextjs-cloudflare build`, then `npx opennextjs-cloudflare deploy`).
+  Build-time `NEXT_PUBLIC_*` values live in the Workers Builds settings, not in
+  the repo; runtime secrets live on the worker.
+- Free-plan limits shape the code: 3 MB gzipped bundle, 10 ms CPU per request,
+  and a read-only static page cache, so no ISR `revalidate` anywhere.
+- Every googleapis client must pass `clientOptions: googleClientOptions`
+  (`lib/google-fetch.ts`). Without it Google's responses arrive still gzipped on
+  Workers and every Sheets call fails.
+- Before changing any Meta tracking, read `docs/tracking-cutover-plan.md`.
+  `NEXT_PUBLIC_DIRECT_PIXEL` must stay off until the GTM change in its §4-B is
+  made in the same window, or every PageView is counted twice.
