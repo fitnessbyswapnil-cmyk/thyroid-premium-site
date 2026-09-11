@@ -24,6 +24,7 @@
  * double-submit resolves to the same lead rather than creating a second one.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { internalLeadHeaders } from '@/lib/turnstile'
 
 const CAL_API_KEY = process.env.CAL_API_KEY
 
@@ -122,7 +123,10 @@ export async function POST(req: NextRequest) {
   try {
     await fetch(`${origin}/api/quiz-lead`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // A server-to-server call has no browser and so no Turnstile token. The
+      // signature (empty while Turnstile is off) tells quiz-lead this is us,
+      // so her booking confirmation is not held back as "unverified".
+      headers: { 'Content-Type': 'application/json', ...internalLeadHeaders(leadId) },
       body: JSON.stringify({
         leadId,
         name,
