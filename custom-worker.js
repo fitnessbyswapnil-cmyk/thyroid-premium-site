@@ -31,8 +31,11 @@ export default {
    */
   fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.hostname === APEX) {
-      url.hostname = CANONICAL;
+    // One hop to https://www — Vercel did both of these for free; here the
+    // worker must, or http:// visitors would be served (and pay) unencrypted.
+    if (url.hostname === APEX || url.protocol === "http:") {
+      if (url.hostname === APEX) url.hostname = CANONICAL;
+      url.protocol = "https:";
       return Response.redirect(url.toString(), 307);
     }
     return handler.fetch(request, env, ctx);
