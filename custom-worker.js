@@ -19,8 +19,24 @@ const CRON_ROUTES = {
   "50 23 * * *": "/api/cron/payment-reminder", // daily safety net; cron-job.org polls every 5 min
 };
 
+/** The bare domain answers only with a redirect to www, exactly as Vercel did. */
+const APEX = "swapnilumbarkarfitness.in";
+const CANONICAL = "www.swapnilumbarkarfitness.in";
+
 export default {
-  fetch: handler.fetch,
+  /**
+   * 307, not 301: it preserves the method and body, so a webhook or form POST
+   * that still targets the bare domain is replayed at www instead of turning
+   * into a GET — and browsers do not cache it forever if the rule ever changes.
+   */
+  fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.hostname === APEX) {
+      url.hostname = CANONICAL;
+      return Response.redirect(url.toString(), 307);
+    }
+    return handler.fetch(request, env, ctx);
+  },
 
   /** @param {{ cron: string }} controller */
   async scheduled(controller, env, ctx) {
