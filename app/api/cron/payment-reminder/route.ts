@@ -114,10 +114,20 @@ const BOOKING_TEMPLATE_FALLBACK = "booking_confirmation";
 // planning (index-preserving, so per-row stamping still lands on the right row).
 const PAID_FUNNEL_ACTIVE = true;
 const PAID_LEAD_ID_PREFIXES = ["sched_", "dq_"];
-function paidFunnelRowsOnly(rows: string[][], cols: { leadId: number; phone: number }): string[][] {
+// Turnstile: a quiz lead saved without a bot-check token is stamped
+// "unverified" in the "Bot Check" column. quiz-lead already skips its WhatsApp
+// welcome and Meta events; this keeps the paid reminders off it too, so a bot
+// never costs a message. botCheckCol is -1 when the column does not exist yet.
+function paidFunnelRowsOnly(
+  rows: string[][],
+  cols: { leadId: number; phone: number },
+  botCheckCol = -1,
+): string[][] {
   return rows.map((r) => {
     const id = String(r?.[cols.leadId] ?? "");
-    if (PAID_LEAD_ID_PREFIXES.some((p) => id.startsWith(p))) return r;
+    const unverified =
+      botCheckCol >= 0 && String(r?.[botCheckCol] ?? "").trim().toLowerCase() === "unverified";
+    if (!unverified && PAID_LEAD_ID_PREFIXES.some((p) => id.startsWith(p))) return r;
     const copy = [...(r ?? [])]; copy[cols.phone] = ""; return copy;
   });
 }
@@ -207,7 +217,7 @@ export async function GET(req: NextRequest) {
       reminderSent: findCol(header, SENT_TITLE),
     };
 
-    const paidRows = paidFunnelRowsOnly(rows, cols);
+    const paidRows = paidFunnelRowsOnly(rows, cols, findCol(header, "Bot Check"));
     const plan = planReminders({ rows: paidRows, cols, now: Date.now(), minAgeMinutes, maxAgeHours, limit });
 
     // Second payment touch, a day later, stamped in its OWN column so it can
