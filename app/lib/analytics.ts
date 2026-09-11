@@ -1,4 +1,16 @@
 import { FREE_CALL_VALUE, SESSION_PRICE } from "./pricing";
+import {
+  claimOnce,
+  consumeHeadPageViewId,
+  isFlagOn,
+  isPurchaseEventId,
+  type PixelWindow,
+} from "../components/tracking/pixel-core";
+
+// Default OFF. When ON, app/components/tracking/MetaPixel.tsx initialises the
+// pixel from <head> and this file sends the pixel's PageViews itself. Must be
+// switched on together with the GTM changes in docs/tracking-cutover-plan.md.
+const DIRECT_PIXEL = isFlagOn(process.env.NEXT_PUBLIC_DIRECT_PIXEL);
 
 type DLPayload = Record<string, unknown>;
 
@@ -10,7 +22,9 @@ export function pushDL(payload: DLPayload) {
 }
 
 // ── Browser Pixel leg ───────────────────────────────────────────────────────
-// Used by Purchase only. Do NOT add it to Schedule — see trackSchedule.
+// Used ONLY by trackPageView, and only when NEXT_PUBLIC_DIRECT_PIXEL is on.
+// Every other event's browser leg is a web GTM Meta tag reading the dataLayer
+// push. Do NOT add a direct fbq to Schedule or Purchase — see those functions.
 //
 // The original note here claimed the web GTM container never asks the browser
 // pixel to send these events, and that extra legs sharing one event_id are
@@ -207,8 +221,20 @@ function withUserSignals(payload: DLPayload, userData?: UserData): DLPayload {
 // the full metaUserData (external_id always, + em/ph/fn/ln when identity is
 // already stored) instead of bare external_id/fbc/fbp. This is the biggest EMQ
 // lift: external_id on every anonymous PageView, hydrated on later loads.
+//
+// NEXT_PUBLIC_DIRECT_PIXEL (default off; off = exactly the behaviour above):
+// the <head> script has already sent this document's PageView to the pixel.
+// The first call here reuses that id, so the dataLayer page_view (and any
+// server PageView GTM builds from it) carries the SAME event_id and Meta can
+// pair the two. Later calls are client-side route changes: the head script
+// cannot see them, so the pixel PageView is sent from here, with the id the
+// dataLayer push carries.
 export function trackPageView(pagePath?: string) {
-  const event_id = generateEventId("page_view");
+  const headId =
+    DIRECT_PIXEL && typeof window !== "undefined"
+      ? consumeHeadPageViewId(window as unknown as PixelWindow)
+      : "";
+  const event_id = headId || generateEventId("page_view");
   pushDL(
     withUserSignals({
       event: "page_view",
@@ -216,6 +242,7 @@ export function trackPageView(pagePath?: string) {
       ...(pagePath ? { page_path: pagePath } : {}),
     }),
   );
+  if (DIRECT_PIXEL && !headId) fbqTrack("PageView", event_id);
   return event_id;
 }
 
@@ -270,13 +297,40 @@ export function trackInitiateCheckout() {
   return event_id;
 }
 
-// eventId: pass `Purchase_${orderId}` so the browser Pixel, /api/events, AND
-// the Cashfree webhook all share ONE id and Meta deduplicates to a single
-// Purchase. Falls back to a generated id only when the order id is unknown.
-// value: pass the REAL charged amount (₹1 in test mode, SESSION_PRICE live) so the Pixel
-// Purchase value isn't hardcoded; falls back to PRODUCT.value when omitted.
+// DEDUP CONTRACT: a Purchase event_id is ALWAYS `Purchase_<orderId>` — the id
+// the Cashfree webhook's CAPI Purchase carries. The old fallback minted a
+// random id, which can never pair with the webhook, so a Purchase without the
+// contract id is now refused rather than sent. (The /api/events Purchase POST
+// from /session-booked is rejected with 400 — Purchase is not in that route's
+// allow-list — so the webhook is the only server leg the code sends.)
+//
+// ONE browser leg per order. This pushes the dataLayer `purchase` event and
+// nothing else; the web GTM tag "Meta Pixel – Purchase" (trigger `purchase`,
+// Event ID {{DL - event_id}}) is the browser leg. There used to be a direct
+// fbq("track", "Purchase") here as well, added on the belief that Purchase had
+// no GTM browser tag. It does, so every order sent TWO browser Purchases with
+// the same id, and Meta counts those rather than folding them — exactly the
+// failure found and removed for Schedule (see trackSchedule). A real ₹299
+// payment showed as 2 Purchases / ₹598 on 10 Sep 2026.
+//
+// Once per order per browser, durable across tabs: /session-booked's own guard
+// is sessionStorage, which a new tab (or the WhatsApp booking link reopening
+// the page) does not share. Uses its own key — /session-booked sets
+// `purchase_fired_<orderId>` BEFORE calling this, so reusing that key would
+// block the first, genuine fire.
+//
+// The dataLayer payload itself is unchanged, so GTM receives exactly what it
+// did on the first fire for an order; only repeats and contract violations
+// are suppressed.
+//
+// value: pass the REAL charged amount (₹1 in test mode, SESSION_PRICE live).
 export function trackPurchase(userData?: UserData, eventId?: string, transactionId?: string, value?: number) {
-  const event_id = eventId || generateEventId("purchase");
+  if (!isPurchaseEventId(eventId)) {
+    console.warn(`[analytics] trackPurchase skipped — event_id "${eventId ?? ""}" violates the Purchase_<orderId> contract`);
+    return "";
+  }
+  const event_id = eventId;
+  if (!claimPurchaseOnce(event_id)) return event_id;
   const payload = withUserSignals(
     {
       event: "purchase",
@@ -291,14 +345,17 @@ export function trackPurchase(userData?: UserData, eventId?: string, transaction
     userData,
   );
   pushDL(payload);
-  // Browser leg, same event_id → collapses with the Cashfree webhook's CAPI
-  // Purchase rather than arriving as a second, unmatched event.
-  fbqTrack("Purchase", event_id, {
-    value: value ?? SESSION_PRICE,
-    currency: "INR",
-    ...(transactionId ? { order_id: transactionId } : {}),
-  });
   return event_id;
+}
+
+// localStorage survives new tabs and restarts; sessionStorage is the fallback
+// where localStorage throws. Same approach as claimScheduleOnce below.
+function claimPurchaseOnce(eventId: string): boolean {
+  if (typeof window === "undefined") return false;
+  const box = (kind: "localStorage" | "sessionStorage"): Storage | undefined => {
+    try { return window[kind]; } catch { return undefined; }
+  };
+  return claimOnce(`meta_purchase_claimed_${eventId}`, [box("localStorage"), box("sessionStorage")]);
 }
 
 /**
