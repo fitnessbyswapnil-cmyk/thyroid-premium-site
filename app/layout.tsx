@@ -3,6 +3,7 @@ import { Caveat, Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { ScarcityProvider } from "./context/ScarcityProvider";
 import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
+import { MetaPixelHead } from "./components/tracking/MetaPixel";
 import { RouteTracker } from "./components/tracking/RouteTracker";
 import { UserIdentityTracker } from "./components/tracking/UserIdentityTracker";
 // InputCookieCapture removed — lead data goes to Make webhook in BookingFlow.tsx
@@ -76,6 +77,8 @@ export default function RootLayout({
                   className={`${outfit.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
                 >
                 <head>
+                        {/* Renders nothing unless NEXT_PUBLIC_DIRECT_PIXEL is on — see docs/tracking-cutover-plan.md */}
+                        <MetaPixelHead />
                         <GTMScript />
                 </head>
                 <body className="min-h-full flex flex-col">
