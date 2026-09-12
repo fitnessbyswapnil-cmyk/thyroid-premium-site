@@ -23,6 +23,15 @@
  *                        close, and is scored as one.
  *   18  Decision maker   "I need to discuss with my spouse" is the commonest
  *                        way a good call dies. A delay, though, not a refusal.
+ *    4  Partner on call  The follow-up the /decode quiz asks only when she has
+ *                        just said the decision is shared: can she bring them
+ *                        onto the call for 15 minutes. "Yes" turns the delay
+ *                        above into a scheduling detail and is worth the most
+ *                        of the three; "I will come alone" earns nothing rather
+ *                        than costing her points, because plenty of women still
+ *                        close on their own. Small on purpose: it is a stated
+ *                        intention, not behaviour, and the question is asked
+ *                        mainly to set the expectation that they attend.
  *   16  When to start    Intent decays fast. "Just gathering information"
  *                        scores zero deliberately — it is a no with manners.
  *   16  Paid before      Behaviour beats intention. Someone who has actually
@@ -38,9 +47,16 @@
  *    2  Age              ICP is 30+.
  *    1  City             Metro affordability, at the price point.
  *
+ * The weights now sum to 104 raw points, not 100. The reported score is still
+ * 0-100 and always was: it is earned/available as a percentage, so adding a
+ * weight changes the shape of the ratio, never its ceiling. No existing weight
+ * moved when Partner on call was added.
+ *
  * Unanswered questions are excluded from BOTH sides of the ratio rather than
  * scored zero, so a booking made before a question existed is not punished for
- * it. Fewer than three answers returns null — too little signal to rank on.
+ * it — which is also what makes a lead captured before Partner on call existed
+ * score exactly as it did yesterday. Fewer than three answers returns null —
+ * too little signal to rank on.
  *
  * Matching is by substring on both the field key and the answer text, because
  * Cal.com booking-field slugs and option wording get edited over time and an
@@ -108,6 +124,19 @@ const RULES: Rule[] = [
     match: (k) => has(k, "decision"),
     // Needing to ask a spouse delays a sale; it does not end one.
     points: (v) => (has(v, "sole") || v.startsWith("yes") ? 18 : 7),
+  },
+  {
+    id: "partnerOnCall",
+    label: "Partner on call",
+    max: 4,
+    // The /decode quiz stores yes / unsure / no; a Cal.com field would carry
+    // the full sentence. Both are matched, and "not sure" is tested before
+    // "no" because "Not sure, I will try" contains the letters of "no".
+    match: (k) => has(k, "partner"),
+    points: (v) =>
+      has(v, "yes") ? 4
+      : has(v, "unsure", "not sure") ? 1
+      : 0,
   },
   {
     id: "urgency",

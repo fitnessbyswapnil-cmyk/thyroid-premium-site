@@ -33,6 +33,7 @@ import { google } from "googleapis";
 import { googleClientOptions } from "@/lib/google-fetch";
 import { checkAdminKey } from "../../admin/_lib";
 import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
+import { GATE_OUTCOME_HEADER, isNurtureGated } from "@/lib/decode-gate";
 import {
   sendWhatsAppTemplate,
   sendCheckoutPending,
@@ -118,16 +119,27 @@ const PAID_LEAD_ID_PREFIXES = ["sched_", "dq_"];
 // "unverified" in the "Bot Check" column. quiz-lead already skips its WhatsApp
 // welcome and Meta events; this keeps the paid reminders off it too, so a bot
 // never costs a message. botCheckCol is -1 when the column does not exist yet.
+//
+// Timing gate: a lead stamped "nurture_timing" in the "Gate Outcome" column was
+// never shown the Rs 299 checkout at all. She was sent to the free masterclass,
+// so there is no payment to remind her about, and "your consultation is still
+// open" would be about something she was never offered. Same shape as the bot
+// check above: blank the phone in the mapped COPY, keeping the row index, so
+// per-row stamping still lands on the right row. gateCol is -1 until the column
+// exists, and a BLANK cell is a lead from before the gate did — she keeps
+// behaving exactly as she always has.
 function paidFunnelRowsOnly(
   rows: string[][],
   cols: { leadId: number; phone: number },
   botCheckCol = -1,
+  gateCol = -1,
 ): string[][] {
   return rows.map((r) => {
     const id = String(r?.[cols.leadId] ?? "");
     const unverified =
       botCheckCol >= 0 && String(r?.[botCheckCol] ?? "").trim().toLowerCase() === "unverified";
-    if (!unverified && PAID_LEAD_ID_PREFIXES.some((p) => id.startsWith(p))) return r;
+    const nurtured = gateCol >= 0 && isNurtureGated(r?.[gateCol]);
+    if (!unverified && !nurtured && PAID_LEAD_ID_PREFIXES.some((p) => id.startsWith(p))) return r;
     const copy = [...(r ?? [])]; copy[cols.phone] = ""; return copy;
   });
 }
@@ -217,7 +229,12 @@ export async function GET(req: NextRequest) {
       reminderSent: findCol(header, SENT_TITLE),
     };
 
-    const paidRows = paidFunnelRowsOnly(rows, cols, findCol(header, "Bot Check"));
+    const paidRows = paidFunnelRowsOnly(
+      rows,
+      cols,
+      findCol(header, "Bot Check"),
+      findCol(header, GATE_OUTCOME_HEADER),
+    );
     const plan = planReminders({ rows: paidRows, cols, now: Date.now(), minAgeMinutes, maxAgeHours, limit });
 
     // Second payment touch, a day later, stamped in its OWN column so it can
