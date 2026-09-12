@@ -9,6 +9,13 @@
  *   GOOGLE_PRIVATE_KEY             – service account private_key (with \n escaped)
  *   GOOGLE_SHEETS_ID               – the spreadsheet ID from the URL
  *
+ * OPTIONAL:
+ *   WHATSAPP_PARTNER_TEMPLATE      – set to "on" to let a lead who does not
+ *                                    decide alone receive the forwardable
+ *                                    booking_confirmed_partner_v1 instead of
+ *                                    booking_confirmed_free_v2. Unset or any
+ *                                    other value is exactly today's behaviour.
+ *
  * SHEET SETUP — "Bookings" tab, row 1 headers (exact order):
  *   Timestamp | Name | Phone | Email | Age | Thyroid Condition | Weight Struggles |
  *   Energy Level | Biggest Frustration | Main Goal |
@@ -21,10 +28,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { googleClientOptions } from "@/lib/google-fetch";
 import { after } from "next/server";
-import { sendBookingConfirmedFree } from "@/lib/whatsapp";
+import { sendBookingConfirmedSlot, partnerTemplateEnabled, formatBookingWhen } from "@/lib/whatsapp";
 import { getSheetsClient } from "../admin/_lib";
 
 const SHEET_NAME = "Leads"; // must match the exact tab name in your spreadsheet
+
+/**
+ * The Leads-sheet column that records whether she decides alone.
+ *
+ * Matched by HEADER NAME, never by position: the column is added to the sheet
+ * independently of this route and lands wherever the sheet already ends. A
+ * hardcoded index would silently read whatever column happens to sit there.
+ * Its absence is normal and not an error — until the column exists, every
+ * booking keeps the confirmation it gets today.
+ */
+const PARTNER_HEADER = "partner on call";
+
+/** Zero-based column index to its A1 letter (0 -> A, 26 -> AA). */
+function columnLetter(index: number): string {
+  let n = index + 1;
+  let out = "";
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    out = String.fromCharCode(65 + rem) + out;
+    n = Math.floor((n - 1) / 26);
+  }
+  return out;
+}
 
 type Step1Data = {
   name?: string;
@@ -192,6 +222,11 @@ export async function POST(req: NextRequest) {
     // has been messaging. When they differ, both are told: the booking number is
     // where she expects call reminders, and the quiz number is where the rest of
     // the conversation already lives.
+    //
+    // Which confirmation she gets is decided by planBookingConfirmation: one
+    // template per number, never both. A woman who makes health decisions with
+    // someone at home gets the forwardable one, because that person is
+    // unreachable any other way — we never collect their number.
     after(async () => {
       try {
         const name = String(payload.step1?.name ?? "").trim();
@@ -202,28 +237,80 @@ export async function POST(req: NextRequest) {
         const targets = new Set<string>();
         if (bookingPhone.length === 10) targets.add(bookingPhone);
 
+        // Her answer to "is someone else on this decision", read from the sheet
+        // below. Empty means sole decider, legacy row, or column not there yet
+        // — all three keep today's confirmation.
+        let partnerOnCall = "";
+        // Everything the partner path costs, including its extra Sheets read,
+        // is skipped while the flag is off. Off is exactly today's behaviour.
+        const partnerEnabled = partnerTemplateEnabled();
+
         if (leadId) {
           try {
             const { sheets, sheetId } = await getSheetsClient();
-            const res = await sheets.spreadsheets.values.get({
-              spreadsheetId: sheetId,
-              range: `${SHEET_NAME}!A1:E`,
-            });
-            const rows = (res.data.values as string[][]) ?? [];
+
+            let partnerCol = -1;
+            if (partnerEnabled) {
+              try {
+                const headerRes = await sheets.spreadsheets.values.get({
+                  spreadsheetId: sheetId,
+                  range: `${SHEET_NAME}!1:1`,
+                });
+                const header = ((headerRes.data.values?.[0] as string[]) ?? []).map((h) =>
+                  String(h ?? "").trim().toLowerCase(),
+                );
+                partnerCol = header.indexOf(PARTNER_HEADER);
+              } catch (headerErr) {
+                console.error(
+                  "[booking] partner header read failed (keeping default template):",
+                  headerErr instanceof Error ? headerErr.message : String(headerErr),
+                );
+              }
+            }
+
+            // With the column present, one batch fetches the identity columns
+            // this route already read plus the partner column; the two ranges
+            // come back row-aligned, so index i means the same row in each.
+            // Without it — flag off, or column not added yet — this is the
+            // single values.get it has always been.
+            let rows: string[][] = [];
+            let partnerRows: string[][] = [];
+            if (partnerCol >= 0) {
+              const letter = columnLetter(partnerCol);
+              const res = await sheets.spreadsheets.values.batchGet({
+                spreadsheetId: sheetId,
+                ranges: [`${SHEET_NAME}!A1:E`, `${SHEET_NAME}!${letter}1:${letter}`],
+              });
+              rows = (res.data.valueRanges?.[0]?.values as string[][]) ?? [];
+              partnerRows = (res.data.valueRanges?.[1]?.values as string[][]) ?? [];
+            } else {
+              const res = await sheets.spreadsheets.values.get({
+                spreadsheetId: sheetId,
+                range: `${SHEET_NAME}!A1:E`,
+              });
+              rows = (res.data.values as string[][]) ?? [];
+            }
+
             for (let i = 1; i < rows.length; i++) {
               if (String(rows[i]?.[1] ?? "").trim() !== leadId) continue;
               const p = String(rows[i]?.[3] ?? "").replace(/\D/g, "").slice(-10);
               if (p.length === 10) targets.add(p);
+              const answer = String(partnerRows[i]?.[0] ?? "").trim();
+              if (answer && !partnerOnCall) partnerOnCall = answer;
             }
           } catch (lookupErr) {
             console.error("[booking] lead phone lookup failed:", lookupErr instanceof Error ? lookupErr.message : String(lookupErr));
           }
         }
 
+        // {{1}} of the partner template is the slot, not the name. Both halves
+        // are already display strings by the time they reach this route.
+        const sessionWhen = formatBookingWhen(payload.step3?.bookingDate, payload.step3?.bookingTime);
+
         for (const phone of targets) {
-          const r = await sendBookingConfirmedFree(phone, name);
+          const r = await sendBookingConfirmedSlot(phone, name, { partnerOnCall, sessionWhen });
           console.log(
-            `[booking] booking_confirmed_free_v2 → ***${phone.slice(-4)} sent=${r.sent}` +
+            `[booking] ${r.template} → ***${phone.slice(-4)} sent=${r.sent} why=${r.reason}` +
               (r.skipped ? ` skipped=${r.skipped}` : "") +
               (r.error ? ` error=${r.error}` : ""),
           );
