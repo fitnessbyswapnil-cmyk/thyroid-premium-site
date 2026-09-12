@@ -24,6 +24,15 @@ import { useInView } from "../lib/useInView";
 // (their real quotes), Namrata's fatigue result from her proof card. No
 // per-client details are invented — quotes appear only where a real quote
 // exists in the site's own data.
+//
+// `occupation` (12-Sep-2026) is the pill above each headline. A visitor looks
+// for the card that resembles HER life before she looks at the kilos, so the
+// label earns its place — but occupation falls under the same rule as names,
+// weights and timeframes: NEVER INVENTED. Only Heenal has one, because
+// "IT professional" was already published in her own caption. The other three
+// ship with no pill until the owner confirms theirs, and an unconfirmed card
+// renders cleanly with the clinical descriptor alone. A missing tag is fine;
+// a plausible guess is not.
 const WALL = [
   {
     src: "/transformations/Vaidehi 1.png",
@@ -31,6 +40,7 @@ const WALL = [
     // `tag` and `kg` are transcribed from the same composites and captions the
     // rest of this file already uses. Nothing here is new information — the
     // card anatomy changed, the facts did not.
+    occupation: "",
     tag: "72 kg → 60 kg",
     kg: "12 kg",
     stat: "−12 kg · 90 days",
@@ -41,6 +51,7 @@ const WALL = [
   {
     src: "/transformations/Surekha 3.png",
     name: "Surekha",
+    occupation: "",
     tag: "Bloating & fatigue",
     kg: "12 kg",
     stat: "−12 kg · 90 days",
@@ -51,6 +62,7 @@ const WALL = [
   {
     src: "/transformations/Namrata 5.png",
     name: "Namrata",
+    occupation: "",
     tag: "Constant tiredness",
     kg: "16 kg",
     stat: "−16 kg · 90 days",
@@ -61,7 +73,11 @@ const WALL = [
   {
     src: "/transformations/Heenal 7.png",
     name: "Heenal",
-    tag: "IT professional · Bengaluru",
+    // Split, not invented: her caption already read "IT professional ·
+    // Bengaluru". The occupation half becomes the pill, the city stays on the
+    // descriptor line, and no new claim is made about her.
+    occupation: "IT professional",
+    tag: "Bengaluru",
     kg: "15 kg",
     stat: "−15 kg · 90 days",
     story: "IT professional, Bengaluru. Her blocker was in Pillar 1. The root, not her diet.",
@@ -85,8 +101,11 @@ function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
       }}
     >
       <figcaption className="px-5 pt-6 text-center sm:px-6">
-        <span className="proof-tag">{entry.tag}</span>
-        <h3 className="mx-auto mt-4 max-w-[20ch] text-[19px] font-bold leading-[1.28] text-[var(--t1)] sm:text-[21px]">
+        {entry.occupation ? (
+          <span className="proof-tag">{entry.occupation}</span>
+        ) : null}
+        <span className="proof-desc">{entry.tag}</span>
+        <h3 className="mx-auto mt-3 max-w-[20ch] text-[19px] font-bold leading-[1.28] text-[var(--t1)] sm:text-[21px]">
           Lost {entry.kg} in 90 days
           <span className="block">
             despite <span className="proof-cond">hypothyroidism</span>

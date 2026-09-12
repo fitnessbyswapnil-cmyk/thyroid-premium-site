@@ -74,6 +74,70 @@ const AGENDA = [
   },
 ];
 
+// The three pillars, in the order they are worked. Names are the documented
+// ones (docs/business-handover.md §1 "Method"); the bodies are the owner's
+// 12-Sep brief. The section exists because a named method is what turns a
+// service into a system — and the name appeared nowhere on this page at all,
+// while it is on every ad creative pointing at it.
+const PILLARS = [
+  {
+    n: "1",
+    name: "Fix the Root",
+    body:
+      "Your blood work read properly: TSH, T3, T4, D3, B12, iron. Find the deficiency or conversion problem the tablet was never going to solve.",
+  },
+  {
+    n: "2",
+    name: "Fuel the Body",
+    body:
+      "Ordinary Indian home food, built to support thyroid function instead of starving it. No imported ingredients. Your family eats the same meal.",
+  },
+  {
+    n: "3",
+    name: "Flow into Fitness",
+    body:
+      "Low-impact and joint-safe. Walking and bodyweight progression, not two-hour gym sessions you will abandon in week two.",
+  },
+] as const;
+
+// Self-qualification, placed immediately before the last CTA. Lead quality is
+// the constraint the business actually runs into — 7 client slots a month and
+// 60-minute calls — so a visitor who rules herself out here costs nothing,
+// while the same woman ruling herself out after paying Rs 299 costs an hour.
+//
+// TWO LINES ARE DELIBERATELY ABSENT and must not be added back:
+//  - "if you cannot invest Rs 15,000" — on the recorded calls the LOWEST price
+//    quoted did not close and the highest closed twice. Price does not predict
+//    the buyer here, so it must not be built into the filter.
+//  - "you must be the decision-maker" — the quiz asks this far more softly
+//    (lib/decision-maker.ts). On the page it would lose qualified women whose
+//    only sin is talking to their family first.
+const FOR_YOU = [
+  "You have been diagnosed hypothyroid and take the tablet, but the weight has not moved in two years or more",
+  "Your report says normal and your body says otherwise",
+  "You have already paid someone else to fix this at least once",
+  "You want the reason, not another diet chart",
+  "You are ready to start within the next 30 days",
+] as const;
+
+const NOT_FOR_YOU = [
+  "You want to lose weight fast for an event",
+  "You are not willing to get blood work done — the whole method starts there",
+  "You only want a diet chart emailed to you",
+  "You are not ready to start for a few months yet",
+] as const;
+
+// Task 6 of the 12-Sep brief, built and deliberately left OFF.
+//
+// Naming the Rs 15,000-30,000 programme band under the hero CTA will REDUCE
+// Rs 299 volume, which is the intent — the constraint is 7 slots and 60-minute
+// calls, not fee revenue. But the quiz gates (commitment follow-up, timing
+// gate) shipped on 12-Sep and move the same number this line moves: quiz
+// starts / landing-page views. Shipped in the same window, neither change can
+// be attributed to anything. Flip to true on or after 26-Sep-2026, once the
+// gates have had their two weeks.
+const SHOW_PROGRAMME_PRICE = false;
+
 const FAQ = [
   {
     q: "Is ₹299 the whole cost?",
@@ -99,19 +163,24 @@ const FAQ = [
 
 export default function DecodePage() {
   return (
-    <main>
-      {/* ── Hero: the paradox, and nothing else ─────────────────────────── */}
+    // theme-decode re-skins every CTA on this page to the red of the creatives
+    // that send it traffic (#c8102e). It is a scoped token override in
+    // globals.css, NOT a site-wide change: `/` runs the free funnel off
+    // different ads and keeps its green button.
+    <main className="theme-decode">
+      {/* ── Hero: the paradox, the promise, and nothing else ────────────── */}
       <section className="bg-[var(--bg-page)]">
         <div className="container-default mx-auto w-full max-w-[900px] px-4 pb-10 pt-12 text-center md:px-6 md:pb-14 md:pt-16">
           <p
             className="mb-5 inline-block rounded-full px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.1em]"
             style={{
-              background: "var(--p-subtle)",
-              color: "var(--p600)",
-              border: "1px solid var(--p-border)",
+              background: "var(--accent-wash)",
+              color: "var(--accent-ink)",
+              border: "1px solid var(--accent-yellow)",
             }}
           >
-            For women 30+ with a slow thyroid
+            The T.H.Y.R.O.I.D. Lean Method &middot; for women 30+ with a slow
+            thyroid
           </p>
 
           <h1
@@ -131,7 +200,40 @@ export default function DecodePage() {
             &mdash; but almost nobody reads it that way.
           </p>
 
-          <div className="mt-8 flex flex-col items-center">
+          {/* The guarantee, on the page for the first time.
+              It has always existed — docs/business-handover.md §1 records it
+              verbatim as a term of the offer — but it was only ever SAID, on
+              the call, which means it could only reassure someone who had
+              already paid to get there. Above the CTA, above the fold, because
+              it is the sentence that makes Rs 299 feel like a test rather than
+              a bet.
+
+              The second paragraph is the refund term, quoted from that file
+              and not reworded. Nothing open-ended is promised: an
+              "I'll keep coaching you free until it works" clause cannot be
+              honoured at 7 clients a month, so it is not offered. */}
+          <div
+            className="mx-auto mt-7 max-w-[620px] rounded-r-2xl px-5 py-4 text-left"
+            style={{
+              background: "var(--accent-wash)",
+              borderLeft: "4px solid var(--accent-yellow)",
+            }}
+          >
+            <p className="m-0 text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--accent-ink)]">
+              My commitment to you
+            </p>
+            <p className="mb-0 mt-2 text-[14.5px] leading-[1.6] text-[#14110f]">
+              On the call I read your report line by line and tell you exactly
+              what is blocking your weight. You get that written down before we
+              finish &mdash; whether or not you ever work with me.
+            </p>
+            <p className="mb-0 mt-2 text-[14.5px] font-semibold leading-[1.6] text-[#14110f]">
+              Leave the call without knowing your blocker and the ₹299 is
+              refunded.
+            </p>
+          </div>
+
+          <div className="mt-7 flex flex-col items-center">
             <a
               href="/decode/quiz"
               className="cta-button"
@@ -143,6 +245,13 @@ export default function DecodePage() {
             <p className="mt-3 text-[13px] text-[var(--t3)]">
               No report yet? Answer anyway &mdash; I will tell you what to do next.
             </p>
+            {SHOW_PROGRAMME_PRICE && (
+              <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-[1.55] text-[var(--t3)]">
+                After the ₹299 consultation, if the full 3-month programme is
+                the right next step, it is ₹15,000&ndash;₹30,000. Saying so now
+                so nobody&rsquo;s time is wasted.
+              </p>
+            )}
           </div>
 
           <HeroProofStrip />
@@ -200,6 +309,67 @@ export default function DecodePage() {
         </div>
       </section>
 
+      {/* ── The named method ────────────────────────────────────────────
+          Three mentions on this page and no more: the hero eyebrow, this
+          section, and the credentials label. The competitor page benchmarked
+          on 12-Sep repeats its own acronym about fifteen times, which is
+          worse than useless — but zero, which is what this page had, is worse
+          still. A method is what makes the PROGRAMME the thing being bought
+          rather than whichever plan an individual coach happens to write. */}
+      <section className="bg-[var(--bg-elevated)]" aria-labelledby="method-heading">
+        <div className="mx-auto w-full max-w-[900px] px-4 py-10 md:px-6 md:py-14">
+          <header className="mb-8 text-center">
+            <p className="section-label">The method</p>
+            <h2 id="method-heading" className="section-title mx-auto text-balance">
+              The T.H.Y.R.O.I.D. Lean Method
+            </h2>
+            <p className="mx-auto mt-3 max-w-[34ch] text-[14.5px] leading-[1.6] text-[var(--t3)]">
+              Three pillars. They only work in this order.
+            </p>
+          </header>
+
+          <ol className="grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-3">
+            {PILLARS.map((pillar) => (
+              <li
+                key={pillar.n}
+                className="rounded-2xl bg-white p-5 md:p-6"
+                style={{ boxShadow: "var(--shadow-card)" }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="mb-3 flex h-10 w-10 items-center justify-center rounded-full text-[17px] font-extrabold"
+                  style={{
+                    background: "var(--accent-yellow)",
+                    color: "#14110f",
+                  }}
+                >
+                  {pillar.n}
+                </span>
+                <h3 className="mb-2 text-[17.5px] font-semibold leading-[1.35] text-[var(--t1)]">
+                  {pillar.name}
+                </h3>
+                <p className="m-0 text-[14.5px] leading-[1.6] text-[var(--t2)]">
+                  {pillar.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          {/* The order IS the argument. Without this paragraph the three cards
+              are just a table of contents. */}
+          <p
+            className="mx-auto mt-7 max-w-[680px] rounded-2xl px-5 py-4 text-[14.5px] leading-[1.62] text-[var(--t2)]"
+            style={{ background: "var(--accent-wash)", border: "1px solid var(--accent-yellow)" }}
+          >
+            <strong className="text-[var(--t1)]">Why the order matters:</strong>{" "}
+            every plan you were handed before started at Pillar 2. A diet given
+            to a suppressed metabolism is built on a wrong assumption from its
+            first line &mdash; which is exactly why it worked for six weeks and
+            then stopped.
+          </p>
+        </div>
+      </section>
+
       {/* The quiz lives on its own page (/decode/quiz) so nothing on this one
           competes with it once she has decided to start. Every CTA here goes
           there. */}
@@ -212,7 +382,7 @@ export default function DecodePage() {
       </div>
       <WhatsappProofSection hideCta />
       <VideoTestimonial />
-      <CertificationsSection />
+      <CertificationsSection label="Behind the T.H.Y.R.O.I.D. Lean Method" />
 
       {/* ── Objections specific to a paid reading ───────────────────────── */}
       <section className="bg-[var(--bg-page)]" aria-labelledby="faq-heading">
@@ -239,6 +409,69 @@ export default function DecodePage() {
                 </p>
               </details>
             ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── Self-qualification, then the last CTA ───────────────────────── */}
+      <section className="bg-[var(--bg-elevated)]" aria-labelledby="fit-heading">
+        <div className="mx-auto w-full max-w-[900px] px-4 py-10 md:px-6 md:py-14">
+          <header className="mb-8 text-center">
+            <p className="section-label">Before you book</p>
+            <h2 id="fit-heading" className="section-title mx-auto text-balance">
+              Who this is for
+            </h2>
+          </header>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div
+              className="rounded-2xl bg-white p-5 md:p-6"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <h3 className="mb-3 mt-0 text-[17.5px] font-semibold leading-[1.35] text-[var(--t1)]">
+                This is for you if
+              </h3>
+              <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                {FOR_YOU.map((line) => (
+                  <li
+                    key={line}
+                    className="relative pl-6 text-[14.5px] leading-[1.6] text-[var(--t2)]"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-[0.45em] h-2.5 w-2.5 rounded-full"
+                      style={{ background: "var(--accent-yellow)" }}
+                    />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div
+              className="rounded-2xl bg-white p-5 md:p-6"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <h3 className="mb-3 mt-0 text-[17.5px] font-semibold leading-[1.35] text-[var(--t1)]">
+                This is not for you if
+              </h3>
+              <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                {NOT_FOR_YOU.map((line) => (
+                  <li
+                    key={line}
+                    className="relative pl-6 text-[14.5px] leading-[1.6] text-[var(--t3)]"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-[0.62em] h-[2px] w-3 rounded-full"
+                      style={{ background: "var(--t5)" }}
+                    />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="mt-9 text-center">

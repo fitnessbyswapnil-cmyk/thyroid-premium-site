@@ -437,6 +437,20 @@ a {
   content: none;
 }
 
+/* CTA colour, tokenised 2026-09-12 so one route can re-skin its buttons
+   without forking the component. The defaults below ARE the old hard-coded
+   values, so every page except /decode is unchanged; /decode overrides them in
+   .theme-decode to the red of the creatives that send it traffic. */
+:root {
+  --cta-bg: var(--yellow-mark);
+  --cta-fg: var(--ink-on-yellow);
+  --cta-sub-fg: currentColor;
+  --cta-sub-opacity: 0.85;
+  --cta-bg-hover: #17e85c;
+  --cta-bg-active: #0fd453;
+  --cta-shadow-hover: 0 12px 28px rgba(0, 255, 102, 0.32);
+}
+
 .cta-button {
   min-height: 0;
 
@@ -450,9 +464,9 @@ a {
   /* Electric green is the action colour in the restyled system: a FILL only,
      carrying near-black text. It is 1.4:1 on white and can never be text
      there — which is exactly how the reference build uses it too. */
-  background: var(--yellow-mark);
+  background: var(--cta-bg);
 
-  color: var(--ink-on-yellow);
+  color: var(--cta-fg);
 
   font-weight: 700;
   font-size: 16px;
@@ -484,14 +498,15 @@ a {
 
 .cta-button:hover {
   /* Was flipping green to red on hover — a leftover from the red-primary
-     system. The action colour must not change identity under the cursor. */
-  background: #17e85c;
+     system. The action colour must not change identity under the cursor:
+     every state below is a shade of whatever --cta-bg is. */
+  background: var(--cta-bg-hover);
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(0, 255, 102, 0.32);
+  box-shadow: var(--cta-shadow-hover);
 }
 
 .cta-button:active {
-  background: #0fd453;
+  background: var(--cta-bg-active);
   transform: translateY(0);
 }
 
@@ -506,10 +521,85 @@ a {
   .cta-button:hover { transform: none; }
 }
 
+/* The sticky bar's copy of the CTA. Same words and same red, tighter box:
+   at 375px the standard 32px side padding leaves 287px of line and the label
+   needs ~300px, so it wrapped to two lines and the bar stood 134px tall —
+   16% of the viewport, permanently, plus that much bottom padding on the
+   page. 18px of padding fits the label on one line and gives it back. */
+.cta-button.cta-sticky {
+  padding: 14px 18px;
+  align-items: center;
+  text-align: center;
+}
+
+@media (min-width: 760px) {
+  .cta-button.cta-sticky { padding: 16px 28px; }
+}
+
 .cta-sub {
   font-size: 12px;
   font-weight: 500;
-  opacity: 0.85;
+  color: var(--cta-sub-fg, currentColor);
+  opacity: var(--cta-sub-opacity, 0.85);
+}
+
+/* ── /decode: the ad palette ───────────────────────────────────────────────
+   The creatives pointing at /decode are red / white / yellow and their button
+   reads "CLICK LEARN MORE…", so the page they land on must open with the same
+   red or the click feels like it went somewhere else. Scoped to that page's
+   <main> rather than applied site-wide on purpose: `/` runs the FREE funnel
+   off different creatives and is the only thing in the account currently
+   working — it keeps its green. Custom properties inherit down the DOM, so
+   the sticky bar (position: fixed, still a child of <main>) picks these up. */
+.theme-decode {
+  --cta-bg: #c8102e;
+  --cta-fg: #ffffff;
+  /* 5.04:1 on #c8102e. Do NOT lighten this toward white-pink — it fails AA. */
+  --cta-sub-fg: #ffe8eb;
+  --cta-sub-opacity: 1;
+  --cta-bg-hover: #a80d26;
+  --cta-bg-active: #8e0b20;
+  --cta-shadow-hover: 0 12px 28px rgba(200, 16, 46, 0.32);
+
+  /* Accent / highlight from the same creatives. Yellow is a FILL here, never
+     text: #ffc91e is 1.6:1 on white. --accent-ink is the legible ink version
+     (5.1:1 on white, 4.7:1 on the wash) for the places the accent has to be
+     type. */
+  --accent-yellow: #ffc91e;
+  --accent-wash: #fff6d6;
+  --accent-ink: #8a6a00;
+
+  /* The rest of the accent system follows the buttons, or the page reads as
+     two brands stacked: a red CTA under a green section label is exactly the
+     ad-to-page break this palette exists to close. Red is NOT borrowed for
+     type here — .section-label's rule holds, and for good reason: the moment
+     red appears as text, every red button on the page stops meaning "press
+     me". So the accent type becomes real gold ink, which is what --gold-ink
+     was named for before the green restyle took it over. */
+  --gold-ink: var(--accent-ink);
+  --p300: var(--accent-ink);
+  --p400: var(--accent-ink);
+  --p500: var(--accent-ink);
+  --p600: var(--accent-ink);
+  --p-subtle: var(--accent-wash);
+  --p-tint: #fffbf0;
+  --p-border: rgba(255, 201, 30, 0.55);
+  --focus-ring: #c8102e;
+  --yellow-soft: var(--accent-wash);
+}
+
+/* The proof wall runs on a near-black band, where the accent may be the full
+   yellow as type: #ffc91e on #0c110c is about 11:1. The band hard-codes the
+   green rather than reading a token, so it is overridden by name. */
+.theme-decode .band-deep {
+  --gold-ink: var(--accent-yellow);
+  --p300: var(--accent-yellow);
+  --p400: var(--accent-yellow);
+  --p500: var(--accent-yellow);
+  --p600: var(--accent-yellow);
+  --p-subtle: rgba(255, 201, 30, 0.08);
+  --p-tint: rgba(255, 201, 30, 0.06);
+  --p-border: rgba(255, 201, 30, 0.32);
 }
 
 /* SECONDARY BUTTON */
@@ -1704,17 +1794,40 @@ a {
 }
 
 /* The occupation/context pill. Amber on cream, as in the reference. */
+/* Proof-card occupation pill. Uppercase and letter-spaced so it reads as a
+   label rather than a caption — a visitor scans these to find the card that
+   looks like her life, which moves her more than the kilo count does.
+   Size is clamped rather than fixed at the brief's 13px: the wall is 2-up on
+   mobile, where a 13px pill with 1.5px tracking wraps to two lines inside its
+   own border. 13px on desktop, down to 10.5px at 375px. */
 .proof-tag {
   display: inline-block;
-  background: #fdf3d3;
-  border: 1px solid #f0d99a;
-  color: #6b4e0d;
+  max-width: 100%;
+  background: #fff6d6;
+  border: 1px solid #ffc91e;
+  color: #14110f;
   border-radius: 999px;
-  padding: 5px 14px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
+  padding: 5px 10px;
+  font-size: clamp(10.5px, 2.4vw, 13px);
+  font-weight: 600;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
+}
+
+@media (min-width: 640px) {
+  .proof-tag { padding: 5px 14px; }
+}
+
+/* The clinical descriptor that used to BE the pill. Kept as a second, quieter
+   line: the kg / symptom detail is what no competitor proof wall carries, so
+   the occupation tag is added above it, never in place of it. */
+.proof-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--t3);
 }
 
 /* The condition phrase inside a result headline. Red carries "despite" — it

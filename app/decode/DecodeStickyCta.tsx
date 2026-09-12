@@ -9,11 +9,18 @@
  * into the free funnel — where it would also fire the wrong conversion event.
  * So this is a small anchor-only twin: same 20% scroll trigger, same body
  * padding handling, no ScarcityProvider dependency.
+ *
+ * The label is the ad's label, character for character, and so are the other
+ * two CTAs on the page. It used to read "Schedule my…  12 quick questions
+ * first" — a different verb AND no price, which meant the last thing a
+ * visitor saw before deciding disagreed with the creative that brought her.
+ * The price stays on every CTA on purpose: it qualifies the click.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function DecodeStickyCta() {
+  const barRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   // Once she has finished the quiz the bar has nothing left to ask for — the
   // real CTA is on screen — so it retires rather than repeating itself.
@@ -37,15 +44,37 @@ export default function DecodeStickyCta() {
 
   const show = visible && !retired;
 
+  // Reserve exactly the bar's own height at the bottom of the page.
+  //
+  // This used to be a hard-coded 84px, which was already ~50px short: at 375px
+  // the label wraps to two lines and the sub-line to two more, so the bar is
+  // about 134px tall and was sitting on top of the last of the page. A fixed
+  // number cannot survive a copy change — the pixel it needs to match is a
+  // consequence of the words in it — so it is measured instead, and re-measured
+  // when the viewport changes.
   useEffect(() => {
-    document.body.style.paddingBottom = show ? "84px" : "";
+    if (!show) {
+      document.body.style.paddingBottom = "";
+      return;
+    }
+    const apply = () => {
+      const h = barRef.current?.offsetHeight ?? 0;
+      document.body.style.paddingBottom = h ? `${h}px` : "";
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    if (barRef.current) ro.observe(barRef.current);
+    window.addEventListener("resize", apply);
     return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", apply);
       document.body.style.paddingBottom = "";
     };
   }, [show]);
 
   return (
     <div
+      ref={barRef}
       aria-hidden={!show}
       className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pt-2.5 transition-transform duration-300"
       style={{
@@ -57,12 +86,12 @@ export default function DecodeStickyCta() {
     >
       <a
         href="/decode/quiz"
-        className="cta-button mx-auto"
+        className="cta-button cta-sticky mx-auto"
         style={{ maxWidth: "28rem", textDecoration: "none" }}
         tabIndex={show ? 0 : -1}
       >
-        Schedule my 1-1 Thyroid Consultation
-        <span className="cta-sub">12 quick questions first &middot; then pick your slot</span>
+        Book my 1-1 Thyroid Consultation
+        <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
       </a>
     </div>
   );

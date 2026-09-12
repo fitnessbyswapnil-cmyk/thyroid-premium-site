@@ -325,8 +325,12 @@ function ProofCard({
                 }}
                 aria-hidden="true"
               />
+              {/* Same label language as the transformation wall's occupation
+                  pill (.proof-tag): uppercase, 1.5px of tracking, semibold.
+                  All proof labels on the site now read as one family rather
+                  than as two components that happened to both use caps. */}
               <span
-                className="text-[0.6rem] font-extrabold uppercase tracking-[0.18em]"
+                className="text-[11px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: ACCENT_LIGHT }}
               >
                 {tag}
