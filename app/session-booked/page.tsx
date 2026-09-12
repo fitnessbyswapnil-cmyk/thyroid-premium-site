@@ -175,7 +175,7 @@ function CalcomStep({
   return (
     <div className="mx-auto w-full">
       {/* Heading — Fraunces display (site --font-display), Inter subline */}
-      <div className="mb-5 text-center">
+      <div className="mb-3.5 text-center">
         <h2
           className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-[1.12] tracking-[-0.01em] text-[#241f1a]"
           style={{ fontFamily: "var(--font-display), Georgia, serif", fontWeight: 600 }}
@@ -184,6 +184,25 @@ function CalcomStep({
         </h2>
         <p className="mx-auto mt-2.5 max-w-[42ch] text-[0.85rem] leading-relaxed text-[#6b6157]">
           Swapnil personally reviews your intake before the call. Pick any open slot below.
+        </p>
+      </div>
+
+      {/* The most common reason a good call ends in "let me talk to my husband"
+          is that the person she shares the decision with was never on it. The
+          fix costs nothing here: ask before the slot is chosen, when moving an
+          hour is still free.
+
+          Deliberately calm and shown to EVERYONE — no amber, no clock, no
+          "spots left". A warning box would read as a hurdle in front of the
+          calendar she has already paid to reach, and a conditional note would
+          single out the women who answered one way in the quiz. It asks for
+          nothing: no field, no checkbox, no second contact to capture. */}
+      <div className="mx-auto mb-4 max-w-[52ch] border-t pt-3" style={{ borderColor: "rgba(36,31,26,0.10)" }}>
+        <p className="text-[0.78rem] font-semibold text-[#241f1a]">Choosing your time</p>
+        <p className="mt-1 text-[0.78rem] leading-[1.5] text-[#6b6157]">
+          If you make health decisions together with someone at home, please pick a slot
+          when they are also free for 15 minutes. I would rather explain it once, to both
+          of you, than have you relay it afterwards.
         </p>
       </div>
 

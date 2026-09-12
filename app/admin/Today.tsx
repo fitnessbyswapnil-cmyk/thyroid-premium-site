@@ -22,6 +22,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { paymentDateStatus, toDateInputValue, META_ATTRIBUTION_WINDOW_DAYS } from "@/lib/payment-date";
+import type { DecisionBadge } from "@/lib/decision-maker";
+import { DM_PRESENCE_TARGET_PCT, formatDmPresence, type PresenceRate } from "@/lib/dm-presence";
 
 const N = {
   bg: "#0B0E14",
@@ -43,8 +45,9 @@ type Data = {
     contracted: number; collected: number; costPerConsultPayer: number | null;
     costPerProgrammeClient: number | null; spendAvailable: boolean;
   };
-  queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string }[];
-  decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number }[];
+  queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string; badge?: DecisionBadge }[];
+  decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
+  dmPresence?: PresenceRate;
   health: { sent24: number; failed24: number; byTemplate: { name: string; sent: number; last: string }[] };
   capacity: { closed: number; ceiling: number };
   caveats: string[];
@@ -114,6 +117,30 @@ export default function Today({ adminKey }: { adminKey: string }) {
     } finally { setSaving(null); }
   }, [adminKey, load]);
 
+  // The second write this screen makes, and the cheapest. One tap, straight
+  // after the call, while he still remembers who was on it. Held optimistically
+  // so the pill flips under his thumb instead of waiting on a sheet round-trip
+  // — the row it belongs to often disappears moments later, when the same call
+  // gets marked as closed.
+  const [dmSaved, setDmSaved] = useState<Record<number, "yes" | "no">>({});
+  const [dmBusy, setDmBusy] = useState<number | null>(null);
+  const markDmPresent = useCallback(async (row: number, present: "yes" | "no") => {
+    setDmBusy(row); setDmSaved((m) => ({ ...m, [row]: present }));
+    try {
+      const r = await fetch("/api/admin/mark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ row, field: "dmPresent", value: present }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      await load();
+    } catch (e) {
+      // Put the pill back rather than leaving a tap that looks saved and is not.
+      setDmSaved((m) => { const n = { ...m }; delete n[row]; return n; });
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setDmBusy(null); }
+  }, [adminKey, load]);
+
   // Reading the clock during render is impure — React can re-render at any
   // moment and two rows on the same screen would disagree about what "today"
   // is. Captured once, and refreshed on Refresh so a dashboard left open
@@ -133,6 +160,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
   const h6: React.CSSProperties = { ...kicker, margin: "26px 0 10px" };
 
   const a = d?.acquisition;
+  const dmp = d?.dmPresence;
   const diverge = a && a.costPerConsultPayer !== null && a.costPerProgrammeClient !== null
     && a.costPerProgrammeClient > a.costPerConsultPayer * 12;
 
@@ -151,6 +179,25 @@ export default function Today({ adminKey }: { adminKey: string }) {
             {busy ? "Syncing…" : "Refresh"}
           </button>
         </header>
+
+        {/* The one number this screen is trying to move. It sits above the
+            money because the money follows it: a consultation held without the
+            person who shares the decision is a consultation that ends in "let
+            me talk to it over". Shown as an em dash, never 0%, until something
+            has actually been marked. */}
+        <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 12,
+          border: `1px solid ${N.line}`, background: N.card,
+          display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13.5,
+            color: dmp && dmp.pct !== null && dmp.pct >= DM_PRESENCE_TARGET_PCT ? N.good : N.text }}>
+            {dmp ? formatDmPresence(dmp) : "Decision-maker present: …"}
+          </span>
+          <span style={{ fontSize: 11.5, color: N.dim }}>
+            {dmp && dmp.unmarked > 0
+              ? `${dmp.unmarked} held call${dmp.unmarked === 1 ? "" : "s"} not marked · target ${DM_PRESENCE_TARGET_PCT}%`
+              : `target ${DM_PRESENCE_TARGET_PCT}%`}
+          </span>
+        </div>
 
         {err && <div style={{ ...card, borderColor: N.bad, color: N.bad, marginTop: 12 }}>Could not load: {err}</div>}
         {notice && (
@@ -227,18 +274,40 @@ export default function Today({ adminKey }: { adminKey: string }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {d?.queue.map((q) => {
             const accent = q.kind === "call_today" ? N.bad : q.kind === "paid_not_booked" ? N.warn : N.accent;
+            // Green means nothing to do about it. Amber means open the call a
+            // particular way — and the way is printed underneath, because a
+            // label he has to remember the meaning of is a label he stops
+            // reading. No badge at all is a lead from before the question
+            // existed; silence is honest there.
+            const badgeColor = q.badge?.tone === "warn" ? N.warn : N.good;
             return (
-              <div key={q.leadId + q.kind} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}`,
-                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name}</div>
-                  <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>{q.reason}</div>
+              <div key={q.leadId + q.kind} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name}</div>
+                    <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>{q.reason}</div>
+                    {q.badge && (
+                      <span style={{ display: "inline-block", marginTop: 6, padding: "2px 8px", borderRadius: 999,
+                        fontSize: 10, fontWeight: 800, letterSpacing: ".07em", color: badgeColor,
+                        border: `1px solid ${badgeColor}44`, background: `${badgeColor}14` }}>
+                        {q.badge.label}
+                      </span>
+                    )}
+                  </div>
+                  <a href={q.wa || `https://wa.me/91${q.phone}`} target="_blank" rel="noreferrer"
+                    style={{ flex: "none", background: accent, color: "#0B0E14", borderRadius: 999,
+                      padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+                    WhatsApp
+                  </a>
                 </div>
-                <a href={q.wa || `https://wa.me/91${q.phone}`} target="_blank" rel="noreferrer"
-                  style={{ flex: "none", background: accent, color: "#0B0E14", borderRadius: 999,
-                    padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
-                  WhatsApp
-                </a>
+                {/* Always visible. Not a tooltip, not behind a tap — he reads
+                    this between calls, one-handed. */}
+                {q.badge?.prompt && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`,
+                    fontSize: 12.5, lineHeight: 1.5, color: N.warn }}>
+                    {q.badge.prompt}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -256,6 +325,8 @@ export default function Today({ adminKey }: { adminKey: string }) {
                 const amounts = p.pitched > 0 ? [p.pitched] : [15000, 20000, 25000, 30000];
                 const payDate = payDateFor(p.row);
                 const when = paymentDateStatus(payDate, nowMs);
+                // The optimistic tap wins over the sheet until the reload lands.
+                const dmAnswer = dmSaved[p.row] ?? (p.dmPresent ?? "").trim().toLowerCase();
                 return (
                   <div key={p.row} style={{ ...card, padding: 14 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
@@ -289,6 +360,25 @@ export default function Today({ adminKey }: { adminKey: string }) {
                         Mark payments the same day.
                       </div>
                     )}
+                    {/* Asked BEFORE the money buttons on purpose: marking the
+                        money removes this row from the list, so a question
+                        placed after it would only ever be answered by accident. */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11.5, color: N.dim }}>Decision-maker present on the call?</span>
+                      {(["yes", "no"] as const).map((v) => {
+                        const on = dmAnswer === v;
+                        return (
+                          <button key={v} disabled={dmBusy === p.row}
+                            onClick={() => void markDmPresent(p.row, v)}
+                            style={{ background: on ? `${N.accent}22` : "transparent",
+                              color: on ? N.accent : N.dim,
+                              border: `1px solid ${on ? N.accent : N.line}`, borderRadius: 999,
+                              padding: "4px 12px", fontSize: 12, fontWeight: on ? 700 : 400, cursor: "pointer" }}>
+                            {v === "yes" ? "Yes" : "No"}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <div style={{ display: "flex", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
                       {amounts.map((amt) => (
                         <button key={amt} disabled={saving === p.row}

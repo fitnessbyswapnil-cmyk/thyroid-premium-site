@@ -29,6 +29,8 @@ import { isOwnerTest } from "@/lib/owner-filter";
 import { readCalls } from "@/lib/crm-calls";
 import { fetchBookings } from "@/lib/cal-bookings";
 import { draftMessage, draftWaLink } from "@/lib/draft-message";
+import { decisionBadge, findColumn, type DecisionBadge } from "@/lib/decision-maker";
+import { dmPresenceRate, type PresenceRecord } from "@/lib/dm-presence";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -103,6 +105,18 @@ export async function GET(req: NextRequest) {
     tried: col(header, "Tried Before"),
     city: col(header, "City"),
     budget: col(header, "Investment Ability"),
+    // Who signs off, and whether that person will be on the call. Both are
+    // resolved case-insensitively and both are allowed to be absent: "Decision
+    // Maker" is missing on leads older than the question, and "Partner On
+    // Call" is missing on every row written before the column existed. A -1
+    // reads as an empty cell, which reads as "no badge".
+    decisionMaker: findColumn(header, "Decision Maker"),
+    partnerOnCall: findColumn(header, "Partner On Call"),
+    // Marked by hand on this screen after the call. Absent until the first one
+    // is marked, which is why every reader of it tolerates -1. Resolved with
+    // the plain exact-match helper, not the tolerant one above: this column is
+    // written by /api/admin/mark under a fixed title, never typed by hand.
+    dmPresent: col(header, "DM Present"),
   };
 
   // ── Acquisition ───────────────────────────────────────────────────────────
@@ -154,6 +168,8 @@ export async function GET(req: NextRequest) {
   type QRow = {
     name: string; phone: string; reason: string; kind: string;
     risk: number; when: string; leadId: string; wa: string;
+    /** Only on an upcoming call, and only when her answers support one. */
+    badge?: DecisionBadge;
   };
   const queue: QRow[] = [];
   const todayEnd = now + 86400000;
@@ -191,8 +207,13 @@ export async function GET(req: NextRequest) {
     })) || `https://wa.me/91${phone}`;
 
     if (booked && session! >= now && session! <= todayEnd) {
+      // Computed only for calls that are actually about to happen. It is two
+      // regexes on two short cells, but this route runs under a 10ms CPU
+      // budget and the sheet is thousands of rows long.
+      const badge = decisionBadge(cell(r, C.decisionMaker), cell(r, C.partnerOnCall));
       queue.push({ name, phone, leadId, kind: "call_today", wa, risk: 30000,
-        reason: "Call today", when: new Date(session!).toISOString() });
+        reason: "Call today", when: new Date(session!).toISOString(),
+        ...(badge ? { badge } : {}) });
     } else if (paid && !booked) {
       queue.push({ name, phone, leadId, kind: "paid_not_booked", wa, risk: 20000,
         reason: "Paid, no slot chosen", when: cell(r, C.paidAt) });
@@ -202,6 +223,19 @@ export async function GET(req: NextRequest) {
     }
   }
   queue.sort((a, b) => b.risk - a.risk || (a.when < b.when ? -1 : 1));
+
+  // ── Decision-maker presence ───────────────────────────────────────────────
+  // The scoreboard for the badges above. Of the consultations actually held in
+  // the last fortnight, how many had the person who shares the decision on
+  // them. A third today; the number worth reaching is seventy.
+  const presence = dmPresenceRate(
+    rows.map((r): PresenceRecord => ({
+      sessionDate: cell(r, C.sessionDate),
+      showed: cell(r, C.showed),
+      dmPresent: cell(r, C.dmPresent),
+    })),
+    now,
+  );
 
   // ── Automation health ─────────────────────────────────────────────────────
   // Delivery failures are mirrored into the thread as an outbound line starting
@@ -237,6 +271,9 @@ export async function GET(req: NextRequest) {
   type Decide = {
     row: number; name: string; phone: string; email: string;
     pitched: number; objection: string; occurredAt: string; daysSince: number;
+    /** "DM Present" as already marked — so the screen shows the answer back
+     *  rather than offering the question again as if nothing happened. */
+    dmPresent: string;
   };
   const decide: Decide[] = [];
   // Counts at each hop, returned as decideDebug. A join that silently produces
@@ -291,6 +328,7 @@ export async function GET(req: NextRequest) {
         email: cell(r, C.email) || email,
         pitched: num(String(c.pricePitched ?? "")),
         objection: String(c.objection ?? ""),
+        dmPresent: cell(r, C.dmPresent),
         occurredAt,
         daysSince: when === null ? 0 : Math.floor((now - when) / 86400000),
       });
@@ -314,6 +352,7 @@ export async function GET(req: NextRequest) {
       spendAvailable: spend !== null,
     },
     queue: queue.slice(0, 25),
+    dmPresence: presence,
     decide: decide.slice(0, 20),
     decideDebug: dbg,
     health: { sent24, failed24, byTemplate: health },

@@ -4,6 +4,7 @@
  * Writes call outcomes and sequence state from the dashboard back to the
  * Leads sheet:
  *   { row, field: "showed",   value: "Y" | "N" }
+ *   { row, field: "dmPresent", value: "yes" | "no" }   (decision-maker on the call)
  *   { row, field: "closed",   value: "<amount in ₹>", paidAt?: "<ISO date paid>" }
  *   { row, field: "meetlink", value: "<google meet / zoom URL>" }
  *   { row, field: "msg1" | "msg2" | "msg3", value: "Y" }   (sequence step sent)
@@ -49,6 +50,10 @@ const HEADERS = {
   msg1: "Msg1 Sent",
   msg2: "Msg2 Sent",
   msg3: "Msg3 Sent",
+  // Was the person who shares the decision actually on the call. The one fact
+  // about a consultation that no recording, webhook or transcript can supply,
+  // because it is about who was NOT there. yes | no, one tap, nothing else.
+  dmPresent: "DM Present",
 } as const;
 type Field = keyof typeof HEADERS;
 const FIELDS = Object.keys(HEADERS) as Field[];
@@ -237,6 +242,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
   if (field === "showed" && value !== "Y" && value !== "N") {
+    return NextResponse.json({ error: "bad_value" }, { status: 400 });
+  }
+  // Two answers and no third. "unknown" is the blank cell, and a cell that can
+  // hold free text is a column the rolling figure would have to guess about.
+  if (field === "dmPresent" && value !== "yes" && value !== "no") {
     return NextResponse.json({ error: "bad_value" }, { status: 400 });
   }
   // Sequence steps store the SEND TIMESTAMP (ISO) so the dashboard can

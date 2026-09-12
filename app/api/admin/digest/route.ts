@@ -26,6 +26,7 @@ import {
   formatUnmarkedOutcomes,
   type ConsultationRecord,
 } from "@/lib/unmarked-outcomes";
+import { dmPresenceRate, formatDmPresence, type PresenceRecord } from "@/lib/dm-presence";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,9 @@ export async function GET(req: NextRequest) {
       msg1: col("Msg1 Sent", -1),
       closed: col("Closed ₹", -1),
       programmeValue: col("Programme Value", -1),
+      // Written by /api/admin/mark under a fixed title; -1 until the first call
+      // is marked, and cell() reads -1 as an empty string.
+      dmPresent: col("DM Present", -1),
     };
     const cell = (r: string[], i: number) => (r[i] ?? "").toString().trim();
 
@@ -100,6 +104,10 @@ export async function GET(req: NextRequest) {
     const todaySessions: { time: string; name: string; risk: string }[] = [];
     // Consultations already held, for the unmarked-outcome nudge below.
     const held: ConsultationRecord[] = [];
+    // Every row, unfiltered, for the rolling presence figure — it does its own
+    // held-and-in-window test, and it is the one number on this brief that is
+    // about the coach's habit rather than about a particular woman.
+    const presenceRows: PresenceRecord[] = [];
 
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
@@ -121,6 +129,7 @@ export async function GET(req: NextRequest) {
       if (ageMs < 3 * 86400000 && !cell(r, C.msg1) && cell(r, C.showed) === "") unconfirmed++;
 
       const sd = cell(r, C.sessionDate);
+      presenceRows.push({ sessionDate: sd, showed: cell(r, C.showed), dmPresent: cell(r, C.dmPresent) });
       const sess = sd ? parseSession(sd) : null;
       if (booked && sess && istDayString(new Date(sess.getTime() + IST_OFFSET_MS - IST_OFFSET_MS)) === today) {
         // session date string is already in IST wall-clock terms
@@ -179,6 +188,10 @@ export async function GET(req: NextRequest) {
       // and Meta stops accepting it after seven days. Names and dates only —
       // this text leaves the building through Make and Gmail.
       ...formatUnmarkedOutcomes(selectUnmarkedOutcomes(held, nowMs), IST_OFFSET_MS),
+      ``,
+      // The habit number, in the same words the dashboard uses so the two can
+      // never quietly disagree about the same fortnight. A count, no names.
+      formatDmPresence(dmPresenceRate(presenceRows, nowMs)),
       ``,
       `Dashboard: https://www.swapnilumbarkarfitness.in/admin`,
     ];
