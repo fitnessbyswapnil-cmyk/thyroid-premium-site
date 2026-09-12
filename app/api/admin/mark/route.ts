@@ -4,7 +4,7 @@
  * Writes call outcomes and sequence state from the dashboard back to the
  * Leads sheet:
  *   { row, field: "showed",   value: "Y" | "N" }
- *   { row, field: "closed",   value: "<amount in ₹>" }
+ *   { row, field: "closed",   value: "<amount in ₹>", paidAt?: "<ISO date paid>" }
  *   { row, field: "meetlink", value: "<google meet / zoom URL>" }
  *   { row, field: "msg1" | "msg2" | "msg3", value: "Y" }   (sequence step sent)
  *
@@ -121,13 +121,21 @@ function cell(row: string[], i: number): string {
 /**
  * Read the lead's row and fire the programme conversion.
  * Never throws — returns a status the dashboard can display.
+ *
+ * `closedAtMs` is WHEN THE MONEY CHANGED HANDS, not when the coach got round to
+ * tapping the button. It used to be Date.now(), which meant a sale marked three
+ * days late was attributed to the wrong day and a sale marked eight days late
+ * was silently rewritten to the oldest timestamp Meta accepts. The caller now
+ * passes the date the coach picked, and the `tooOld` flag travels back so the
+ * screen can say the attribution is unreliable instead of implying it worked.
  */
 async function sendWinToMeta(
   sheets: Awaited<ReturnType<typeof getSheetsClient>>["sheets"],
   sheetId: string,
   row: number,
   amount: number,
-): Promise<{ status: string; detail?: ProgramConversionResult }> {
+  closedAtMs: number,
+): Promise<{ status: string; tooOld?: boolean; detail?: ProgramConversionResult }> {
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId: sheetId,
     ranges: [`${SHEET_NAME}!1:1`, `${SHEET_NAME}!${row}:${row}`],
@@ -155,15 +163,15 @@ async function sendWinToMeta(
     fbclid: cell(values, indexOf(header, "FBclid")),
     visitorId: cell(values, indexOf(header, "Visitor ID")),
     leadCreatedAtMs: Number.isFinite(leadCreatedAtMs) ? leadCreatedAtMs : undefined,
-    closedAtMs: Date.now(),
+    closedAtMs,
   });
 
-  if (!detail.success) return { status: "capi_failed", detail };
+  if (!detail.success) return { status: "capi_failed", tooOld: detail.timestampAdjusted, detail };
 
   // Stamp the audit column only after Meta accepted the event, so a failure
   // leaves the win re-sendable rather than silently swallowed.
   const stampCol = await resolveOrAppendColumn(sheets, sheetId, META_HEADER);
-  if (stampCol === null) return { status: "sent_unstamped", detail };
+  if (stampCol === null) return { status: "sent_unstamped", tooOld: detail.timestampAdjusted, detail };
   const stampLetter = numToCol(stampCol);
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: sheetId,
@@ -179,14 +187,14 @@ async function sendWinToMeta(
     },
   });
 
-  return { status: "sent", detail };
+  return { status: "sent", tooOld: detail.timestampAdjusted, detail };
 }
 
 export async function POST(req: NextRequest) {
   if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  let body: { row?: number; field?: string; value?: string; rail?: string; paidAt?: string; /** What she actually paid today, when the close is on instalments. */ collected?: number | string };
+  let body: { row?: number; field?: string; value?: string; rail?: string; /** ISO date the money actually arrived. Drives the sheet stamps AND the Meta event_time; defaults to now. */ paidAt?: string; /** What she actually paid today, when the close is on instalments. */ collected?: number | string };
   try {
     body = await req.json();
   } catch {
@@ -267,15 +275,20 @@ export async function POST(req: NextRequest) {
     });
 
     // A closed win is the highest-value signal the business produces. Send it.
-    let meta: { status: string; detail?: ProgramConversionResult } | undefined;
+    let meta: { status: string; tooOld?: boolean; detail?: ProgramConversionResult } | undefined;
     const amount = field === "closed" ? parseFloat(value) : NaN;
+    // Resolved once, because the sheet stamp and the Meta event must agree on
+    // the day the money arrived. A date in the future is the coach's phone
+    // clock or a typo, never a real payment, so it falls back to now.
+    const paidAtMs = body.paidAt && !Number.isNaN(Date.parse(body.paidAt)) ? Date.parse(body.paidAt) : Date.now();
+    const closedAtMs = paidAtMs > Date.now() ? Date.now() : paidAtMs;
+    const paidAt = new Date(closedAtMs).toISOString();
     // A recorded win IS a payment. Stamp the columns the CRM and dashboard read
     // for revenue, so UPI and bank-transfer fees stop being invisible. Rail and
     // date are optional; absent, the rail is "manual" and the date is now.
     if (field === "closed" && Number.isFinite(amount) && amount > 0) {
       try {
         const rail = (body.rail ?? "manual").toString().slice(0, 24);
-        const paidAt = body.paidAt && !Number.isNaN(Date.parse(body.paidAt)) ? new Date(body.paidAt).toISOString() : new Date().toISOString();
         // Paid / Paid Amount stay as they are so the CRM, dashboard and digest
         // keep reading what they always read. But those columns were carrying
         // BOTH the Rs299 consult fee and a Rs15,000-30,000 programme close, so
@@ -311,7 +324,7 @@ export async function POST(req: NextRequest) {
     }
     if (field === "closed" && Number.isFinite(amount) && amount > 0) {
       try {
-        meta = await sendWinToMeta(sheets, sheetId, row, amount);
+        meta = await sendWinToMeta(sheets, sheetId, row, amount, closedAtMs);
         console.log(`[admin/mark] programme conversion row=${row} amount=${amount} status=${meta.status}`, meta.detail ?? "");
       } catch (metaErr) {
         // Fail OPEN — the sheet write above already succeeded and must stand.

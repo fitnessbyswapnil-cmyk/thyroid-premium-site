@@ -2,7 +2,9 @@
  * GET /api/admin/digest
  *
  * Composes the daily Morning Brief (plain text): yesterday's numbers, today's
- * sessions with risk flags, and the action-queue counts. Two callers:
+ * sessions with risk flags, the action-queue counts, and consultations whose
+ * outcome is still unmarked days later — that last one because an unmarked
+ * close never reaches Meta and expires after seven days. Two callers:
  *
  *  1. The dashboard / owner (x-admin-key header) — returns { text }.
  *  2. Vercel Cron at 8:00 AM IST (02:30 UTC, vercel.json) — authorized via
@@ -16,10 +18,16 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME } from "../_lib";
+import { isOwnerTest } from "@/lib/owner-filter";
+import {
+  IST_OFFSET_MS,
+  parseIstSession,
+  selectUnmarkedOutcomes,
+  formatUnmarkedOutcomes,
+  type ConsultationRecord,
+} from "@/lib/unmarked-outcomes";
 
 export const dynamic = "force-dynamic";
-
-const IST_OFFSET_MS = 5.5 * 3600000;
 
 function istNow(): Date {
   return new Date(Date.now() + IST_OFFSET_MS);
@@ -28,14 +36,12 @@ function istDayString(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** The session slot as a Date whose UTC fields ARE the IST wall clock — which
+ *  is what every caller below already assumes. parseIstSession does the zone
+ *  arithmetic so the answer no longer depends on the runtime's timezone. */
 function parseSession(sessionDate: string): Date | null {
-  const m = sessionDate.match(/^(\d{1,2}) (\w{3}) (\d{4}) (\d{1,2}):(\d{2}) ([AP]M)/);
-  if (!m) return null;
-  const [, d, mon, y, h, min, ap] = m;
-  let hour = parseInt(h, 10) % 12;
-  if (ap === "PM") hour += 12;
-  const dt = new Date(`${mon} ${d}, ${y} ${String(hour).padStart(2, "0")}:${min}:00`);
-  return Number.isNaN(dt.getTime()) ? null : dt;
+  const ms = parseIstSession(sessionDate);
+  return ms === null ? null : new Date(ms + IST_OFFSET_MS);
 }
 
 export async function GET(req: NextRequest) {
@@ -53,7 +59,11 @@ export async function GET(req: NextRequest) {
     const [res, cal] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: sheetId,
-        range: `${SHEET_NAME}!A1:BG`,
+        // BZ, not BG: the outcome columns (Showed, Closed ₹, Programme Value)
+        // are APPENDED by /api/admin/mark, and the payment webhook's own columns
+        // have since pushed them past BG. Reading to BG left them all empty, so
+        // every row looked unmarked. Same range the Today feed reads.
+        range: `${SHEET_NAME}!A1:BZ`,
       }),
       fetchCalBookingState(),
     ]);
@@ -74,15 +84,22 @@ export async function GET(req: NextRequest) {
       score: col("Lead Score", 52),
       showed: col("Showed", -1),
       msg1: col("Msg1 Sent", -1),
+      closed: col("Closed ₹", -1),
+      programmeValue: col("Programme Value", -1),
     };
     const cell = (r: string[], i: number) => (r[i] ?? "").toString().trim();
 
+    // One clock for the whole brief, so the 3-day cutoff and the "held yet?"
+    // test cannot land on opposite sides of a tick.
+    const nowMs = Date.now();
     const nowIst = istNow();
     const today = istDayString(nowIst);
     const yesterday = istDayString(new Date(nowIst.getTime() - 86400000));
 
     let yLeads = 0, yBooked = 0, unconfirmed = 0, cancelledOpen = 0;
     const todaySessions: { time: string; name: string; risk: string }[] = [];
+    // Consultations already held, for the unmarked-outcome nudge below.
+    const held: ConsultationRecord[] = [];
 
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
@@ -121,6 +138,25 @@ export async function GET(req: NextRequest) {
           risk,
         });
       }
+
+      // Consultations already held. cal.state.active only lists UPCOMING
+      // bookings, so a past call is "held" per the sheet's own Booked status
+      // minus whatever Cal.com says was cancelled. The coach's own test rows are
+      // dropped — nearly half the pipeline is his, and a nudge list he learns to
+      // scroll past is a nudge list he stops reading.
+      const sessAt = sd ? parseIstSession(sd) : null;
+      if (
+        booked && sessAt !== null && sessAt < nowMs &&
+        !isOwnerTest({ name: cell(r, C.name), email: cell(r, C.email) })
+      ) {
+        held.push({
+          name: cell(r, C.name),
+          sessionAtMs: sessAt,
+          showed: cell(r, C.showed),
+          closedAmount: cell(r, C.closed),
+          programmeValue: cell(r, C.programmeValue),
+        });
+      }
     }
     todaySessions.sort((a, b) => (parseSession(`05 Aug 2026 ${a.time}`)?.getTime() ?? 0) - (parseSession(`05 Aug 2026 ${b.time}`)?.getTime() ?? 0));
 
@@ -139,6 +175,10 @@ export async function GET(req: NextRequest) {
       ...(cancelledOpen > 0
         ? [``, `ACTION: ${cancelledOpen} paid lead(s) cancelled and have NOT rebooked — win the slot back today.`]
         : []),
+      // An outcome that never gets marked is a sale Meta is never told about,
+      // and Meta stops accepting it after seven days. Names and dates only —
+      // this text leaves the building through Make and Gmail.
+      ...formatUnmarkedOutcomes(selectUnmarkedOutcomes(held, nowMs), IST_OFFSET_MS),
       ``,
       `Dashboard: https://www.swapnilumbarkarfitness.in/admin`,
     ];
