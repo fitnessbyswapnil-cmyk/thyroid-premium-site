@@ -27,6 +27,7 @@ import {
   type ConsultationRecord,
 } from "@/lib/unmarked-outcomes";
 import { dmPresenceRate, formatDmPresence, type PresenceRecord } from "@/lib/dm-presence";
+import { IS_TEST_MODE } from "../../create-cashfree-order/route";
 
 export const dynamic = "force-dynamic";
 
@@ -169,7 +170,14 @@ export async function GET(req: NextRequest) {
     }
     todaySessions.sort((a, b) => (parseSession(`05 Aug 2026 ${a.time}`)?.getTime() ?? 0) - (parseSession(`05 Aug 2026 ${b.time}`)?.getTime() ?? 0));
 
+    // Same warning as the dashboard banner: a forgotten test mode is invisible
+
+    // until the money is gone.
+
+    const testModeLine = IS_TEST_MODE ? ["⚠️ TEST MODE IS ON — Cashfree is charging Rs 1, not Rs 299."] : [];
+
     const lines = [
+      ...testModeLine,
       `MORNING BRIEF — ${nowIst.toISOString().slice(0, 10)}`,
       ``,
       `Yesterday: ${yLeads} leads, ${yBooked} booked.`,

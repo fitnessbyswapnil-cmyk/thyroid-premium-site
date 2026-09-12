@@ -48,6 +48,7 @@ type Data = {
   queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string; badge?: DecisionBadge }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
   dmPresence?: PresenceRate;
+  testMode?: boolean;
   health: { sent24: number; failed24: number; byTemplate: { name: string; sent: number; last: string }[] };
   capacity: { closed: number; ceiling: number };
   caveats: string[];
@@ -167,6 +168,11 @@ export default function Today({ adminKey }: { adminKey: string }) {
   return (
     <div style={wrap}>
       <div style={inner}>
+        {d?.testMode ? (
+          <div style={{ background: "#7f1d1d", color: "#fff", borderRadius: 10, padding: "12px 14px", margin: "14px 0 0", fontWeight: 700, letterSpacing: 0.2 }}>
+            TEST MODE IS ON — Cashfree is charging ₹1, not ₹299. Every page still shows ₹299. Turn it off before any ad runs.
+          </div>
+        ) : null}
         <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "22px 0 4px" }}>
           <div>
             <div style={{ fontSize: 21, fontWeight: 600 }}>Today</div>

@@ -31,6 +31,7 @@ import { fetchBookings } from "@/lib/cal-bookings";
 import { draftMessage, draftWaLink } from "@/lib/draft-message";
 import { decisionBadge, findColumn, type DecisionBadge } from "@/lib/decision-maker";
 import { dmPresenceRate, type PresenceRecord } from "@/lib/dm-presence";
+import { IS_TEST_MODE } from "../../create-cashfree-order/route";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -353,6 +354,10 @@ export async function GET(req: NextRequest) {
     },
     queue: queue.slice(0, 25),
     dmPresence: presence,
+    // True means Cashfree is charging Rs 1 while every page still reads Rs 299.
+    // Left on by accident it costs roughly Rs 900/day and fills the calendar
+    // with people who paid nothing — so the dashboard says so in red.
+    testMode: IS_TEST_MODE,
     decide: decide.slice(0, 20),
     decideDebug: dbg,
     health: { sent24, failed24, byTemplate: health },
