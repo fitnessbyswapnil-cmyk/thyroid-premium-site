@@ -64,6 +64,21 @@ export const SCORING = {
 
 export const TIER_CUTOFFS = { best: 70, average: 45 } as const;
 
+/**
+ * The sheet column the QUIZ's tier is written to — its own column, on purpose.
+ *
+ * "Lead Tier" is shared ground: the Cal.com Make scenario writes a PAYMENT
+ * STATUS into it ("⏳ Awaiting ₹299"), and whichever writer lands last wins. On
+ * 12-Sep a lead who scored "Best" was showing as "⏳ Awaiting ₹299", so her
+ * quality tier — the thing the whole scoring model exists to produce — was
+ * simply gone by the time anyone read the row.
+ *
+ * Two different facts were sharing one column. This is the second column.
+ * "Lead Tier" keeps being written too, so nothing downstream that reads it
+ * breaks; readers that want the quality tier prefer this one.
+ */
+export const QUIZ_TIER_HEADER = "Quiz Tier";
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function asString(v: Answers[string]): string {

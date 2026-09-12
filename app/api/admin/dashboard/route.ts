@@ -21,6 +21,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { budgetAnswer, scoreBooking } from "@/lib/lead-score";
 import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME, type LeadRow } from "../_lib";
+import { QUIZ_TIER_HEADER } from "@/lib/lead-scoring";
 import { draftMessage, draftWaLink } from "@/lib/draft-message";
 
 export type { CalStatus } from "../_lib";
@@ -65,6 +66,11 @@ export async function GET(req: NextRequest) {
       adId: col("UTM Content", 50),
       bookingStatus: col("Booking Status", 18),
       sessionDate: col("Session Date", 19),
+      // Two columns, on purpose: "Quiz Tier" is the quality tier and only the
+      // quiz writes it; "Lead Tier" is shared with a payment status the Make
+      // scenario writes on booking. Prefer the clean one, fall back for rows
+      // written before it existed.
+      quizTier: col(QUIZ_TIER_HEADER, -1),
       tier: col("Lead Tier", 36),
       city: col("City", 37),
       goal: col("Main Goal", -1),
@@ -179,7 +185,7 @@ export async function GET(req: NextRequest) {
         booked: calActive || (sheetBooked && !calCancelled),
         cancelled: calCancelled && !calActive,
         sessionDate: cell(r, C.sessionDate),
-        tier: cell(r, C.tier),
+        tier: cell(r, C.quizTier) || cell(r, C.tier),
         city: cell(r, C.city),
         commitment: num(cell(r, C.commitment)),
         amountSpent: cell(r, C.amountSpent),

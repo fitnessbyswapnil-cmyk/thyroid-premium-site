@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "../admin/_lib";
 import { GATE_OUTCOME_HEADER, isNurtureGated } from "@/lib/decode-gate";
+import { mergeLeadRows } from "@/lib/lead-row-merge";
 
 export const dynamic = "force-dynamic";
 
@@ -46,14 +47,17 @@ export async function GET(req: NextRequest) {
     const cGate = findCol(header, GATE_OUTCOME_HEADER);
     const cScore = findCol(header, "Lead Score");
 
-    // Rows are appended chronologically, so the LAST match is her newest state.
-    // Duplicates should no longer be created, but rows written before that fix
-    // still exist and the newest is the one carrying her latest payment.
-    let row: string[] | null = null;
-    for (let i = 1; i < all.length; i++) {
-      if (String(all[i]?.[LEAD_ID_COL] ?? "").trim() === leadId) row = all[i] ?? [];
-    }
-    if (!row) return NextResponse.json({ found: false, paid: false, booked: false });
+    // Her state is assembled from EVERY row carrying her lead id, not just the
+    // newest one. This used to take the last match, on the reasoning that the
+    // newest row is her newest state. It is not — the newest row is the newest
+    // WRITER, and the Cal.com Make scenario appends a booking row that knows
+    // nothing about her score or her payment. On 12-Sep that returned
+    // `score: null, paid: false` for a woman who had scored Best, paid Rs 1 and
+    // booked, which is exactly why QualifiedSchedule has never fired: no score
+    // here means no qscore into Cal, means the webhook scores the booking 0.
+    const merged = mergeLeadRows(all, leadId, LEAD_ID_COL);
+    if (!merged) return NextResponse.json({ found: false, paid: false, booked: false });
+    const row: string[] = merged.cells;
 
     const cell = (i: number) => (i >= 0 ? String(row?.[i] ?? "").trim() : "");
     const paid = cell(cPaid).toUpperCase() === "Y";

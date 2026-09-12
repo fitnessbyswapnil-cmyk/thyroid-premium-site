@@ -25,6 +25,7 @@ import { checkTurnstile, turnstileConfig, isInternalLeadCall, findOrAddColumn, I
 import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
 import { PARTNER_ON_CALL_HEADER, normalizePartnerOnCall } from "@/lib/decode-commitment";
 import { GATE_OUTCOME_HEADER, normalizeGateOutcome } from "@/lib/decode-gate";
+import { QUIZ_TIER_HEADER } from "@/lib/lead-scoring";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -301,6 +302,17 @@ export async function POST(req: NextRequest) {
     // The timing gate's verdict. Written for BOTH outcomes, so the sheet records
     // what the funnel actually decided rather than leaving it to be re-derived
     // from the Timing answer months later, after the option labels have moved.
+    // Her quality tier, in a column of its own. set("Lead Tier", …) above still
+    // runs, but that column is shared with a payment status the Make scenario
+    // writes on booking — and the booking happens LAST, so "Best" was being
+    // replaced by "⏳ Awaiting ₹299" every single time.
+    const quizTier = str(payload.leadTier);
+    if (quizTier) {
+      const tierIdx = await placeColumn(QUIZ_TIER_HEADER);
+      if (tierIdx >= 0) cells.set(tierIdx, quizTier);
+      else console.error("[quiz-lead] could not place the Quiz Tier column; tier left to the shared column");
+    }
+
     const gate = normalizeGateOutcome(payload.gateOutcome);
     if (gate) {
       const gateIdx = await placeColumn(GATE_OUTCOME_HEADER);

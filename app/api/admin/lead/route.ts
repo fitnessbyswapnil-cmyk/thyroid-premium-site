@@ -25,17 +25,30 @@ export async function GET(req: NextRequest) {
   const all = (res.data.values as string[][]) ?? [];
   const header = (all[0] ?? []).map((h) => String(h ?? "").trim());
 
-  // Newest match wins — a retake or resume writes later rows for the same woman.
-  let idx = -1;
+  // EVERY row she appears on, oldest to newest, newest non-empty value per
+  // column. "Newest match wins" was the old rule and it hid things that matter
+  // on a call: three writers touch this sheet — the quiz, the payment webhook
+  // and the Cal.com Make scenario — and the last one to write is the booking,
+  // which carries neither her score nor her payment. Reading only that row is
+  // how a paid, Best-tier lead showed up here as unpaid and unscored.
+  const rowsForLead: number[] = [];
   for (let i = 1; i < all.length; i++) {
-    const r = all[i] ?? [];
-    const hitId = leadId && String(r[1] ?? "").trim() === leadId;
-    const hitPhone = phone && String(r[3] ?? "").replace(/\D/g, "").slice(-10) === phone;
-    if (hitId || hitPhone) idx = i;
+    const r0 = all[i] ?? [];
+    const hitId = leadId && String(r0[1] ?? "").trim() === leadId;
+    const hitPhone = phone && String(r0[3] ?? "").replace(/\D/g, "").slice(-10) === phone;
+    if (hitId || hitPhone) rowsForLead.push(i);
   }
-  if (idx < 0) return NextResponse.json({ found: false });
+  if (rowsForLead.length === 0) return NextResponse.json({ found: false });
+  const idx = rowsForLead[rowsForLead.length - 1];
 
-  const r = all[idx] ?? [];
+  const r: string[] = [];
+  for (const i of rowsForLead) {
+    const src = all[i] ?? [];
+    for (let c = 0; c < src.length; c++) {
+      const v = String(src[c] ?? "").trim();
+      if (v !== "") r[c] = v;
+    }
+  }
   const fields: Record<string, string> = {};
   header.forEach((h, i) => {
     const v = String(r[i] ?? "").trim();
@@ -43,5 +56,8 @@ export async function GET(req: NextRequest) {
     const key = h || `col_${i}`;
     fields[fields[key] ? `${key} (col ${i})` : key] = v;
   });
-  return NextResponse.json({ found: true, row: idx + 1, fields });
+  // `rows` is deliberately visible: if it holds more than one number, this
+  // woman is split across the sheet and the Make scenario appended rather than
+  // matched. That is worth seeing rather than silently smoothing over.
+  return NextResponse.json({ found: true, row: idx + 1, rows: rowsForLead.map((i) => i + 1), fields });
 }
