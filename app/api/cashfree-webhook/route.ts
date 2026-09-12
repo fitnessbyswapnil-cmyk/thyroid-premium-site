@@ -378,15 +378,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (sheetResult === 'already_paid') {
-      console.log(`[cashfree-webhook] ${source} ${payment.refId} — lead already marked paid, skipping Purchase CAPI`)
+      console.log(`[cashfree-webhook] ${source} ${payment.refId} — lead already marked paid, skipping MicroPurchase CAPI`)
       return NextResponse.json({ ok: true, duplicate: true, source, leadId })
     }
 
-    // event_id stays keyed on the reference so the browser Purchase leg
-    // deduplicates against it exactly as it does today.
+    // MicroPurchase, not Purchase: since 12-Sep-2026 'Purchase' means the real
+    // programme sale (lib/meta-conversion.ts), and this ₹299 consultation fee is
+    // its own event so it cannot drown the revenue number. The event_id KEEPS the
+    // Purchase_ prefix — ids are load-bearing for deduplication against anything
+    // already sent under that id, and renaming them would break it.
     const eventId = `Purchase_${payment.refId}`
 
-    const result = await sendCAPIEvent('Purchase', {
+    const result = await sendCAPIEvent('MicroPurchase', {
       eventId,
       sourceUrl: 'https://www.swapnilumbarkarfitness.in/session-booked',
       userData,
@@ -400,7 +403,7 @@ export async function POST(req: NextRequest) {
       testCode: process.env.META_TEST_EVENT_CODE,
     })
 
-    console.log(`[cashfree-webhook] ${source} Purchase CAPI result:`, result, `sheet=${sheetResult}`)
+    console.log(`[cashfree-webhook] ${source} MicroPurchase CAPI result:`, result, `sheet=${sheetResult}`)
 
     // Tell her the payment landed and hand her straight to Cal.com. This is the
     // fix for the ~50% of payers who previously paid and never booked.

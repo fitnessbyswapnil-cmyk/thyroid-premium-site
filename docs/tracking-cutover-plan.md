@@ -128,7 +128,7 @@ possibly S3) on the server. On 10 Sep one real ₹299 payment showed as 2 Purcha
 worth ₹598. Removing B2 is certain to take one extra leg out. Whether S3 is also
 live can only be seen in the console, so §4-A covers it.
 
-`lib/meta-conversion.ts` sends the programme sale as **`Subscribe`**
+`lib/meta-conversion.ts` sends the programme sale as **`Purchase`** (since 12-Sep-2026; the ₹299 fee is `MicroPurchase`)
 (`program_<seed>`, action_source phone_call) via `/api/admin/mark`. It is a
 different event name and cannot collide with Purchase.
 

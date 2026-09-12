@@ -9,13 +9,15 @@
  * been optimising for people who buy a ₹299 call — not for people who become
  * clients. Those are different audiences.
  *
- * WHY A SEPARATE EVENT NAME (not a second Purchase)
- * Purchase is reserved for the ₹299 consultation. Sending the programme as a
- * second Purchase would double the purchase COUNT per customer and wreck
- * cost-per-purchase — the number the ad account is judged on. 'Subscribe' is a
- * STANDARD Meta event (so it supports value optimisation, custom conversions
- * and value-based lookalikes, which arbitrary custom events support poorly),
- * and semantically it is what a paid coaching programme is.
+ * WHICH EVENT NAME, AND WHY IT CHANGED (12-Sep-2026)
+ * This programme sale IS the revenue, so it is the one Meta knows as
+ * 'Purchase'. The ₹299 consultation fee — same customer, 50× more often, 1/60th
+ * the value — now sends as the custom event 'MicroPurchase' from the Cashfree
+ * webhook. Before the swap the ₹299 owned the Purchase name, which made ROAS
+ * meaningless and would have pointed value optimisation and value-based
+ * lookalikes at the cheap event. The two must never share a name: that would
+ * double the purchase COUNT per customer and wreck cost-per-purchase, the
+ * number the ad account is judged on.
  *
  * ATTRIBUTION
  * The close happens offline, so there is no cookie to read. Match quality comes
@@ -33,8 +35,8 @@ import {
   // allowImportingTsExtensions, and the bundler resolves the exact file.
 } from './server-tracking.ts'
 
-/** Standard event used for the paid programme. See header for why not Purchase. */
-export const PROGRAM_EVENT_NAME = 'Subscribe'
+/** The programme sale is the account's real Purchase. See header. */
+export const PROGRAM_EVENT_NAME = 'Purchase'
 export const PROGRAM_CONTENT_NAME = 'thyroid_3month_program'
 
 /** Meta rejects events whose event_time is more than 7 days old. */
