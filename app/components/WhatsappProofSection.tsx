@@ -218,7 +218,7 @@ function FeaturedStoryCard({
         <div className="flex flex-col justify-center p-6">
           {featured && (
             <span
-              className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-[5px] text-[0.6rem] font-extrabold uppercase tracking-[0.18em]"
+              className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-[5px] text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)]"
               style={{
                 background: 'var(--p-subtle)',
                 border: '1px solid var(--p-border)',
@@ -229,16 +229,16 @@ function FeaturedStoryCard({
             </span>
           )}
 
-          <p className="mb-1 text-[0.95rem] font-bold tracking-[-0.01em] text-[var(--t1)]">
+          <p className="mb-1 text-[length:var(--fs-2xs)] font-bold tracking-[var(--ls-heading)] text-[var(--t1)]">
             {story.name}{' '}
             <span className="font-medium text-[var(--t3)]">· {story.meta}</span>
           </p>
 
-          <p className="mb-3 text-[0.85rem] font-semibold leading-[1.5]" style={{ color: ACCENT_LIGHT }}>
+          <p className="mb-3 text-[length:var(--fs-3xs)] font-medium leading-[var(--lh-tight)]" style={{ color: ACCENT_LIGHT }}>
             {story.result}
           </p>
 
-          <p className="text-[0.85rem] italic leading-[1.65] text-[var(--t2)]">
+          <p className="text-[length:var(--fs-3xs)] italic leading-[var(--lh-body)] text-[var(--t2)]">
             &ldquo;{story.quote}&rdquo;
           </p>
         </div>
@@ -326,7 +326,7 @@ function ProofCard({
           whose whole claim is that this is real, a fake avatar is an odd thing
           to put next to a real name. */}
       <div className="px-5 pb-5 pt-4 mt-auto">
-        <p className="m-0 text-[14px] leading-[1.5] pt-3" style={{ borderTop: '1px solid #efe8db', color: '#57514b' }}>
+        <p className="m-0 text-[length:var(--fs-3xs)] leading-[var(--lh-tight)] pt-3" style={{ borderTop: '1px solid #efe8db', color: '#57514b' }}>
           {card.client}
         </p>
       </div>
@@ -405,7 +405,7 @@ export default function WhatsappProofSection({
           </Reveal>
         </div>
 
-        <p className="container-default mb-10 text-center text-[0.7rem] leading-relaxed" style={{ color: 'var(--t4)' }}>
+        <p className="container-default mb-10 text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)]" style={{ color: 'var(--t4)' }}>
           {RESULTS_VARY}
         </p>
 
@@ -438,7 +438,7 @@ export default function WhatsappProofSection({
         </div>
         {cards.length === ALL_CARDS.length && (
           <p
-            className="mt-3 text-center text-[0.59rem] font-semibold uppercase tracking-[0.18em]"
+            className="mt-3 text-center text-[length:var(--fs-3xs)] font-semibold uppercase tracking-[var(--ls-caps)]"
             style={{ color: 'var(--t5)' }}
           >
             Swipe to see more ›

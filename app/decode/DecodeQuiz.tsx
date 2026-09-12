@@ -403,7 +403,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       <Shell>
         <p className="section-label">Start here</p>
         <h2 className="section-title mx-auto text-balance">Twelve questions. About forty seconds.</h2>
-        <p className="mx-auto mt-3 max-w-[540px] text-[15.5px] leading-[1.6] text-[var(--t2)]">
+        <p className="mx-auto mt-3 max-w-[540px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
           No typing. Just tap. At the end you get your score, and I tell you what to do next.
         </p>
         <button
@@ -424,20 +424,20 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       <Shell>
         <p className="section-label">Last step before your score</p>
         <h2 className="section-title mx-auto text-balance">Where should I send it?</h2>
-        <p className="mx-auto mt-3 max-w-[520px] text-[15.5px] leading-[1.6] text-[var(--t2)]">
+        <p className="mx-auto mt-3 max-w-[520px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
           Your score shows here now, and I WhatsApp it to you so you keep it &mdash; with the one thing to do next.
         </p>
         <div className="mx-auto mt-6 w-full max-w-[420px] text-left">
-          <label className="block text-[13px] font-semibold text-[var(--t1)]" htmlFor="gate-name">Your name</label>
+          <label className="block text-[length:var(--fs-3xs)] font-medium text-[var(--t1)]" htmlFor="gate-name">Your name</label>
           <input id="gate-name" value={gate.name} onChange={(e) => setGate((g) => ({ ...g, name: e.target.value }))} placeholder="First name" autoComplete="given-name"
-            className="mt-1 w-full rounded-lg bg-white px-4 py-3 text-[16px] text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }} />
-          <label className="mt-4 block text-[13px] font-semibold text-[var(--t1)]" htmlFor="gate-phone">WhatsApp number</label>
+            className="mt-1 w-full rounded-lg bg-white px-4 py-3 text-[length:var(--fs-xs)] text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }} />
+          <label className="mt-4 block text-[length:var(--fs-3xs)] font-medium text-[var(--t1)]" htmlFor="gate-phone">WhatsApp number</label>
           <div className="mt-1 flex">
-            <span aria-hidden="true" className="flex items-center rounded-l-lg bg-white px-3 text-[15px] text-[var(--t2)]" style={{ border: "1.5px solid var(--border-strong)", borderRight: 0 }}>+91</span>
+            <span aria-hidden="true" className="flex items-center rounded-l-lg bg-white px-3 text-[length:var(--fs-2xs)] text-[var(--t2)]" style={{ border: "1.5px solid var(--border-strong)", borderRight: 0 }}>+91</span>
             <input id="gate-phone" value={gate.phone} onChange={(e) => setGate((g) => ({ ...g, phone: e.target.value }))} placeholder="10-digit mobile" inputMode="numeric" autoComplete="tel"
-              className="w-full rounded-r-lg bg-white px-4 py-3 text-[16px] text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }} />
+              className="w-full rounded-r-lg bg-white px-4 py-3 text-[length:var(--fs-xs)] text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }} />
           </div>
-          {gateErr && <p className="mt-2 text-[13px]" style={{ color: "var(--red-cta)" }}>{gateErr}</p>}
+          {gateErr && <p className="mt-2 text-[length:var(--fs-3xs)]" style={{ color: "var(--red-cta)" }}>{gateErr}</p>}
           <TurnstileBox bot={bot} hint="One quick check. Tap the box to see your score." hintColor="var(--t2)" />
           <button type="button" onClick={submitGate} disabled={gateBusy} className="cta-button mt-5 w-full" style={{ opacity: gateBusy ? 0.7 : 1 }}>
             {gateBusy ? "One moment…" : "Show my score"}
@@ -456,19 +456,19 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           className="mx-auto mt-2 max-w-[560px] rounded-2xl px-6 py-7"
           style={{ background: "#0b1120", color: "#fff" }}
         >
-          <div className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: "#00ff66" }}>
+          <div className="text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)]" style={{ color: "var(--accent-yellow)" }}>
             Markers of a stalled thyroid metabolism
           </div>
-          <div className="mt-2 font-bold leading-none" style={{ fontSize: 60 }}>
-            {score100}<span className="text-[26px] font-semibold" style={{ color: "#9a9890" }}> / 100</span>
+          <div className="mt-2 text-[length:var(--fs-3xl)] font-bold leading-[var(--lh-display)] tracking-[var(--ls-display)]" data-tabular>
+            {score100}<span className="text-[length:var(--fs-xl)] font-medium" style={{ color: "#9a9890" }}> / 100</span>
           </div>
-          <div className="mt-2 text-[13px]" style={{ color: "#9a9890" }}>
+          <div className="mt-2 text-[length:var(--fs-3xs)]" style={{ color: "#9a9890" }}>
             {hits} of 7 markers present
           </div>
           {resumeScore == null && (<ul className="mt-5 flex list-none flex-col gap-2 p-0 text-left">
             {ms.map((m) => (
-              <li key={m.label} className="flex items-start gap-3 text-[15px] leading-[1.45]" style={{ color: m.hit ? "#fff" : "#6b7280" }}>
-                <span aria-hidden="true" className="mt-[3px] inline-block h-4 w-4 flex-none rounded-full" style={{ background: m.hit ? "#00ff66" : "transparent", border: m.hit ? "0" : "1.5px solid #4b5563" }} />
+              <li key={m.label} className="flex items-start gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-tight)]" style={{ color: m.hit ? "#fff" : "#6b7280" }}>
+                <span aria-hidden="true" className="mt-[3px] inline-block h-4 w-4 flex-none rounded-full" style={{ background: m.hit ? "var(--accent-yellow)" : "transparent", border: m.hit ? "0" : "1.5px solid #4b5563" }} />
                 {m.label}
               </li>
             ))}
@@ -478,30 +478,30 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
         {already ? (
           <div className="mx-auto mt-8 max-w-[560px] rounded-2xl p-6 text-left"
                style={{ background: "var(--p-subtle)", border: "1.5px solid var(--p-border)" }}>
-            <p className="text-[19px] font-bold text-[var(--t1)]">
+            <p className="text-[length:var(--fs-lg)] font-bold text-[var(--t1)]">
               {already.booked
                 ? "You are already booked."
                 : "Your payment is already received."}
             </p>
             {already.booked ? (
               <>
-                <p className="mt-2 text-[15px] leading-[1.6] text-[var(--t2)]">
+                <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
                   Your 1-1 Thyroid Consultation is confirmed &mdash; 60 minutes, one to one with Swapnil.
                   {already.sessionDate ? <> Your slot: <strong>{already.sessionDate}</strong>.</> : null}
                 </p>
-                <p className="mt-3 text-[15px] leading-[1.6] text-[var(--t2)]">
+                <p className="mt-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
                   Nothing more to pay and nothing more to book. Before we speak, send your latest
                   thyroid report (TSH, T3, T4) on WhatsApp &mdash; I read every report before the call.
                 </p>
                 <a href="https://cal.com/swapnilumbarkarfitness/60min"
-                   className="mt-5 inline-block text-[14px] font-bold underline"
+                   className="mt-5 inline-block text-[length:var(--fs-3xs)] font-bold underline"
                    style={{ color: "var(--p500)" }}>
                   Change or cancel your slot
                 </a>
               </>
             ) : (
               <>
-                <p className="mt-2 text-[15px] leading-[1.6] text-[var(--t2)]">
+                <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
                   We have your ₹299. The only step left is choosing your time &mdash; do not pay again.
                 </p>
                 <a href="https://cal.com/swapnilumbarkarfitness/60min"
@@ -521,15 +521,15 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
             className="mx-auto mt-8 max-w-[560px] rounded-2xl p-6 text-left"
             style={{ background: "var(--p-subtle)", border: "1.5px solid var(--p-border)" }}
           >
-            <p className="text-[19px] font-bold text-[var(--t1)]">
+            <p className="text-[length:var(--fs-lg)] font-bold text-[var(--t1)]">
               Start with the free masterclass.
             </p>
-            <p className="mt-2 text-[15px] leading-[1.6] text-[var(--t2)]">
+            <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
               You said you are looking to start a little further out, so I am not going to take
               ₹299 from you today. The paid consultation is built for the woman who is starting
               now. I read her blood report line by line and she leaves with a plan for that week.
             </p>
-            <p className="mt-3 text-[15px] leading-[1.6] text-[var(--t2)]">
+            <p className="mt-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
               Come to the free masterclass first. It is 90 minutes, live, and it covers the same
               blockers your score just flagged. When you are ready to start, the consultation
               will still be here.
@@ -542,13 +542,13 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
               Save my free seat
               <span className="cta-sub">Free live masterclass &middot; 90 minutes</span>
             </a>
-            <p className="mt-4 text-[13.5px] leading-[1.55] text-[var(--t3)]">
+            <p className="mt-4 text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
               Your score is on its way to you on WhatsApp as well, so you keep it.
             </p>
           </div>
         ) : hasReport ? (
           <>
-            <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
+            <p className="mx-auto mt-6 max-w-[580px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
               {score100 >= 57
                 ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 60 minutes I read yours line by line and tell you <strong>which</strong> of these markers already happened, and <strong>when</strong>.</>
                 : <>Your report will show which of these are real and which are not. That is the whole job of the session &mdash; and if the answer is that you do not need me, you will hear that too.</>}
@@ -589,7 +589,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           </>
         ) : (
           <>
-            <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.62] text-[var(--t2)]">
+            <p className="mx-auto mt-6 max-w-[580px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
               You do not have a blood report yet &mdash; that is fine. In the session I tell you <strong>exactly which tests to get</strong> and why (the ones most labs leave out), and we work from your answers above until the results are in.
             </p>
             <div className="mt-8 text-left">
@@ -645,11 +645,11 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
             "Step 1 of 2" is honest about the shape of it: the questions, then
             the slot. */}
         <div className="mb-2 flex items-baseline justify-between">
-          <span className="text-[13px] font-bold uppercase tracking-[0.1em] text-[var(--t3)]">
+          <span className="text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--t3)]">
             Step 1 of 2 &middot; about 90 seconds
           </span>
           {i > 0 && (
-            <button type="button" onClick={() => setI((n) => n - 1)} className="text-[13px] text-[var(--t3)] underline">
+            <button type="button" onClick={() => setI((n) => n - 1)} className="text-[length:var(--fs-3xs)] text-[var(--t3)] underline">
               Back
             </button>
           )}
@@ -670,7 +670,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
               type="button"
               onClick={() => pick(q, o)}
               aria-pressed={showPartner ? chosen : undefined}
-              className="w-full rounded-lg px-5 py-4 text-left text-[16px] font-medium leading-[1.4] text-[var(--t1)] transition-colors"
+              className="w-full rounded-lg px-5 py-4 text-left text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)] transition-colors"
               style={{
                 background: chosen ? "var(--p-subtle)" : "#fff",
                 border: chosen ? "1.5px solid var(--p500)" : "1.5px solid var(--border-strong)",
@@ -683,13 +683,13 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       </div>
       {showPartner && (
         <div className="mx-auto mt-8 w-full max-w-[560px] text-left">
-          <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[var(--t3)]">
+          <p className="text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--t3)]">
             One quick follow-up
           </p>
-          <h3 className="mt-2 text-[20px] font-bold leading-[1.35] text-[var(--t1)]">
+          <h3 className="mt-2 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-[var(--t1)]">
             {PARTNER_ON_CALL_QUESTION}
           </h3>
-          <p className="mt-2 text-[14.5px] leading-[1.55] text-[var(--t2)]">
+          <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
             Either way you keep your slot. It just helps to have them hear the same answers you do.
           </p>
           <div className="mt-4 flex w-full flex-col gap-3">
@@ -698,7 +698,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 key={o.value}
                 type="button"
                 onClick={() => pickPartner(o.label)}
-                className="w-full rounded-lg bg-white px-5 py-4 text-left text-[16px] font-medium leading-[1.4] text-[var(--t1)] transition-colors"
+                className="w-full rounded-lg bg-white px-5 py-4 text-left text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)] transition-colors"
                 style={{ border: "1.5px solid var(--border-strong)" }}
               >
                 {o.label}

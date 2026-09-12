@@ -18,16 +18,70 @@
    Body sizes stay raised for presbyopic eyes (18px floor on base text). */
 
 :root {
-  /* Typography — floors raised for 40+ eyes (base ≈18px) */
-  /* Bottom rung: micro-labels, badges, legal lines. Added because the page
-     was reaching for 9px–11.5px in fifteen different arbitrary values. */
-  --text-2xs: clamp(0.68rem, 0.655rem + 0.14vw, 0.75rem);
-  --text-xs: clamp(0.78rem, 0.76rem + 0.18vw, 0.86rem);
-  --text-sm: clamp(0.94rem, 0.9rem + 0.22vw, 1.02rem);
-  --text-base: clamp(1.08rem, 1.03rem + 0.25vw, 1.17rem);
-  --text-lg: clamp(1.2rem, 1.06rem + 0.7vw, 1.55rem);
-  --text-xl: clamp(1.8rem, 1.2rem + 2vw, 3rem);
-  --text-hero: clamp(2.6rem, 1.9rem + 3vw, 4.8rem);
+  /* ── THE TYPE SCALE ────────────────────────────────────────────────────────
+     Nine sizes. Nothing outside this list may be used anywhere on the funnel,
+     and lib/typography.test.ts fails the build if one appears.
+
+     It replaced fifty-eight. Sizes like 0.55rem, 0.56rem, 0.58rem and 0.59rem
+     all existed at once — 8.8px, 9.0px, 9.3px, 9.4px. Nobody can see a 0.2px
+     difference; four separate one-off decisions is not a scale, and the page
+     read as unsystematic for exactly that reason. None of them arrived
+     deliberately: they accumulated one "slightly smaller here" at a time.
+
+     Ratio is about 1.22 — a calm editorial step, deliberately not dramatic.
+
+     EVERY clamp is the three-part form: clamp(min, Xrem + Yvw, max). The naive
+     form — clamp(1rem, 2.5vw, 1.2rem) — puts a pure vw in the middle, and a
+     pure vw does not respond to browser zoom. A reader in her late forties who
+     zooms to 125% gets text that does not move. That is an accessibility
+     failure before it is an aesthetic one.
+
+     THE FLOOR IS 13px. The old floor was 8.8px, on a page whose smallest type
+     was its medical disclaimers — and text she cannot read reads as text you
+     did not want her to read. */
+  /*              min                 fluid                     max          */
+  --fs-3xs:  clamp(0.8125rem, 0.80rem + 0.06vw, 0.875rem);  /* 13 → 14 px */
+  --fs-2xs:  clamp(0.875rem,  0.85rem + 0.12vw, 0.9375rem); /* 14 → 15 px */
+  --fs-xs:   clamp(0.9375rem, 0.91rem + 0.14vw, 1rem);      /* 15 → 16 px */
+  --fs-sm:   clamp(1rem,      0.97rem + 0.16vw, 1.0625rem); /* 16 → 17 px */
+  --fs-base: clamp(1.0625rem, 1.02rem + 0.22vw, 1.125rem);  /* 17 → 18 px */
+  --fs-lg:   clamp(1.25rem,   1.17rem + 0.40vw, 1.375rem);  /* 20 → 22 px */
+  --fs-xl:   clamp(1.5rem,    1.33rem + 0.85vw, 1.75rem);   /* 24 → 28 px */
+  --fs-2xl:  clamp(1.875rem,  1.50rem + 1.85vw, 2.375rem);  /* 30 → 38 px */
+  --fs-3xl:  clamp(2.5rem,    1.85rem + 3.25vw, 3.5rem);    /* 40 → 56 px */
+
+  /* Letter-spacing: four values, tied to size. Big type needs negative
+     tracking, uppercase needs positive, everything between needs none.
+     This replaced twelve — including -0.015em, -0.018em and -0.028em, which
+     differ from each other by hundredths of a pixel. That is drift, not a
+     decision. */
+  --ls-display: -0.03em; /* --fs-3xl, --fs-2xl */
+  --ls-heading: -0.02em; /* --fs-xl, --fs-lg   */
+  --ls-body: 0;          /* --fs-base and below */
+  --ls-caps: 0.12em;     /* uppercase eyebrows and badges ONLY */
+
+  /* Line-height: four values, replacing twelve. --lh-body is deliberately
+     generous — she is in her late forties, on a phone, reading several hundred
+     words of explanation, and leading is the cheapest readability there is. */
+  --lh-display: 1.08; /* --fs-3xl, --fs-2xl */
+  --lh-heading: 1.22; /* --fs-xl, --fs-lg   */
+  --lh-body: 1.62;    /* --fs-base, --fs-sm */
+  --lh-tight: 1.45;   /* captions, badges, UI */
+
+  /* Measure. Below ~45ch and above ~75ch reading speed drops measurably. */
+  --measure-prose: 66ch;
+  --measure-caption: 46ch;
+
+  /* Old names, kept as aliases ONLY so that call sites outside the funnel
+     (admin, crm, inbox, webinar) keep working while they are migrated. Nothing
+     new may use them. */
+  --text-2xs: var(--fs-3xs);
+  --text-xs: var(--fs-2xs);
+  --text-sm: var(--fs-xs);
+  --text-base: var(--fs-base);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-2xl);
+  --text-hero: var(--fs-3xl);
 
   /* Spacing */
   --space-1: 0.25rem;
@@ -177,6 +231,58 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+
+  /* font-optical-sizing was unused. Inter supports it: the letterforms adjust
+     between small and large sizes on their own. It costs nothing and is the
+     kind of detail that reads as properly set without being nameable. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+/* ── TASK 22.3: wrapping ────────────────────────────────────────────────────
+   `balance` is what stops a headline dropping one orphan word onto a line of
+   its own — the most visible typographic flaw on a phone, where these
+   headlines wrap across three and four lines. `pretty` does the same for the
+   last line of a paragraph. Four declarations existed; it belongs on every
+   heading and every paragraph. */
+h1,
+h2,
+h3,
+h4,
+.section-label,
+.cta-button {
+  text-wrap: balance;
+}
+
+p,
+li,
+figcaption,
+blockquote,
+summary {
+  text-wrap: pretty;
+}
+
+/* Numbers are this page's proof, and proportional figures make stacked ones
+   look ragged. Anywhere digits align or compare, they are tabular. */
+.price,
+.stat,
+.chart-label,
+.proof-desc,
+.cta-sub,
+.record-metric,
+[data-tabular] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pulls an opening quotation mark into the margin so the text edge stays
+   optically straight. Safari honours it; everywhere else ignores it
+   harmlessly. */
+blockquote,
+.testimonial-quote {
+  hanging-punctuation: first;
 }
 
 body {
@@ -185,7 +291,7 @@ body {
   background: var(--bg-page);
   color: var(--t1);
   font-family: var(--font-body), 'Inter', system-ui, -apple-system, sans-serif;
-  line-height: 1.65;
+  line-height: var(--lh-body);
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -198,8 +304,8 @@ body {
 h1, h2, h3,
 .section-title {
   font-family: var(--font-body), 'Inter', system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.015em;
+  font-weight: 700;
+  letter-spacing: var(--ls-heading);
 }
 
 section {
@@ -263,9 +369,9 @@ a {
 /* SECTION LABEL */
 
 .section-label {
-  font-size: 12px;
+  font-size: var(--fs-3xs);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   /* Gold-ink, not red. Red is reserved for buttons: the moment it appears as
      text, every red button on the page loses its meaning. Gold-ink is the
@@ -273,7 +379,7 @@ a {
   color: var(--gold-ink);
   margin-bottom: 14px;
   font-family: var(--font-display), 'Outfit', system-ui, sans-serif;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--ls-caps);
 }
 
 /* The em-dash prefix is the reference build's tell. Added here rather than in
@@ -286,11 +392,11 @@ a {
 
 .section-title {
   /* 24px mobile -> 34px desktop */
-  font-size: clamp(1.75rem, 1rem + 2.6vw, 2.625rem);
-  line-height: 1.14;
-  font-weight: 800;
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-display);
+  font-weight: 700;
   color: var(--t1);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--ls-heading);
 }
 
 .section-header {
@@ -300,10 +406,10 @@ a {
 
 .section-lead {
   margin-top: clamp(0.65rem, 2vw, 0.85rem);
-  max-width: 44ch;
-  font-size: 16px;
+  max-width: var(--measure-caption);
+  font-size: var(--fs-xs);
   color: var(--t2);
-  line-height: 1.55;
+  line-height: var(--lh-body);
 }
 
 .section-cta {
@@ -406,10 +512,10 @@ a {
 
   color: var(--p300);
 
-  font-size: var(--text-xs);
+  font-size: var(--fs-2xs);
   font-weight: 700;
 
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-caps);
 }
 
 .badge-dot {
@@ -469,11 +575,11 @@ a {
   color: var(--cta-fg);
 
   font-weight: 700;
-  font-size: 16px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-caps);
 
-  letter-spacing: -0.01em;
+  letter-spacing: var(--ls-heading);
 
   display: flex;
   flex-direction: column;
@@ -537,7 +643,7 @@ a {
 }
 
 .cta-sub {
-  font-size: 12px;
+  font-size: var(--fs-3xs);
   font-weight: 500;
   color: var(--cta-sub-fg, currentColor);
   opacity: var(--cta-sub-opacity, 0.85);
@@ -630,78 +736,25 @@ a {
   padding-bottom: 0;
 }
 
-/* A floor under the type. Nothing on this page is rendered below 15px, which
-   the old ramp broke in three places at once: 0.7rem disclaimers, 0.66rem
-   captions, 13px notes. Uppercase micro-labels are exempt by having their own
-   rules below — they are labels, not text to be read. */
+/* The scale carries the floor now: --fs-3xs bottoms out at 13px, so no
+   element can be set below it without leaving the system — and
+   lib/typography.test.ts fails the build if one tries. What used to be here
+   was a list of Tailwind arbitrary class names raised by hand, one at a time,
+   which is the same accumulation the scale exists to stop. */
 .theme-decode {
-  --text-2xs: 15px;
-  --text-xs: 15px;
-  --text-sm: 16px;
-  line-height: 1.6;
+  line-height: var(--lh-body);
 }
 
 .theme-decode p,
 .theme-decode li {
-  line-height: 1.6;
-}
-
-.theme-decode .section-label {
-  font-size: 13px;
-}
-
-/* The floor, applied to the sizes that are actually on this page.
-   Tailwind arbitrary sizes (text-[14.5px]) are baked into the class, so a
-   token change cannot reach them — they are raised by name instead. Kept as a
-   scoped list rather than a blanket rule on <p> so that nothing already LARGER
-   gets dragged down: a blanket font-size would flatten the 17.5px hero
-   paragraph and the 21px card headlines along with the 13px notes.
-
-   Two floors, because two different things are being sized. Prose she has to
-   read goes to 15px. Uppercase letter-spaced micro-labels go to 13px — a label
-   is scanned, not read, and setting one at 15px makes it shout over the
-   heading it belongs to.
-
-   NOT TOUCHED: the chart inside "Where did the gap go?". Its labels are
-   positioned against SVG coordinates and the mechanism section is off limits. */
-.theme-decode .text-\[12\.5px\],
-.theme-decode .text-\[13px\],
-.theme-decode .text-\[13\.5px\],
-.theme-decode .text-\[14px\],
-.theme-decode .text-\[14\.5px\],
-.theme-decode .text-\[0\.7rem\] {
-  font-size: 15px;
-}
-
-.theme-decode .text-\[0\.6rem\],
-.theme-decode .text-\[11\.5px\],
-.theme-decode .text-\[12px\] {
-  font-size: 13px;
-}
-
-/* The proof-card descriptor clamps down to 10px on a narrow screen, which is
-   under the label floor. It has room at 13px: the wall is one card wide below
-   640px and two above it, and the longest descriptor fits either way. */
-.theme-decode .proof-desc {
-  font-size: 13px;
-}
-
-/* The responsive steps that the rules above would otherwise out-specify. */
-@media (min-width: 640px) {
-  .theme-decode .sm\:text-\[21px\] { font-size: 21px; }
-}
-
-@media (min-width: 768px) {
-  .theme-decode .md\:text-\[15\.5px\] { font-size: 15.5px; }
-  .theme-decode .md\:text-\[17\.5px\] { font-size: 17.5px; }
-  .theme-decode .md\:text-\[18px\] { font-size: 18px; }
+  line-height: var(--lh-body);
 }
 
 /* Prose blocks stop at a readable measure. Full-bleed body copy reads cheap
    at any width, and unreadable past about 80 characters. */
 .theme-decode .section-title + p,
 .theme-decode .section-header p {
-  max-width: 42ch;
+  max-width: var(--measure-caption);
   margin-left: auto;
   margin-right: auto;
 }
@@ -736,9 +789,9 @@ a {
   border: 0;
 
   font-weight: 700;
-  font-size: 16px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-caps);
 
   padding: 18px 32px;
 
@@ -789,7 +842,7 @@ a {
   color: var(--p300);
 
   font-weight: 700;
-  font-size: clamp(0.93rem, 2.5vw, 0.99rem);
+  font-size: var(--fs-xs);
 
   display: flex;
   flex-direction: column;
@@ -818,7 +871,7 @@ a {
 .btn-ghost .cta-sub {
   color: var(--t3);
   opacity: 1;
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
 }
 
 .btn-sticky {
@@ -830,9 +883,9 @@ a {
   color: #fff;
   border: none;
 
-  font-size: var(--text-xs);
+  font-size: var(--fs-2xs);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--ls-heading);
   white-space: nowrap;
 
   box-shadow: none;
@@ -863,9 +916,9 @@ a {
 /* TRUST */
 
 .micro-trust {
-  font-size: var(--text-xs);
+  font-size: var(--fs-2xs);
   color: var(--t4);
-  line-height: 1.5;
+  line-height: var(--lh-tight);
 }
 
 /* RESULT BADGES */
@@ -882,7 +935,7 @@ a {
 
   padding: 0.28rem 0.62rem;
 
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
 
   color: var(--p300);
 
@@ -897,9 +950,9 @@ a {
   border: 1px solid var(--p-border);
   background: rgba(255, 255, 255, 0.85);
   padding: 0.28rem 0.65rem;
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--p300);
   backdrop-filter: blur(8px);
@@ -951,9 +1004,9 @@ a {
   border-radius: 999px;
   background: rgba(0,0,0,0.52);
   border: 1px solid rgba(255,255,255,0.13);
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: rgba(255,255,255,0.72);
   backdrop-filter: blur(8px);
@@ -968,9 +1021,9 @@ a {
   border-radius: 999px;
   background: rgba(163, 114, 32,0.85);
   border: 1px solid rgba(255,255,255,0.35);
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: #ffffff;
   backdrop-filter: blur(8px);
@@ -987,10 +1040,10 @@ a {
 
 /* Result headline inside card */
 .result-headline {
-  font-size: clamp(1.05rem, 2vw, 1.2rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-heading);
   color: var(--t1);
 }
 
@@ -1024,11 +1077,11 @@ a {
 }
 
 .stat-num {
-  font-size: clamp(1.1rem, 3vw, 1.35rem);
-  font-weight: 800;
+  font-size: var(--fs-lg);
+  font-weight: 700;
   color: var(--p300);
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--ls-display);
 }
 
 .stat-row,
@@ -1037,9 +1090,9 @@ a {
 }
 
 .stat-label {
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   color: var(--t4);
-  line-height: 1.3;
+  line-height: var(--lh-heading);
   text-align: center;
 }
 
@@ -1075,18 +1128,18 @@ a {
 }
 
 .trust-bar-value {
-  font-size: clamp(0.9rem, 2.5vw, 1.05rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: var(--ls-display);
   color: var(--t1);
 }
 
 .trust-bar-label {
   margin-top: 0.25rem;
   max-width: 11ch;
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 500;
-  line-height: 1.4;
+  line-height: var(--lh-tight);
   color: var(--t4);
 }
 
@@ -1132,7 +1185,7 @@ a {
   border-radius: 999px;
   border: 1px solid var(--p-border);
   background: var(--p-subtle);
-  font-size: 1.05rem;
+  font-size: var(--fs-sm);
 }
 
 .coach-portrait-wrap {
@@ -1212,9 +1265,9 @@ a {
 
 .cert-card-label {
   padding: 0.5rem 0.55rem 0.6rem;
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--lh-tight);
   color: var(--t3);
   text-align: center;
 }
@@ -1334,9 +1387,9 @@ a {
   border-radius: 999px;
   border: 1px solid rgba(163, 114, 32, 0.25);
   background: rgba(163, 114, 32, 0.09);
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--p400);
 }
@@ -1349,10 +1402,10 @@ a {
   border-radius: 999px;
   border: 1px solid rgba(163, 114, 32, 0.18);
   background: rgba(163, 114, 32, 0.06);
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 700;
   color: var(--p300);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-caps);
   white-space: nowrap;
 }
 
@@ -1376,32 +1429,32 @@ a {
 
 /* Coach name — large, impactful */
 .authority-coach-name {
-  font-size: clamp(2rem, 4.8vw, 2.85rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1.06;
+  font-size: var(--fs-3xl);
+  font-weight: 700;
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-display);
   color: var(--t1);
   margin: 0 0 0.55rem;
 }
 
 /* Authority subtitle in accent */
 .authority-coach-title {
-  font-size: clamp(0.7rem, 1.35vw, 0.8rem);
+  font-size: var(--fs-3xs);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--p400);
   margin: 0 0 1.6rem;
-  line-height: 1.5;
+  line-height: var(--lh-tight);
   opacity: 0.92;
 }
 
 /* Bio paragraph */
 .authority-bio {
-  font-size: var(--text-sm);
-  line-height: 1.82;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
   color: var(--t2);
-  max-width: 52ch;
+  max-width: var(--measure-prose);
   margin: 0 auto 1.65rem;
 }
 
@@ -1416,7 +1469,7 @@ a {
   list-style: none;
   padding: 0;
   margin: 0 auto;
-  max-width: 46ch;
+  max-width: var(--measure-caption);
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
@@ -1433,9 +1486,9 @@ a {
   display: flex;
   align-items: flex-start;
   gap: 0.7rem;
-  font-size: var(--text-sm);
+  font-size: var(--fs-xs);
   color: var(--t2);
-  line-height: 1.65;
+  line-height: var(--lh-body);
 }
 
 .authority-trust-dot {
@@ -1544,12 +1597,12 @@ a {
 /* Cert card label */
 .authority-cert-label {
   padding: 0.7rem 0.8rem 0.75rem;
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 700;
-  line-height: 1.35;
+  line-height: var(--lh-tight);
   color: var(--t2);
   text-align: center;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-caps);
   flex: 1;
   display: flex;
   align-items: center;
@@ -1572,7 +1625,7 @@ a {
 
   color: var(--p300);
 
-  font-size: var(--text-2xs);
+  font-size: var(--fs-3xs);
   font-weight: 600;
 }
 
@@ -1698,7 +1751,7 @@ a {
   }
 
   .section-title {
-    font-size: clamp(1.55rem, 1.2rem + 1.8vw, 2rem);
+    font-size: var(--fs-2xl);
   }
 }
 /* ── Hero entrance — staggered fade-up ───────────────────────────────────────── */
@@ -1926,14 +1979,28 @@ a {
   color: #14110f;
   border-radius: 999px;
   padding: 5px 10px;
-  font-size: clamp(10.5px, 2.4vw, 13px);
+  font-size: var(--fs-3xs);
   font-weight: 600;
-  letter-spacing: 1.5px;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
 }
 
 @media (min-width: 640px) {
   .proof-tag { padding: 5px 14px; }
+}
+
+/* Design 1B's record labels: the small uppercase keys that run down the case
+   records — "RECORD 01", "WEIGHT", "DURATION". One rule rather than the same
+   four declarations repeated at every call site, which is how twelve
+   letter-spacing values happened in the first place. */
+.record-label {
+  margin: 0;
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--t3);
 }
 
 /* The clinical descriptor that used to BE the pill. Kept as a second, quieter
@@ -1947,9 +2014,9 @@ a {
 .proof-desc {
   display: block;
   margin-top: 8px;
-  font-size: clamp(10px, 2.2vw, 11.5px);
+  font-size: var(--fs-3xs);
   font-weight: 600;
-  letter-spacing: 1.2px;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--t3);
 }

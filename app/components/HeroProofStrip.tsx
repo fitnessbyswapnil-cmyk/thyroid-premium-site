@@ -54,7 +54,7 @@ function Avatar({ a }: { a: ProofAvatar }) {
   return (
     <span
       aria-hidden="true"
-      className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full text-[length:var(--text-xs)] font-semibold text-[var(--p300)] ring-1 ring-[var(--p-border)] sm:h-[42px] sm:w-[42px] sm:text-[length:var(--text-xs)]"
+      className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full text-[length:var(--fs-2xs)] font-medium text-[var(--p300)] ring-1 ring-[var(--p-border)] sm:h-[42px] sm:w-[42px] sm:text-[length:var(--fs-2xs)]"
       style={{ background: "var(--p-tint)" }}
     >
       {a.initials}
@@ -86,10 +86,10 @@ export default function HeroProofStrip({
         <div role="listitem" className="flex shrink-0 items-center gap-1.5">
           <Laurel />
           <div className="text-center">
-            <div className="text-[length:var(--text-xl)] font-bold leading-none text-[var(--p300)] sm:text-[length:var(--text-xl)]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
+            <div data-tabular className="text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[var(--p300)] sm:text-[length:var(--fs-2xl)]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
               100+
             </div>
-            <div className="mx-auto mt-1 max-w-[11ch] text-[length:var(--text-2xs)] leading-[1.25] text-[var(--t2)] sm:text-[length:var(--text-xs)]">
+            <div className="mx-auto mt-1 max-w-[11ch] text-[length:var(--fs-3xs)] leading-[var(--lh-heading)] text-[var(--t2)] sm:text-[length:var(--fs-2xs)]">
               Indian Women Coached
             </div>
           </div>
@@ -105,8 +105,8 @@ export default function HeroProofStrip({
               <div role="listitem" className="flex min-w-0 items-center gap-2 sm:shrink-0 sm:gap-3">
                 <Avatar a={a} />
                 <div className="min-w-0 sm:max-w-[150px]">
-                  <p className="text-[length:var(--text-2xs)] leading-[1.3] text-[var(--t1)] sm:text-[length:var(--text-xs)] sm:leading-[1.4]">&ldquo;{a.claim}&rdquo;</p>
-                  <p className="mt-0.5 truncate text-[length:var(--text-2xs)] font-medium text-[var(--p400)] sm:text-[length:var(--text-2xs)]">&ndash; {a.name}</p>
+                  <p className="text-[length:var(--fs-3xs)] leading-[var(--lh-heading)] text-[var(--t1)] sm:text-[length:var(--fs-2xs)] sm:leading-[var(--lh-tight)]">&ldquo;{a.claim}&rdquo;</p>
+                  <p className="mt-0.5 truncate text-[length:var(--fs-3xs)] font-medium text-[var(--p400)] sm:text-[length:var(--fs-3xs)]">&ndash; {a.name}</p>
                 </div>
               </div>
             </Fragment>

@@ -27,17 +27,17 @@ export default function DecodeQuizPage() {
     // she is actually deciding.
     <main className="theme-decode min-h-screen bg-[var(--bg-page)]">
       <header className="mx-auto flex w-full max-w-[900px] items-center justify-between px-4 pt-5 md:px-6">
-        <a href="/decode" className="text-[13px] font-semibold text-[var(--t3)]" aria-label="Back to the page">
+        <a href="/decode" className="text-[length:var(--fs-3xs)] font-medium text-[var(--t3)]" aria-label="Back to the page">
           &larr; Back
         </a>
-        <span className="text-[12px] font-bold uppercase tracking-[0.14em] text-[var(--gold-ink)]">
+        <span className="text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--gold-ink)]">
           Swapnil Umbarkar
         </span>
       </header>
       {/* This used to end "— step 1 of 2". The quiz's own progress row now
           says exactly that, one line below, so the page was telling her twice
           in two different type sizes. */}
-      <p className="mx-auto mt-6 max-w-[900px] px-4 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-[var(--t3)] md:px-6">
+      <p className="mx-auto mt-6 max-w-[900px] px-4 text-center text-[length:var(--fs-3xs)] font-semibold uppercase tracking-[var(--ls-caps)] text-[var(--t3)] md:px-6">
         Scheduling your 1-1 Thyroid Consultation
       </p>
       <DecodeQuiz autostart />

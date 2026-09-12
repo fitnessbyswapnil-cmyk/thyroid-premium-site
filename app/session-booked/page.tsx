@@ -30,7 +30,7 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
           <div key={step.id} className="flex items-center">
             <div className="flex flex-col items-center">
               <div
-                className={`relative flex h-7 w-7 items-center justify-center rounded-full border text-[0.6rem] font-bold transition-all duration-500 ${
+                className={`relative flex h-7 w-7 items-center justify-center rounded-full border text-[length:var(--fs-3xs)] font-bold transition-all duration-500 ${
                   done
                     ? "border-[#96661a]/60 bg-[#96661a]/20 text-[#96661a]"
                     : active
@@ -50,7 +50,7 @@ function ProgressStepper({ activeStep }: { activeStep: number }) {
                 )}
               </div>
               <span
-                className={`mt-1.5 hidden text-[0.56rem] font-semibold uppercase tracking-[0.12em] sm:block ${
+                className={`mt-1.5 hidden text-[length:var(--fs-3xs)] font-semibold uppercase tracking-[var(--ls-caps)] sm:block ${
                   done ? "text-[#96661a]/60" : active ? "text-[#96661a]/80" : "text-[#c9c0af]"
                 }`}
               >
@@ -177,12 +177,12 @@ function CalcomStep({
       {/* Heading — Fraunces display (site --font-display), Inter subline */}
       <div className="mb-3.5 text-center">
         <h2
-          className="text-[length:clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-[1.12] tracking-[-0.01em] text-[#241f1a]"
-          style={{ fontFamily: "var(--font-display), Georgia, serif", fontWeight: 600 }}
+          className="text-[length:var(--fs-xl)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[#241f1a]"
+          style={{ fontFamily: "var(--font-display), Georgia, serif" }}
         >
           Choose a time that works for you
         </h2>
-        <p className="mx-auto mt-2.5 max-w-[42ch] text-[0.85rem] leading-relaxed text-[#6b6157]">
+        <p className="mx-auto mt-2.5 max-w-[var(--measure-caption)] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[#6b6157]">
           Swapnil personally reviews your intake before the call. Pick any open slot below.
         </p>
       </div>
@@ -197,9 +197,9 @@ function CalcomStep({
           calendar she has already paid to reach, and a conditional note would
           single out the women who answered one way in the quiz. It asks for
           nothing: no field, no checkbox, no second contact to capture. */}
-      <div className="mx-auto mb-4 max-w-[52ch] border-t pt-3" style={{ borderColor: "rgba(36,31,26,0.10)" }}>
-        <p className="text-[0.78rem] font-semibold text-[#241f1a]">Choosing your time</p>
-        <p className="mt-1 text-[0.78rem] leading-[1.5] text-[#6b6157]">
+      <div className="mx-auto mb-4 max-w-[var(--measure-prose)] border-t pt-3" style={{ borderColor: "rgba(36,31,26,0.10)" }}>
+        <p className="text-[length:var(--fs-3xs)] font-medium text-[#241f1a]">Choosing your time</p>
+        <p className="mt-1 text-[length:var(--fs-3xs)] leading-[var(--lh-tight)] text-[#6b6157]">
           If you make health decisions together with someone at home, please pick a slot
           when they are also free for 15 minutes. I would rather explain it once, to both
           of you, than have you relay it afterwards.
@@ -222,7 +222,7 @@ function CalcomStep({
           // is to make an override deliberate rather than accidental — and
           // /api/booking now confirms to both numbers when they differ.
           <p
-            className="mb-3 text-center text-[13px] leading-relaxed"
+            className="mb-3 text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)]"
             style={{ color: "var(--t3)" }}
           >
             Your confirmation and call reminders go to{" "}
@@ -562,7 +562,7 @@ export default function SessionBooked() {
                 animation: "sb-spin 0.9s linear infinite",
               }}
             />
-            <p className="text-[0.9rem]" style={{ color: "#6b6157" }}>
+            <p className="text-[length:var(--fs-3xs)]" style={{ color: "#6b6157" }}>
               Confirming your payment…
             </p>
             <style>{`@keyframes sb-spin { to { transform: rotate(360deg); } }`}</style>
@@ -577,18 +577,18 @@ export default function SessionBooked() {
             className="mx-auto max-w-[520px] rounded-2xl border p-7 text-center"
             style={{ borderColor: "rgba(245,158,11,0.30)", background: "rgba(245,158,11,0.06)" }}
           >
-            <p className="mb-3 text-[1.6rem]">🔒</p>
-            <h2 className="mb-3 text-[1.15rem] font-bold" style={{ color: "var(--t1)" }}>
+            <p className="mb-3 text-[length:var(--fs-xl)]">🔒</p>
+            <h2 className="mb-3 text-[length:var(--fs-base)] font-bold" style={{ color: "var(--t1)" }}>
               Your slot isn&apos;t confirmed yet
             </h2>
-            <p className="mb-6 text-[0.86rem] leading-relaxed" style={{ color: "#423b33" }}>
+            <p className="mb-6 text-[length:var(--fs-3xs)] leading-[var(--lh-body)]" style={{ color: "#423b33" }}>
               Consultation times are held only after the ₹299 is paid — it keeps the
               calendar honest for the women waiting. Fully refundable if you don&apos;t
               leave the call with clarity, and credited against your plan.
             </p>
             <a
               href={CONSULTATION_FORM_URL}
-              className="block rounded-2xl px-5 py-4 text-[1rem] font-extrabold no-underline"
+              className="block rounded-2xl px-5 py-4 text-[length:var(--fs-xs)] font-bold no-underline"
               style={{
                 color: "#ffffff",
                 background: "linear-gradient(135deg, #96661a, #8a5d12)",
@@ -597,7 +597,7 @@ export default function SessionBooked() {
             >
               Pay ₹299 &amp; Pick My Time →
             </a>
-            <p className="mt-4 text-[0.72rem]" style={{ color: "#857c6d" }}>
+            <p className="mt-4 text-[length:var(--fs-3xs)]" style={{ color: "#857c6d" }}>
               Already paid? Open the booking link from your WhatsApp confirmation,
               or reply there and we&apos;ll sort it out immediately.
             </p>
@@ -627,14 +627,14 @@ export default function SessionBooked() {
                     <path d="M2 7l3 3 7-7" stroke="#96661a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <p className="text-[0.9rem] font-bold" style={{ color: "var(--t1)" }}>
+                <p className="text-[length:var(--fs-3xs)] font-bold" style={{ color: "var(--t1)" }}>
                   Payment received — your consultation is confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
                 </p>
               </div>
-              <p className="text-[0.78rem]" style={{ color: "#96661a" }}>
+              <p className="text-[length:var(--fs-3xs)]" style={{ color: "#96661a" }}>
                 Last step: pick your call time below.
               </p>
-              <p className="mt-1.5 text-[0.72rem]" style={{ color: "#6b6157" }}>
+              <p className="mt-1.5 text-[length:var(--fs-3xs)]" style={{ color: "#6b6157" }}>
                 After booking, send your latest thyroid reports (TSH, T3, T4) on WhatsApp — Swapnil reviews them personally before your call.
               </p>
             </div>

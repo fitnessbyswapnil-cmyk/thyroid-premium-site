@@ -94,7 +94,7 @@ export default function DeficitDiagram() {
           >
             Where did the gap go?
           </h2>
-          <p className="mx-auto mt-3 max-w-[620px] text-[15px] leading-[1.6] text-[var(--t2)] md:text-[16px]">
+          <p className="mx-auto mt-3 max-w-[620px] text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-xs)]">
             You did make a gap between what you eat and what you burn. Twice.
             Both times it closed on its own.
           </p>
@@ -108,7 +108,7 @@ export default function DeficitDiagram() {
               borderColor: "var(--border-on-wash)",
             }}
           >
-            <svg
+            <svg style={{ fontVariantNumeric: "tabular-nums" }}
               viewBox="0 0 720 340"
               className={`block h-auto w-full dd${on ? " dd-on" : ""}`}
               role="img"
@@ -138,7 +138,7 @@ export default function DeficitDiagram() {
                   x="68"
                   y={d.y + 4}
                   textAnchor="end"
-                  fontSize="12"
+                  fontSize="13"
                   fill="var(--t3)"
                   fontFamily="var(--font-mono)"
                 >
@@ -148,7 +148,7 @@ export default function DeficitDiagram() {
               <text
                 x="80"
                 y="24"
-                fontSize="11.5"
+                fontSize="13"
                 fill="var(--t3)"
                 letterSpacing="0.08em"
               >
@@ -170,7 +170,7 @@ export default function DeficitDiagram() {
                   <text
                     x={x + 6}
                     y="40"
-                    fontSize="11.5"
+                    fontSize="13"
                     fill="var(--t3)"
                   >
                     you eat less again
@@ -224,7 +224,7 @@ export default function DeficitDiagram() {
                   x={d.x}
                   y="304"
                   textAnchor={d.x === 80 ? "start" : d.x === 680 ? "end" : "middle"}
-                  fontSize="12"
+                  fontSize="13"
                   fill="var(--t3)"
                 >
                   {d.t}
@@ -239,13 +239,13 @@ export default function DeficitDiagram() {
                 <line x1="270" x2="270" y1="69" y2="158" stroke="var(--p600)" strokeWidth="1.5" />
                 <line x1="265" x2="275" y1="69" y2="69" stroke="var(--p600)" strokeWidth="1.5" />
                 <line x1="265" x2="275" y1="158" y2="158" stroke="var(--p600)" strokeWidth="1.5" />
-                <text x="280" y="117" fontSize="12.5" fontWeight="700" fill="var(--p600)">
+                <text x="280" y="117" fontSize="13" fontWeight="700" fill="var(--p600)">
                   &minus;400
                 </text>
 
                 {/* closed again, three months later */}
                 <line x1="462" x2="462" y1="144" y2="158" stroke="var(--t3)" strokeWidth="1.5" />
-                <text x="456" y="178" textAnchor="end" fontSize="12.5" fontWeight="700" fill="var(--t2)">
+                <text x="456" y="178" textAnchor="end" fontSize="13" fontWeight="700" fill="var(--t2)">
                   &minus;60
                 </text>
                 <line x1="458" x2="462" y1="172" y2="160" stroke="var(--t3)" strokeWidth="1" />
@@ -254,13 +254,13 @@ export default function DeficitDiagram() {
                 <line x1="504" x2="504" y1="151" y2="226" stroke="var(--p600)" strokeWidth="1.5" />
                 <line x1="499" x2="509" y1="151" y2="151" stroke="var(--p600)" strokeWidth="1.5" />
                 <line x1="499" x2="509" y1="226" y2="226" stroke="var(--p600)" strokeWidth="1.5" />
-                <text x="514" y="193" fontSize="12.5" fontWeight="700" fill="var(--p600)">
+                <text x="514" y="193" fontSize="13" fontWeight="700" fill="var(--p600)">
                   &minus;330
                 </text>
 
                 {/* and closed again */}
                 <line x1="662" x2="662" y1="211" y2="226" stroke="var(--t3)" strokeWidth="1.5" />
-                <text x="656" y="246" textAnchor="end" fontSize="12.5" fontWeight="700" fill="var(--t2)">
+                <text x="656" y="246" textAnchor="end" fontSize="13" fontWeight="700" fill="var(--t2)">
                   &minus;65
                 </text>
                 <line x1="658" x2="662" y1="240" y2="228" stroke="var(--t3)" strokeWidth="1" />
@@ -280,7 +280,7 @@ export default function DeficitDiagram() {
           </div>
           {/* Phones: the in-chart series tags collide with the lines once they are
               enlarged, so the legend moves out of the SVG here. */}
-          <div className="mt-3 flex items-center justify-center gap-5 text-[13px] font-semibold sm:hidden" aria-hidden="true">
+          <div className="mt-3 flex items-center justify-center gap-5 text-[length:var(--fs-3xs)] font-medium sm:hidden" aria-hidden="true">
             <span className="flex items-center gap-2" style={{ color: "var(--p600)" }}>
               <span className="inline-block h-[3px] w-6 rounded" style={{ background: "var(--p500)" }} /> What you burn
             </span>
@@ -288,11 +288,11 @@ export default function DeficitDiagram() {
               <span className="inline-block h-[3px] w-6 rounded" style={{ background: "var(--t1)" }} /> What you eat
             </span>
           </div>
-          <p className="mt-3 text-center text-[15px] font-semibold leading-[1.45] text-[var(--t1)] sm:hidden">
+          <p className="mt-3 text-center text-[length:var(--fs-2xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)] sm:hidden">
             Same gap as before. <span style={{ color: "var(--p600)" }}>600 calories less food.</span>
           </p>
 
-          <figcaption className="mt-3 text-center text-[12.5px] leading-[1.5] text-[var(--t5)]">
+          <figcaption className="mt-3 text-center text-[length:var(--fs-3xs)] leading-[var(--lh-tight)] text-[var(--t5)]">
             This shows a known pattern that happens when you eat less for a
             long time. It is not a reading of anyone&rsquo;s report, and it is
             not a diagnosis.
@@ -310,22 +310,22 @@ export default function DeficitDiagram() {
                 boxShadow: "var(--shadow-card)",
               }}
             >
-              <div className="mb-2 text-[11.5px] font-bold uppercase tracking-[0.08em] text-[var(--t3)]">
+              <div className="mb-2 text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--t3)]">
                 {s.when}
               </div>
-              <div className="mb-1.5 text-[16px] font-semibold leading-[1.35] text-[var(--t1)] md:text-[17px]">
+              <div className="mb-1.5 text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)] md:text-[length:var(--fs-sm)]">
                 {s.head}
               </div>
-              <p className="m-0 text-[14.5px] leading-[1.6] text-[var(--t2)]">
+              <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
                 {s.body}
               </p>
             </li>
           ))}
         </ol>
 
-        <p className="mx-auto mt-8 max-w-[660px] text-center text-[17px] font-semibold leading-[1.5] text-[var(--t1)] md:text-[19px]">
+        <p className="mx-auto mt-8 max-w-[660px] text-center text-[length:var(--fs-sm)] font-medium leading-[var(--lh-tight)] text-[var(--t1)] md:text-[length:var(--fs-lg)]">
           Every one of these steps leaves a mark on a blood test.
-          <span className="block text-[var(--t2)] font-normal mt-1 text-[15px] md:text-[16px]">
+          <span className="block text-[var(--t2)] font-normal mt-1 text-[length:var(--fs-2xs)] md:text-[length:var(--fs-xs)]">
             That is what this session is for &mdash; to find which ones have
             already happened to you.
           </span>

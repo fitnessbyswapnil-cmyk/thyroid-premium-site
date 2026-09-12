@@ -253,7 +253,7 @@ function VideoCard({
                 <path d="M7.5 4.5l11 7.5-11 7.5V4.5z" fill="rgba(255,255,255,0.92)" />
               </svg>
             </div>
-            <p className="mt-3 text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-white/45">
+            <p className="mt-3 text-[length:var(--fs-3xs)] font-semibold uppercase tracking-[var(--ls-caps)] text-white/45">
               Watch Story
             </p>
           </div>
@@ -331,7 +331,7 @@ function VideoCard({
           One line. Was a three-cell stats bar plus an initial-in-a-circle
           standing in for a photograph we do not have. */}
       <div className="px-5 pb-5 pt-4">
-        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: "#57514b" }}>
+        <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-tight)]" style={{ color: "#57514b" }}>
           {story.caption}
         </p>
       </div>
@@ -386,7 +386,7 @@ export default function VideoTestimonial() {
           <Reveal
             as="p"
             delay={0.2}
-            className="mx-auto mt-3 text-[15px] font-semibold tracking-[0.02em] text-[var(--t3)]"
+            className="mx-auto mt-3 text-[length:var(--fs-2xs)] font-medium tracking-[var(--ls-caps)] text-[var(--t3)]"
           >
             Video testimonials
           </Reveal>

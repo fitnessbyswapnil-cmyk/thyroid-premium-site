@@ -120,7 +120,7 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
                 }}
               />
             </div>
-            <div className="whitespace-nowrap text-[length:var(--text-xs)] font-semibold text-[var(--t1)]">
+            <div className="whitespace-nowrap text-[length:var(--fs-2xs)] font-medium text-[var(--t1)]">
               {count} of {total} ticked
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
                   </span>
                   <span
                     className={[
-                      "text-[14.5px] leading-[1.4] transition-colors duration-200 md:text-[15.5px]",
+                      "text-[length:var(--fs-2xs)] leading-[var(--lh-tight)] transition-colors duration-200 md:text-[length:var(--fs-xs)]",
                       on ? "text-[var(--t1)]" : "text-[#4a4436]",
                     ].join(" ")}
                   >
@@ -188,11 +188,11 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
         </ul>
 
         <div className="mb-9 max-w-[600px] text-center">
-          <p className="mb-2.5 text-[19px] leading-[1.5] text-[var(--t1)]">
-            <strong className="font-semibold">Tap the ones that are true for you.</strong>{" "}
+          <p className="mb-2.5 text-[length:var(--fs-lg)] leading-[var(--lh-tight)] text-[var(--t1)]">
+            <strong className="font-medium">Tap the ones that are true for you.</strong>{" "}
             Most women on thyroid medicine tick more than they expect to.
           </p>
-          <p className="text-[length:var(--text-sm)] leading-[1.5] text-[var(--t4)]">
+          <p className="text-[length:var(--fs-xs)] leading-[var(--lh-tight)] text-[var(--t4)]">
             No tablet, and your report says &ldquo;normal&rdquo; but your body disagrees? This still applies.
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
         {encourage && (
           <div
             aria-live="polite"
-            className="tick-pop -mt-4 mb-7 max-w-[600px] text-center text-[length:var(--text-sm)] font-semibold text-[var(--gold-ink)]"
+            className="tick-pop -mt-4 mb-7 max-w-[600px] text-center text-[length:var(--fs-xs)] font-medium text-[var(--gold-ink)]"
           >
             {encourage}
           </div>

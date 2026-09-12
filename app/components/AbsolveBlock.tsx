@@ -27,10 +27,10 @@ export default function AbsolveBlock() {
             className="rounded-2xl bg-white p-5 md:p-7"
             style={{ borderLeft: "4px solid var(--border-strong)" }}
           >
-            <div className="mb-[10px] text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--t3)]">
+            <div className="mb-[10px] text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--t3)]">
               Every plan you were handed
             </div>
-            <div className="text-[19px] font-semibold leading-[1.4] text-[var(--t1)]">
+            <div className="text-[length:var(--fs-lg)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">
               Assumed a metabolism that works normally.
             </div>
           </div>
@@ -39,16 +39,16 @@ export default function AbsolveBlock() {
             className="rounded-2xl bg-white p-5 md:p-7"
             style={{ borderLeft: "4px solid var(--red-cta)" }}
           >
-            <div className="mb-[10px] text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--red-cta)]">
+            <div className="mb-[10px] text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--red-cta)]">
               With an underactive thyroid
             </div>
-            <div className="text-[19px] font-semibold leading-[1.4] text-[var(--t1)]">
+            <div className="text-[length:var(--fs-lg)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">
               That assumption is wrong from the first line.
             </div>
           </div>
         </div>
 
-        <p className="mx-auto mt-6 max-w-[640px] text-center text-[14.5px] leading-[1.55] text-[var(--t2)] md:text-[15.5px]">
+        <p className="mx-auto mt-6 max-w-[640px] text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-xs)]">
           Four failed attempts aren&rsquo;t four failures &mdash; they&rsquo;re four
           datasets telling you the same thing. The consultation starts from the
           opposite assumption. That&rsquo;s the whole difference.

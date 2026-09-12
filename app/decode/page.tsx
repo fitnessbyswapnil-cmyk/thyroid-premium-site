@@ -246,7 +246,7 @@ export default function DecodePage() {
             fold wins. Re-measure after any copy change above the button. */}
         <div className="container-default mx-auto w-full max-w-[900px] px-4 pb-10 pt-8 text-center md:px-6 md:pb-14 md:pt-16">
           <p
-            className="mb-4 inline-block rounded-full px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.1em]"
+            className="mb-4 inline-block rounded-full px-3.5 py-1.5 text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)]"
             style={{
               background: "var(--accent-wash)",
               color: "var(--accent-ink)",
@@ -258,7 +258,7 @@ export default function DecodePage() {
           </p>
 
           <h1
-            className="mx-auto max-w-[760px] text-balance text-[length:var(--text-xl)] font-bold leading-[1.12] text-[var(--t1)]"
+            className="mx-auto max-w-[760px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[var(--t1)]"
             style={{ fontFamily: "var(--font-display), Georgia, serif" }}
           >
             Eating less. And still not losing weight.
@@ -267,7 +267,7 @@ export default function DecodePage() {
             </span>
           </h1>
 
-          <p className="mx-auto mt-5 max-w-[620px] text-[16px] leading-[1.62] text-[var(--t2)] md:text-[17.5px]">
+          <p className="mx-auto mt-5 max-w-[620px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
             This is not about willpower. When you eat less for a long time, a
             slow thyroid makes your body burn less too. So the gap you made
             closes. <strong>Your blood report can show the exact reason</strong>{" "}
@@ -292,15 +292,15 @@ export default function DecodePage() {
               borderLeft: "4px solid var(--accent-yellow)",
             }}
           >
-            <p className="m-0 text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--accent-ink)]">
+            <p className="m-0 text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--accent-ink)]">
               My commitment to you
             </p>
-            <p className="mb-0 mt-2 text-[14.5px] leading-[1.6] text-[#14110f]">
+            <p className="mb-0 mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[#14110f]">
               On the call I read your report line by line and tell you exactly
               what is blocking your weight. You get it written down before we
               finish, so you can start acting on it that same day.
             </p>
-            <p className="mb-0 mt-2 text-[14.5px] font-semibold leading-[1.6] text-[#14110f]">
+            <p data-tabular className="mb-0 mt-2 text-[length:var(--fs-2xs)] font-medium leading-[var(--lh-body)] text-[#14110f]">
               Leave the call without knowing your blocker and the ₹299 is
               refunded.
             </p>
@@ -315,7 +315,7 @@ export default function DecodePage() {
               Book my 1-1 Thyroid Consultation
               <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
             </a>
-            <p className="mt-3 text-[13px] text-[var(--t3)]">
+            <p className="mt-3 text-[length:var(--fs-3xs)] text-[var(--t3)]">
               No report yet? Answer anyway &mdash; I will tell you what to do next.
             </p>
           </div>
@@ -345,7 +345,7 @@ export default function DecodePage() {
             <h2 id="compare-heading" className="section-title mx-auto text-balance">
               You did not choose four wrong diets
             </h2>
-            <p className="mx-auto mt-3 max-w-[40ch] text-[14.5px] leading-[1.6] text-[var(--t3)]">
+            <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t3)]">
               All four made the same mistake. They started at your plate.
             </p>
           </header>
@@ -360,10 +360,10 @@ export default function DecodePage() {
                 className="rounded-2xl bg-white p-4"
                 style={{ boxShadow: "var(--shadow-card)" }}
               >
-                <p className="m-0 text-[14px] leading-[1.55] text-[var(--t3)] line-through decoration-[var(--t5)] decoration-1">
+                <p className="m-0 text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)] line-through decoration-[var(--t5)] decoration-1">
                   {row.them}
                 </p>
-                <p className="mb-0 mt-2 text-[14.5px] font-semibold leading-[1.55] text-[var(--t1)]">
+                <p className="mb-0 mt-2 text-[length:var(--fs-2xs)] font-medium leading-[var(--lh-body)] text-[var(--t1)]">
                   {row.us}
                 </p>
               </div>
@@ -372,10 +372,10 @@ export default function DecodePage() {
 
           <div className="hidden md:block">
             <div className="grid grid-cols-2 gap-4">
-              <p className="m-0 pb-1 text-[12px] font-bold uppercase tracking-[0.12em] text-[var(--t4)]">
+              <p className="m-0 pb-1 text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--t4)]">
                 Every plan you have been given
               </p>
-              <p className="m-0 pb-1 text-[12px] font-bold uppercase tracking-[0.12em] text-[var(--accent-ink)]">
+              <p className="m-0 pb-1 text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--accent-ink)]">
                 What we do instead
               </p>
             </div>
@@ -383,13 +383,13 @@ export default function DecodePage() {
               {COMPARISON.map((row) => (
                 <div key={row.them} className="grid grid-cols-2 gap-4">
                   <p
-                    className="m-0 rounded-2xl px-5 py-4 text-[14.5px] leading-[1.55] text-[var(--t3)]"
+                    className="m-0 rounded-2xl px-5 py-4 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t3)]"
                     style={{ background: "var(--s1)", border: "1px solid var(--border-hairline)" }}
                   >
                     {row.them}
                   </p>
                   <p
-                    className="m-0 rounded-2xl px-5 py-4 text-[14.5px] font-semibold leading-[1.55] text-[var(--t1)]"
+                    className="m-0 rounded-2xl px-5 py-4 text-[length:var(--fs-2xs)] font-medium leading-[var(--lh-body)] text-[var(--t1)]"
                     style={{ background: "var(--accent-wash)", border: "1px solid var(--accent-yellow)" }}
                   >
                     {row.us}
@@ -399,7 +399,7 @@ export default function DecodePage() {
             </div>
           </div>
 
-          <p className="mx-auto mt-7 max-w-[62ch] text-center text-[14.5px] leading-[1.62] text-[var(--t2)]">
+          <p className="mx-auto mt-7 max-w-[var(--measure-caption)] text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
             A diet handed to a suppressed metabolism is built on a wrong
             assumption from its first line. That is why it worked for six weeks
             and then stopped &mdash; every time, for everybody.
@@ -437,14 +437,14 @@ export default function DecodePage() {
         <div className="mx-auto w-full max-w-[680px] px-4 py-9 md:px-6 md:py-12">
           <h2
             id="credentials-heading"
-            className="m-0 text-center text-[17px] font-medium leading-[1.65] tracking-[0.03em] text-[#14110f] md:text-[18px]"
+            className="m-0 text-center text-[length:var(--fs-sm)] font-medium leading-[var(--lh-body)] tracking-[var(--ls-caps)] text-[#14110f] md:text-[length:var(--fs-base)]"
           >
             ACE Certified <Sep /> INFS Certified <Sep /> AIHM &mdash; Nutrition
             for Hashimoto&rsquo;s Thyroiditis <Sep /> AHA BLS
           </h2>
 
           <details className="mt-5 text-center">
-            <summary className="inline-block cursor-pointer list-none text-[15px] font-semibold text-[#57514b] underline underline-offset-4 marker:content-none">
+            <summary className="inline-block cursor-pointer list-none text-[length:var(--fs-2xs)] font-medium text-[#57514b] underline underline-offset-4 marker:content-none">
               View certificates
             </summary>
             {/* The <ul> is wrapped rather than being the direct child of
@@ -474,7 +474,7 @@ export default function DecodePage() {
             </div>
           </details>
 
-          <p className="mt-5 text-center text-[15px] leading-[1.6] text-[#57514b]">
+          <p className="mt-5 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[#57514b]">
             Credentials support your coaching. They are not a substitute for
             medical care.
           </p>
@@ -505,15 +505,15 @@ export default function DecodePage() {
                 style={{ boxShadow: "var(--shadow-card)" }}
               >
                 <div
-                  className="mb-2.5 text-[12px] font-bold tracking-[0.1em]"
+                  className="mb-2.5 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
                   style={{ color: "var(--p600)", fontFamily: "var(--font-mono)" }}
                 >
                   {a.n}
                 </div>
-                <div className="mb-2 text-[17.5px] font-semibold leading-[1.35] text-[var(--t1)]">
+                <div className="mb-2 text-[length:var(--fs-base)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">
                   {a.h}
                 </div>
-                <p className="m-0 text-[14.5px] leading-[1.6] text-[var(--t2)]">{a.p}</p>
+                <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{a.p}</p>
               </li>
             ))}
           </ol>
@@ -529,7 +529,7 @@ export default function DecodePage() {
               the session honest; promising never to ask is a different thing,
               and it was costing the close. */}
           <p
-            className="mx-auto mt-7 max-w-[680px] rounded-2xl px-5 py-4 text-center text-[14.5px] leading-[1.6] text-[var(--t2)]"
+            className="mx-auto mt-7 max-w-[var(--measure-prose)] rounded-2xl px-5 py-4 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]"
             style={{ background: "var(--p-tint)", border: "1px solid var(--p-border)" }}
           >
             If a full programme turns out to be the right next step for you, I
@@ -554,14 +554,14 @@ export default function DecodePage() {
               className="rounded-2xl bg-white p-5 md:p-6"
               style={{ boxShadow: "var(--shadow-card)" }}
             >
-              <h3 className="mb-3 mt-0 text-[17.5px] font-semibold leading-[1.35] text-[var(--t1)]">
+              <h3 className="mb-3 mt-0 text-[length:var(--fs-base)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">
                 This is for you if
               </h3>
               <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
                 {FOR_YOU.map((line) => (
                   <li
                     key={line}
-                    className="relative pl-6 text-[14.5px] leading-[1.6] text-[var(--t2)]"
+                    className="relative pl-6 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]"
                   >
                     <span
                       aria-hidden="true"
@@ -578,14 +578,14 @@ export default function DecodePage() {
               className="rounded-2xl bg-white p-5 md:p-6"
               style={{ boxShadow: "var(--shadow-card)" }}
             >
-              <h3 className="mb-3 mt-0 text-[17.5px] font-semibold leading-[1.35] text-[var(--t1)]">
+              <h3 className="mb-3 mt-0 text-[length:var(--fs-base)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">
                 This is not for you if
               </h3>
               <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
                 {NOT_FOR_YOU.map((line) => (
                   <li
                     key={line}
-                    className="relative pl-6 text-[14.5px] leading-[1.6] text-[var(--t3)]"
+                    className="relative pl-6 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t3)]"
                   >
                     <span
                       aria-hidden="true"
@@ -618,10 +618,10 @@ export default function DecodePage() {
                 className="group rounded-2xl bg-white px-5 py-4"
                 style={{ boxShadow: "var(--shadow-card)" }}
               >
-                <summary className="cursor-pointer list-none text-[16px] font-semibold leading-[1.4] text-[var(--t1)] marker:content-none">
+                <summary className="cursor-pointer list-none text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)] marker:content-none">
                   {f.q}
                 </summary>
-                <p className="mb-0 mt-2.5 text-[14.5px] leading-[1.62] text-[var(--t2)]">
+                <p className="mb-0 mt-2.5 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
                   {f.a}
                 </p>
               </details>
@@ -645,7 +645,7 @@ export default function DecodePage() {
             <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
           </a>
           {SHOW_PROGRAMME_PRICE && (
-            <p className="mx-auto mt-4 max-w-[48ch] text-[13.5px] leading-[1.6] text-[var(--t3)]">
+            <p className="mx-auto mt-4 max-w-[var(--measure-caption)] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
               After the ₹299 consultation, if the full 3-month programme is the
               right next step, it is ₹15,000&ndash;₹30,000. Saying so now so
               nobody&rsquo;s time is wasted.

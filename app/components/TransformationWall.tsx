@@ -4,10 +4,26 @@ import Image from "next/image";
 
 import { useInView } from "../lib/useInView";
 
-// Transformation wall — the 1080×1920 composites carry the visual message
-// (Before/After labels and numbers are burned into the artwork), and each
-// card now carries its own caption anatomy (name + stat) for the DOM/SEO/
-// screen-reader layer the composites can't provide.
+// Transformation wall — DESIGN 1B, "case records, stacked rows".
+//
+// Replaced a 2x2 grid of cards. The grid asked a visitor to compare four
+// things at once and gave her no way in; a record does the opposite — it is
+// read one at a time, top to bottom, and each one is a small argument with the
+// evidence on the left and the reading of it on the right. It also suits what
+// this actually is: a clinical file, not a gallery.
+//
+// The 1080x1920 composites carry the visual message (Before/After labels and
+// numbers are burned into the artwork). The mock this was built from had
+// SEPARATE before and after slots; ours are single composites that already
+// contain both, so each record shows one image rather than a pair. The yellow
+// rule under it is the mock's "after" accent, kept as the record's own edge.
+//
+// EVERY NUMBER AND NAME ON THIS PAGE IS REAL. The design mock arrived carrying
+// invented clients — "Rajya Lakshmi, Hyderabad", TSH 8.0 → 1.0, blood sugar
+// back in range — and none of it shipped. What is below is transcribed from
+// the composites and from captions already published on this site. The house
+// rule is absolute: never invent a client name, weight, timeframe, occupation
+// or marker.
 //
 // WOMEN ONLY, VERIFIED BY OPENING EVERY IMAGE (not by filename): the brief's
 // original list included "Rozal 2.png" and "Nehamia 6.png", but both are MALE
@@ -15,35 +31,27 @@ import { useInView } from "../lib/useInView";
 // page targets Indian women with hypothyroidism, so the wall uses exactly the
 // four genuinely female composites and nothing else.
 //
-// Names + stats below are transcribed from the numbers burned into each
-// composite — NOT invented. Don't edit one without the other.
+// `story` is composed ONLY from facts already published elsewhere on this
+// site: Vaidehi's composite text ("balanced her thyroid naturally"), Surekha's
+// and Heenal's featured cards in the WhatsApp-proof section, Namrata's fatigue
+// result from her proof card.
 //
-// `story`/`quote` are composed ONLY from facts already published elsewhere
-// on this site: Vaidehi's composite text ("balanced her thyroid naturally"),
-// Surekha's and Heenal's featured cards in the WhatsApp-proof section
-// (their real quotes), Namrata's fatigue result from her proof card. No
-// per-client details are invented — quotes appear only where a real quote
-// exists in the site's own data.
-//
-// OCCUPATION TAGS WERE BUILT AND THEN PARKED (owner call, 12-Sep-2026). A pill
-// naming each client's occupation is a good idea — a visitor looks for the card
-// that resembles her life before she looks at the kilos — but only one of the
-// four occupations is actually known, and the page's problem that week was
-// length, not labelling. If it comes back, the rule it was built under still
-// stands: occupation falls under the same rule as names, weights and
-// timeframes, so an unknown one ships as no pill at all. Never a guess.
+// `metrics` is the bordered strip from the mock. Only cells we can evidence
+// exist: weight and duration come off the composites, and the third cell is
+// the symptom the client's own published card names. There is no TSH cell,
+// because we do not hold TSH numbers for these four.
 const WALL = [
   {
     src: "/transformations/Vaidehi 1.png",
     name: "Vaidehi",
-    // `tag` and `kg` are transcribed from the same composites and captions the
-    // rest of this file already uses. Nothing here is new information — the
-    // card anatomy changed, the facts did not.
     tag: "72 kg → 60 kg",
     kg: "12 kg",
-    stat: "−12 kg · 90 days",
+    metrics: [
+      { label: "Weight", value: "−12 kg" },
+      { label: "Duration", value: "90 days" },
+      { label: "Thyroid", value: "Balanced naturally" },
+    ],
     story: "Balanced her thyroid naturally. Down from 72 kg to 60 kg.",
-    quote: "",
     alt: "Vaidehi, before and after, lost 12 kg in 90 days",
   },
   {
@@ -51,9 +59,12 @@ const WALL = [
     name: "Surekha",
     tag: "Bloating & fatigue",
     kg: "12 kg",
-    stat: "−12 kg · 90 days",
+    metrics: [
+      { label: "Weight", value: "−12 kg" },
+      { label: "Duration", value: "90 days" },
+      { label: "Symptoms", value: "Bloating gone" },
+    ],
     story: "Bloating and afternoon fatigue, gone.",
-    quote: "",
     alt: "Surekha, before and after, lost 12 kg in 90 days",
   },
   {
@@ -61,9 +72,12 @@ const WALL = [
     name: "Namrata",
     tag: "Constant tiredness",
     kg: "16 kg",
-    stat: "−16 kg · 90 days",
+    metrics: [
+      { label: "Weight", value: "−16 kg" },
+      { label: "Duration", value: "90 days" },
+      { label: "Energy", value: "Tiredness gone" },
+    ],
     story: "16 kg down, and the all-day tiredness went with it.",
-    quote: "",
     alt: "Namrata, before and after, lost 16 kg in 90 days",
   },
   {
@@ -71,9 +85,12 @@ const WALL = [
     name: "Heenal",
     tag: "IT professional · Bengaluru",
     kg: "15 kg",
-    stat: "−15 kg · 90 days",
+    metrics: [
+      { label: "Weight", value: "−15 kg" },
+      { label: "Duration", value: "90 days" },
+      { label: "Blocker", value: "Found in Pillar 1" },
+    ],
     story: "IT professional, Bengaluru. Her blocker was in Pillar 1. The root, not her diet.",
-    quote: "",
     alt: "Heenal, before and after, lost 15 kg in 90 days",
   },
 ] as const;
@@ -86,43 +103,88 @@ type WallEntry = (typeof WALL)[number];
 const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
 const COUNT_WORD = NUMBER_WORDS[WALL.length] ?? String(WALL.length);
 
-function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
+/** "01", "02" … The record number is part of the file conceit, and it is also
+ *  the only thing telling a reader how far through the set she is. */
+const recordNo = (i: number) => String(i + 1).padStart(2, "0");
+
+function Record({ entry, index }: { entry: WallEntry; index: number }) {
   const { ref, visible } = useInView(0.08);
+  const first = index === 0;
   return (
-    <figure
+    <article
       ref={ref}
-      className="proof-card"
+      className="record grid grid-cols-1 gap-7 py-8 md:grid-cols-[300px_minmax(0,1fr)] md:gap-10 md:py-9"
       style={{
+        // The first record takes the heavy rule; the rest are hairlines, so
+        // the set reads as one table rather than four stacked boxes.
+        borderTop: first ? "2px solid var(--t1)" : "1px solid var(--border-hairline)",
+        borderBottom: index === WALL.length - 1 ? "1px solid var(--border-hairline)" : undefined,
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(14px)",
         transition: `opacity 0.55s var(--ease) ${index * 60}ms, transform 0.55s var(--ease) ${index * 60}ms`,
       }}
     >
-      <figcaption className="px-5 pt-6 text-center sm:px-6">
-        <span className="proof-desc">{entry.tag}</span>
-        <h3 className="mx-auto mt-3 max-w-[20ch] text-[19px] font-bold leading-[1.28] text-[var(--t1)] sm:text-[21px]">
-          Lost {entry.kg} in 90 days
-          <span className="block">
-            despite <span className="proof-cond">hypothyroidism</span>
-          </span>
-        </h3>
-        <p className="mx-auto mt-3 max-w-[30ch] text-[13.5px] leading-[1.55] text-[var(--t2)]">
-          {entry.name} &mdash; {entry.story}
-        </p>
-      </figcaption>
+      {/* Evidence. The composite carries its own Before/After labels, so none
+          are drawn over it — two sets would collide. */}
+      <figure className="m-0">
+        <div
+          className="relative aspect-[9/16] w-full overflow-hidden"
+          style={{ borderBottom: "4px solid var(--accent-yellow)" }}
+        >
+          <Image
+            src={entry.src}
+            alt={entry.alt}
+            fill
+            sizes="(max-width: 767px) 100vw, 300px"
+            className="object-cover"
+          />
+        </div>
+        <figcaption className="record-label mt-2">Before and after · 90 days</figcaption>
+      </figure>
 
-      {/* The composites already carry their own Before/After labels burned in,
-          so no label chips are drawn over them — two sets would collide. */}
-      <div className="relative mt-5 aspect-[9/16] overflow-hidden">
-        <Image
-          src={entry.src}
-          alt={entry.alt}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover"
-        />
+      {/* The reading of it. */}
+      <div>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="record-label">Record {recordNo(index)}</span>
+          <span className="record-label">{entry.tag}</span>
+        </div>
+
+        <h3 className="mb-0 mt-2.5 text-[length:var(--fs-xl)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)]">
+          {entry.name}
+        </h3>
+        <p className="mb-0 mt-1 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">
+          Lost {entry.kg} in 90 days despite hypothyroidism
+        </p>
+
+        {/* The metric strip. One border, cells divided by hairlines — the
+            numbers are tabular so they sit on the same rhythm across records
+            rather than each one shuffling to its own width. */}
+        <dl
+          className="m-0 mt-5 grid grid-cols-3"
+          style={{ border: "1px solid var(--border-hairline)" }}
+        >
+          {entry.metrics.map((m, i) => (
+            <div
+              key={m.label}
+              className="px-3 py-3.5 md:px-4"
+              style={{
+                borderRight:
+                  i < entry.metrics.length - 1 ? "1px solid var(--border-hairline)" : undefined,
+              }}
+            >
+              <dt className="record-label">{m.label}</dt>
+              <dd className="record-metric m-0 mt-1.5 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)]">
+                {m.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <p className="mb-0 mt-4 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">
+          {entry.story}
+        </p>
       </div>
-    </figure>
+    </article>
   );
 }
 
@@ -132,49 +194,42 @@ export default function TransformationWall() {
       className="cv-auto section-pad-tight relative bg-[var(--bg-elevated)]"
       aria-labelledby="transformations-heading"
     >
-      <div aria-hidden="true" className="section-glow">
-        <div className="glow-section" />
-      </div>
-
       <div className="container-default relative z-10">
-        {/* Direct claim as the title; every number is verified by the
-            composites below it. */}
-        <header className="section-header">
-          <p className="section-label">The Proof</p>
-          {/* The count is DERIVED. It read "Real women. Real reports. Real
-              results." — the most templated construction in this category, and
-              near-identical to the WhatsApp heading two sections down, so the
-              two together read as filler. Naming the number is the opposite
-              move: it is a specific, checkable claim about what is below it,
-              which means it has to change when the wall does. */}
+        {/* File header: a label, a rule, and the claim. */}
+        <div className="flex items-baseline gap-4">
+          <p className="record-label m-0 whitespace-nowrap">
+            Client records &nbsp;01&ndash;{recordNo(WALL.length - 1)}
+          </p>
+          <span aria-hidden="true" className="h-px flex-1" style={{ background: "var(--border-hairline)" }} />
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:items-end md:gap-10">
+          {/* The count is DERIVED. This heading read "Real women. Real
+              reports. Real results." — the most templated construction in the
+              category, and near-identical to the WhatsApp heading two sections
+              down. Naming the number is the opposite move: a specific,
+              checkable claim about what is directly below it, which means it
+              has to change when the wall does. */}
           <h2
             id="transformations-heading"
-            className="section-title mx-auto text-balance"
-            style={{ maxWidth: "22ch" }}
+            className="m-0 text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] tracking-[var(--ls-display)] text-[var(--t1)]"
           >
             {COUNT_WORD} women. {COUNT_WORD} reports.
           </h2>
-          <p className="mx-auto mt-3 max-w-[34ch] text-center text-[length:var(--text-sm)] leading-[1.6] text-[var(--t3)]">
-            100+ Indian women with hypothyroidism coached, one to one.
+          <p className="m-0 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)] md:pb-1.5">
+            Each of these started with the blood report and the symptom pattern.
+            The diet was built afterwards, around the blocker. 100+ Indian women
+            with hypothyroidism coached, one to one.
           </p>
-        </header>
+        </div>
 
-        {/* Grid at every breakpoint — never a rail.
-            This was a horizontal scroll-snap rail on mobile, which showed ~1.3
-            of the four cards to the ~80% of traffic that is mobile and hid the
-            rest behind a sideways swipe most people never discover. Proof only
-            works by accumulation: one before/after is an anecdote, four seen
-            together are a pattern, so all four must sit in the vertical scroll
-            path. 2-up rather than 1-up on mobile because these are 9:16
-            portraits — stacked full-width they would run ~2,700px and get
-            abandoned, while 2x2 puts the whole wall on roughly one screen. */}
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:gap-7">
+        <div className="mt-9 flex flex-col">
           {WALL.map((entry, i) => (
-            <WallCell key={entry.src} entry={entry} index={i} />
+            <Record key={entry.src} entry={entry} index={i} />
           ))}
         </div>
 
-        <p className="mt-6 text-center text-[length:var(--text-2xs)] text-[var(--t5)]">
+        <p className="mt-6 text-[length:var(--fs-3xs)] leading-[var(--lh-tight)] text-[var(--t5)]">
           Individual results vary. Not a substitute for medical advice.
         </p>
       </div>

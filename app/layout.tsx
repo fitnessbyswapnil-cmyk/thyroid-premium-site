@@ -8,26 +8,36 @@ import { RouteTracker } from "./components/tracking/RouteTracker";
 import { UserIdentityTracker } from "./components/tracking/UserIdentityTracker";
 // InputCookieCapture removed — lead data goes to Make webhook in BookingFlow.tsx
 
-// Inter + Outfit, matching the reference direct-response build the owner asked
-// this page to be restyled after. Inter carries every headline and all body
-// copy at 400/600/700/800/900; Outfit sets only the small tracked eyebrow
-// labels, where its wider forms hold up at 12px with 2px of letter-spacing.
+// Inter + Outfit. Inter carries every headline and all body copy; Outfit sets
+// the small tracked eyebrow labels, where its wider forms hold up at 13px with
+// letter-spacing on them.
 //
-// This replaces the previous Lora + Source Sans 3 pairing. The variable NAMES
-// are kept (--font-display / --font-body) so nothing downstream has to change:
-// every component reads the variable, not the family.
+// The variable NAMES are kept (--font-display / --font-body) so nothing
+// downstream has to change: every component reads the variable, not the family.
+//
+// THREE WEIGHTS, and only three. 400 for body, 500 for emphasis and UI labels,
+// 700 for headings, CTAs and numbers being emphasised — plus 600, used in
+// exactly one place, on uppercase eyebrows, where small caps need the extra
+// weight to hold. Seven were in play before, including the `bold` keyword
+// mixed in with numeric values, and 800 against 900 is not a distinction
+// anybody can see on Outfit at display sizes. Each unused weight was a font
+// file downloaded for nothing: dropping 800 and 900 removes two Inter files.
+//
+// `latin` does NOT cover U+20B9. The rupee sign is on every CTA on this site,
+// and without latin-ext it falls out of Inter to a system font — at a
+// different weight to the digits beside it, mid-price. Do not remove it.
 const inter = Inter({
-    subsets: ["latin"],
+    subsets: ["latin", "latin-ext"],
     display: "swap",
     variable: "--font-body",
-    weight: ["400", "600", "700", "800", "900"],
+    weight: ["400", "500", "700"],
 });
 
 const outfit = Outfit({
-    subsets: ["latin"],
+    subsets: ["latin", "latin-ext"],
     display: "swap",
     variable: "--font-display",
-    weight: ["600", "700"],
+    weight: ["500", "600", "700"],
 });
 
 // Handwritten annotation font (hero "Watch 45 Sec Video" note only).

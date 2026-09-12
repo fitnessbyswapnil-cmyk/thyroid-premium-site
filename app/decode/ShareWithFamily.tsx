@@ -65,7 +65,7 @@ export default function ShareWithFamily() {
           <h2 id="share-heading" className="section-title mx-auto text-balance">
             Send this to whoever you talk it over with
           </h2>
-          <p className="mx-auto mt-3 max-w-[46ch] text-[14.5px] leading-[1.6] text-[var(--t3)]">
+          <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t3)]">
             Most women here decide with a husband, a son or a daughter. Here it
             is in five lines, so you are not explaining it from memory.
           </p>
@@ -85,7 +85,7 @@ export default function ShareWithFamily() {
             {LINES.map((line) => (
               <li
                 key={line}
-                className="relative pl-6 text-[14.5px] leading-[1.6] text-[#14110f]"
+                className="relative pl-6 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[#14110f]"
               >
                 <span
                   aria-hidden="true"
@@ -101,7 +101,7 @@ export default function ShareWithFamily() {
             <button
               type="button"
               onClick={copy}
-              className="rounded-xl px-4 py-3 text-[14px] font-bold"
+              className="rounded-xl px-4 py-3 text-[length:var(--fs-3xs)] font-bold"
               style={{
                 background: "#14110f",
                 color: "#ffffff",
@@ -114,7 +114,7 @@ export default function ShareWithFamily() {
               href={`https://wa.me/?text=${encodeURIComponent(SHARE_TEXT)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl px-4 py-3 text-center text-[14px] font-bold"
+              className="rounded-xl px-4 py-3 text-center text-[length:var(--fs-3xs)] font-bold"
               style={{
                 background: "transparent",
                 color: "#14110f",
