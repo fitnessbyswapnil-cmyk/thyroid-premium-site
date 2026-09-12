@@ -40,6 +40,12 @@ import {
   needsPartnerQuestion,
   partnerOnCallValue,
 } from "@/lib/decode-commitment";
+import {
+  NURTURE_DESTINATION,
+  gateOutcome,
+  normalizeGateOutcome,
+  type GateOutcome,
+} from "@/lib/decode-gate";
 import ScheduleClient from "@/app/schedule/ScheduleClient";
 
 type Q = { id: string; q: string; options: string[] };
@@ -165,6 +171,34 @@ function toLeadAnswers(a: A) {
   };
 }
 
+/**
+ * Remembering the gate outcome is what keeps browser Back, a reload and the
+ * WhatsApp resume link from landing a gated-out woman back on the checkout she
+ * was just told is not for her today. The live answers decide on the way
+ * through; this only has to survive the page going away and coming back.
+ *
+ * Keyed by leadId so one device can hold more than one, and every access is
+ * wrapped: a browser in private mode throws on the accessor itself, and that
+ * must cost her nothing.
+ */
+const GATE_MEMORY_KEY = "decode_gate_outcome";
+
+function rememberGateOutcome(leadId: string, outcome: GateOutcome) {
+  try {
+    window.localStorage.setItem(GATE_MEMORY_KEY, JSON.stringify({ leadId, outcome }));
+  } catch { /* private mode, quota, no window */ }
+}
+
+function recallGateOutcome(leadId: string): GateOutcome | "" {
+  try {
+    const raw = window.localStorage.getItem(GATE_MEMORY_KEY);
+    if (!raw) return "";
+    const v = JSON.parse(raw) as { leadId?: string; outcome?: string };
+    if (!v || v.leadId !== leadId) return "";
+    return normalizeGateOutcome(v.outcome);
+  } catch { return ""; }
+}
+
 /** `autostart`: begin at question 1. Used by /decode/quiz, where the CTA she
  *  just tapped WAS the intro — a second "start" screen would be a second ask. */
 export default function DecodeQuiz({ autostart = false }: { autostart?: boolean } = {}) {
@@ -182,6 +216,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   // What the resume link needs to know before it offers to sell her anything
   // again: she may have already paid, and may already hold a slot.
   const [already, setAlready] = useState<{ paid: boolean; booked: boolean; sessionDate: string } | null>(null);
+  // Set only when a resume link reopens the page for a lead this device has
+  // already seen gated out. The fresh run derives the same thing from a.timing.
+  const [remembered, setRemembered] = useState<GateOutcome | "">("");
 
   // Resume link from WhatsApp: /decode/quiz?leadId=<id>&s=<score> reopens the
   // checkout prefilled with the score shown — nothing asked twice.
@@ -209,6 +246,10 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
         })
         .catch(() => {});
       setA((prev) => ({ ...prev, report: "Yes, from the last 6 months" }));
+      // Her answers are gone on a fresh load, so a.timing cannot be consulted.
+      // Without this the resume link would reopen the checkout for exactly the
+      // woman the gate just turned away.
+      setRemembered(recallGateOutcome(id));
       setI(QUESTIONS.length + 1);
     } catch { /* no window */ }
   }, []);
@@ -255,9 +296,17 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
 
   const atGate = i === QUESTIONS.length; // answered everything, number not yet given
   const done = i > QUESTIONS.length;      // gate passed, or resumed
+  // The only hard gate in the funnel. Q10's two "not now" answers never see the
+  // Rs 299 checkout; everything else, including an unanswered Q10, does.
+  // Budget and the decision-maker are deliberately NOT inputs here.
+  const gatedOut =
+    done && (remembered === "nurture_timing" || gateOutcome(a.timing) === "nurture_timing");
   useEffect(() => {
     if (done) window.dispatchEvent(new Event("decode-quiz-done"));
   }, [done]);
+  useEffect(() => {
+    if (gatedOut && !already) pushDL({ event: "decode_gate_nurture_timing" });
+  }, [gatedOut, already]);
 
   const hasReport = a.report?.startsWith("Yes");
   const ms = done ? markers(a) : [];
@@ -280,6 +329,12 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     const msNow = markers(a); const hitsNow = msNow.filter((m) => m.hit).length;
     const scoreNow = Math.round((hitsNow / 7) * 100);
     const leadNow = scoreLead(toLeadAnswers(a));
+    // Decided here, once, from the answers she actually gave, and remembered on
+    // the device before anything else can fail. A gated-out lead still posts,
+    // still fires QuizComplete and still gets her WhatsApp score message: the
+    // gate decides what SHE is shown next, not whether she is a lead.
+    const outcome = gateOutcome(a.timing);
+    rememberGateOutcome(id, outcome);
     persistUserIdentity({ first_name: firstName, phone: phone10 });
     // Bot check off: Lead fires here, exactly as it always has. Bot check on:
     // Lead waits for the server's verdict below, because a submission the
@@ -303,6 +358,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
         amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
         goal: a.goal ?? "", budget: a.budget ?? "", timing: a.timing ?? "", decisionMaker: a.decision ?? "",
         partnerOnCall: partnerOnCallValue(a.decision, a.partner),
+        gateOutcome: outcome,
         symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${scoreNow}/100 (${hitsNow}/7)`,
         leadScore: leadNow.score, leadTier: leadNow.tier,
         patternScore: scoreNow, markersHit: hitsNow, decidesAlone: a.decision === "Yes, I decide on my own",
@@ -428,6 +484,40 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 </a>
               </>
             )}
+          </div>
+        ) : gatedOut ? (
+          // The ONLY hard gate in this funnel, and the only screen that does not
+          // lead to checkout. No shame and no countdown: she has done nothing
+          // wrong, and a woman nurtured well in September is a client in
+          // November. /webinar is the live free masterclass, already running.
+          <div
+            className="mx-auto mt-8 max-w-[560px] rounded-2xl p-6 text-left"
+            style={{ background: "var(--p-subtle)", border: "1.5px solid var(--p-border)" }}
+          >
+            <p className="text-[19px] font-bold text-[var(--t1)]">
+              Start with the free masterclass.
+            </p>
+            <p className="mt-2 text-[15px] leading-[1.6] text-[var(--t2)]">
+              You said you are looking to start a little further out, so I am not going to take
+              ₹299 from you today. The paid consultation is built for the woman who is starting
+              now. I read her blood report line by line and she leaves with a plan for that week.
+            </p>
+            <p className="mt-3 text-[15px] leading-[1.6] text-[var(--t2)]">
+              Come to the free masterclass first. It is 90 minutes, live, and it covers the same
+              blockers your score just flagged. When you are ready to start, the consultation
+              will still be here.
+            </p>
+            <a
+              href={NURTURE_DESTINATION}
+              className="cta-button mt-5"
+              style={{ maxWidth: "24rem", textDecoration: "none" }}
+            >
+              Save my free seat
+              <span className="cta-sub">Free live masterclass &middot; 90 minutes</span>
+            </a>
+            <p className="mt-4 text-[13.5px] leading-[1.55] text-[var(--t3)]">
+              Your score is on its way to you on WhatsApp as well, so you keep it.
+            </p>
           </div>
         ) : hasReport ? (
           <>

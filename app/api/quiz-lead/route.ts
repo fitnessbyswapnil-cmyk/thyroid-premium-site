@@ -24,6 +24,7 @@ import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTempla
 import { checkTurnstile, turnstileConfig, isInternalLeadCall, findOrAddColumn, INTERNAL_LEAD_HEADER, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
 import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
 import { PARTNER_ON_CALL_HEADER, normalizePartnerOnCall } from "@/lib/decode-commitment";
+import { GATE_OUTCOME_HEADER, normalizeGateOutcome } from "@/lib/decode-gate";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -60,6 +61,17 @@ type QuizLeadPayload = {
    * alone and was never asked. It gates nothing, and never blocks checkout.
    */
   partnerOnCall?: string;
+  /**
+   * Which side of the /decode timing gate she landed on: "eligible" (she saw
+   * the Rs 299 checkout) or "nurture_timing" (she was sent to the free
+   * masterclass at /webinar instead). Absent for every other entry point.
+   *
+   * A gated-out lead is still a lead. She gets her row, her QuizComplete and
+   * her WhatsApp score message exactly as before. The stamp exists so the paid
+   * reminder cron can skip her, because chasing a payment nobody was offered is
+   * the fastest way to lose the trust the funnel is built on.
+   */
+  gateOutcome?: string;
   leadScore?: number;
   leadTier?: string;
   /** Pattern score 0-100 from the /decode quiz. Numeric only — sent to Meta. */
@@ -284,6 +296,16 @@ export async function POST(req: NextRequest) {
       const partnerIdx = await placeColumn(PARTNER_ON_CALL_HEADER);
       if (partnerIdx >= 0) cells.set(partnerIdx, partnerOnCall);
       else console.error("[quiz-lead] could not place the Partner On Call column; answer dropped, lead saved");
+    }
+
+    // The timing gate's verdict. Written for BOTH outcomes, so the sheet records
+    // what the funnel actually decided rather than leaving it to be re-derived
+    // from the Timing answer months later, after the option labels have moved.
+    const gate = normalizeGateOutcome(payload.gateOutcome);
+    if (gate) {
+      const gateIdx = await placeColumn(GATE_OUTCOME_HEADER);
+      if (gateIdx >= 0) cells.set(gateIdx, gate);
+      else console.error("[quiz-lead] could not place the Gate Outcome column; lead saved unstamped");
     }
 
     const width = cells.size ? Math.max(...cells.keys()) + 1 : 0;
