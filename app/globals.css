@@ -566,26 +566,144 @@ a {
      (5.1:1 on white, 4.7:1 on the wash) for the places the accent has to be
      type. */
   --accent-yellow: #ffc91e;
-  --accent-wash: #fff6d6;
+  --accent-wash: #fff9ea;
   --accent-ink: #8a6a00;
 
-  /* The rest of the accent system follows the buttons, or the page reads as
-     two brands stacked: a red CTA under a green section label is exactly the
-     ad-to-page break this palette exists to close. Red is NOT borrowed for
-     type here — .section-label's rule holds, and for good reason: the moment
-     red appears as text, every red button on the page stops meaning "press
-     me". So the accent type becomes real gold ink, which is what --gold-ink
-     was named for before the green restyle took it over. */
-  --gold-ink: var(--accent-ink);
-  --p300: var(--accent-ink);
-  --p400: var(--accent-ink);
-  --p500: var(--accent-ink);
-  --p600: var(--accent-ink);
+  /* ONE accent system, and it is deliberately small: red acts, yellow marks,
+     everything else is ink on cream. What this replaced was three systems at
+     once — green CTAs, a per-section accent inside each proof block, and a
+     third palette in the ads pointing here.
+
+     Red is NOT borrowed for type. .section-label's rule holds and is the
+     reason: the moment red appears as text, every red button on the page
+     stops meaning "press me". And yellow cannot be type at all — #ffc91e is
+     1.6:1 on white — so the accent TYPE is simply the secondary ink. A label
+     does not need a colour to be a label; uppercase and letter-spacing
+     already do that job. */
+  --gold-ink: var(--t2-decode);
+  --p300: var(--t2-decode);
+  --p400: var(--t2-decode);
+  --p500: var(--t2-decode);
+  --p600: var(--t2-decode);
   --p-subtle: var(--accent-wash);
-  --p-tint: #fffbf0;
+  --p-tint: var(--accent-wash);
   --p-border: rgba(255, 201, 30, 0.55);
   --focus-ring: #c8102e;
   --yellow-soft: var(--accent-wash);
+
+  /* Ink ramp: two values, not five. Body is #14110f, everything secondary is
+     #57514b (7.4:1 on white). The old ramp faded to #9a9890 by --t5, which is
+     where the disclaimers were set — grey-on-white at 11px, for a reader in
+     her late forties on a phone. */
+  --t2-decode: #57514b;
+  --t1: #14110f;
+  --t2: #57514b;
+  --t3: #57514b;
+  --t4: #57514b;
+  --t5: #57514b;
+}
+
+/* ── /decode: air ───────────────────────────────────────────────────────────
+   The page was vertically dense, which is most of what separates a page that
+   reads as premium from one that reads as a pitch. Restraint is also the
+   cheapest change available here: no copy moves.
+
+   Section padding is multiplied, applied by one rule rather than tuned per
+   section by eye — per-section exceptions are how a spacing system rots.
+   THE HERO IS THE ONE EXEMPTION, and deliberately: the CTA has to stay
+   reachable on a 375x667 screen, and that constraint outranks the air. */
+.theme-decode > section {
+  padding-top: clamp(3.5rem, 9vw, 6rem);
+  padding-bottom: clamp(3.5rem, 9vw, 6rem);
+}
+
+/* The exemption is named, not positional. As :first-of-type it also caught the
+   QUIZ — whose first <section> is the quiz itself — and stripped every bit of
+   air off the top of the page she lands on after tapping the CTA. */
+.theme-decode > section.decode-hero {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.theme-decode > section > div {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* A floor under the type. Nothing on this page is rendered below 15px, which
+   the old ramp broke in three places at once: 0.7rem disclaimers, 0.66rem
+   captions, 13px notes. Uppercase micro-labels are exempt by having their own
+   rules below — they are labels, not text to be read. */
+.theme-decode {
+  --text-2xs: 15px;
+  --text-xs: 15px;
+  --text-sm: 16px;
+  line-height: 1.6;
+}
+
+.theme-decode p,
+.theme-decode li {
+  line-height: 1.6;
+}
+
+.theme-decode .section-label {
+  font-size: 13px;
+}
+
+/* The floor, applied to the sizes that are actually on this page.
+   Tailwind arbitrary sizes (text-[14.5px]) are baked into the class, so a
+   token change cannot reach them — they are raised by name instead. Kept as a
+   scoped list rather than a blanket rule on <p> so that nothing already LARGER
+   gets dragged down: a blanket font-size would flatten the 17.5px hero
+   paragraph and the 21px card headlines along with the 13px notes.
+
+   Two floors, because two different things are being sized. Prose she has to
+   read goes to 15px. Uppercase letter-spaced micro-labels go to 13px — a label
+   is scanned, not read, and setting one at 15px makes it shout over the
+   heading it belongs to.
+
+   NOT TOUCHED: the chart inside "Where did the gap go?". Its labels are
+   positioned against SVG coordinates and the mechanism section is off limits. */
+.theme-decode .text-\[12\.5px\],
+.theme-decode .text-\[13px\],
+.theme-decode .text-\[13\.5px\],
+.theme-decode .text-\[14px\],
+.theme-decode .text-\[14\.5px\],
+.theme-decode .text-\[0\.7rem\] {
+  font-size: 15px;
+}
+
+.theme-decode .text-\[0\.6rem\],
+.theme-decode .text-\[11\.5px\],
+.theme-decode .text-\[12px\] {
+  font-size: 13px;
+}
+
+/* The proof-card descriptor clamps down to 10px on a narrow screen, which is
+   under the label floor. It has room at 13px: the wall is one card wide below
+   640px and two above it, and the longest descriptor fits either way. */
+.theme-decode .proof-desc {
+  font-size: 13px;
+}
+
+/* The responsive steps that the rules above would otherwise out-specify. */
+@media (min-width: 640px) {
+  .theme-decode .sm\:text-\[21px\] { font-size: 21px; }
+}
+
+@media (min-width: 768px) {
+  .theme-decode .md\:text-\[15\.5px\] { font-size: 15.5px; }
+  .theme-decode .md\:text-\[17\.5px\] { font-size: 17.5px; }
+  .theme-decode .md\:text-\[18px\] { font-size: 18px; }
+}
+
+/* Prose blocks stop at a readable measure. Full-bleed body copy reads cheap
+   at any width, and unreadable past about 80 characters. */
+.theme-decode .section-title + p,
+.theme-decode .section-header p {
+  max-width: 42ch;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* The proof wall runs on a near-black band, where the accent may be the full

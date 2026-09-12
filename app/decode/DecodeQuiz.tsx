@@ -51,28 +51,24 @@ import ScheduleClient from "@/app/schedule/ScheduleClient";
 
 type Q = { id: string; q: string; options: string[] };
 
+// ORDER IS DELIBERATE, and it is not the order these were written in.
+//
+// Question 1 used to be "What is your age?" — the weakest opener available. It
+// reads as a form, asks for nothing she has to recognise in herself, and gives
+// her nothing back for the first tap. It now opens on how long the weight has
+// been stuck: she sees her own story in one tap, and a long plateau is also
+// the strongest qualifying signal in the whole set, so it arrives first.
+//
+// The shape of the rest: easy, self-recognising questions first; the two she
+// may not want to answer — budget and who decides about money — in the second
+// half, after she has invested nine taps and has something to finish.
+//
+// NOTHING HERE IS POSITIONAL. Scoring matches on id (lib/lead-score.ts), the
+// sheet writes by key (lib/lead-sheet.ts), the timing gate reads a.timing, and
+// the partner follow-up tests q.id === "decision". So this array can be
+// reordered freely, and the wording and options must NOT be edited to suit an
+// order — every option label is a stored value and a scoring weight.
 const QUESTIONS: Q[] = [
-  { id: "age", q: "What is your age?", options: ["Under 30", "30 to 35", "36 to 40", "41 to 50", "Over 50"] },
-  {
-    id: "diagnosis",
-    q: "Has a doctor told you that you have a thyroid problem?",
-    options: [
-      "Yes, hypothyroid and on medication",
-      "Yes, hypothyroid but not on medication",
-      "Not tested, but I think so",
-      "No",
-    ],
-  },
-  {
-    id: "report",
-    q: "Do you have a blood test report?",
-    options: ["Yes, from the last 6 months", "Yes, but it is older", "No, I have not done one"],
-  },
-  {
-    id: "goal",
-    q: "How much weight do you want to lose?",
-    options: ["Under 5 kg", "5 to 10 kg", "10 to 15 kg", "15 to 20 kg", "More than 20 kg"],
-  },
   {
     id: "stuck",
     q: "How long has your weight been stuck?",
@@ -89,24 +85,30 @@ const QUESTIONS: Q[] = [
     ],
   },
   {
+    id: "diagnosis",
+    q: "Has a doctor told you that you have a thyroid problem?",
+    options: [
+      "Yes, hypothyroid and on medication",
+      "Yes, hypothyroid but not on medication",
+      "Not tested, but I think so",
+      "No",
+    ],
+  },
+  { id: "age", q: "What is your age?", options: ["Under 30", "30 to 35", "36 to 40", "41 to 50", "Over 50"] },
+  {
+    id: "goal",
+    q: "How much weight do you want to lose?",
+    options: ["Under 5 kg", "5 to 10 kg", "10 to 15 kg", "15 to 20 kg", "More than 20 kg"],
+  },
+  {
+    id: "report",
+    q: "Do you have a blood test report?",
+    options: ["Yes, from the last 6 months", "Yes, but it is older", "No, I have not done one"],
+  },
+  {
     id: "tried",
     q: "Have you ever paid a coach, dietitian or programme for this?",
     options: ["No, never", "Yes, under ₹10,000", "Yes, ₹10,000 to ₹25,000", "Yes, more than ₹25,000"],
-  },
-  {
-    id: "budget",
-    q: "This is a paid programme. How much can you invest to fix this properly?",
-    options: ["I can invest ₹50,000", "I can invest ₹30,000", "I can invest ₹15,000", "I'll decide on the call"],
-  },
-  {
-    id: "decision",
-    q: "If you decide to go ahead, are you the one who decides about the money?",
-    options: ["Yes, I decide on my own", "No, I need to discuss it with my spouse or family"],
-  },
-  {
-    id: "timing",
-    q: "If we find your blocker, when would you want to start?",
-    options: ["This week", "This month", "In a month or two", "Just exploring for now"],
   },
   {
     id: "city",
@@ -124,6 +126,21 @@ const QUESTIONS: Q[] = [
       "Teacher / educator",
       "Something else",
     ],
+  },
+  {
+    id: "budget",
+    q: "This is a paid programme. How much can you invest to fix this properly?",
+    options: ["I can invest ₹50,000", "I can invest ₹30,000", "I can invest ₹15,000", "I'll decide on the call"],
+  },
+  {
+    id: "decision",
+    q: "If you decide to go ahead, are you the one who decides about the money?",
+    options: ["Yes, I decide on my own", "No, I need to discuss it with my spouse or family"],
+  },
+  {
+    id: "timing",
+    q: "If we find your blocker, when would you want to start?",
+    options: ["This week", "This month", "In a month or two", "Just exploring for now"],
   },
 ];
 
@@ -276,17 +293,18 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     (q: Q, value: string) => {
       setA((prev) => {
         const next = { ...prev, [q.id]: value };
-        // She tapped Back and changed Q9 to "I decide on my own": the follow-up
+        // She tapped Back and changed the decision question to "I decide on my
+        // own": the follow-up
         // disappears, so its answer has to go with it. Leaving it behind would
         // record a partner for a woman the question was never put to.
         if (q.id === "decision" && !needsPartnerQuestion(value)) delete next.partner;
         return next;
       });
       pushDL({ event: "decode_quiz_answer", quiz_step: String(i + 1), quiz_question: q.id });
-      // The commitment follow-up opens UNDERNEATH Q9 rather than on a screen of
-      // its own, so the counter still reads "Question 9 of 12" and the quiz does
-      // not get longer for the woman who triggers it. Holding position here is
-      // what makes that inline reveal possible.
+      // The commitment follow-up opens UNDERNEATH the decision question rather
+      // than on a screen of its own, so the progress bar does not jump and the
+      // quiz does not get longer for the woman who triggers it. Holding
+      // position here is what makes that inline reveal possible.
       if (q.id === "decision" && needsPartnerQuestion(value)) return;
       setI((n) => n + 1);
     },
@@ -304,8 +322,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
 
   const atGate = i === QUESTIONS.length; // answered everything, number not yet given
   const done = i > QUESTIONS.length;      // gate passed, or resumed
-  // The only hard gate in the funnel. Q10's two "not now" answers never see the
-  // Rs 299 checkout; everything else, including an unanswered Q10, does.
+  // The only hard gate in the funnel. The two "not now" answers to the timing
+  // question never see the Rs 299 checkout; everything else, including an
+  // unanswered timing question, does.
   // Budget and the decision-maker are deliberately NOT inputs here.
   const gatedOut =
     done && (remembered === "nurture_timing" || gateOutcome(a.timing) === "nurture_timing");
@@ -620,9 +639,14 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   return (
     <Shell>
       <div className="mx-auto mb-6 w-full max-w-[560px]">
+        {/* No count. "Question 1 of 12" tells a woman at her first tap exactly
+            how much work is left, and twelve is a number people quit at — the
+            bar says the same thing without putting a total in front of her.
+            "Step 1 of 2" is honest about the shape of it: the questions, then
+            the slot. */}
         <div className="mb-2 flex items-baseline justify-between">
-          <span className="text-[12px] font-bold uppercase tracking-[0.1em] text-[var(--t3)]">
-            Question {i + 1} of {QUESTIONS.length}
+          <span className="text-[13px] font-bold uppercase tracking-[0.1em] text-[var(--t3)]">
+            Step 1 of 2 &middot; about 90 seconds
           </span>
           {i > 0 && (
             <button type="button" onClick={() => setI((n) => n - 1)} className="text-[13px] text-[var(--t3)] underline">

@@ -20,7 +20,12 @@ export const metadata: Metadata = {
 
 export default function DecodeQuizPage() {
   return (
-    <main className="min-h-screen bg-[var(--bg-page)]">
+    // Same palette as the page she came from. Without theme-decode the brand
+    // line, the progress bar and every selected-answer border rendered in the
+    // free funnel's electric green, one tap after a red CTA — which is the
+    // ad-to-page break the palette exists to close, reopened at the step where
+    // she is actually deciding.
+    <main className="theme-decode min-h-screen bg-[var(--bg-page)]">
       <header className="mx-auto flex w-full max-w-[900px] items-center justify-between px-4 pt-5 md:px-6">
         <a href="/decode" className="text-[13px] font-semibold text-[var(--t3)]" aria-label="Back to the page">
           &larr; Back
@@ -29,8 +34,11 @@ export default function DecodeQuizPage() {
           Swapnil Umbarkar
         </span>
       </header>
+      {/* This used to end "— step 1 of 2". The quiz's own progress row now
+          says exactly that, one line below, so the page was telling her twice
+          in two different type sizes. */}
       <p className="mx-auto mt-6 max-w-[900px] px-4 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-[var(--t3)] md:px-6">
-        Scheduling your 1-1 Thyroid Consultation &mdash; step 1 of 2
+        Scheduling your 1-1 Thyroid Consultation
       </p>
       <DecodeQuiz autostart />
     </main>

@@ -22,6 +22,17 @@ import { join } from "node:path";
 const root = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(root, p), "utf8");
 
+/** Source with comments removed. Every "this string is gone" check needs it:
+ *  the comments are where the removed string is quoted and explained, and a
+ *  test that forbids explaining a decision is a test that deletes the reason. */
+const rendered = (p: string) =>
+  read(p)
+    // JSX comments FIRST — stripping /* */ first would leave a bare {} behind
+    // and break any assertion that reads across it.
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+
 const PAGE = read("app/decode/page.tsx");
 const STICKY = read("app/decode/DecodeStickyCta.tsx");
 const WALL = read("app/components/TransformationWall.tsx");
@@ -136,6 +147,66 @@ test("neither line that cost him closes is anywhere in the funnel", () => {
     .replace(/^\s*\/\/.*$/gm, "");
   assert.ok(!/ever work with me/i.test(RENDERED));
   assert.ok(!/not be asked to decide/i.test(RENDERED));
+});
+
+test("nothing is printed on top of the evidence", () => {
+  // The WhatsApp screenshots are the one thing on this page nobody can fake.
+  // Each used to carry one or two of our own labels — "TSH Improved",
+  // "Metabolism Fixed" — set in marketing type over somebody's real message,
+  // which is exactly what makes real evidence read as staged. The video cards
+  // carried nine chipped metrics between them, and a "Real Client Story" pill
+  // on every single thumbnail, which therefore distinguished no thumbnail.
+  const wa = rendered("app/components/WhatsappProofSection.tsx");
+  const video = rendered("app/components/VideoTestimonial.tsx");
+  assert.ok(!/tags:/.test(wa), "badge data must not come back with the badges");
+  assert.ok(!/stats:/.test(video), "the chips are a caption line now");
+  for (const label of ["Real Client Story", "Featured Story", "take my word"]) {
+    assert.ok(!video.includes(label), `"${label}" is gone on purpose`);
+  }
+});
+
+test("no emoji in anything this page renders", () => {
+  // One 🎬 sat above a heading written in a practitioner's voice. Decoration is
+  // seen before copy is read, which is why a single emoji could undo the tone
+  // of everything under it.
+  // Pictographs only. The arrow in "72 kg → 60 kg" and the box-drawing in the
+  // comment banners are punctuation, not decoration.
+  const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u;
+  for (const f of [
+    "app/decode/page.tsx",
+    "app/decode/ShareWithFamily.tsx",
+    "app/components/VideoTestimonial.tsx",
+    "app/components/WhatsappProofSection.tsx",
+    "app/components/TransformationWall.tsx",
+  ]) {
+    // HTML entities hide them from a plain scan: the one this removed was
+    // written &#127916;, not as a literal character.
+    const src = rendered(f)
+      .replace(/&#(\d+);/g, (m, n) => (Number(n) > 0x2500 ? "EMOJI" : m))
+      // Not copy: three video files on disk are named with emoji, and the
+      // paths quote them. Renaming the assets is a separate job from this one.
+      .replace(/encodeURIComponent\([\s\S]*?\)/g, "");
+    assert.ok(!EMOJI.test(src) && !src.includes("EMOJI"), `${f} has an emoji in it`);
+  }
+});
+
+test("neither templated \"Real X. Real Y.\" heading is back", () => {
+  const wall = rendered("app/components/TransformationWall.tsx");
+  assert.ok(!wall.includes("Real women"));
+  assert.ok(!rendered("app/components/WhatsappProofSection.tsx").includes("Real feedback"));
+  // The transformation heading names a count, so it has to be DERIVED from the
+  // array or it becomes a lie the first time a card is added or dropped.
+  assert.match(wall, /COUNT_WORD/);
+  assert.ok(!/\b(Three|Four|Five) women\./.test(wall), "the count must not be typed by hand");
+});
+
+test("the credentials are a line, and the scans are behind a disclosure", () => {
+  assert.match(PAGE, /ACE Certified/);
+  assert.match(PAGE, /View certificates/);
+  // The <ul> must not be the direct child of <details>: a closed <details>
+  // hides its non-summary children with display:none, and an explicit display
+  // on that child (grid, here) wins — which rendered all four scans on load.
+  assert.match(rendered("app/decode/page.tsx"), /<\/summary>\s*<div>\s*<ul/);
 });
 
 test("the proof claim is never inflated", () => {

@@ -32,7 +32,11 @@ type Story = {
   role: string;
   headline: string;
   subtext: string;
-  stats: { num: string; label: string }[];
+  // `caption` is the ONE line under each card. It replaced a three-cell stats
+  // bar — "Age 55 · Client", "2 Wks · To Results", "4.2 kg · Lost" — because
+  // chipped metrics on a video thumbnail are an infomercial device, and the
+  // video is the evidence. Everything in it was already in `name` and `role`.
+  caption: string;
 };
 
 const STORIES: Story[] = [
@@ -46,11 +50,7 @@ const STORIES: Story[] = [
     headline: "Half My Thyroid Was Removed. Nothing Worked Until This.",
     subtext:
       "After years of failed methods and coaches who didn't understand her condition, Kshama finally started seeing real results.",
-    stats: [
-      { num: "Age 55", label: "Client" },
-      { num: "½ Thyroid", label: "Removed" },
-      { num: "2 Wks", label: "To Results" },
-    ],
+    caption: "Kshama Handa · 55 · partial thyroidectomy",
   },
   {
     id: "fathima",
@@ -61,11 +61,7 @@ const STORIES: Story[] = [
     headline: "I Thought My Body Was Just Broken.",
     subtext:
       "Within 2 weeks, her energy returned and confidence shifted for the first time in years.",
-    stats: [
-      { num: "2 Wks", label: "Timeline" },
-      { num: "Energy", label: "Restored" },
-      { num: "Bloat", label: "Gone" },
-    ],
+    caption: "Fathima P. · thyroid coaching client",
   },
   {
     id: "rashmi",
@@ -76,11 +72,7 @@ const STORIES: Story[] = [
     headline: "I Was Trying Everything. My Weight Wouldn't Move.",
     subtext:
       "Then her specific thyroid blockers were finally identified correctly, and everything changed in 3 weeks.",
-    stats: [
-      { num: "4.2 kg", label: "Lost" },
-      { num: "3 Wks", label: "Timeline" },
-      { num: "Energy", label: "Back" },
-    ],
+    caption: "Rashmi D. · hypothyroid client",
   },
 ];
 
@@ -192,21 +184,9 @@ function VideoCard({
       {/* Featured badge */}
       {story.featured && (
         <div
-          className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5"
-          style={{
-            background: "rgba(0,0,0,0.6)",
-            border: "1px solid rgba(163, 114, 32,0.5)",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <span
-            className="h-1.5 w-1.5 animate-pulse rounded-full"
-            style={{ background: "#5fd0c2", boxShadow: "0 0 6px rgba(95,208,194,0.85)" }}
-          />
-          <span className="text-[0.56rem] font-bold uppercase tracking-[0.2em] text-white/90">
-            Featured Story
-          </span>
-        </div>
+          className="absolute left-3 top-3 z-20 hidden"
+          aria-hidden
+        />
       )}
 
       {/* ── Video container — strict 9:16 ── */}
@@ -341,75 +321,19 @@ function VideoCard({
           </div>
         )}
 
-        {/* "Real Client Story" floating label */}
-        <div
-          className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1"
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            backdropFilter: "blur(8px)",
-          }}
-          aria-hidden
-        >
-          <span
-            className="h-1 w-1 rounded-full bg-emerald-400"
-            style={{ boxShadow: "0 0 5px rgba(52,211,153,0.9)" }}
-          />
-          <span className="text-[0.55rem] font-semibold uppercase tracking-[0.15em] text-white/55">
-            Real Client Story
-          </span>
-        </div>
+        {/* The "Real Client Story" and "Featured Story" pills that used to
+            float over every thumbnail are gone. A label that appears on every
+            card distinguishes no card, and both were asserting authenticity
+            rather than showing it — which reads as the opposite. */}
       </div>
 
-      {/* ── Stats bar ── */}
-      <div
-        className="flex"
-        style={{ borderBottom: "1px solid #efe8db" }}
-      >
-        {story.stats.map((s, i) => (
-          <div
-            key={s.label}
-            className="flex flex-1 flex-col items-center py-3.5"
-            style={{
-              borderRight:
-                i < story.stats.length - 1 ? "1px solid #efe8db" : "none",
-            }}
-          >
-            <span
-              className="text-[0.8rem] font-extrabold leading-none"
-              style={{ color: "var(--p300)" }}
-            >
-              {s.num}
-            </span>
-            <span className="mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.15em] text-[var(--t4)]">
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Text content ── */}
-      <div className="flex flex-1 flex-col p-5 pb-6">
-        <div className="mb-4 flex-1" aria-hidden="true" />
-
-        {/* Client identity */}
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[0.72rem] font-bold text-white"
-            style={{
-              background: "var(--p400)",
-              boxShadow: "0 0 12px rgba(163, 114, 32,0.25)",
-            }}
-          >
-            {story.name.charAt(0)}
-          </div>
-          <div>
-            <p className="text-[0.8rem] font-semibold leading-tight text-[var(--t1)]">
-              {story.name}
-            </p>
-            <p className="mt-0.5 text-[0.65rem] text-[var(--t3)]">{story.role}</p>
-          </div>
-        </div>
+      {/* ── Caption ──────────────────────────────────────────────────────
+          One line. Was a three-cell stats bar plus an initial-in-a-circle
+          standing in for a photograph we do not have. */}
+      <div className="px-5 pb-5 pt-4">
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: "#57514b" }}>
+          {story.caption}
+        </p>
       </div>
     </Reveal>
   );
@@ -442,9 +366,10 @@ export default function VideoTestimonial() {
 
         {/* ── Section header ── */}
         <div className="mb-12 text-center sm:mb-14">
-          <Reveal as="p" className="section-label">
-            Don&rsquo;t take my word for it
-          </Reveal>
+          {/* The eyebrow here read "Don't take my word for it" — the single
+              most-used line in this category, and one the benchmarked
+              competitor page uses almost verbatim. The heading stands without
+              it. */}
           <Reveal
             as="h2"
             id="testimonial-heading"
@@ -455,12 +380,15 @@ export default function VideoTestimonial() {
             When the method is right,{" "}
             <span className="hl">the results speak.</span>
           </Reveal>
+          {/* Was "🎬 Video testimonials" — the only emoji on the page, under a
+              heading written in a practitioner's voice. The cards below are
+              visibly videos. */}
           <Reveal
             as="p"
             delay={0.2}
-            className="mx-auto mt-3 text-[13.5px] font-semibold tracking-[0.02em] text-[var(--t3)]"
+            className="mx-auto mt-3 text-[15px] font-semibold tracking-[0.02em] text-[var(--t3)]"
           >
-            &#127916; Video testimonials
+            Video testimonials
           </Reveal>
         </div>
 

@@ -218,6 +218,17 @@ const FAQ = [
   },
 ];
 
+// The one place yellow is allowed to be a glyph: a separator carries no
+// information, so its 1.6:1 on white is a feature — it divides without
+// competing with the words on either side.
+function Sep() {
+  return (
+    <span aria-hidden="true" style={{ color: "var(--accent-yellow)" }}>
+      &middot;
+    </span>
+  );
+}
+
 export default function DecodePage() {
   return (
     // theme-decode re-skins every CTA on this page to the red of the creatives
@@ -226,10 +237,16 @@ export default function DecodePage() {
     // different ads and keeps its green button.
     <main className="theme-decode">
       {/* ── 1. Hero — "is this about me?" ────────────────────────────────── */}
-      <section className="bg-[var(--bg-page)]">
-        <div className="container-default mx-auto w-full max-w-[900px] px-4 pb-10 pt-12 text-center md:px-6 md:pb-14 md:pt-16">
+      <section className="decode-hero bg-[var(--bg-page)]">
+        {/* The hero is the ONE section exempt from the page's spacing scale,
+            and this is why: at 375x667 — the smallest screen that still
+            matters in this market — the CTA has to stay reachable without a
+            scroll, and it sits under an eyebrow, a two-line headline, a
+            paragraph and the guarantee box. Air everywhere else; here, the
+            fold wins. Re-measure after any copy change above the button. */}
+        <div className="container-default mx-auto w-full max-w-[900px] px-4 pb-10 pt-8 text-center md:px-6 md:pb-14 md:pt-16">
           <p
-            className="mb-5 inline-block rounded-full px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.1em]"
+            className="mb-4 inline-block rounded-full px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.1em]"
             style={{
               background: "var(--accent-wash)",
               color: "var(--accent-ink)",
@@ -269,7 +286,7 @@ export default function DecodePage() {
               until it works" clause cannot be honoured at 7 clients a month,
               so it is not offered. */}
           <div
-            className="mx-auto mt-7 max-w-[620px] rounded-r-2xl px-5 py-4 text-left"
+            className="mx-auto mt-6 max-w-[620px] rounded-r-2xl px-5 py-4 text-left"
             style={{
               background: "var(--accent-wash)",
               borderLeft: "4px solid var(--accent-yellow)",
@@ -289,7 +306,7 @@ export default function DecodePage() {
             </p>
           </div>
 
-          <div className="mt-7 flex flex-col items-center">
+          <div className="mt-6 flex flex-col items-center">
             <a
               href="/decode/quiz"
               className="cta-button"
@@ -403,43 +420,61 @@ export default function DecodePage() {
       <VideoTestimonial />
 
       {/* ── 7. "Who is this man?" ────────────────────────────────────────────
-          One line and a logo strip, where there used to be four full cards
-          with captions. The credentials are strong and they are worth naming,
-          but naming is all this question needs at this point in the page —
-          she is checking that he is qualified, not studying the certificates.
-          The disclaimer stays: it is the one thing here that is not optional. */}
+          A line of text, not four certificate scans.
+
+          A displayed certificate scan reads like a document download; a
+          practitioner states credentials in a sentence. These credentials are
+          genuinely strong — stronger than anything on the competitor pages
+          benchmarked in September — and printing them as four thumbnails was
+          the weakest available format for them. There is no logo strip: the
+          repo has scans of the certificates, not clean marks from the issuing
+          bodies, and a row of badly cropped logos is worse than none.
+
+          The scans are still here for anyone who wants to check, behind a
+          disclosure that is closed on load. Nothing renders until she opens
+          it, and the images are lazy so nothing is even fetched. */}
       <section className="bg-[var(--bg-page)]" aria-labelledby="credentials-heading">
-        <div className="mx-auto w-full max-w-[900px] px-4 py-9 md:px-6 md:py-12">
+        <div className="mx-auto w-full max-w-[680px] px-4 py-9 md:px-6 md:py-12">
           <h2
             id="credentials-heading"
-            className="m-0 text-center text-[15px] font-bold uppercase leading-[1.5] tracking-[0.1em] text-[var(--t2)]"
+            className="m-0 text-center text-[17px] font-medium leading-[1.65] tracking-[0.03em] text-[#14110f] md:text-[18px]"
           >
-            ACE &middot; INFS &middot; AIHM Nutrition for Hashimoto&rsquo;s
-            Thyroiditis &middot; AHA BLS
+            ACE Certified <Sep /> INFS Certified <Sep /> AIHM &mdash; Nutrition
+            for Hashimoto&rsquo;s Thyroiditis <Sep /> AHA BLS
           </h2>
 
-          {/* Four across at every width. Flex-wrap put three on one row and a
-              lonely fourth underneath at 375px, which reads as an afterthought
-              rather than a set. */}
-          <ul
-            className="mx-auto mt-5 grid max-w-[560px] list-none grid-cols-4 items-center gap-2 p-0 md:gap-6"
-            aria-label="Certifications"
-          >
-            {CERTIFICATIONS.map((cert) => (
-              <li key={cert.id} className="relative h-[46px] w-full md:h-[64px]">
-                <Image
-                  src={cert.image}
-                  alt={cert.title}
-                  fill
-                  sizes="100px"
-                  className="object-contain"
-                  loading="lazy"
-                />
-              </li>
-            ))}
-          </ul>
+          <details className="mt-5 text-center">
+            <summary className="inline-block cursor-pointer list-none text-[15px] font-semibold text-[#57514b] underline underline-offset-4 marker:content-none">
+              View certificates
+            </summary>
+            {/* The <ul> is wrapped rather than being the direct child of
+                <details>. A closed <details> hides its non-summary children by
+                giving them display:none — and an explicit display on that
+                child (grid, here) simply wins, so all four certificates were
+                rendering on first load with the disclosure shut. The wrapper
+                takes the hiding; the grid sits one level in. */}
+            <div>
+            <ul
+              className="mx-auto mt-5 grid max-w-[560px] list-none grid-cols-2 gap-4 p-0 sm:grid-cols-4"
+              aria-label="Certificates"
+            >
+              {CERTIFICATIONS.map((cert) => (
+                <li key={cert.id} className="relative aspect-[4/3] w-full">
+                  <Image
+                    src={cert.image}
+                    alt={cert.title}
+                    fill
+                    sizes="(max-width: 640px) 45vw, 140px"
+                    className="object-contain"
+                    loading="lazy"
+                  />
+                </li>
+              ))}
+            </ul>
+            </div>
+          </details>
 
-          <p className="mt-5 text-center text-[0.7rem] leading-relaxed text-[var(--t5)]">
+          <p className="mt-5 text-center text-[15px] leading-[1.6] text-[#57514b]">
             Credentials support your coaching. They are not a substitute for
             medical care.
           </p>

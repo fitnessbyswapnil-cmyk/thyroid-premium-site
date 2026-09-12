@@ -108,7 +108,7 @@ export default function ShareWithFamily() {
                 border: "1px solid #14110f",
               }}
             >
-              {copied ? "Copied ✓" : "Copy these lines"}
+              {copied ? "Copied" : "Copy these lines"}
             </button>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(SHARE_TEXT)}`}

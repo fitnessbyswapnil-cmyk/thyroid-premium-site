@@ -9,7 +9,6 @@ import SectionCta from './SectionCta'
 type ProofCard = {
   id: string
   image: string
-  tags: string[]
   headline: string
   client: string
 }
@@ -55,49 +54,42 @@ const ALL_CARDS: ProofCard[] = [
   {
     id: 'c1',
     image: '/whatsapp-proof/Shariya-Sultana.jpeg',
-    tags: ['TSH Improved', 'Energy Back'],
     headline: 'TSH is finally in range.',
     client: 'Shariya Sultana · Thyroid client',
   },
   {
     id: 'c3',
     image: '/whatsapp-proof/Pooja-Sharma.jpeg',
-    tags: ['Hair Fall Stopped', 'Thyroid Healing'],
     headline: 'Hair loss finally stopped.',
     client: 'Pooja Sharma · Hypothyroid client',
   },
   {
     id: 'c4',
     image: '/whatsapp-proof/Priya-Shree.jpeg',
-    tags: ['Metabolism Fixed', 'Feeling Lighter'],
     headline: 'Metabolism feels alive again.',
     client: 'Priya Shree · Thyroid client',
   },
   {
     id: 'c5',
     image: '/whatsapp-proof/Ritika-Deshmukh.jpeg',
-    tags: ['Fatigue Gone', 'Strength Restored'],
     headline: 'No more morning exhaustion.',
     client: 'Ritika Deshmukh · Thyroid client',
   },
   {
     id: 'c15',
     image: '/whatsapp-proof/Sima R1.png',
-    tags: ['4 kg Lost'],
     headline: 'Weight started moving. Finally.',
     client: 'Sima · Thyroid client',
   },
   {
     id: 'c2',
     image: '/whatsapp-proof/Sruthi-Reddy.jpeg',
-    tags: ['Weight Moving', 'Bloating Down'],
     headline: 'Weight started moving again.',
     client: 'Sruthi Reddy · Thyroid client',
   },
   {
     id: 'c10',
     image: '/whatsapp-proof/Namarata R9.png',
-    tags: ['No More Fatigue'],
     headline: 'Finally not tired all day.',
     client: 'Namrata · Hypothyroid client',
   },
@@ -115,56 +107,48 @@ const REMOVED_FOR_LENGTH: ProofCard[] = [
     // avatar strip + transformation wall) — cap any one client at 2 placements.
     id: 'c7',
     image: '/whatsapp-proof/Heenal R4.png',
-    tags: ['TSH In Range'],
     headline: 'TSH dropped. Energy came back.',
     client: 'Heenal · Hypothyroid client',
   },
   {
     id: 'c6',
     image: '/whatsapp-proof/Rozal R2.png',
-    tags: ['TSH Improved'],
     headline: 'My thyroid finally responded.',
     client: 'Rozal · Hypothyroid client',
   },
   {
     id: 'c8',
     image: '/whatsapp-proof/Jay R6.png',
-    tags: ['Energy Restored'],
     headline: 'Energy came back naturally.',
     client: 'Jay · Thyroid client',
   },
   {
     id: 'c9',
     image: '/whatsapp-proof/Nahamia R5.png',
-    tags: ['Bloating Down'],
     headline: 'Bloating reduced significantly.',
     client: 'Nahamia · Thyroid client',
   },
   {
     id: 'c12',
     image: '/whatsapp-proof/Nitin R10.png',
-    tags: ['Mind Fog Gone'],
     headline: 'Focus and clarity returned.',
     client: 'Nitin · Fat loss client',
   },
   {
     id: 'c13',
     image: '/whatsapp-proof/Rakesh R3.png',
-    tags: ['Clothes Fitting'],
     headline: 'Old clothes fitting again.',
     client: 'Rakesh · Fat loss client',
   },
   {
     id: 'c11',
     image: '/whatsapp-proof/Nishant R7.png',
-    tags: ['Consistent Results'],
     headline: 'Results without starving.',
     client: 'Nishant · Fat loss client',
   },
   {
     id: 'c14',
     image: '/whatsapp-proof/Guitar R8.png',
-    tags: ['Body Fat Down'],
     headline: 'Feeling like myself again.',
     client: 'Guitar · Fat loss client',
   },
@@ -276,7 +260,6 @@ function ProofCard({
   // accessibility tree so screen readers announce each client exactly once.
   ariaHidden?: boolean
 }) {
-  const initial = card.client.charAt(0)
 
   return (
     <article
@@ -304,46 +287,18 @@ function ProofCard({
         el.style.transform = 'translateY(0) scale(1)'
       }}
     >
-      {/* ── Header: Tags + Headline ─────────────────────────────────────────── */}
-      <div className="px-5 pt-5 pb-4">
-        {/* Tags */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          {card.tags.map((tag) => (
-            <div
-              key={tag}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px]"
-              style={{
-                background: 'var(--p-subtle)',
-                border: '1px solid var(--p-border)',
-              }}
-            >
-              <span
-                className="h-[5px] w-[5px] shrink-0 rounded-full"
-                style={{
-                  background: ACCENT,
-                  boxShadow: `0 0 8px ${ACCENT}`,
-                }}
-                aria-hidden="true"
-              />
-              {/* Same label language as the transformation wall's occupation
-                  pill (.proof-tag): uppercase, 1.5px of tracking, semibold.
-                  All proof labels on the site now read as one family rather
-                  than as two components that happened to both use caps. */}
-              <span
-                className="text-[11px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: ACCENT_LIGHT }}
-              >
-                {tag}
-              </span>
-            </div>
-          ))}
-        </div>
-
-      </div>
+      {/* NO BADGES. Each card used to carry one or two of our own labels —
+          "TSH Improved", "Metabolism Fixed" — printed on top of somebody's
+          actual message. The screenshot is evidence; the badge was our reading
+          of it, set in marketing type, which is precisely what makes real
+          evidence look staged. The heading over this section says "unedited
+          screenshots" and the badges argued with it. The header block they
+          lived in is gone rather than emptied — an empty container leaves the
+          spacing behind. */}
 
       {/* ── Screenshot ── */}
       <div
-        className="relative overflow-hidden mx-3"
+        className="relative overflow-hidden mx-3 mt-5"
         style={{
           aspectRatio: '9 / 15',
           borderRadius: '18px',
@@ -364,30 +319,16 @@ function ProofCard({
         />
       </div>
 
-      {/* ── Trust footer ────────────────────────────────────────────────────── */}
-      <div className="px-5 py-4 mt-auto">
-        <div
-          className="flex items-center gap-2.5 pt-3"
-          style={{ borderTop: '1px solid #efe8db' }}
-        >
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-black"
-            style={{
-              background: 'var(--p400)',
-              boxShadow: '0 0 0 2px rgba(163, 114, 32,0.18), 0 2px 8px rgba(163, 114, 32,0.25)',
-              color: '#fff',
-            }}
-            aria-hidden="true"
-          >
-            {initial}
-          </div>
-          <p
-            className="text-[0.66rem] font-semibold tracking-[0.08em]"
-            style={{ color: 'var(--t3)' }}
-          >
-            {card.client}
-          </p>
-        </div>
+      {/* ── Caption ─────────────────────────────────────────────────────────
+          One plain line. The coloured circle with her first initial that used
+          to sit beside it was a placeholder pretending to be a portrait — the
+          single most recognisable template component there is, and on a page
+          whose whole claim is that this is real, a fake avatar is an odd thing
+          to put next to a real name. */}
+      <div className="px-5 pb-5 pt-4 mt-auto">
+        <p className="m-0 text-[14px] leading-[1.5] pt-3" style={{ borderTop: '1px solid #efe8db', color: '#57514b' }}>
+          {card.client}
+        </p>
       </div>
     </article>
   )
@@ -460,8 +401,7 @@ export default function WhatsappProofSection({
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "20ch" }}
           >
-            Real feedback.{" "}
-            <span className="hl">Real results.</span>
+            What they sent afterwards.
           </Reveal>
         </div>
 

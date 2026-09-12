@@ -80,6 +80,12 @@ const WALL = [
 
 type WallEntry = (typeof WALL)[number];
 
+// Spelled out because the heading is a sentence, not a stat. Falls back to the
+// digits past nine, which the wall will never reach — but a wrong word in a
+// heading is worse than a digit.
+const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+const COUNT_WORD = NUMBER_WORDS[WALL.length] ?? String(WALL.length);
+
 function WallCell({ entry, index }: { entry: WallEntry; index: number }) {
   const { ref, visible } = useInView(0.08);
   return (
@@ -135,13 +141,18 @@ export default function TransformationWall() {
             composites below it. */}
         <header className="section-header">
           <p className="section-label">The Proof</p>
+          {/* The count is DERIVED. It read "Real women. Real reports. Real
+              results." — the most templated construction in this category, and
+              near-identical to the WhatsApp heading two sections down, so the
+              two together read as filler. Naming the number is the opposite
+              move: it is a specific, checkable claim about what is below it,
+              which means it has to change when the wall does. */}
           <h2
             id="transformations-heading"
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "22ch" }}
           >
-            Real women. Real reports.{" "}
-            <span className="hl">Real results.</span>
+            {COUNT_WORD} women. {COUNT_WORD} reports.
           </h2>
           <p className="mx-auto mt-3 max-w-[34ch] text-center text-[length:var(--text-sm)] leading-[1.6] text-[var(--t3)]">
             100+ Indian women with hypothyroidism coached, one to one.
