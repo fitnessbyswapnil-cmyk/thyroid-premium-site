@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
     const cSessionDate = findCol(header, "Session Date");
     const cName = findCol(header, "Name");
     const cGate = findCol(header, GATE_OUTCOME_HEADER);
+    const cScore = findCol(header, "Lead Score");
 
     // Rows are appended chronologically, so the LAST match is her newest state.
     // Duplicates should no longer be created, but rows written before that fix
@@ -73,6 +74,11 @@ export async function GET(req: NextRequest) {
       // (new phone, cleared storage, husband's handset), but the sheet does, and
       // the resume link must not reopen a checkout she was never offered.
       gate: isNurtureGated(cell(cGate)) ? "nurture_timing" : "",
+      // Her intent score. The booking page sends it to Cal.com as `qscore`,
+      // which is the only thing that can turn a Schedule into a
+      // QualifiedSchedule — and it otherwise rides only in this browser's
+      // storage, so a new phone or cleared storage silently kills the signal.
+      score: Number.parseInt(cell(cScore), 10) || null,
       firstName: cell(cName).split(/\s+/)[0] ?? "",
     });
   } catch (err) {

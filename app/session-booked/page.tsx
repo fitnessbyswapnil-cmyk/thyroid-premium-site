@@ -340,6 +340,22 @@ export default function SessionBooked() {
 
   // ── Entitlement check ────────────────────────────────────────────────────────
   // Runs once on mount against every identifier we hold: the order id from the
+  // qscore is what separates a QualifiedSchedule from a plain Schedule. It
+  // reaches this page through localStorage from the quiz, which a different
+  // phone or cleared storage loses — and then the signal just stops, silently.
+  // The sheet still holds her score, so ask for it rather than book without it.
+  useEffect(() => {
+    if (qscore || !leadId) return;
+    let cancelled = false;
+    fetch(`/api/lead-status?leadId=${encodeURIComponent(leadId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { score?: number | null } | null) => {
+        if (!cancelled && typeof d?.score === "number" && d.score > 0) setQscore(String(d.score));
+      })
+      .catch(() => { /* booking must never wait on this */ });
+    return () => { cancelled = true; };
+  }, [leadId, qscore]);
+
   // URL or the localStorage bridge, and the lead id. The server decides; this
   // only renders the answer.
   useEffect(() => {
