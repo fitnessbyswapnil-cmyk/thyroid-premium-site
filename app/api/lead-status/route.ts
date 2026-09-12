@@ -14,6 +14,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient } from "../admin/_lib";
+import { GATE_OUTCOME_HEADER, isNurtureGated } from "@/lib/decode-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export async function GET(req: NextRequest) {
     const cBookingStatus = findCol(header, "Booking Status");
     const cSessionDate = findCol(header, "Session Date");
     const cName = findCol(header, "Name");
+    const cGate = findCol(header, GATE_OUTCOME_HEADER);
 
     // Rows are appended chronologically, so the LAST match is her newest state.
     // Duplicates should no longer be created, but rows written before that fix
@@ -67,6 +69,10 @@ export async function GET(req: NextRequest) {
       paid,
       booked,
       sessionDate: booked ? sessionDate : "",
+      // The durable record of the timing gate. Her device may not remember it
+      // (new phone, cleared storage, husband's handset), but the sheet does, and
+      // the resume link must not reopen a checkout she was never offered.
+      gate: isNurtureGated(cell(cGate)) ? "nurture_timing" : "",
       firstName: cell(cName).split(/\s+/)[0] ?? "",
     });
   } catch (err) {

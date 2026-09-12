@@ -239,9 +239,16 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       // normal checkout rather than telling her something wrong.
       fetch(`/api/lead-status?leadId=${encodeURIComponent(id)}`)
         .then((r) => (r.ok ? r.json() : null))
-        .then((d: { paid?: boolean; booked?: boolean; sessionDate?: string } | null) => {
+        .then((d: { paid?: boolean; booked?: boolean; sessionDate?: string; gate?: string } | null) => {
           if (d && (d.paid || d.booked)) {
             setAlready({ paid: !!d.paid, booked: !!d.booked, sessionDate: d.sessionDate ?? "" });
+          }
+          // The sheet outranks this device: a resume link opened on another
+          // phone must land her on the masterclass, not the checkout the gate
+          // already withheld. Nothing here can re-open it, only close it.
+          if (d && isNurtureGated(d.gate)) {
+            setRemembered("nurture_timing");
+            rememberGateOutcome(id, "nurture_timing");
           }
         })
         .catch(() => {});
