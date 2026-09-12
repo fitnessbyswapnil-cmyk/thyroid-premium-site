@@ -44,18 +44,15 @@ test("every /decode CTA shows the price", () => {
   for (const sub of subs) assert.equal(sub, CTA_SUB);
 });
 
-test("no transformation card carries an unconfirmed occupation", () => {
-  // Confirmed = the occupation was already published in that client's own
-  // caption on this site. Adding a name here means the owner confirmed it.
-  const CONFIRMED = new Set(["", "IT professional"]);
-  const found = [...WALL.matchAll(/occupation:\s*"([^"]*)"/g)].map((m) => m[1]);
-  assert.ok(found.length >= 4, "every card must declare an occupation field");
-  for (const occupation of found) {
-    assert.ok(
-      CONFIRMED.has(occupation),
-      `"${occupation}" is not a confirmed occupation — add it to CONFIRMED only after the owner confirms it`,
-    );
-  }
+test("occupation tags stay parked until the owner confirms them", () => {
+  // Built 12-Sep, parked the same day: only one of the four occupations is
+  // actually known, and the page's problem was length, not labelling. If this
+  // comes back, the rule it was built under still stands — occupation is a
+  // client fact like a name or a weight, so an unknown one is no pill at all.
+  assert.ok(
+    !/occupation:/.test(WALL),
+    "re-adding occupation data means re-adding the confirmed-only rule with it",
+  );
 });
 
 test("the ₹15,000-₹30,000 line stays off until the quiz gates are measured", () => {
@@ -83,9 +80,62 @@ test("the guarantee and the method are both on the page", () => {
   assert.ok(PAGE.includes("the ₹299 is"), "the refund term must be stated");
   assert.equal(
     (PAGE.match(/T\.H\.Y\.R\.O\.I\.D\. Lean Method/g) ?? []).length,
-    3,
-    "three mentions: hero eyebrow, method section, credentials label",
+    2,
+    "two mentions only: the hero eyebrow and the 60-minutes heading. A name is positioning; a full pillar breakdown is the programme's sales material, not this page's",
   );
+});
+
+test("the page answers her questions in the order she asks them", () => {
+  // The one that has already been wrong once: the agenda sat ABOVE the proof,
+  // which tells her what happens in the 60 minutes before she believes the 60
+  // minutes work. Process detail only lands on someone already convinced.
+  const ORDER = [
+    ["hero", "for women 30+ with a slow"],
+    ["symptom checklist", "<SymptomChips hideCta />"],
+    ["the gap chart", "<DeficitDiagram />"],
+    ["you didn't fail", "<AbsolveBlock />"],
+    ["the comparison", 'id="compare-heading"'],
+    ["proof", "<TransformationWall />"],
+    ["credentials", 'id="credentials-heading"'],
+    ["the 60 minutes", 'id="agenda-heading"'],
+    ["who this is for", 'id="fit-heading"'],
+    ["FAQ", 'id="faq-heading"'],
+    ["share with family", "<ShareWithFamily />"],
+  ] as const;
+
+  let previous = -1;
+  for (const [name, marker] of ORDER) {
+    const at = PAGE.indexOf(marker);
+    assert.ok(at > -1, `${name} is missing from the page`);
+    assert.ok(at > previous, `${name} must come after the section before it`);
+    previous = at;
+  }
+});
+
+test("proof is capped, and the argument is not", () => {
+  assert.match(PAGE, /<WhatsappProofSection hideCta limit=\{3\} \/>/);
+  // The four transformation composites and the video testimonials are the
+  // proof that carries faces and voices. Owner's explicit call: never cut.
+  assert.ok(PAGE.includes("<TransformationWall />"));
+  assert.ok(PAGE.includes("<VideoTestimonial />"));
+  assert.equal((WALL.match(/src: "\/transformations\//g) ?? []).length, 4);
+});
+
+test("neither line that cost him closes is anywhere in the funnel", () => {
+  // "…whether or not you ever work with me" told her the plan was hers to take
+  // and leave. "You will not be asked to decide anything on the call"
+  // pre-authorised "let me think about it" in his own words. Both read as
+  // generous; both argued against the sale while he was making it. They lived
+  // on the free funnel too — the close rate is a property of the CALL, not of
+  // one page — so both pages are checked here.
+  const RENDERED = [PAGE, read("app/components/CallAgenda.tsx"), read("app/components/FAQSection.tsx")]
+    .join("\n")
+    // strip comments: they explain why the lines are gone, and must be allowed
+    // to quote them
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  assert.ok(!/ever work with me/i.test(RENDERED));
+  assert.ok(!/not be asked to decide/i.test(RENDERED));
 });
 
 test("the proof claim is never inflated", () => {

@@ -8,7 +8,7 @@ import SectionHeader from './SectionHeader'
 const faqs = [
   {
     q: 'Is this a sales call?',
-    a: "No. It is a diagnosis. The first 45 minutes are yours to keep whether or not you ever work with me — I read your reports beforehand and tell you which blocker is actually holding your fat loss. If my programme is not right for you, I will say so on the call.",
+    a: "No. It is a diagnosis. The first 45 minutes are yours to keep — I read your reports beforehand and tell you which blocker is actually holding your fat loss. If my programme is not right for you, I will say so on the call. If it is, I will show you what it involves and ask what you would like to do.",
   },
   {
     q: 'Why is the call free?',

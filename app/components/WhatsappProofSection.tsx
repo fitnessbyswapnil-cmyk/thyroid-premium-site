@@ -401,7 +401,17 @@ function ProofCard({
  * so it renders the screenshots without the button. Default false — the home
  * page is unchanged.
  */
-export default function WhatsappProofSection({ hideCta = false }: { hideCta?: boolean } = {}) {
+export default function WhatsappProofSection({
+  hideCta = false,
+  limit,
+}: { hideCta?: boolean; limit?: number } = {}) {
+  // `limit`: /decode shows three screenshots, not eight. Proof works by
+  // accumulation up to a point and then stops — a woman deciding on a Rs 299
+  // call is convinced by six proof units or she is gone, and the page was
+  // carrying twenty-two. Cutting the count is what shortens the page; cutting
+  // the ARGUMENT would cost a sale. Default undefined = all of them, so the
+  // home page is unchanged.
+  const cards = typeof limit === "number" ? ALL_CARDS.slice(0, limit) : ALL_CARDS
   return (
     // White is mandatory here: WhatsApp green against a yellow wash plus a red
     // CTA makes a red-yellow-green traffic light, on the calmest section of the
@@ -475,7 +485,7 @@ export default function WhatsappProofSection({ hideCta = false }: { hideCta?: bo
             className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
             style={{ padding: '14px 1.25rem 22px' }}
           >
-            {ALL_CARDS.map((card) => (
+            {cards.map((card) => (
               // Straight, not tilted (owner call): these cards contain real
               // screenshots of readable chat text, and rotation makes that
               // text visibly crooked. The tilt suited empty placeholders in
@@ -486,12 +496,14 @@ export default function WhatsappProofSection({ hideCta = false }: { hideCta?: bo
             ))}
           </div>
         </div>
-        <p
-          className="mt-3 text-center text-[0.59rem] font-semibold uppercase tracking-[0.18em]"
-          style={{ color: 'var(--t5)' }}
-        >
-          Swipe to see more ›
-        </p>
+        {cards.length === ALL_CARDS.length && (
+          <p
+            className="mt-3 text-center text-[0.59rem] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: 'var(--t5)' }}
+          >
+            Swipe to see more ›
+          </p>
+        )}
 
         {/* THE single stack CTA — the one conversion point after the whole
             proof stack (moved here from the removed More Than Fat Loss

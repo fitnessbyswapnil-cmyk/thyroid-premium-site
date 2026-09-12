@@ -7,13 +7,7 @@ import { CERTIFICATIONS } from "../lib/authority";
 // Certifications, extracted from AuthoritySection so they can sit directly
 // after the hero (mockup order). Markup/classes moved verbatim — the
 // authority-cert-* styles in globals.css carry the grid + hover behaviour.
-export default function CertificationsSection({
-  // /decode passes its own label so the T.H.Y.R.O.I.D. Lean Method is named
-  // where the proof of competence sits. `/` keeps "Credentials": it already
-  // carries PillarsSection, and a fourth mention on one page is the
-  // over-repetition the 12-Sep brief explicitly warned against.
-  label = "Credentials",
-}: { label?: string } = {}) {
+export default function CertificationsSection() {
   return (
     <section
       className="section-pad relative bg-[var(--bg-page)]"
@@ -25,7 +19,7 @@ export default function CertificationsSection({
 
       <div className="container-default relative z-10">
         <header className="section-header">
-          <p className="section-label">{label}</p>
+          <p className="section-label">Credentials</p>
           <h2 id="certifications-heading" className="section-title mx-auto" style={{ maxWidth: "22ch" }}>
             Certified to coach this, specifically.
           </h2>

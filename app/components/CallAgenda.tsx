@@ -75,7 +75,7 @@ export default function CallAgenda() {
 
         <p className="mx-auto mt-8 max-w-[62ch] text-center text-[13.5px] leading-[1.55] text-[var(--t3)] md:text-[15px]">
           Is this a sales call? No — it is a diagnosis. You leave knowing your
-          blocker whether or not you ever work with me.
+          blocker, written down, whatever you decide to do next.
         </p>
 
         {/* Every recorded call that failed this month failed on someone who was

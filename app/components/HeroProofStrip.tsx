@@ -62,7 +62,18 @@ function Avatar({ a }: { a: ProofAvatar }) {
   );
 }
 
-export default function HeroProofStrip() {
+/**
+ * `claimsOnly`: /decode renders the 100+ laurel block WITHOUT the four client
+ * quotes. Those quotes are four of the twenty-two separate proof units that
+ * page was carrying, and they are the weakest four — a name, an initial and a
+ * number, above four full transformation composites saying the same thing with
+ * faces. The laurel stays: it is the "100+ Indian women coached" claim, which
+ * is the one proof statement the hero cannot do without. Default false, so the
+ * home page is unchanged.
+ */
+export default function HeroProofStrip({
+  claimsOnly = false,
+}: { claimsOnly?: boolean } = {}) {
   return (
     // All five items visible on a 390px screen with NO horizontal scrolling —
     // the old row overflowed, cutting quotes mid-word ("Lost 4.5 …") unless
@@ -86,6 +97,7 @@ export default function HeroProofStrip() {
         </div>
 
         {/* Quotes — 2x2 grid on mobile, inline row from sm up */}
+        {!claimsOnly && (
         <div className="grid w-full grid-cols-2 gap-x-3 gap-y-3 sm:flex sm:w-auto sm:items-center sm:gap-6">
           {PROOF.map((a) => (
             <Fragment key={a.initials}>
@@ -100,6 +112,7 @@ export default function HeroProofStrip() {
             </Fragment>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

@@ -51,7 +51,13 @@ function encouragementFor(n: number): string {
   return out;
 }
 
-export default function SymptomChips() {
+/**
+ * `hideCta`: the closing SectionCta routes to the FREE booking flow. /decode
+ * needs the recognition this section produces — it is the second question she
+ * asks, right after "is this about me?" — but must not hand paid-intent
+ * traffic to the free flow. Default false: the home page is unchanged.
+ */
+export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } = {}) {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const count = picked.size;
   const total = SYMPTOMS.length;
@@ -200,15 +206,17 @@ export default function SymptomChips() {
           </div>
         )}
 
-        <SectionCta
-          variant="primary"
-          className="mx-auto max-w-sm"
-          buttonClassName={count >= 5 ? "cta-pulse" : ""}
-          label="Schedule My 1-1 Thyroid Consultation"
-          sublabel="₹299 · 60 minutes · one to one"
-          ariaLabel="Schedule my 1-1 thyroid fat loss session"
-          location="symptoms"
-        />
+        {!hideCta && (
+          <SectionCta
+            variant="primary"
+            className="mx-auto max-w-sm"
+            buttonClassName={count >= 5 ? "cta-pulse" : ""}
+            label="Schedule My 1-1 Thyroid Consultation"
+            sublabel="₹299 · 60 minutes · one to one"
+            ariaLabel="Schedule my 1-1 thyroid fat loss session"
+            location="symptoms"
+          />
+        )}
       </div>
     </section>
   );
