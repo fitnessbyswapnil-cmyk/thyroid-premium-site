@@ -23,6 +23,7 @@ import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation, sendBookingConfirmedFree } from "@/lib/whatsapp";
 import { checkTurnstile, turnstileConfig, isInternalLeadCall, findOrAddColumn, INTERNAL_LEAD_HEADER, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
 import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
+import { PARTNER_ON_CALL_HEADER, normalizePartnerOnCall } from "@/lib/decode-commitment";
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -53,6 +54,12 @@ type QuizLeadPayload = {
   timing?: string;
   budget?: string; // what she said she can invest — sales signal, never scored
   decisionMaker?: string; // whether she signs off alone — sales signal, never scored
+  /**
+   * The commitment follow-up the /decode quiz shows only when decisionMaker is
+   * not "I decide on my own": yes / unsure / no, or absent when she decides
+   * alone and was never asked. It gates nothing, and never blocks checkout.
+   */
+  partnerOnCall?: string;
   leadScore?: number;
   leadTier?: string;
   /** Pattern score 0-100 from the /decode quiz. Numeric only — sent to Meta. */
@@ -230,31 +237,53 @@ export async function POST(req: NextRequest) {
     if (typeof payload.patternScore === "number") set("Thyroid Score", String(payload.patternScore));
     if (typeof payload.markersHit === "number") set("Blockers", String(payload.markersHit));
 
-    // Bot check marker. Written ONLY for an unverified submission, so an
-    // accepted row is exactly what it was before Turnstile existed. Found by
-    // header name; added once, after the true last column, if the sheet has
-    // none. Losing the marker is tolerated — losing the lead is not.
-    if (unverified) {
-      const botIdx = await findOrAddColumn({
+    // Find a column by HEADER NAME, appending it past the true last column when
+    // the live sheet has never had it. Every late-added column goes through
+    // this, so none of them is ever a hardcoded index and a column somebody
+    // inserted by hand cannot shift a value into its neighbour.
+    const placeColumn = async (title: string): Promise<number> => {
+      const at = await findOrAddColumn({
         known: hdr,
-        title: BOT_CHECK_HEADER,
+        title,
         readFullHeader: async () => {
           const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1` });
           return ((r.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? ""));
         },
-        writeHeaderCell: async (i, title) => {
+        writeHeaderCell: async (at2, title2) => {
           // The Leads grid is fixed-width; widen it first or the write fails.
-          await ensureGridColumns(sheets, sheetId, SHEET_NAME, i);
+          await ensureGridColumns(sheets, sheetId, SHEET_NAME, at2);
           await sheets.spreadsheets.values.update({
             spreadsheetId: sheetId,
-            range: `${SHEET_NAME}!${colLetter(i)}1`,
+            range: `${SHEET_NAME}!${colLetter(at2)}1`,
             valueInputOption: "RAW",
-            requestBody: { values: [[title]] },
+            requestBody: { values: [[title2]] },
           });
         },
       });
+      // Keep the local header in step, so a second call in the same request
+      // appends after this column rather than on top of it.
+      if (at >= 0) hdr[at] = title;
+      return at;
+    };
+
+    // Bot check marker. Written ONLY for an unverified submission, so an
+    // accepted row is exactly what it was before Turnstile existed. Losing the
+    // marker is tolerated — losing the lead is not.
+    if (unverified) {
+      const botIdx = await placeColumn(BOT_CHECK_HEADER);
       if (botIdx >= 0) cells.set(botIdx, UNVERIFIED);
       else console.error("[quiz-lead] could not place the Bot Check marker; lead saved unmarked");
+    }
+
+    // The commitment follow-up from the /decode quiz. Empty means she decides
+    // alone and was never shown the question, so nothing is written and the
+    // column is not created for a blank. Anything the map does not recognise
+    // is dropped rather than guessed at.
+    const partnerOnCall = normalizePartnerOnCall(payload.partnerOnCall);
+    if (partnerOnCall) {
+      const partnerIdx = await placeColumn(PARTNER_ON_CALL_HEADER);
+      if (partnerIdx >= 0) cells.set(partnerIdx, partnerOnCall);
+      else console.error("[quiz-lead] could not place the Partner On Call column; answer dropped, lead saved");
     }
 
     const width = cells.size ? Math.max(...cells.keys()) + 1 : 0;

@@ -34,6 +34,12 @@ import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tra
 import InAppBrowserNotice from "@/app/components/InAppBrowserNotice";
 import { useTurnstile, TurnstileBox, postWithBotCheck, leadCounted, loadTurnstile } from "@/app/components/TurnstileWidget";
 import { scoreLead } from "@/lib/lead-scoring";
+import {
+  PARTNER_ON_CALL_OPTIONS,
+  PARTNER_ON_CALL_QUESTION,
+  needsPartnerQuestion,
+  partnerOnCallValue,
+} from "@/lib/decode-commitment";
 import ScheduleClient from "@/app/schedule/ScheduleClient";
 
 type Q = { id: string; q: string; options: string[] };
@@ -219,12 +225,33 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
 
   const pick = useCallback(
     (q: Q, value: string) => {
-      setA((prev) => ({ ...prev, [q.id]: value }));
+      setA((prev) => {
+        const next = { ...prev, [q.id]: value };
+        // She tapped Back and changed Q9 to "I decide on my own": the follow-up
+        // disappears, so its answer has to go with it. Leaving it behind would
+        // record a partner for a woman the question was never put to.
+        if (q.id === "decision" && !needsPartnerQuestion(value)) delete next.partner;
+        return next;
+      });
       pushDL({ event: "decode_quiz_answer", quiz_step: String(i + 1), quiz_question: q.id });
+      // The commitment follow-up opens UNDERNEATH Q9 rather than on a screen of
+      // its own, so the counter still reads "Question 9 of 12" and the quiz does
+      // not get longer for the woman who triggers it. Holding position here is
+      // what makes that inline reveal possible.
+      if (q.id === "decision" && needsPartnerQuestion(value)) return;
       setI((n) => n + 1);
     },
     [i],
   );
+
+  /** The follow-up's answer. It gates nothing: all three advance identically.
+   *  Deliberately not wrapped in useCallback — the compiler already declines to
+   *  optimise this component, and a second unpreservable memo just adds noise. */
+  const pickPartner = (label: string) => {
+    setA((prev) => ({ ...prev, partner: label }));
+    pushDL({ event: "decode_quiz_answer", quiz_step: String(i + 1), quiz_question: "partner_on_call" });
+    setI((n) => n + 1);
+  };
 
   const atGate = i === QUESTIONS.length; // answered everything, number not yet given
   const done = i > QUESTIONS.length;      // gate passed, or resumed
@@ -275,6 +302,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
         struggleDuration: a.stuck ?? "", biggestChallenge: a.pattern ?? "", triedBefore: a.tried ?? "",
         amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
         goal: a.goal ?? "", budget: a.budget ?? "", timing: a.timing ?? "", decisionMaker: a.decision ?? "",
+        partnerOnCall: partnerOnCallValue(a.decision, a.partner),
         symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${scoreNow}/100 (${hitsNow}/7)`,
         leadScore: leadNow.score, leadTier: leadNow.tier,
         patternScore: scoreNow, markersHit: hitsNow, decidesAlone: a.decision === "Yes, I decide on my own",
@@ -486,6 +514,11 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   }
 
   const q = QUESTIONS[i];
+  // WHY THIS QUESTION EXISTS: the point is not the data, it is that reading the
+  // question sets the expectation that the decision-maker joins the call. It is
+  // asked only of a woman who has just said the money decision is shared, and
+  // every one of its three answers continues to the Rs 299 checkout.
+  const showPartner = q.id === "decision" && needsPartnerQuestion(a.decision);
   return (
     <Shell>
       <div className="mx-auto mb-6 w-full max-w-[560px]">
@@ -505,18 +538,53 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       </div>
       <h2 className="section-title mx-auto max-w-[600px] text-balance">{q.q}</h2>
       <div className="mx-auto mt-7 flex w-full max-w-[560px] flex-col gap-3">
-        {q.options.map((o) => (
-          <button
-            key={o}
-            type="button"
-            onClick={() => pick(q, o)}
-            className="w-full rounded-lg bg-white px-5 py-4 text-left text-[16px] font-medium leading-[1.4] text-[var(--t1)] transition-colors"
-            style={{ border: "1.5px solid var(--border-strong)" }}
-          >
-            {o}
-          </button>
-        ))}
+        {q.options.map((o) => {
+          // Only the decision question ever stays on screen after a tap, so it
+          // is the only one that needs to show which option she chose.
+          const chosen = showPartner && a[q.id] === o;
+          return (
+            <button
+              key={o}
+              type="button"
+              onClick={() => pick(q, o)}
+              aria-pressed={showPartner ? chosen : undefined}
+              className="w-full rounded-lg px-5 py-4 text-left text-[16px] font-medium leading-[1.4] text-[var(--t1)] transition-colors"
+              style={{
+                background: chosen ? "var(--p-subtle)" : "#fff",
+                border: chosen ? "1.5px solid var(--p500)" : "1.5px solid var(--border-strong)",
+              }}
+            >
+              {o}
+            </button>
+          );
+        })}
       </div>
+      {showPartner && (
+        <div className="mx-auto mt-8 w-full max-w-[560px] text-left">
+          <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[var(--t3)]">
+            One quick follow-up
+          </p>
+          <h3 className="mt-2 text-[20px] font-bold leading-[1.35] text-[var(--t1)]">
+            {PARTNER_ON_CALL_QUESTION}
+          </h3>
+          <p className="mt-2 text-[14.5px] leading-[1.55] text-[var(--t2)]">
+            Either way you keep your slot. It just helps to have them hear the same answers you do.
+          </p>
+          <div className="mt-4 flex w-full flex-col gap-3">
+            {PARTNER_ON_CALL_OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => pickPartner(o.label)}
+                className="w-full rounded-lg bg-white px-5 py-4 text-left text-[16px] font-medium leading-[1.4] text-[var(--t1)] transition-colors"
+                style={{ border: "1.5px solid var(--border-strong)" }}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }
