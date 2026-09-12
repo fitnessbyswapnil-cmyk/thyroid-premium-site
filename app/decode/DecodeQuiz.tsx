@@ -43,6 +43,7 @@ import {
 import {
   NURTURE_DESTINATION,
   gateOutcome,
+  isNurtureGated,
   normalizeGateOutcome,
   type GateOutcome,
 } from "@/lib/decode-gate";
