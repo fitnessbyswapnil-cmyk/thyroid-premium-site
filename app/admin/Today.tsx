@@ -22,6 +22,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { paymentDateStatus, toDateInputValue, META_ATTRIBUTION_WINDOW_DAYS } from "@/lib/payment-date";
+import type { DecisionBadge } from "@/lib/decision-maker";
 
 const N = {
   bg: "#0B0E14",
@@ -43,7 +44,7 @@ type Data = {
     contracted: number; collected: number; costPerConsultPayer: number | null;
     costPerProgrammeClient: number | null; spendAvailable: boolean;
   };
-  queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string }[];
+  queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string; badge?: DecisionBadge }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number }[];
   health: { sent24: number; failed24: number; byTemplate: { name: string; sent: number; last: string }[] };
   capacity: { closed: number; ceiling: number };
@@ -227,18 +228,40 @@ export default function Today({ adminKey }: { adminKey: string }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {d?.queue.map((q) => {
             const accent = q.kind === "call_today" ? N.bad : q.kind === "paid_not_booked" ? N.warn : N.accent;
+            // Green means nothing to do about it. Amber means open the call a
+            // particular way — and the way is printed underneath, because a
+            // label he has to remember the meaning of is a label he stops
+            // reading. No badge at all is a lead from before the question
+            // existed; silence is honest there.
+            const badgeColor = q.badge?.tone === "warn" ? N.warn : N.good;
             return (
-              <div key={q.leadId + q.kind} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}`,
-                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name}</div>
-                  <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>{q.reason}</div>
+              <div key={q.leadId + q.kind} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name}</div>
+                    <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>{q.reason}</div>
+                    {q.badge && (
+                      <span style={{ display: "inline-block", marginTop: 6, padding: "2px 8px", borderRadius: 999,
+                        fontSize: 10, fontWeight: 800, letterSpacing: ".07em", color: badgeColor,
+                        border: `1px solid ${badgeColor}44`, background: `${badgeColor}14` }}>
+                        {q.badge.label}
+                      </span>
+                    )}
+                  </div>
+                  <a href={q.wa || `https://wa.me/91${q.phone}`} target="_blank" rel="noreferrer"
+                    style={{ flex: "none", background: accent, color: "#0B0E14", borderRadius: 999,
+                      padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+                    WhatsApp
+                  </a>
                 </div>
-                <a href={q.wa || `https://wa.me/91${q.phone}`} target="_blank" rel="noreferrer"
-                  style={{ flex: "none", background: accent, color: "#0B0E14", borderRadius: 999,
-                    padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
-                  WhatsApp
-                </a>
+                {/* Always visible. Not a tooltip, not behind a tap — he reads
+                    this between calls, one-handed. */}
+                {q.badge?.prompt && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`,
+                    fontSize: 12.5, lineHeight: 1.5, color: N.warn }}>
+                    {q.badge.prompt}
+                  </div>
+                )}
               </div>
             );
           })}
