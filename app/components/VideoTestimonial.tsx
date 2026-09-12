@@ -189,6 +189,16 @@ function VideoCard({
         />
       )}
 
+      {/* The claim, above the video and in the same place on every card — the
+          same anatomy as the transformation and WhatsApp cards, so the three
+          proof blocks read as one system rather than three components. It is
+          her own line, transcribed from the video. */}
+      <div className="px-5 pb-1 pt-6 text-center">
+        <h3 className="mx-auto mb-0 max-w-[var(--measure-caption)] text-[length:var(--fs-lg)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)]">
+          {story.headline}
+        </h3>
+      </div>
+
       {/* ── Video container — strict 9:16 ── */}
       <div
         ref={containerRef}
@@ -377,8 +387,8 @@ export default function VideoTestimonial() {
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "22ch" }}
           >
-            When the method is right,{" "}
-            <span className="hl">the results speak.</span>
+            When the Method Is Right,{" "}
+            <span className="hl">the Results Speak.</span>
           </Reveal>
           {/* Was "🎬 Video testimonials" — the only emoji on the page, under a
               heading written in a practitioner's voice. The cards below are

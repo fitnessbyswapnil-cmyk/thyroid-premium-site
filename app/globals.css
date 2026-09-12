@@ -1989,6 +1989,19 @@ a {
   .proof-tag { padding: 5px 14px; }
 }
 
+/* The condition phrase each proof headline ends on. The competitor page sets
+   this in red; here it is ink on the yellow highlight, because red is this
+   page's BUTTON colour and display type in red makes every button on the page
+   stop reading as a button. Ink on #ffc91e is 10.3:1, so it is also the one
+   way yellow can carry text at all. */
+.proof-cond {
+  background: var(--accent-yellow);
+  color: #14110f;
+  padding: 0.04em 0.18em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 /* Design 1B's record labels: the small uppercase keys that run down the case
    records — "RECORD 01", "WEIGHT", "DURATION". One rule rather than the same
    four declarations repeated at every call site, which is how twelve
@@ -2023,7 +2036,9 @@ a {
 
 /* The condition phrase inside a result headline. Red carries "despite" — it
    is the obstacle, not the outcome. */
-.proof-cond { color: var(--red-cta); }
+/* (The old red .proof-cond lived here. It set the condition phrase in red
+   display type, which is the one thing the button colour cannot survive — see
+   the .proof-cond rule above, which replaced it with ink on yellow.) */
 
 /* An accent phrase inside a headline. Resolves green on the deep band and the
    AA-safe dark green on white, because both come from the same token. */

@@ -55,15 +55,24 @@ test("every /decode CTA shows the price", () => {
   for (const sub of subs) assert.equal(sub, CTA_SUB);
 });
 
-test("occupation tags stay parked until the owner confirms them", () => {
-  // Built 12-Sep, parked the same day: only one of the four occupations is
-  // actually known, and the page's problem was length, not labelling. If this
-  // comes back, the rule it was built under still stands — occupation is a
-  // client fact like a name or a weight, so an unknown one is no pill at all.
-  assert.ok(
-    !/occupation:/.test(WALL),
-    "re-adding occupation data means re-adding the confirmed-only rule with it",
-  );
+test("no transformation card carries an occupation nobody confirmed", () => {
+  // The competitor page this card design came from puts a pill on every card:
+  // ENTREPRENEUR, WORKING PROFESSIONAL, MANAGER. Copying the design does not
+  // license copying that, because occupation is a client fact like a name or a
+  // weight and only ONE of ours is known — Heenal's own caption already said
+  // "IT professional". The other three ship with no pill.
+  //
+  // Adding a name to CONFIRMED is the deliberate act. Do it only after the
+  // owner has actually confirmed that client's occupation.
+  const CONFIRMED = new Set(["", "IT Professional"]);
+  const found = [...WALL.matchAll(/occupation:\s*"([^"]*)"/g)].map((m) => m[1]);
+  assert.equal(found.length, 4, "every card must declare the field, even empty");
+  for (const occupation of found) {
+    assert.ok(
+      CONFIRMED.has(occupation),
+      `"${occupation}" is not a confirmed occupation — confirm it with the owner before listing it here`,
+    );
+  }
 });
 
 test("the ₹15,000-₹30,000 line stays off until the quiz gates are measured", () => {

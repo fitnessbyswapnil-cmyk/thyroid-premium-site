@@ -54,43 +54,43 @@ const ALL_CARDS: ProofCard[] = [
   {
     id: 'c1',
     image: '/whatsapp-proof/Shariya-Sultana.jpeg',
-    headline: 'TSH is finally in range.',
+    headline: 'TSH is Finally in Range.',
     client: 'Shariya Sultana · Thyroid client',
   },
   {
     id: 'c3',
     image: '/whatsapp-proof/Pooja-Sharma.jpeg',
-    headline: 'Hair loss finally stopped.',
+    headline: 'Hair Loss Finally Stopped.',
     client: 'Pooja Sharma · Hypothyroid client',
   },
   {
     id: 'c4',
     image: '/whatsapp-proof/Priya-Shree.jpeg',
-    headline: 'Metabolism feels alive again.',
+    headline: 'Metabolism Feels Alive Again.',
     client: 'Priya Shree · Thyroid client',
   },
   {
     id: 'c5',
     image: '/whatsapp-proof/Ritika-Deshmukh.jpeg',
-    headline: 'No more morning exhaustion.',
+    headline: 'No More Morning Exhaustion.',
     client: 'Ritika Deshmukh · Thyroid client',
   },
   {
     id: 'c15',
     image: '/whatsapp-proof/Sima R1.png',
-    headline: 'Weight started moving. Finally.',
+    headline: 'Weight Started Moving. Finally.',
     client: 'Sima · Thyroid client',
   },
   {
     id: 'c2',
     image: '/whatsapp-proof/Sruthi-Reddy.jpeg',
-    headline: 'Weight started moving again.',
+    headline: 'Weight Started Moving Again.',
     client: 'Sruthi Reddy · Thyroid client',
   },
   {
     id: 'c10',
     image: '/whatsapp-proof/Namarata R9.png',
-    headline: 'Finally not tired all day.',
+    headline: 'Finally not Tired all Day.',
     client: 'Namrata · Hypothyroid client',
   },
 ]
@@ -107,49 +107,49 @@ const REMOVED_FOR_LENGTH: ProofCard[] = [
     // avatar strip + transformation wall) — cap any one client at 2 placements.
     id: 'c7',
     image: '/whatsapp-proof/Heenal R4.png',
-    headline: 'TSH dropped. Energy came back.',
+    headline: 'TSH Dropped. Energy Came Back.',
     client: 'Heenal · Hypothyroid client',
   },
   {
     id: 'c6',
     image: '/whatsapp-proof/Rozal R2.png',
-    headline: 'My thyroid finally responded.',
+    headline: 'My Thyroid Finally Responded.',
     client: 'Rozal · Hypothyroid client',
   },
   {
     id: 'c8',
     image: '/whatsapp-proof/Jay R6.png',
-    headline: 'Energy came back naturally.',
+    headline: 'Energy Came back Naturally.',
     client: 'Jay · Thyroid client',
   },
   {
     id: 'c9',
     image: '/whatsapp-proof/Nahamia R5.png',
-    headline: 'Bloating reduced significantly.',
+    headline: 'Bloating Reduced Significantly.',
     client: 'Nahamia · Thyroid client',
   },
   {
     id: 'c12',
     image: '/whatsapp-proof/Nitin R10.png',
-    headline: 'Focus and clarity returned.',
+    headline: 'Focus and Clarity Returned.',
     client: 'Nitin · Fat loss client',
   },
   {
     id: 'c13',
     image: '/whatsapp-proof/Rakesh R3.png',
-    headline: 'Old clothes fitting again.',
+    headline: 'Old Clothes Fitting Again.',
     client: 'Rakesh · Fat loss client',
   },
   {
     id: 'c11',
     image: '/whatsapp-proof/Nishant R7.png',
-    headline: 'Results without starving.',
+    headline: 'Results Without Starving.',
     client: 'Nishant · Fat loss client',
   },
   {
     id: 'c14',
     image: '/whatsapp-proof/Guitar R8.png',
-    headline: 'Feeling like myself again.',
+    headline: 'Feeling Like Myself Again.',
     client: 'Guitar · Fat loss client',
   },
 ]
@@ -287,14 +287,21 @@ function ProofCard({
         el.style.transform = 'translateY(0) scale(1)'
       }}
     >
-      {/* NO BADGES. Each card used to carry one or two of our own labels —
-          "TSH Improved", "Metabolism Fixed" — printed on top of somebody's
-          actual message. The screenshot is evidence; the badge was our reading
-          of it, set in marketing type, which is precisely what makes real
-          evidence look staged. The heading over this section says "unedited
-          screenshots" and the badges argued with it. The header block they
-          lived in is gone rather than emptied — an empty container leaves the
-          spacing behind. */}
+      {/* ── The claim, then the evidence ──────────────────────────────────
+          STILL NO BADGES. The pills that used to sit here — "TSH Improved",
+          "Metabolism Fixed" — were our own labels printed ON somebody's real
+          message, which is what makes real evidence look staged.
+
+          What sits here instead is HER sentence, not ours: `headline` is the
+          line she wrote, read straight off the screenshot below it. Saying it
+          once in type, above, makes a wall of small screenshots scannable
+          without editorialising a single one of them — and it gives all three
+          proof blocks the same anatomy: claim, then evidence, then who. */}
+      <div className="px-5 pt-6 text-center">
+        <h3 className="mx-auto mb-0 max-w-[var(--measure-caption)] text-[length:var(--fs-lg)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)]">
+          {card.headline}
+        </h3>
+      </div>
 
       {/* ── Screenshot ── */}
       <div
@@ -401,7 +408,7 @@ export default function WhatsappProofSection({
             className="section-title mx-auto text-balance"
             style={{ maxWidth: "20ch" }}
           >
-            What they sent afterwards.
+            What They Sent Afterwards.
           </Reveal>
         </div>
 
