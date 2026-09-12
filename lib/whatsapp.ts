@@ -381,9 +381,151 @@ export async function sendCheckoutPending(
   return sendWhatsAppTemplate(phone, 'checkout_pending_v2', [firstName, leadId], languageOverride)
 }
 
+/** Shared by both confirmation templates: a full name reads like a mail merge,
+ *  so only the first name is ever passed. */
+function firstNameOf(fullName: string | null | undefined): string {
+  return (fullName || '').trim().split(/\s+/)[0] || 'there'
+}
+
+export const BOOKING_CONFIRMED_TEMPLATE = 'booking_confirmed_free_v2'
+
+/**
+ * The forwardable confirmation, for a woman who does not decide alone.
+ *
+ * Same moment as booking_confirmed_free_v2 and never alongside it — one
+ * confirmation per booking, this one or that one. It asks her to forward the
+ * message to whoever she makes health decisions with and have them join for
+ * fifteen minutes, which is the only way that person hears the reasoning
+ * first-hand: we never collect their number, so we can never message them.
+ *
+ * UTILITY, and it must stay that way. This WABA's marketing templates hit
+ * Meta's per-recipient cap (#131049) and fail AFTER returning a message id, so
+ * the send looks successful and nothing arrives. Buttons and links are what get
+ * a template reclassified, which is why this one carries neither.
+ *
+ * Its {{1}} is NOT the first name — it is the session date and time as she
+ * would read it. Sending the wrong value here is invisible: the message still
+ * delivers, it just greets her with a timestamp.
+ */
+export const BOOKING_CONFIRMED_PARTNER_TEMPLATE = 'booking_confirmed_partner_v1'
+
+/**
+ * The "Partner On Call" answers that mean she is NOT the sole decider.
+ *
+ * All three qualify. "no" is not a rejection of the consultation — it means
+ * the person she decides with is not planning to join, which is exactly who
+ * the forwardable message is for. A sole decider answers something outside
+ * this set, and a legacy row answers nothing at all; both keep the existing
+ * confirmation.
+ */
+const NOT_SOLE_DECIDER = new Set(['yes', 'unsure', 'no'])
+
+/**
+ * Kill switch for the partner confirmation, OFF unless explicitly 'on'.
+ *
+ * booking_confirmed_partner_v1 is PENDING review at the time of writing, and
+ * sending a template Meta has not approved fails the whole message. Nothing
+ * about the partner path runs — not even the extra Sheets read that finds her
+ * answer — until WHATSAPP_PARTNER_TEMPLATE=on.
+ */
+export function partnerTemplateEnabled(raw?: string | null): boolean {
+  const value = raw === undefined ? process.env.WHATSAPP_PARTNER_TEMPLATE : raw
+  return String(value ?? '').trim().toLowerCase() === 'on'
+}
+
+/**
+ * Her slot as one readable string for the template's {{1}}.
+ *
+ * Both halves arrive already formatted from the Cal.com handler
+ * ("Friday, 19 September 2026" and "06:00 pm"). Whitespace is collapsed
+ * because Meta rejects a body parameter containing a newline or a tab, which
+ * would fail the entire send.
+ */
+export function formatBookingWhen(date?: string | null, time?: string | null): string {
+  const clean = (v: string | null | undefined) => String(v ?? '').replace(/\s+/g, ' ').trim()
+  const d = clean(date)
+  const t = clean(time)
+  if (d && t) return `${d} at ${t}`
+  return d || t
+}
+
+export type BookingConfirmationPlan = {
+  template: string
+  params: string[]
+  /** Why this template and not the other — logged, so a surprise is diagnosable. */
+  reason: 'flag_off' | 'sole_decider' | 'no_session_time' | 'partner'
+}
+
+/**
+ * PURE. Decide which of the two confirmations a booking earns.
+ *
+ * Exactly one template comes back every time, so a caller can never send both.
+ * Every route out of the partner path lands on the existing confirmation
+ * rather than on silence: an unknown answer, a missing column, a legacy row
+ * and a booking whose time could not be formatted all still get confirmed.
+ */
+export function planBookingConfirmation(input: {
+  fullName?: string | null
+  /** Raw cell from the Leads sheet's "Partner On Call" column, or undefined
+   *  when the column does not exist yet. */
+  partnerOnCall?: string | null
+  /** Output of formatBookingWhen. */
+  sessionWhen?: string | null
+  /** Raw WHATSAPP_PARTNER_TEMPLATE; omit to read the environment. */
+  flag?: string | null
+}): BookingConfirmationPlan {
+  const firstName = firstNameOf(input.fullName)
+  const keepExisting = (reason: BookingConfirmationPlan['reason']): BookingConfirmationPlan => ({
+    template: BOOKING_CONFIRMED_TEMPLATE,
+    params: [firstName],
+    reason,
+  })
+
+  if (!partnerTemplateEnabled('flag' in input ? input.flag : undefined)) return keepExisting('flag_off')
+
+  const answer = String(input.partnerOnCall ?? '').trim().toLowerCase()
+  if (!NOT_SOLE_DECIDER.has(answer)) return keepExisting('sole_decider')
+
+  // {{1}} is the slot itself, so no slot means no message worth sending under
+  // this template. Better the existing confirmation than "confirmed for .".
+  const when = String(input.sessionWhen ?? '').replace(/\s+/g, ' ').trim()
+  if (!when) return keepExisting('no_session_time')
+
+  return { template: BOOKING_CONFIRMED_PARTNER_TEMPLATE, params: [when], reason: 'partner' }
+}
+
 export async function sendBookingConfirmedFree(phone: string, fullName: string): Promise<WhatsAppResult> {
-  const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there'
-  return sendWhatsAppTemplate(phone, 'booking_confirmed_free_v2', [firstName])
+  return sendWhatsAppTemplate(phone, BOOKING_CONFIRMED_TEMPLATE, [firstNameOf(fullName)])
+}
+
+/**
+ * The single confirmation for a booked slot — partner-forwardable or not.
+ *
+ * If the partner template is picked but Meta will not take it (not approved
+ * yet, wrong parameter count), she falls back to the existing confirmation
+ * rather than receiving nothing: the first attempt delivered no message, so
+ * the fallback keeps it at exactly one confirmation per number.
+ */
+export async function sendBookingConfirmedSlot(
+  phone: string,
+  fullName: string,
+  opts: { partnerOnCall?: string | null; sessionWhen?: string | null; flag?: string | null } = {},
+): Promise<WhatsAppResult & { template: string; reason: string }> {
+  const plan = planBookingConfirmation({ fullName, ...opts })
+
+  if (plan.template === BOOKING_CONFIRMED_TEMPLATE) {
+    const r = await sendWhatsAppTemplate(phone, plan.template, plan.params)
+    return { ...r, template: plan.template, reason: plan.reason }
+  }
+
+  const r = await sendTryingLanguages((language) =>
+    sendWhatsAppTemplate(phone, plan.template, plan.params, language),
+  )
+  if (r.sent || !isTemplateConfigError(r.error)) {
+    return { ...r, template: plan.template, reason: plan.reason }
+  }
+  const fallback = await sendBookingConfirmedFree(phone, fullName)
+  return { ...fallback, template: BOOKING_CONFIRMED_TEMPLATE, reason: 'partner_unavailable' }
 }
 
 /**
