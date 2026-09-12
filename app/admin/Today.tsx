@@ -21,6 +21,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { paymentDateStatus, toDateInputValue, META_ATTRIBUTION_WINDOW_DAYS } from "@/lib/payment-date";
 
 const N = {
   bg: "#0B0E14",
@@ -73,21 +74,57 @@ export default function Today({ adminKey }: { adminKey: string }) {
   // The only write this screen makes. field "closed" stamps the programme
   // columns and fires the Purchase to Meta, so one tap both records the money
   // and teaches the algorithm what a real buyer looks like.
+  //
+  // The date travels with it. Marking is a between-calls job that often happens
+  // days after the money landed, and the send used to timestamp the sale at the
+  // moment of the tap — so the one number Meta optimises on was attributed to
+  // the wrong day. Today stays the default, so the fast path is still one tap.
   const [saving, setSaving] = useState<number | null>(null);
-  const markClosed = useCallback(async (row: number, amount: number, collected?: number) => {
-    setSaving(row);
+  const [notice, setNotice] = useState("");
+  const markClosed = useCallback(async (row: number, amount: number, payDate: string, collected?: number) => {
+    const when = paymentDateStatus(payDate, Date.now());
+    if (!when.valid || when.ms === null) {
+      setErr(when.future ? "That payment date is in the future." : "That payment date is not a real date.");
+      return;
+    }
+    setSaving(row); setNotice("");
     try {
       const r = await fetch("/api/admin/mark", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({ row, field: "closed", value: String(amount), ...(collected ? { collected } : {}) }),
+        body: JSON.stringify({
+          row, field: "closed", value: String(amount),
+          paidAt: new Date(when.ms).toISOString(),
+          ...(collected ? { collected } : {}),
+        }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      // The server says what Meta actually did with the timestamp. Saying
+      // nothing would let a clamped, badly-attributed event read as a clean one.
+      const body = (await r.json()) as { meta?: { status?: string; tooOld?: boolean } };
+      const m = body.meta;
+      if (m?.tooOld) {
+        setNotice(`Saved. Meta had to move the event time forward — this sale is older than ${META_ATTRIBUTION_WINDOW_DAYS} days, so its attribution is unreliable.`);
+      } else if (m && m.status !== "sent" && m.status !== "already_sent") {
+        setNotice(`Saved to the sheet, but Meta did not accept the sale (${m.status}).`);
+      }
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setSaving(null); }
   }, [adminKey, load]);
+
+  // Reading the clock during render is impure — React can re-render at any
+  // moment and two rows on the same screen would disagree about what "today"
+  // is. Captured once, and refreshed on Refresh so a dashboard left open
+  // overnight does not keep offering yesterday.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const todayValue = toDateInputValue(new Date(nowMs));
+
+  // Per-row payment date, defaulting to today. Held outside the row so the
+  // picker survives a re-render mid-edit.
+  const [payDates, setPayDates] = useState<Record<number, string>>({});
+  const payDateFor = (row: number) => payDates[row] ?? todayValue;
 
   const wrap: React.CSSProperties = { background: N.bg, color: N.text, minHeight: "100vh", padding: "0 0 48px", fontFamily: "Inter, system-ui, sans-serif" };
   const inner: React.CSSProperties = { maxWidth: 620, margin: "0 auto", padding: "0 16px" };
@@ -109,13 +146,20 @@ export default function Today({ adminKey }: { adminKey: string }) {
               {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
             </div>
           </div>
-          <button onClick={() => void load()} disabled={busy}
+          <button onClick={() => { setNowMs(Date.now()); void load(); }} disabled={busy}
             style={{ background: "none", border: `1px solid ${N.line}`, color: N.dim, borderRadius: 999, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>
             {busy ? "Syncing…" : "Refresh"}
           </button>
         </header>
 
         {err && <div style={{ ...card, borderColor: N.bad, color: N.bad, marginTop: 12 }}>Could not load: {err}</div>}
+        {notice && (
+          <div style={{ ...card, borderColor: N.warn, color: N.warn, marginTop: 12, fontSize: 13, display: "flex", gap: 10 }}>
+            <span style={{ flex: 1 }}>{notice}</span>
+            <button onClick={() => setNotice("")}
+              style={{ background: "none", border: 0, color: N.dim, cursor: "pointer", fontSize: 13 }}>✕</button>
+          </div>
+        )}
 
         {/* 1 — Acquisition */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 0 10px" }}>
@@ -210,6 +254,8 @@ export default function Today({ adminKey }: { adminKey: string }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {d.decide.map((p) => {
                 const amounts = p.pitched > 0 ? [p.pitched] : [15000, 20000, 25000, 30000];
+                const payDate = payDateFor(p.row);
+                const when = paymentDateStatus(payDate, nowMs);
                 return (
                   <div key={p.row} style={{ ...card, padding: 14 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
@@ -228,10 +274,25 @@ export default function Today({ adminKey }: { adminKey: string }) {
                         WhatsApp →
                       </a>
                     </div>
+                    {/* Default today, so the common case stays one tap. Future
+                        dates are refused by the picker itself. */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 11 }}>
+                      <span style={{ fontSize: 11.5, color: N.dim }}>Paid on</span>
+                      <input type="date" value={payDate} max={todayValue}
+                        onChange={(e) => setPayDates((m) => ({ ...m, [p.row]: e.target.value }))}
+                        style={{ background: "transparent", color: N.text, border: `1px solid ${N.line}`,
+                          borderRadius: 8, padding: "5px 8px", fontSize: 12.5, colorScheme: "dark" }} />
+                    </div>
+                    {when.stale && (
+                      <div style={{ fontSize: 12, color: N.warn, marginTop: 7, lineHeight: 1.45 }}>
+                        Older than {META_ATTRIBUTION_WINDOW_DAYS} days — Meta may not attribute this sale.
+                        Mark payments the same day.
+                      </div>
+                    )}
                     <div style={{ display: "flex", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
                       {amounts.map((amt) => (
                         <button key={amt} disabled={saving === p.row}
-                          onClick={() => void markClosed(p.row, amt)}
+                          onClick={() => void markClosed(p.row, amt, payDate)}
                           style={{ background: N.good, color: "#06210f", border: 0, borderRadius: 999,
                             padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                           Paid {inr(amt)}
@@ -245,7 +306,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
                           if (!total) return;
                           const c = window.prompt(`Received now (₹) — leave as ${total} if paid in full`, String(total));
                           const got = Number(String(c ?? total).replace(/[^\d]/g, "")) || total;
-                          void markClosed(p.row, total, got);
+                          void markClosed(p.row, total, payDate, got);
                         }}
                         style={{ background: "transparent", color: N.dim, border: `1px solid ${N.line}`,
                           borderRadius: 999, padding: "7px 14px", fontSize: 12.5, cursor: "pointer" }}>
