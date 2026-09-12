@@ -31,12 +31,12 @@ import { SESSION_PRICE } from "@/app/lib/pricing";
 // payment made there never stamps Paid, never fires booking_confirmation,
 // and never fires Schedule — which is the event the live ad campaign is
 // currently optimising against.
-// TEST MODE — ON (2026-09-12, owner's Rs 1 test of Turnstile + ledger + the
-// Purchase dedup fix, ads paused). While true, Cashfree charges Rs 1 while
+// TEST MODE — OFF. Last used 2026-09-12 (Rs 1 test of Turnstile + ledger +
+// the Purchase dedup fix; it passed). While true, Cashfree charges Rs 1 while
 // every visible price still reads Rs 299, and the Purchase value Meta receives
 // is 1. It MUST be false whenever an ad points at the funnel: the last time it
 // was left on it cost roughly Rs 900/day uncollected.
-const IS_TEST_MODE = true;
+const IS_TEST_MODE = false;
 const DISPLAY_PRICE = SESSION_PRICE; // single source of truth (app/lib/pricing)
 const ACTUAL_PAYMENT_AMOUNT = IS_TEST_MODE ? 1 : DISPLAY_PRICE;
 // ─────────────────────────────────────────────────────────────────────────────
