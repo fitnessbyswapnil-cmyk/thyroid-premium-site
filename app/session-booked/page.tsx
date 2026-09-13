@@ -4,7 +4,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { CAL_UI_CONFIG } from "@/lib/cal-theme";
-import { trackPurchase } from "../lib/analytics";
+import { getFbc as getFbcCookie, getFbp, getVisitorId } from "@/lib/tracking";
+import { trackPurchase, getFbc as getFbcCached } from "../lib/analytics";
 import { SESSION_PRICE } from "../lib/pricing";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
@@ -102,6 +103,28 @@ function CalcomStep({
   // Idempotency: redirect fires AT MOST once per mount, even if Cal.com emits
   // bookingSuccessful more than once.
   const bookedRef = useRef(false);
+
+  // Her first-party ad signals, handed to Cal.com so the booking webhook's
+  // Schedule can carry them.
+  //
+  // The webhook has always READ fbc, fbp and visitor_id from booking metadata —
+  // its comments describe the embed forwarding them. This page never did. So
+  // every /decode booking reached Meta's Schedule, the one event the ads
+  // optimise on, with an empty click id and a booking uid standing in for her
+  // external id. Events Manager said as much on 13-Sep: "the fbc parameter
+  // arrives via the Meta pixel but your server is sending an empty fbc", worth
+  // an estimated +0.7 on Schedule's match quality.
+  //
+  // Read once, on the client. The cookie is the real _fbc; the cached value is
+  // rebuilt from the fbclid she landed with, for the phone that blocks it.
+  const [adSignals] = useState(() => {
+    if (typeof window === "undefined") return { fbc: "", fbp: "", visitor_id: "" };
+    try {
+      return { fbc: getFbcCookie() || getFbcCached(), fbp: getFbp(), visitor_id: getVisitorId() };
+    } catch {
+      return { fbc: "", fbp: "", visitor_id: "" };
+    }
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -245,10 +268,21 @@ function CalcomStep({
             // country for its flag selector; E.164 makes India deterministic.
             ...(prefillPhone ? { attendeePhoneNumber: toIndianE164(prefillPhone), smsReminderNumber: toIndianE164(prefillPhone) } : {}),
             // Additive metadata only — ties the booking (and the BOOKING_CREATED
-            // webhook) back to the lead/payment. Does NOT affect the event_id
-            // (still schedule_<uid>) or the bookingSuccessful handling.
-            ...((leadId || orderId || qscore)
-              ? { metadata: { ...(leadId ? { leadId } : {}), ...(orderId ? { orderId } : {}), ...(qscore ? { qscore } : {}) } }
+            // webhook) back to the lead, the payment and her ad click. Does NOT
+            // affect the event_id (still schedule_<uid>) or the
+            // bookingSuccessful handling. Empty values are left out: Cal.com
+            // stores metadata verbatim and a blank key reads as a real one.
+            ...((leadId || orderId || qscore || adSignals.fbc || adSignals.fbp || adSignals.visitor_id)
+              ? {
+                  metadata: {
+                    ...(leadId ? { leadId } : {}),
+                    ...(orderId ? { orderId } : {}),
+                    ...(qscore ? { qscore } : {}),
+                    ...(adSignals.fbc ? { fbc: adSignals.fbc } : {}),
+                    ...(adSignals.fbp ? { fbp: adSignals.fbp } : {}),
+                    ...(adSignals.visitor_id ? { visitor_id: adSignals.visitor_id } : {}),
+                  },
+                }
               : {}),
           }}
         />
