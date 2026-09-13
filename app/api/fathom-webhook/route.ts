@@ -7,7 +7,12 @@
  *       https://www.swapnilumbarkarfitness.in/api/fathom-webhook
  *     trigger: new meeting content ready
  *  3. Copy the signing secret → FATHOM_WEBHOOK_SECRET
- *  4. ANTHROPIC_API_KEY for the extraction step.
+ *  4. OPTIONAL: ANTHROPIC_API_KEY, for the full AI call analysis (price
+ *     pitched, objection vs excuse, scorecard, summary). Without it the call is
+ *     still recorded and CallHeld still fires — attendance, duration and talk
+ *     share come from the transcript itself (lib/call-attendance). Owner's
+ *     choice, 13-Sep-2026: run free; add the key only if the scorecards will be
+ *     read.
  *
  * DELIVERY CONTRACT — same shape as /api/cal-webhook, for the same reason:
  * the ONLY non-2xx this route returns is 401 on a genuine signature mismatch.
@@ -34,6 +39,7 @@ import { fetchBookings } from "@/lib/cal-bookings";
 import { sendCAPIEvent, buildUserData } from "@/lib/server-tracking";
 import { isOwnerTest } from "@/lib/owner-filter";
 import { extractCall, failedCount, EXTRACT_MODEL } from "@/lib/call-extract";
+import { inferAttendance } from "@/lib/call-attendance";
 import { writeCall, type CallFields } from "@/lib/crm-calls";
 
 export const dynamic = "force-dynamic";
@@ -97,23 +103,25 @@ export async function POST(req: NextRequest) {
 
 /**
  * CallHeld → Meta. The call is the richest signal in the business and Meta
- * never saw it. Fired only when the extractor says she attended, keyed to the
- * booking uid so a re-run cannot double count. `partner_present` is whether a
- * second non-owner attendee was on the recording — the number that will settle
- * whether the absent decision-maker is the leak it looks like.
+ * never saw it. Fired only when she attended, keyed to the booking uid so a
+ * re-run cannot double count. `partner_present` is whether a second non-owner
+ * person was on the call — by a second voice in the transcript, or a second
+ * invitee — the number that will settle whether the absent decision-maker is
+ * the leak it looks like.
  */
-async function fireCallHeld(args: { uid: string; name: string; email: string; phone: string; attended: boolean; emails: string[]; startedAt: string }) {
+async function fireCallHeld(args: { uid: string; name: string; email: string; phone: string; attended: boolean; emails: string[]; startedAt: string; partnerBySpeakers?: boolean }) {
   if (!args.attended) return;
   try {
     const others = args.emails.filter((e) => e && e.toLowerCase() !== args.email.toLowerCase() && !isOwnerTest({ email: e }));
+    const partnerPresent = others.length > 0 || !!args.partnerBySpeakers;
     const r = await sendCAPIEvent("CallHeld", {
       eventId: `call_${args.uid}`,
       userData: buildUserData({ email: args.email, phone: args.phone, firstName: args.name.split(" ")[0] || "", country: "in" }),
-      customData: { partner_present: others.length > 0 ? 1 : 0 },
+      customData: { partner_present: partnerPresent ? 1 : 0 },
       actionSource: "phone_call",
       ...(args.startedAt ? { eventTime: Math.floor(new Date(args.startedAt).getTime() / 1000) } : {}),
     });
-    console.log(`[fathom] CallHeld uid=${args.uid} partner_present=${others.length > 0 ? 1 : 0} result=${JSON.stringify(r).slice(0, 160)}`);
+    console.log(`[fathom] CallHeld uid=${args.uid} partner_present=${partnerPresent ? 1 : 0} result=${JSON.stringify(r).slice(0, 160)}`);
   } catch (e) {
     console.error("[fathom] CallHeld failed (swallowed):", e instanceof Error ? e.message : String(e));
   }
@@ -150,48 +158,77 @@ async function processMeeting(meeting: ReturnType<typeof normaliseMeeting>) {
 
   const booking = bookings.find((b) => b.uid === match.uid);
 
-  // 3. Extract. This is the slow part and the reason for after().
-  const started = Date.now();
-  const x = await extractCall({
-    transcript,
-    meetingTitle: meeting.title,
-    occurredAt: meeting.startedAt,
-  });
-  const failed = failedCount(x.scorecard);
+  // 3. Attendance from the transcript itself — free, and always run. This is
+  //    what CallHeld needs, so a missing or failing AI key can no longer
+  //    silence it.
+  const heard = inferAttendance(transcript);
   console.log(
-    `[fathom-webhook] extracted uid=${match.uid} in ${Date.now() - started}ms ` +
-      `attended=${x.attended} price=${x.price_pitched ?? "-"} lowest=${x.lowest_price_said ?? "-"} ` +
-      `discount=${x.discount_offered} objection=${x.objection_category} scorecardFailed=${failed}/10`,
+    `[fathom-webhook] attendance uid=${match.uid} attended=${heard.attended} basis=${heard.basis} ` +
+      `clientWords=${heard.clientWords} speakers=${heard.otherSpeakers.length} durationMin=${heard.durationMin ?? "-"}`,
   );
 
-  // 4. Write. Every column comes from a system; none is typed by a human.
-  const fields: CallFields = {
+  let attended = heard.attended;
+  let fields: CallFields = {
     bookingUid: match.uid,
     writtenAt: new Date().toISOString(),
     occurredAt: meeting.startedAt || "",
     name: booking?.name ?? match.name ?? "",
     email: booking?.email ?? match.email ?? "",
     phone: booking?.phone ?? "",
-    attended: yn(x.attended),
-    durationMin: "",
-    coachTalkPct: String(Math.round(x.coach_talk_pct)),
-    pricePitched: x.price_pitched == null ? "" : String(x.price_pitched),
-    lowestPriceSaid: x.lowest_price_said == null ? "" : String(x.lowest_price_said),
-    discountOffered: yn(x.discount_offered),
-    discountAt: x.discount_at,
-    moneyMovedOnCall: yn(x.money_moved_on_call),
-    amountAgreed: x.amount_agreed == null ? "" : String(x.amount_agreed),
-    objection: `${x.objection_category}: ${x.objection_real}`.trim(),
-    excuse: x.excuse_stated,
-    agreedCallbackAt: x.agreed_callback_at,
-    summary: x.summary,
-    scorecardFailed: String(failed),
-    scorecard: JSON.stringify(x.scorecard),
+    attended: yn(heard.attended),
+    durationMin: heard.durationMin == null ? "" : String(heard.durationMin),
+    coachTalkPct: heard.coachTalkPct == null ? "" : String(heard.coachTalkPct),
     fathomUrl: meeting.url,
-    extractedBy: EXTRACT_MODEL,
+    extractedBy: `transcript (no AI) · ${heard.basis}`,
   };
+
+  // 4. The full AI call analysis — ONLY when a key is configured. It is the
+  //    slow, paid part and the reason for after(). If it fails, the
+  //    transcript-based record above stands and CallHeld still goes.
+  if ((process.env.ANTHROPIC_API_KEY ?? "").trim()) {
+    try {
+      const started = Date.now();
+      const x = await extractCall({
+        transcript,
+        meetingTitle: meeting.title,
+        occurredAt: meeting.startedAt,
+      });
+      const failed = failedCount(x.scorecard);
+      console.log(
+        `[fathom-webhook] extracted uid=${match.uid} in ${Date.now() - started}ms ` +
+          `attended=${x.attended} price=${x.price_pitched ?? "-"} lowest=${x.lowest_price_said ?? "-"} ` +
+          `discount=${x.discount_offered} objection=${x.objection_category} scorecardFailed=${failed}/10`,
+      );
+      attended = x.attended;
+      fields = {
+        ...fields,
+        attended: yn(x.attended),
+        coachTalkPct: String(Math.round(x.coach_talk_pct)),
+        pricePitched: x.price_pitched == null ? "" : String(x.price_pitched),
+        lowestPriceSaid: x.lowest_price_said == null ? "" : String(x.lowest_price_said),
+        discountOffered: yn(x.discount_offered),
+        discountAt: x.discount_at,
+        moneyMovedOnCall: yn(x.money_moved_on_call),
+        amountAgreed: x.amount_agreed == null ? "" : String(x.amount_agreed),
+        objection: `${x.objection_category}: ${x.objection_real}`.trim(),
+        excuse: x.excuse_stated,
+        agreedCallbackAt: x.agreed_callback_at,
+        summary: x.summary,
+        scorecardFailed: String(failed),
+        scorecard: JSON.stringify(x.scorecard),
+        extractedBy: EXTRACT_MODEL,
+      };
+    } catch (err) {
+      console.error(
+        `[fathom-webhook] AI analysis failed uid=${match.uid} — keeping the transcript-based record:`,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  } else {
+    console.log(`[fathom-webhook] no ANTHROPIC_API_KEY — recorded attendance from the transcript only uid=${match.uid}`);
+  }
 
   const plan = await writeCall(fields);
   console.log(`[fathom-webhook] Calls row ${plan.action}${plan.skipReason ? ` (${plan.skipReason})` : ""} uid=${match.uid}`);
-  await fireCallHeld({ uid: match.uid, name: fields.name ?? "", email: fields.email ?? "", phone: fields.phone ?? "", attended: x.attended, emails: meeting.emails, startedAt: meeting.startedAt });
+  await fireCallHeld({ uid: match.uid, name: fields.name ?? "", email: fields.email ?? "", phone: fields.phone ?? "", attended, emails: meeting.emails, startedAt: meeting.startedAt, partnerBySpeakers: heard.partnerPresent });
 }
