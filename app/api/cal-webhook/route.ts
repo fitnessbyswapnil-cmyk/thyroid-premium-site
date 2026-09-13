@@ -23,13 +23,15 @@
  *    200 — even for unknown triggers, missing uid, malformed JSON, or a failed
  *    Meta CAPI call. A Meta outage must never make Cal.com mark delivery failed.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import {
   sendCAPIEvent,
   buildUserData,
   getCookieFromReq,
 } from '@/lib/server-tracking'
 import { FREE_CALL_VALUE } from '@/app/lib/pricing'
+import { QUALIFIED_MIN_SCORE } from '@/lib/booking-lead-score'
+import { lookupSheetScore } from '@/lib/booking-lead-score-sheet'
 import crypto from 'crypto'
 
 const CAL_WEBHOOK_SECRET = process.env.CAL_WEBHOOK_SECRET
@@ -272,29 +274,62 @@ export async function POST(req: NextRequest) {
     })
 
     // ── QualifiedSchedule (additive; never affects the Schedule send above) ──
-    try {
-      // Cal.com's booking form no longer carries questions (owner removed them
-      // 2026-09-08), so `responses` is empty and the value scan returns 0. The
-      // quiz's lead score now rides in as metadata and is the primary signal;
-      // the response scan stays as a fallback for older bookings.
-      const metaScore = Number(metaValue(metadata, 'qscore'))
-      const fromMeta = Number.isFinite(metaScore) && metaScore > 0
-      const qScore = fromMeta ? (metaScore >= 45 ? 3 : 0) : qualifiedScore(payload.responses)
-      if (qScore >= 3) {
-        const q = await sendCAPIEvent('QualifiedSchedule', {
-          eventId: `qsched_${uid}`,
-          sourceUrl: SOURCE_URL,
-          userData,
-          customData: { score: fromMeta ? metaScore : qScore },
-          ...(testCode ? { testCode } : {}),
-        })
-        console.log(`[cal-webhook] QualifiedSchedule uid=${uid} source=${fromMeta ? 'quiz' : 'form'} score=${fromMeta ? metaScore : qScore} result=${JSON.stringify(q).slice(0, 160)}`)
-      } else {
-        console.log(`[cal-webhook] Schedule not qualified uid=${uid} source=${fromMeta ? 'quiz' : 'form'} score=${fromMeta ? metaScore : qScore}`)
+    //
+    // It had never once fired. The quiz score reached this webhook only as
+    // Cal booking metadata `qscore`, carried there by the browser — quiz page,
+    // then local storage, then /session-booked, then the Cal embed. Any hop
+    // could drop it: another phone, cleared storage, a link forwarded to her
+    // husband, or (until 13-Sep) /api/lead-status reading the wrong sheet row.
+    // With no qscore, the fallback scanned Cal's booking-form answers, empty
+    // since those questions were removed on 08-Sep, and scored every booking 0.
+    //
+    // Now: metadata `qscore` first (cheapest, already right), then the sheet
+    // itself — by the lead id Cal carries, else the phone or email she booked
+    // with. The browser is no longer a link in the chain. The old form scan
+    // stays as the last resort for bookings older than the quiz.
+    //
+    // It runs in after(): the sheet lookup is a network round trip, and Cal.com
+    // must get its 200 without waiting on it. A bare promise would die when the
+    // invocation freezes; after() keeps it alive. Event id qsched_<uid> goes
+    // through the ledger, so a Cal retry cannot double-send it.
+    const qualifyBooking = async () => {
+      try {
+        const metaScore = Number(metaValue(metadata, 'qscore'))
+        let score = Number.isFinite(metaScore) && metaScore > 0 ? metaScore : 0
+        let source = score ? 'metadata' : ''
+
+        if (!score) {
+          try {
+            const found = await lookupSheetScore({ leadId: metaValue(metadata, 'leadId'), phone, email })
+            if (found) {
+              score = found.score
+              source = `sheet:${found.matchedBy}`
+            }
+          } catch (lookupErr) {
+            console.error('[cal-webhook] sheet score lookup failed (falling back to form scan):', lookupErr instanceof Error ? lookupErr.message : String(lookupErr))
+          }
+        }
+
+        const qScore = score ? (score >= QUALIFIED_MIN_SCORE ? 3 : 0) : qualifiedScore(payload.responses)
+        if (!score) source = 'form'
+
+        if (qScore >= 3) {
+          const q = await sendCAPIEvent('QualifiedSchedule', {
+            eventId: `qsched_${uid}`,
+            sourceUrl: SOURCE_URL,
+            userData,
+            customData: { score: score || qScore },
+            ...(testCode ? { testCode } : {}),
+          })
+          console.log(`[cal-webhook] QualifiedSchedule uid=${uid} source=${source} score=${score || qScore} result=${JSON.stringify(q).slice(0, 160)}`)
+        } else {
+          console.log(`[cal-webhook] Schedule not qualified uid=${uid} source=${source} score=${score || qScore}`)
+        }
+      } catch (qErr) {
+        console.error('[cal-webhook] QualifiedSchedule failed (swallowed):', qErr instanceof Error ? qErr.message : String(qErr))
       }
-    } catch (qErr) {
-      console.error('[cal-webhook] QualifiedSchedule failed (swallowed):', qErr instanceof Error ? qErr.message : String(qErr))
     }
+    after(qualifyBooking)
 
     // Full Meta CAPI response (status implied by success + the raw body), so the
     // Vercel logs show whether the Schedule was accepted by Meta.
