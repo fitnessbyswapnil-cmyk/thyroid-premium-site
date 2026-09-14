@@ -232,12 +232,16 @@ export async function GET(req: NextRequest) {
   if (sheetRes.status === "fulfilled") leads = sheetRes.value;
   else warnings.push(`leads sheet unavailable: ${String(sheetRes.reason).slice(0, 120)}`);
   if (bookingRes.status === "fulfilled") {
-    bookings = bookingRes.value.bookings;
+    // The source drops his own identity; the rest of the test rule (the "test"
+    // keyword, placeholder emails, dummy numbers) is applied here.
+    const all = bookingRes.value.bookings;
+    bookings = all.filter((b) => !isTestIdentity({ name: b.name, email: b.email, phone: b.phone }));
+    const keywordTests = all.length - bookings.length;
     // A silent zero is indistinguishable from a true zero, so say why.
     if (bookingRes.value.error) warnings.push(`No bookings loaded — ${bookingRes.value.error}`);
     // Say what was removed rather than quietly shrinking the pipeline.
-    if (bookingRes.value.ownerTestsRemoved > 0) {
-      warnings.push(`${bookingRes.value.ownerTestsRemoved} of your own test bookings hidden.`);
+    if (bookingRes.value.ownerTestsRemoved + keywordTests > 0) {
+      warnings.push(`${bookingRes.value.ownerTestsRemoved + keywordTests} test bookings hidden.`);
     }
   } else {
     warnings.push(`cal.com unavailable: ${String(bookingRes.reason).slice(0, 120)}`);

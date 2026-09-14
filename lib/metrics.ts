@@ -134,9 +134,33 @@ function ownerPhones(): Set<string> {
   return new Set([...BUILT_IN_OWNER_PHONES, ...extra.split(",").map(phoneKey)].filter((p) => p.length === 10));
 }
 
+/**
+ * Test data that is not his own identity but is plainly not a prospect
+ * (owner's rule, 14-Sep-2026: "wherever you get the test keyword, it's not part
+ * of the programme"). Rows like "GTMVerify Test" at gtmverify@test.com and
+ * "Test User" on 9876543210 were sitting in the Today queue as "Paid, no slot
+ * chosen".
+ *  - "test" anywhere in the name or the email;
+ *  - a placeholder domain: example.com / test.com and their .org/.net/.in;
+ *  - a dummy phone: one digit repeated (9999999999), or 9876543210 / 1234567890.
+ * CRM-side only. Meta tracking does not use this rule and is unchanged.
+ */
+const TEST_KEYWORD = /test/i;
+const PLACEHOLDER_DOMAIN = /@(?:[\w-]+\.)*(?:example|test)\.(?:com|org|net|in)$/i;
+const DUMMY_PHONES = new Set(["9876543210", "1234567890", "0123456789"]);
+
+export function looksLikeTestData(who: { name?: string; email?: string; phone?: string }): boolean {
+  const email = String(who.email ?? "").trim();
+  if (TEST_KEYWORD.test(who.name ?? "") || TEST_KEYWORD.test(email)) return true;
+  if (PLACEHOLDER_DOMAIN.test(email)) return true;
+  const p = phoneKey(who.phone ?? "");
+  return p.length === 10 && (/^(\d)\1{9}$/.test(p) || DUMMY_PHONES.has(p));
+}
+
 /** The one test rule. Every metric, every tab, the queue. */
 export function isTestIdentity(who: { name?: string; email?: string; phone?: string }): boolean {
   if (isOwnerTest({ name: who.name ?? "", email: who.email ?? "" })) return true;
+  if (looksLikeTestData(who)) return true;
   const p = phoneKey(who.phone ?? "");
   return p.length === 10 && ownerPhones().has(p);
 }

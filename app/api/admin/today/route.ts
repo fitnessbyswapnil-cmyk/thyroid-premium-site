@@ -25,7 +25,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { readMessages } from "@/lib/wa-messages";
-import { isOwnerTest } from "@/lib/owner-filter";
 import { summarize, windowFor, checklistSummary, coverageOf, attendanceOf, isTestIdentity, personKey } from "@/lib/metrics";
 import { loadMetricsDataset } from "@/lib/metrics-source";
 import { readCalls } from "@/lib/crm-calls";
@@ -177,9 +176,10 @@ export async function GET(req: NextRequest) {
     const name = cell(r, C.name);
     const phone = digits10(cell(r, C.phone));
     if (!name || phone.length !== 10) continue;
-    // His own test rows would otherwise dominate a queue sorted by money at
-    // risk, and a queue you have to mentally filter is one you stop reading.
-    if (isOwnerTest({ name, email: cell(r, C.email) })) continue;
+    // Test rows would otherwise dominate a queue sorted by money at risk, and a
+    // queue you have to mentally filter is one you stop reading. The one test
+    // rule (lib/metrics): his identity, the "test" keyword, dummy numbers.
+    if (isTestIdentity({ name, email: cell(r, C.email), phone })) continue;
     if (/^(9{6,}|1234|0000)/.test(phone)) continue;
     const leadId = cell(r, C.leadId);
     const paid = cell(r, C.paid).toUpperCase() === "Y";
@@ -316,7 +316,7 @@ export async function GET(req: NextRequest) {
 
       const r = rows[idx] ?? [];
       const name = cell(r, C.name) || String(b?.name ?? c.name ?? "");
-      if (isOwnerTest({ name, email: cell(r, C.email) })) { dbg.ownerTest++; continue; }
+      if (isTestIdentity({ name, email: cell(r, C.email), phone: cell(r, C.phone) })) { dbg.ownerTest++; continue; }
       // Already settled — money recorded either way.
       if (num(cell(r, closedCol)) > 0 || num(cell(r, C.programmeValue)) > 0) { dbg.settled++; continue; }
 

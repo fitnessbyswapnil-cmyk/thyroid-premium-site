@@ -91,6 +91,14 @@ test("his test data is excluded from every number, three ways", () => {
   assert.ok(isTestIdentity({ email: "fitnessbyswapnil+anything@gmail.com" }));
   assert.ok(isTestIdentity({ name: "swapnil" }));
   assert.ok(!isTestIdentity({ phone: "9000000001", name: "Priya" }));
+  // The "test" keyword and placeholder data (owner's rule, 14-Sep).
+  assert.ok(isTestIdentity({ name: "GTMVerify Test", email: "gtmverify@test.com", phone: "9998887771" }));
+  assert.ok(isTestIdentity({ name: "LeadFixVerify", email: "leadfixverify@test.com" }));
+  assert.ok(isTestIdentity({ name: "Priya Sharma", email: "priya.test@example.com" }));
+  assert.ok(isTestIdentity({ name: "Test User", phone: "9876543210" }));
+  assert.ok(isTestIdentity({ name: "A", email: "a@gmail.com", phone: "8888888888" }));
+  // A real-looking lead is untouched.
+  assert.ok(!isTestIdentity({ name: "Anita Rao", email: "anita.rao@gmail.com", phone: "9820012345" }));
 });
 
 test("attendance: unknown is never a no-show, cancelled is neither", () => {
