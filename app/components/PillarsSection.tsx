@@ -2,7 +2,9 @@
 // why past attempts failed) while withholding the DIAGNOSIS (which pillar is
 // broken in HER case — that's what the free call diagnoses). The analogies are
 // the owner's own sales-call language, compressed for the page.
-const PILLARS = [
+// Exported so /decode renders the same three pillars in its own dark cards,
+// with one copy of the words.
+export const PILLARS = [
   {
     n: "1",
     name: "Fix the Root",

@@ -34,6 +34,7 @@ const rendered = (p: string) =>
     .replace(/^\s*\/\/.*$/gm, "");
 
 const PAGE = read("app/decode/page.tsx");
+const COACH = read("app/decode/CoachIntro.tsx");
 const STICKY = read("app/decode/DecodeStickyCta.tsx");
 const WALL = read("app/components/TransformationWall.tsx");
 
@@ -48,12 +49,14 @@ test("every /decode CTA carries the ad's own label", () => {
   assert.ok(STICKY.includes(CTA_LABEL), "the sticky bar must use the same label");
 });
 
-test("a Book button after the hero, the proof, the steps and at the end", () => {
-  // The long page had two in 14 phone screens. Every button goes to the quiz.
+test("a Book button after the hero, inside the proof, after the steps and at the end", () => {
   const inline = (PAGE.match(/className="cta-button/g) ?? []).length - 1; // minus BookButton's own definition
-  const reused = (PAGE.match(/<BookButton \/>/g) ?? []).length;
-  assert.ok(inline + reused >= 4, `expected at least 4 Book buttons, found ${inline + reused}`);
+  const rows = (PAGE.match(/<ButtonRow \/>/g) ?? []).length;
+  const reused = (PAGE.match(/<BookButton \/>/g) ?? []).length - 1; // minus ButtonRow's own use
+  const total = inline + rows + reused;
+  assert.ok(total >= 5, `expected at least 5 Book buttons, found ${total}`);
   for (const href of PAGE.matchAll(/href="([^"]+)"/g)) assert.equal(href[1], "/decode/quiz");
+  assert.match(PAGE, /<DecodeStickyCta fromTop \/>/, "the sticky bar shows from page load");
 });
 
 test("every /decode CTA shows the price", () => {
@@ -96,17 +99,20 @@ test("the refund sentence is on the page, word for word", () => {
   assert.ok((PAGE.match(/T\.H\.Y\.R\.O\.I\.D\./g) ?? []).length <= 1);
 });
 
-test("the short page keeps its order: what she needs to book, and nothing else", () => {
-  // Owner's call, 14-Sep-2026: the long argument read as noise. The long page
-  // is kept at /decode-long; this one must not grow back into it.
+test("the page keeps its order, and the long argument stays off it", () => {
+  // docs/decode-redesign-feeldvibes-style.md. The long page lives at /decode-long.
   const ORDER = [
     ["hero", 'className="decode-hero'],
+    ["the owner's video", "<HeroVideo />"],
     ["symptoms", "<SymptomChips hideCta compact"],
     ["proof: transformations", "<TransformationWall compact />"],
-    ["proof: screenshots", "<WhatsappProofSection hideCta limit={3} />"],
     ["proof: videos", "<VideoTestimonial compact />"],
+    ["proof: screenshots", "<WhatsappProofSection hideCta limit={3} />"],
+    ["meet your coach", "<CoachIntro />"],
+    ["the method", 'id="method-heading"'],
     ["what you get", 'id="get-heading"'],
     ["how booking works", 'id="steps-heading"'],
+    ["who this is for", 'id="fit-heading"'],
     ["FAQ", 'id="faq-heading"'],
   ] as const;
   let previous = -1;
@@ -117,14 +123,31 @@ test("the short page keeps its order: what she needs to book, and nothing else",
     previous = at;
   }
   const code = rendered("app/decode/page.tsx");
-  for (const gone of ["<DeficitDiagram", "<AbsolveBlock", "<ShareWithFamily", 'id="fit-heading"', 'id="compare-heading"']) {
+  for (const gone of ["<DeficitDiagram", "<AbsolveBlock", "<ShareWithFamily", 'id="compare-heading"', "NOT_FOR_YOU"]) {
     assert.ok(!code.includes(gone), `${gone} was removed on purpose — it lives on /decode-long`);
   }
 });
 
+test("the qualification list keeps the two excluded filters out", () => {
+  const list = PAGE.match(/const FOR_YOU = \[([\s\S]*?)\] as const;/)?.[1] ?? "";
+  assert.ok(list.length > 0, "the qualification list must exist");
+  assert.ok(!/invest|₹15,000|cost|afford/i.test(list), "price must not be a stated filter");
+  assert.ok(!/decision|husband|family decide/i.test(list), "the decision-maker question is the quiz's job, softly");
+});
+
+test("the call stays ₹299 and the coach section says only what the owner said", () => {
+  // Owner, 14-Sep-2026: ads run on the ₹299 call; never made free.
+  assert.ok(!/free (60|strategy|consultation) call|no obligation|spots left|limited spots/i.test(rendered("app/decode/page.tsx")));
+  assert.ok(COACH.includes("Scientific Thyroid Lean Method for fat loss"));
+  assert.match(COACH, /ACE<\/span> &middot; <span className="decode-gold">INFS<\/span>/);
+  assert.match(COACH, /BLS<\/span> certified/);
+  assert.ok(!/50,000|coach(ing)? you free/i.test(COACH + PAGE), "never the reference page's claims");
+});
+
 test("the page's own words stay under budget", () => {
   // Text the page itself writes: JSX text and string constants, not the proof
-  // components. ~1,850 words became ~200; the ceiling leaves room, not a license.
+  // components. ~1,850 words became a short page; the coach, method and fit
+  // sections added ~200 more. The ceiling leaves room, not a license.
   const code = rendered("app/decode/page.tsx")
     .replace(/^import[\s\S]*?;$/gm, "")
     .replace(/export const metadata[\s\S]*?\};/, "")
@@ -132,7 +155,7 @@ test("the page's own words stay under budget", () => {
   const text = [...code.matchAll(/>([^<>{}]+)</g), ...code.matchAll(/"([^"\n]{12,})"/g)].map((m) => m[1]).join(" ");
   const words = text.match(/[A-Za-z₹0-9']+/g) ?? [];
   assert.ok(words.length > 100, `word count looks broken (${words.length})`);
-  assert.ok(words.length <= 320, `the page writes ${words.length} words of its own — keep it minimal`);
+  assert.ok(words.length <= 560, `the page writes ${words.length} words of its own — keep it minimal`);
   assert.ok(PAGE.includes("SYMPTOM_PICK") && /SYMPTOM_PICK = \[(\s*\d+,?){6}\s*\]/.test(PAGE), "six symptom lines");
 });
 
@@ -186,6 +209,7 @@ test("no emoji in anything this page renders", () => {
   const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u;
   for (const f of [
     "app/decode/page.tsx",
+    "app/decode/CoachIntro.tsx",
     "app/decode/ShareWithFamily.tsx",
     "app/components/VideoTestimonial.tsx",
     "app/components/WhatsappProofSection.tsx",
@@ -212,9 +236,9 @@ test("neither templated \"Real X. Real Y.\" heading is back", () => {
   assert.ok(!/\b(Three|Four|Five) women\./.test(wall), "the count must not be typed by hand");
 });
 
-test("the credentials are one line", () => {
-  assert.match(PAGE, /ACE &middot; INFS &middot; AIHM/);
-  assert.ok(!PAGE.includes("<Image"), "no certificate scans on the short page");
+test("credentials are a line in the coach section, no certificate scans", () => {
+  assert.ok(!PAGE.includes("<Image"), "no certificate scans on the page");
+  assert.ok(!COACH.includes("Certificate"), "the coach photo only, not scans");
 });
 
 test("the proof claim is never inflated", () => {

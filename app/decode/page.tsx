@@ -1,36 +1,39 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import HeroProofStrip from "@/app/components/HeroProofStrip";
+import HeroVideo from "@/app/components/HeroVideo";
+import { PILLARS } from "@/app/components/PillarsSection";
 import DecodeStickyCta from "./DecodeStickyCta";
+import CoachIntro from "./CoachIntro";
 
 /**
  * /decode — the paid (₹299) 1-1 consultation offer. Ad traffic only.
  *
- * SHORT ON PURPOSE (owner's call, 14-Sep-2026). The page had grown to ~1,850
- * words in 13 sections — about 14 phone screens — with the first proof four
- * screens down and only two Book buttons. The owner's read: so much text that
- * it reads as noise and she never gets to the button. The long version is kept
- * unchanged at /decode-long, one change away if this books fewer calls.
+ * LOOK (owner's call, 14-Sep-2026): the layout of feeldvibes.in, a thyroid
+ * coach the owner reports closing consistently — white hero, near-black
+ * everything after it, gold labels, red buttons, a coach section, the method
+ * as cards, a checkmark list. Spec and the list of what was deliberately NOT
+ * copied (their words, their numbers, their scarcity lines, their free call):
+ * docs/decode-redesign-feeldvibes-style.md.
  *
- * What stays is what she needs to book, in the order she needs it:
- *   1 hero ............ is this about me, what is it, what does it cost
- *   2 symptoms ........ six lines, tap the true ones
- *   3 proof ........... faces, screenshots, voices — words around them cut
- *   4 what you get .... three lines
- *   5 how booking works three steps
- *   6 FAQ ............. three one-line answers
- *   7 last button
- * with a Book button after the hero, inside and after the proof, after the
- * steps and at the end.
+ * WORDS: short on purpose (same day, earlier). The long page is kept unchanged
+ * at /decode-long.
  *
- * The "why" argument (gap chart, "you didn't fail", the diets comparison) is
- * ONE sentence in the hero now — owner's choice. "Who this is for" and the
- * share-with-family block are gone: the 12-question quiz already filters.
+ * Order:
+ *   1 hero (white) ...... headline, the why, the refund line, button, video
+ *   2 symptoms .......... six lines, tap the true ones
+ *   3 proof ............. before/afters · video stories · WhatsApp screenshots
+ *   4 meet your coach ... the owner's own words
+ *   5 the method ........ the three pillars
+ *   6 what you get ...... three lines, then how booking works in three steps
+ *   7 who this is for ... five checkmarks
+ *   8 FAQ ............... three one-line answers
+ *   9 last button
  *
- * Unchanged, and must stay so: every button goes to /decode/quiz with the ad's
- * own label and the price; the refund sentence is quoted, not reworded; the
- * proof claim is "100+"; testimonial words are verbatim (the proof components
- * only lose their section intro lines, through props, so `/` is untouched).
+ * Unchanged, and must stay so: ₹299 (ads run on it — owner, 14-Sep); every
+ * button goes to /decode/quiz with the ad's own label and the price; the refund
+ * sentence is quoted, not reworded; the proof claim is "100+"; testimonial
+ * words are verbatim.
  */
 
 const SymptomChips = dynamic(() => import("@/app/components/SymptomChips"));
@@ -55,7 +58,23 @@ const GET = [
   "What to do about it, written down before we finish",
 ] as const;
 
-const STEPS = ["Answer 12 quick questions", "Pay ₹299", "Pick your slot"] as const;
+const STEPS = [
+  { h: "Answer 12 quick questions", p: "About your report, your diet history and what you have tried." },
+  { h: "Pay ₹299", p: "Refunded if you leave the call without knowing your blocker." },
+  { h: "Pick your slot", p: "Sixty minutes, one to one, on a video call." },
+] as const;
+
+// Self-qualification. TWO LINES ARE DELIBERATELY ABSENT and must not be added:
+// a price filter ("if you cannot invest…") and a decision-maker filter — on the
+// recorded calls neither predicted the buyer, and the quiz asks the second one
+// far more softly.
+const FOR_YOU = [
+  "You have been diagnosed hypothyroid and take the tablet, but the weight has not moved in two years or more",
+  "Your report says normal and your body says otherwise",
+  "You have already paid someone else to fix this at least once",
+  "You want the reason, not another diet chart",
+  "You are ready to start within the next 30 days",
+] as const;
 
 const FAQ = [
   { q: "Is ₹299 the whole cost?", a: "Yes. Nothing extra is added at the end." },
@@ -83,30 +102,43 @@ function BookButton() {
   );
 }
 
+function ButtonRow() {
+  return (
+    <section className="px-4 pb-12 md:px-6">
+      <div className="mx-auto w-full max-w-[760px] text-center">
+        <BookButton />
+      </div>
+    </section>
+  );
+}
+
 export default function DecodePage() {
   return (
-    // theme-decode re-skins the CTAs to the red of the creatives (globals.css).
+    // theme-decode: red buttons, gold accents (globals.css).
     <main className="theme-decode">
-      {/* ── 1. Hero ─────────────────────────────────────────────────────── */}
-      <section className="decode-hero bg-[var(--bg-page)]">
-        <div className="container-default mx-auto w-full max-w-[760px] px-4 pb-8 pt-8 text-center md:px-6 md:pb-12 md:pt-14">
+      {/* ── 1. Hero (white) ─────────────────────────────────────────────── */}
+      <section className="decode-hero bg-white">
+        <div className="container-default mx-auto w-full max-w-[760px] px-4 pb-10 pt-7 text-center md:px-6 md:pb-14 md:pt-14">
+          <p className="m-0 text-[length:var(--fs-3xs)] font-medium text-[var(--t2)]">
+            For women 30+ with a slow thyroid
+          </p>
           <h1
-            className="mx-auto max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[var(--t1)]"
-            style={{ fontFamily: "var(--font-display), Georgia, serif" }}
+            className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]"
+            style={{ fontFamily: "var(--font-body), Inter, system-ui, sans-serif" }}
           >
-            Eating less but still not losing weight?
-            <span className="block" style={{ color: "var(--p600)" }}>
+            Eating less but still not losing weight?{" "}
+            <span className="block" style={{ color: "#dc3434" }}>
               Your blood report shows why.
             </span>
           </h1>
 
           <p className="mx-auto mt-4 max-w-[560px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
             Eat less for months and a slow thyroid makes your body burn less too
-            &mdash; so the gap closes. On a 60-minute 1-1 call I read your report
-            and tell you exactly what is blocking your weight.
+            &mdash; so the gap closes. On a <strong className="text-[#0b1120]">60-minute 1-1 call</strong> I
+            read your report and tell you exactly what is blocking your weight.
           </p>
 
-          <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-medium leading-[var(--lh-body)] text-[var(--t1)]">
+          <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-bold leading-[var(--lh-body)] text-[#0b1120]">
             Leave the call without knowing your blocker and the ₹299 is refunded.
           </p>
 
@@ -121,125 +153,197 @@ export default function DecodePage() {
             </a>
           </div>
 
-          <HeroProofStrip claimsOnly />
-          <p className="mx-auto mt-3 text-[length:var(--fs-3xs)] tracking-[var(--ls-caps)] text-[var(--t3)]">
-            ACE &middot; INFS &middot; AIHM (Hashimoto&rsquo;s nutrition) certified
-          </p>
-        </div>
-      </section>
-
-      {/* ── 2. Symptoms ─────────────────────────────────────────────────── */}
-      <SymptomChips hideCta compact pick={SYMPTOM_PICK} />
-
-      {/* ── 3. Proof ────────────────────────────────────────────────────── */}
-      <div className="band-deep">
-        <TransformationWall compact />
-      </div>
-      {/* A button between the faces and the screenshots: proof runs about three
-          phone screens, and the next button should never be further away. */}
-      <section className="bg-[var(--bg-page)]">
-        <div className="mx-auto w-full max-w-[760px] px-4 pt-8 text-center md:px-6">
-          <BookButton />
-        </div>
-      </section>
-      <WhatsappProofSection hideCta limit={3} />
-      <VideoTestimonial compact />
-      <section className="bg-[var(--bg-page)]">
-        <div className="mx-auto w-full max-w-[760px] px-4 pb-10 text-center md:px-6">
-          <BookButton />
-        </div>
-      </section>
-
-      {/* ── 4. What you get · 5. How booking works ──────────────────────── */}
-      <section className="bg-[var(--bg-elevated)]" aria-labelledby="get-heading">
-        <div className="mx-auto w-full max-w-[640px] px-4 py-10 md:px-6 md:py-14">
-          <h2 id="get-heading" className="section-title mx-auto text-balance text-center">
-            What you get in 60 minutes
-          </h2>
-          <ul className="mx-auto mt-6 flex list-none flex-col gap-3 p-0">
-            {GET.map((line) => (
-              <li
-                key={line}
-                className="relative rounded-2xl bg-white py-3.5 pl-11 pr-4 text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]"
-                style={{ boxShadow: "var(--shadow-card)" }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="absolute left-4 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full"
-                  style={{ background: "var(--accent-yellow)" }}
-                />
-                {line}
-              </li>
-            ))}
-          </ul>
-          <p className="mx-auto mt-4 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-            If a full programme suits you, I will show you what it involves and
-            what it costs. No pressure.
-          </p>
-
-          <h2 id="steps-heading" className="section-title mx-auto mt-12 text-balance text-center">
-            How booking works
-          </h2>
-          <ol className="mx-auto mt-6 grid list-none grid-cols-3 gap-3 p-0">
-            {STEPS.map((step, i) => (
-              <li key={step} className="text-center">
-                <span
-                  className="mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[length:var(--fs-2xs)] font-bold text-white"
-                  style={{ background: "var(--p600)" }}
-                >
-                  {i + 1}
-                </span>
-                <span className="mt-2 block text-[length:var(--fs-2xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">
-                  {step}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-8 text-center">
-            <BookButton />
-          </div>
-        </div>
-      </section>
-
-      {/* ── 6. FAQ ──────────────────────────────────────────────────────── */}
-      <section className="bg-[var(--bg-page)]" aria-labelledby="faq-heading">
-        <div className="mx-auto w-full max-w-[640px] px-4 py-10 md:px-6 md:py-14">
-          <h2 id="faq-heading" className="section-title mx-auto text-balance text-center">
-            Quick questions
-          </h2>
-          <dl className="mt-6 flex flex-col gap-3">
-            {FAQ.map((f) => (
-              <div key={f.q} className="rounded-2xl bg-white px-5 py-4" style={{ boxShadow: "var(--shadow-card)" }}>
-                <dt className="text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">{f.q}</dt>
-                <dd className="m-0 mt-1.5 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{f.a}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      {/* ── 7. Last button ──────────────────────────────────────────────── */}
-      <section className="bg-[var(--bg-elevated)]">
-        <div className="mx-auto w-full max-w-[760px] px-4 py-10 text-center md:px-6 md:py-12">
-          <a
-            href="/decode/quiz"
-            className="cta-button mx-auto"
-            style={{ maxWidth: "24rem", textDecoration: "none" }}
-          >
-            Book my 1-1 Thyroid Consultation
-            <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
-          </a>
-          {SHOW_PROGRAMME_PRICE && (
-            <p className="mx-auto mt-4 max-w-[var(--measure-caption)] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-              After the ₹299 consultation, if the full 3-month programme is the
-              right next step, it is ₹15,000&ndash;₹30,000. Saying so now so
-              nobody&rsquo;s time is wasted.
+          {/* The owner's own video, the home page VSL. Only its poster loads
+              until she taps play, so it costs the page almost nothing. */}
+          <div className="mx-auto mt-8 w-full max-w-[560px]">
+            <p className="mb-3 text-[length:var(--fs-xs)] font-bold text-[#0b1120]">
+              Why thyroid fat loss is not the same
             </p>
-          )}
+            <HeroVideo />
+          </div>
+
+          <HeroProofStrip claimsOnly />
         </div>
       </section>
 
-      <DecodeStickyCta />
+      {/* Everything after the hero sits on the near-black band. */}
+      <div className="band-deep">
+        {/* ── 2. Symptoms ──────────────────────────────────────────────── */}
+        <SymptomChips hideCta compact pick={SYMPTOM_PICK} />
+
+        {/* ── 3. Proof ─────────────────────────────────────────────────── */}
+        <TransformationWall compact />
+        <ButtonRow />
+        <VideoTestimonial compact />
+      </div>
+
+      <div className="band-deep band-deeper">
+        <WhatsappProofSection hideCta limit={3} />
+        <ButtonRow />
+      </div>
+
+      <div className="band-deep">
+        {/* ── 4. Meet your coach ───────────────────────────────────────── */}
+        <CoachIntro />
+
+        {/* ── 5. The method ────────────────────────────────────────────── */}
+        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="method-heading">
+          <div className="mx-auto w-full max-w-[880px]">
+            <header className="text-center">
+              <p className="section-label">The method</p>
+              <h2 id="method-heading" className="section-title mx-auto text-balance">
+                The <span className="decode-gold">Scientific Thyroid Lean Method</span>
+              </h2>
+            </header>
+            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+              {PILLARS.map((p) => (
+                <article key={p.n} className="decode-card p-5 md:p-6">
+                  <p className="m-0 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)] decode-gold">
+                    PILLAR {p.n}
+                  </p>
+                  <h3 className="mb-2 mt-2 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-white">
+                    {p.name}
+                  </h3>
+                  <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{p.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── 6. What you get · how booking works ──────────────────────── */}
+        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="get-heading">
+          <div className="mx-auto w-full max-w-[640px]">
+            <header className="text-center">
+              <p className="section-label">On the call</p>
+              <h2 id="get-heading" className="section-title mx-auto text-balance">
+                What you get in <span className="decode-gold">60 minutes</span>
+              </h2>
+            </header>
+            <ul className="mx-auto mt-7 flex list-none flex-col gap-3 p-0">
+              {GET.map((line) => (
+                <li
+                  key={line}
+                  className="decode-card relative py-4 pl-11 pr-4 text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-white"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-4 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full"
+                    style={{ background: "var(--accent-yellow)" }}
+                  />
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <p className="mx-auto mt-4 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+              If a full programme suits you, I will show you what it involves and
+              what it costs. No pressure.
+            </p>
+
+            <header className="mt-14 text-center">
+              <p className="section-label">How booking works</p>
+              <h2 id="steps-heading" className="section-title mx-auto text-balance">
+                Three steps to <span className="decode-gold">your call</span>
+              </h2>
+            </header>
+            <ol className="mx-auto mt-8 flex list-none flex-col p-0">
+              {STEPS.map((s, i) => (
+                <li
+                  key={s.h}
+                  className="flex flex-col items-center py-6 text-center"
+                  style={{ borderTop: i ? "1px solid rgba(255,255,255,0.08)" : "none" }}
+                >
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-md text-[length:var(--fs-2xs)] font-bold decode-gold"
+                    style={{ border: "1px solid var(--accent-yellow)" }}
+                  >
+                    0{i + 1}
+                  </span>
+                  <h3 className="mb-1 mt-3 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-white">
+                    {s.h}
+                  </h3>
+                  <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{s.p}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-4 text-center">
+              <BookButton />
+            </div>
+          </div>
+        </section>
+
+        {/* ── 7. Who this is for ───────────────────────────────────────── */}
+        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="fit-heading">
+          <div className="mx-auto w-full max-w-[640px]">
+            <header className="text-center">
+              <p className="section-label">Who this is for</p>
+              <h2 id="fit-heading" className="section-title mx-auto text-balance">
+                Not another diet chart. <span className="decode-gold">Your report, read properly.</span>
+              </h2>
+            </header>
+            <p className="mt-7 text-[length:var(--fs-xs)] font-bold text-white">This is for you if:</p>
+            <ul className="mt-3 flex list-none flex-col gap-3 p-0">
+              {FOR_YOU.map((line) => (
+                <li key={line} className="flex gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t1)]">
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" className="mt-[3px] flex-none">
+                    <path d="M4 10.5l4 4 8-9" fill="none" stroke="#ffc91e" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── 8. FAQ ───────────────────────────────────────────────────── */}
+        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="faq-heading">
+          <div className="mx-auto w-full max-w-[640px]">
+            <header className="text-center">
+              <p className="section-label">Before you book</p>
+              <h2 id="faq-heading" className="section-title mx-auto text-balance">
+                Quick <span className="decode-gold">questions</span>
+              </h2>
+            </header>
+            <dl className="mt-7 flex flex-col gap-3">
+              {FAQ.map((f) => (
+                <div key={f.q} className="decode-card px-5 py-4">
+                  <dt className="text-[length:var(--fs-xs)] font-bold leading-[var(--lh-tight)] text-white">{f.q}</dt>
+                  <dd className="m-0 mt-1.5 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{f.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+
+        {/* ── 9. Last button ───────────────────────────────────────────── */}
+        <section className="px-4 pb-14 pt-4 text-center md:px-6">
+          <div className="mx-auto w-full max-w-[760px]">
+            <a
+              href="/decode/quiz"
+              className="cta-button mx-auto"
+              style={{ maxWidth: "24rem", textDecoration: "none" }}
+            >
+              Book my 1-1 Thyroid Consultation
+              <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
+            </a>
+            <p className="mx-auto mt-4 text-[length:var(--fs-2xs)] text-[var(--t2)]">
+              ₹299 &middot; 60 minutes &middot; one to one with Swapnil
+            </p>
+            {SHOW_PROGRAMME_PRICE && (
+              <p className="mx-auto mt-4 max-w-[var(--measure-caption)] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
+                After the ₹299 consultation, if the full 3-month programme is the
+                right next step, it is ₹15,000&ndash;₹30,000. Saying so now so
+                nobody&rsquo;s time is wasted.
+              </p>
+            )}
+            <p className="mx-auto mt-8 text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
+              Individual results vary. Not a substitute for medical advice.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <DecodeStickyCta fromTop />
     </main>
   );
 }

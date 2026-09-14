@@ -110,7 +110,7 @@ export default function SymptomChips({
         {/* Progress bar, sticky so the count stays visible while she works down
             the list. It is the section's feedback loop: without it, ticking is
             data entry; with it, she is watching a number about herself climb. */}
-        <div className="sticky top-3 z-[5] mb-5 w-full max-w-[640px]">
+        <div className="light-panel sticky top-3 z-[5] mb-5 w-full max-w-[640px]">
           <div className="flex items-center gap-[14px] rounded-[14px] bg-white px-[18px] py-[14px] shadow-[0_2px_12px_rgba(36,31,26,0.08)]">
             <div
               className="h-[10px] flex-1 overflow-hidden rounded-lg bg-[var(--yellow-soft)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]"
@@ -136,7 +136,7 @@ export default function SymptomChips({
           </div>
         </div>
 
-        <ul className="mb-10 w-full max-w-[640px] overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_rgba(36,31,26,0.06)]" role="list">
+        <ul className="light-panel mb-10 w-full max-w-[640px] overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_rgba(36,31,26,0.06)]" role="list">
           {symptoms.map((s, i) => {
             const on = picked.has(s);
             return (

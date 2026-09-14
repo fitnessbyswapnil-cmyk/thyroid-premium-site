@@ -19,7 +19,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function DecodeStickyCta() {
+/** `fromTop`: visible from page load, as on the reference page the redesign
+ *  follows (docs/decode-redesign-feeldvibes-style.md). Default off keeps the
+ *  20% scroll trigger for any other caller. */
+export default function DecodeStickyCta({ fromTop = false }: { fromTop?: boolean } = {}) {
   const barRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   // Once she has finished the quiz the bar has nothing left to ask for — the
@@ -33,14 +36,15 @@ export default function DecodeStickyCta() {
 
   useEffect(() => {
     const onScroll = () => {
+      if (fromTop) return setVisible(true);
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max <= 0) return;
-      setVisible(window.scrollY / max >= 0.2);
+      setVisible(fromTop || window.scrollY / max >= 0.2);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [fromTop]);
 
   const show = visible && !retired;
 

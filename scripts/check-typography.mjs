@@ -35,6 +35,7 @@ const SCOPE = [
   "app/decode/quiz/page.tsx",
   "app/decode/ShareWithFamily.tsx",
   "app/decode/DecodeStickyCta.tsx",
+  "app/decode/CoachIntro.tsx",
   "app/session-booked/page.tsx",
   "app/components/SymptomChips.tsx",
   "app/components/AbsolveBlock.tsx",

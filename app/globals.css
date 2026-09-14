@@ -773,6 +773,77 @@ a {
   --p-border: rgba(255, 201, 30, 0.32);
 }
 
+/* ── /decode: the reference-page skin (14-Sep-2026) ──────────────────────────
+   docs/decode-redesign-feeldvibes-style.md. White hero, near-black everything
+   after it, gold labels, red buttons.
+
+   The red is #dc3434, not the reference page's #e93d3d. They look the same;
+   the difference is legibility. White on #e93d3d is 4.0:1, which fails for
+   the small price line under the label. #dc3434 is 4.6:1, so every word on
+   the button passes at any size. Later in the file than the .theme-decode
+   block above, so these win over its #c8102e. */
+.theme-decode {
+  --cta-bg: #dc3434;
+  --cta-fg: #ffffff;
+  --cta-sub-fg: #ffffff;
+  --cta-sub-opacity: 0.92;
+  --cta-bg-hover: #c52b2b;
+  --cta-bg-active: #b82626;
+  --cta-shadow-hover: 0 12px 28px rgba(220, 52, 52, 0.32);
+  --focus-ring: #dc3434;
+}
+
+/* Sentence case and 8px corners, as on the reference page: a button that
+   reads like a sentence, not a shouted label. */
+.theme-decode .cta-button {
+  border-radius: 8px;
+  text-transform: none;
+  font-size: var(--fs-base);
+  letter-spacing: var(--ls-body);
+  align-items: center;
+  text-align: center;
+}
+
+.theme-decode .cta-button .cta-sub {
+  text-transform: none;
+  letter-spacing: var(--ls-body);
+}
+
+/* Headings on the dark ground: full white, and the gold half of a heading. */
+.theme-decode .band-deep .section-title {
+  color: #ffffff;
+}
+
+.decode-gold {
+  color: var(--accent-yellow);
+}
+
+/* The dark card: coach, method, steps, FAQ. */
+.decode-card {
+  background: #151b15;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+/* A white panel inside the dark band (the symptom checklist) keeps DARK ink.
+   The band flips --t1 and the borders to light values, which on a white panel
+   made the "0 of 6 ticked" count and the empty checkboxes all but invisible.
+   Scoped to the band, so the same panel on the light home page is untouched. */
+.band-deep .light-panel {
+  --t1: #0b1120;
+  --t2: #4b5563;
+  --border-strong: rgba(11, 17, 32, 0.22);
+  --border-hairline: rgba(11, 17, 32, 0.08);
+}
+
+/* One step darker, for the WhatsApp screenshots — the reference page's way of
+   marking a new block without a divider. */
+.band-deeper {
+  background: #080c08;
+  --bg-page: #080c08;
+  --bg-section: #080c08;
+}
+
 /* SECONDARY BUTTON */
 
 .btn-primary {
