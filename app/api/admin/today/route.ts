@@ -26,6 +26,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { readMessages } from "@/lib/wa-messages";
 import { isOwnerTest } from "@/lib/owner-filter";
+import { summarize, windowFor, checklistSummary, coverageOf, attendanceOf, isTestIdentity, personKey } from "@/lib/metrics";
+import { loadMetricsDataset } from "@/lib/metrics-source";
 import { readCalls } from "@/lib/crm-calls";
 import { fetchBookings } from "@/lib/cal-bookings";
 import { draftMessage, draftWaLink } from "@/lib/draft-message";
@@ -69,9 +71,11 @@ async function windsorSpend(from: Date, to: Date): Promise<number | null> {
 export async function GET(req: NextRequest) {
   if (!checkAdminKey(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const days = Math.min(90, Math.max(1, Number(req.nextUrl.searchParams.get("days") ?? 7)));
+  // 0 = all time, shared with the other tabs through the range picker.
+  const rawDays = Number(req.nextUrl.searchParams.get("days") ?? 14);
+  const days = rawDays === 0 ? 0 : Math.min(3650, Math.max(1, Number.isFinite(rawDays) ? rawDays : 14));
   const now = Date.now();
-  const since = now - days * 86400000;
+  const since = days === 0 ? 0 : now - days * 86400000;
 
   const { sheets, sheetId } = await getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
@@ -121,45 +125,54 @@ export async function GET(req: NextRequest) {
   };
 
   // ── Acquisition ───────────────────────────────────────────────────────────
-  // A consult payment is Paid=Y. A programme close is a payment materially
-  // larger than the Rs299 gate — the sheet does not yet separate the two, so
-  // the amount is the only signal available. Flagged in `caveats` rather than
-  // hidden, because a blended number would read as certainty it has not earned.
-  let consultPayers = 0;
-  let programmeCloses = 0;
-  let contracted = 0;
-  let monthCloses = 0;
+  // Every count and sum here comes from lib/metrics — the same definitions,
+  // the same dataset and the same window as Pipeline and Analytics. This block
+  // used to call any payment of ₹5,000+ a programme close and count every
+  // Paid = Y row as a consult payer, a third definition beside the other two
+  // tabs' two. The owner's rules now: a win is ₹15,000+ or a sale marked here,
+  // revenue is programme money collected, ₹299 fees are their own line.
+  const { data: metricsData } = await loadMetricsDataset();
+  const m = summarize(metricsData, windowFor(days, now), now);
   const monthStart = new Date();
   monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+  const month = summarize(metricsData, { from: monthStart.getTime(), to: now + 1 }, now);
+  const consultPayers = m.consultFees.count;
+  const programmeCloses = m.won;
+  const contracted = m.contracted;
+  const collected = m.revenue;
+  const monthCloses = month.won;
+  const heuristicUsed = false;
+  const checklist = checklistSummary(metricsData.calls);
 
-  let collected = 0;
-  let heuristicUsed = false;
-  for (const r of rows) {
-    if (isOwnerTest({ name: cell(r, C.name), email: cell(r, C.email) })) continue;
-    if (cell(r, C.paid).toUpperCase() !== "Y") continue;
-
-    const paidWhen = parseWhen(cell(r, C.paidAt)) ?? parseWhen(cell(r, C.ts));
-
-    // Prefer the dedicated programme columns. Fall back to "a payment of 5,000
-    // or more is a programme" only for rows written before those columns
-    // existed — and say so on the page rather than presenting a guess as fact.
-    const pv = num(cell(r, C.programmeValue));
-    const pc = num(cell(r, C.programmeCollected));
-    const pAt = parseWhen(cell(r, C.programmeClosedAt));
-    const legacyAmt = num(cell(r, C.paidAmount));
-    const isProgramme = pv > 0 || legacyAmt >= 5000;
-    if (pv === 0 && legacyAmt >= 5000) heuristicUsed = true;
-
-    const progValue = pv > 0 ? pv : legacyAmt;
-    const progCollected = pc > 0 ? pc : progValue;
-    const progWhen = pAt ?? paidWhen;
-
-    if (paidWhen !== null && paidWhen >= since) consultPayers++;
-    if (isProgramme && progWhen !== null && progWhen >= since) {
-      programmeCloses++; contracted += progValue; collected += progCollected;
-    }
-    if (isProgramme && progWhen !== null && progWhen >= monthStart.getTime()) monthCloses++;
+  // ── Calls to mark ─────────────────────────────────────────────────────────
+  // Every call from the last 14 days whose slot has passed and that has no
+  // recorded outcome. Recordings stopped arriving after 30 Aug, and the old
+  // "Did she pay?" list only filled from recordings, so nothing was ever
+  // marked. Marking here writes the Calls sheet — attendance plus the
+  // checklist — which is exactly what show-up rate and "what you fail most"
+  // read. It sends nothing to Meta; a payment still goes through /mark.
+  const coverage = coverageOf(metricsData.calls);
+  const judged = new Set(metricsData.calls.filter((c) => c.attended !== null).map((c) => c.bookingUid));
+  const leadRowByPerson = new Map<string, number>();
+  for (const l of metricsData.leads) {
+    if (isTestIdentity(l)) continue;
+    const k = personKey(l);
+    if (k) leadRowByPerson.set(k, l.row); // newest row wins: append-ordered
   }
+  const toMark = metricsData.bookings
+    .filter((b) => !isTestIdentity(b) && !b.cancelled && !judged.has(b.uid))
+    .map((b) => ({ b, state: attendanceOf(b, undefined, coverage, now), t: Date.parse(b.startAt) }))
+    .filter(({ state, t }) => state !== "upcoming" && state !== "cancelled" && Number.isFinite(t) && now - t <= 14 * 86400000)
+    .sort((a, b) => b.t - a.t)
+    .slice(0, 20)
+    .map(({ b }) => ({
+      bookingUid: b.uid,
+      name: b.name,
+      phone: b.phone.replace(/\D/g, "").slice(-10),
+      email: b.email,
+      startAt: b.startAt,
+      leadRow: leadRowByPerson.get(personKey(b)) ?? null,
+    }));
 
   const spend = await windsorSpend(new Date(since), new Date(now));
   const cpp = spend !== null && consultPayers > 0 ? Math.round(spend / consultPayers) : null;
@@ -347,6 +360,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     generatedAt: new Date(now).toISOString(),
     window: { days, since: new Date(since).toISOString() },
+    // The headline numbers and the call checklist, from lib/metrics — the same
+    // objects /api/admin/metrics returns to the other tabs.
+    metrics: m,
+    checklist,
+    toMark,
     acquisition: {
       spend, consultPayers, programmeCloses, contracted, collected,
       costPerConsultPayer: cpp, costPerProgrammeClient: cppc,

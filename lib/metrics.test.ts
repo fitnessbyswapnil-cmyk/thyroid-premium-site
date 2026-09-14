@@ -13,7 +13,7 @@ const iso = (msAgo: number) => new Date(NOW - msAgo).toISOString();
 let rowN = 2;
 const lead = (o: Partial<LeadRecord>): LeadRecord => ({
   row: rowN++, createdAt: iso(DAY), name: "Client", phone: "", email: "", paid: false,
-  paidAmount: null, paidAt: "", closedAmt: null, closedAt: "", ...o,
+  paidAmount: null, paidAt: "", closedAmt: null, closedAt: "", programmeValue: null, programmeCollected: null, ...o,
 });
 const booking = (o: Partial<BookingRecord>): BookingRecord => ({
   uid: `u${rowN++}`, createdAt: iso(DAY), startAt: iso(DAY / 2), cancelled: false, name: "Client", email: "", phone: "", ...o,
@@ -34,8 +34,10 @@ const FIXTURE: Dataset = {
     lead({ phone: "9000000004", paid: true, paidAmount: 1, paidAt: iso(DAY) }),
     // ₹2,000 — reported as "other", never revenue, never a win.
     lead({ phone: "9000000005", paid: true, paidAmount: 2000, paidAt: iso(DAY) }),
-    // A sale marked in Today (Closed ₹), dated by when the money moved.
-    lead({ phone: "9000000006", closedAmt: 20000, closedAt: iso(5 * DAY), paid: true, paidAmount: 20000, paidAt: iso(5 * DAY) }),
+    // A sale marked in Today, on instalments: ₹40,000 contracted, ₹20,000
+    // collected now. Revenue takes the ₹20,000; contracted takes the ₹40,000.
+    lead({ phone: "9000000006", closedAmt: 40000, programmeValue: 40000, programmeCollected: 20000,
+      closedAt: iso(5 * DAY), paid: true, paidAmount: 40000, paidAt: iso(5 * DAY) }),
     // An unpaid lead.
     lead({ phone: "9000000007" }),
     // HIS OWN TESTS, three ways — must vanish from every number.
@@ -47,7 +49,7 @@ const FIXTURE: Dataset = {
   ],
   bookings: [
     booking({ uid: "attended", phone: "9000000001", startAt: iso(3 * DAY) }),
-    booking({ uid: "noshow", phone: "9000000002", startAt: iso(2 * DAY) }),
+    booking({ uid: "noshow", phone: "9000000002", startAt: iso(5 * DAY) }),
     booking({ uid: "cancelled", phone: "9000000003", startAt: iso(2 * DAY), cancelled: true }),
     booking({ uid: "unknown", phone: "9000000005", createdAt: iso(13 * DAY), startAt: iso(12 * DAY) }),
     booking({ uid: "upcoming", phone: "9000000007", startAt: new Date(NOW + DAY).toISOString() }),
@@ -66,8 +68,11 @@ const W14 = windowFor(14, NOW);
 
 test("revenue is programme money only, by payment date — fees stay out", () => {
   const s = summarize(FIXTURE, W14, NOW);
-  assert.equal(s.revenue, 50000, "₹30,000 via Cashfree + ₹20,000 marked; never the ₹299s, ₹1, ₹2,000 or his tests");
+  assert.equal(s.revenue, 50000, "₹30,000 via Cashfree + ₹20,000 COLLECTED of a marked sale; never the ₹299s, ₹1, ₹2,000 or his tests");
+  assert.equal(s.contracted, 70000, "₹30,000 + the ₹40,000 contract");
   assert.equal(s.won, 2);
+  assert.deepEqual(s.wins.map((w) => w.amount), [30000, 20000], "largest first");
+  assert.equal(s.scheduledAhead, 1, "the upcoming booking, whatever the window");
   assert.deepEqual(s.consultFees, { count: 3, amount: 300 }, "₹299 + (no amount) + ₹1");
   assert.deepEqual(s.otherPayments, { count: 1, amount: 2000 });
 });
@@ -115,15 +120,25 @@ test("payment kinds sit exactly on the owner's thresholds", () => {
   assert.equal(paymentKind(PROGRAMME_MIN_AMOUNT), "programme");
   assert.equal(isWonRow({ closedAmt: null, paidAmount: 299 }), false, "the Pipeline bug");
   assert.equal(isWonRow({ closedAmt: 18000, paidAmount: 299 }), true, "marked in Today");
+  assert.equal(isWonRow({ closedAmt: null, paidAmount: 299, programmeValue: 25000 }), true, "Programme Value alone is a marked sale");
 });
 
-test("attendanceOf honours the grace period and the ingest edge", () => {
-  const since = iso(10 * DAY);
-  assert.equal(attendanceOf({ cancelled: false, startAt: iso(30 * 60000) }, undefined, since, NOW), "upcoming");
-  assert.equal(attendanceOf({ cancelled: false, startAt: iso(DAY) }, undefined, since, NOW), "no_show");
-  assert.equal(attendanceOf({ cancelled: false, startAt: iso(20 * DAY) }, undefined, since, NOW), "unknown");
-  assert.equal(attendanceOf({ cancelled: false, startAt: iso(DAY) }, undefined, null, NOW), "unknown", "no ingest at all → nothing is judgeable");
-  assert.equal(attendanceOf({ cancelled: true, startAt: iso(DAY) }, { attended: true }, since, NOW), "cancelled");
+test("attendanceOf honours the grace period and BOTH ingest edges", () => {
+  const cov = { since: iso(10 * DAY), until: iso(DAY) };
+  assert.equal(attendanceOf({ cancelled: false, startAt: iso(30 * 60000) }, undefined, cov, NOW), "upcoming");
+  assert.equal(attendanceOf({ cancelled: false, startAt: iso(2 * DAY) }, undefined, cov, NOW), "no_show");
+  assert.equal(attendanceOf({ cancelled: false, startAt: iso(20 * DAY) }, undefined, cov, NOW), "unknown", "before the first recording");
+  assert.equal(attendanceOf({ cancelled: false, startAt: iso(DAY) }, undefined, { since: null, until: null }, NOW), "unknown", "no ingest at all → nothing is judgeable");
+  assert.equal(attendanceOf({ cancelled: true, startAt: iso(DAY) }, { attended: true }, cov, NOW), "cancelled");
+});
+
+test("the 14-Sep trap: recordings stopped, so later calls are unknown — not no-shows", () => {
+  // Every recording ever ingested was from two days; calls a week later have
+  // no recording because the ingest stopped, not because she stayed away.
+  const cov = { since: iso(16 * DAY), until: iso(15 * DAY) };
+  assert.equal(attendanceOf({ cancelled: false, startAt: iso(15.5 * DAY) }, undefined, cov, NOW), "no_show", "between recordings: judgeable");
+  assert.equal(attendanceOf({ cancelled: false, startAt: iso(3 * DAY) }, undefined, cov, NOW), "unknown", "after the last recording + a day: unknown");
+  assert.equal(attendanceOf({ cancelled: false, startAt: iso(3 * DAY) }, { attended: true }, cov, NOW), "attended", "a recording always wins");
 });
 
 test("checklist: most-missed first, average misses per scored call", () => {
@@ -133,6 +148,15 @@ test("checklist: most-missed first, average misses per scored call", () => {
   assert.equal(c.checks[0].key, "price_said_cleanly");
   assert.equal(c.checks[0].missed, 2);
   assert.equal(c.checks[0].label, "Named the price cleanly, with the guarantee");
+});
+
+test("pitch stats: average of priced calls only, and how many came down", () => {
+  const c = checklistSummary([
+    { bookingUid: "a", occurredAt: iso(DAY), attended: true, scorecard: null, pricePitched: 20000, discountOffered: false },
+    { bookingUid: "b", occurredAt: iso(DAY), attended: true, scorecard: null, pricePitched: 30000, discountOffered: true },
+    { bookingUid: "c", occurredAt: iso(DAY), attended: true, scorecard: null, pricePitched: null },
+  ]);
+  assert.deepEqual(c.pitched, { calls: 2, avgPrice: 25000, discounted: 1 });
 });
 
 test("Today, Pipeline and Analytics show identical headline numbers", () => {

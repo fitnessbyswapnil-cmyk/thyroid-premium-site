@@ -19,6 +19,7 @@ const base = (over: Partial<StageInput> = {}): StageInput => ({
   sessionStart: null,
   call: null,
   paid: false,
+  won: false,
   now: NOW,
   ...over,
 });
@@ -31,10 +32,16 @@ const call = (over: Partial<CallFacts> = {}): CallFacts => ({
   ...over,
 });
 
-test("payment outranks everything, including a missing call record", () => {
-  assert.equal(deriveStage(base({ paid: true })), "won");
+test("a programme sale outranks everything, including a missing call record", () => {
+  assert.equal(deriveStage(base({ paid: true, won: true })), "won");
   // Won even when Fathom says she never showed — money is the only proof.
-  assert.equal(deriveStage(base({ paid: true, call: call({ attended: false }) })), "won");
+  assert.equal(deriveStage(base({ paid: true, won: true, call: call({ attended: false }) })), "won");
+});
+
+test("a ₹299 consultation fee is NOT a win — the 13-Sep Pipeline bug", () => {
+  // Three of Pipeline's nine "wins" were exactly this.
+  assert.equal(deriveStage(base({ paid: true, won: false, hasBooking: true, sessionStart: iso(60) })), "booked");
+  assert.equal(deriveStage(base({ paid: true, won: false })), "new");
 });
 
 test("a lead with no booking is new", () => {
@@ -53,13 +60,14 @@ test("a slot that just passed is NOT a no-show until Fathom has had time", () =>
   // Both cases assume the ingest has already searched this far back; the window
   // rule is covered separately below.
   const covered = iso(-(NO_SHOW_GRACE_MIN + 600));
+  const until = iso(0);
 
   // Inside the grace window: the call may still be running, or the transcript
   // may still be processing. Calling this a no-show sends the wrong message.
-  const justInside = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN - 5)), callDataSince: covered });
+  const justInside = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN - 5)), callDataSince: covered, callDataUntil: until });
   assert.equal(deriveStage(justInside), "booked");
 
-  const past = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN + 5)), callDataSince: covered });
+  const past = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN + 5)), callDataSince: covered, callDataUntil: until });
   assert.equal(deriveStage(past), "no_show");
 });
 
@@ -89,17 +97,20 @@ test("pitched decays to lost only after the follow-up window", () => {
 test("no-show is only inferred inside the window the ingest has searched", () => {
   const past = base({ hasBooking: true, sessionStart: iso(-(NO_SHOW_GRACE_MIN + 60)) });
 
-  // Nothing ingested at all: she stays where the calendar put her.
-  assert.equal(deriveStage(past), "booked");
-  assert.equal(deriveStage({ ...past, callDataSince: "" }), "booked");
+  // Nothing ingested at all: her attendance is unknown, never a no-show.
+  assert.equal(deriveStage(past), "unknown");
+  assert.equal(deriveStage({ ...past, callDataSince: "" }), "unknown");
 
   // Ingest only reaches back to AFTER her call. This is the case that mislabelled
   // 28 women the moment three recent calls were ingested: three calls covered is
   // not thirty calls judged.
-  assert.equal(deriveStage({ ...past, callDataSince: iso(-10) }), "booked");
+  assert.equal(deriveStage({ ...past, callDataSince: iso(-10), callDataUntil: iso(0) }), "unknown");
 
   // Ingest covers her slot and found nothing — now it means she did not join.
-  assert.equal(deriveStage({ ...past, callDataSince: iso(-(NO_SHOW_GRACE_MIN + 600)) }), "no_show");
+  assert.equal(deriveStage({ ...past, callDataSince: iso(-(NO_SHOW_GRACE_MIN + 600)), callDataUntil: iso(0) }), "no_show");
+
+  // Ingest STOPPED well before her slot: unknown again. The 14-Sep case.
+  assert.equal(deriveStage({ ...past, callDataSince: iso(-20000), callDataUntil: iso(-10000) }), "unknown");
 });
 
 test("a recorded no-show wins over the calendar saying booked", () => {
@@ -113,7 +124,8 @@ test("agreed on the call but no payment is flagged — the gateway-failure case"
   // Still 'pitched', never 'won' — the transcript is a signal, not proof.
   assert.equal(deriveStage(agreed), "pitched");
 
-  assert.equal(agreedButUnpaid({ ...agreed, paid: true }), false);
+  assert.equal(agreedButUnpaid({ ...agreed, paid: true, won: true }), false);
+  assert.equal(agreedButUnpaid({ ...agreed, paid: true, won: false }), true, "a ₹299 fee does not settle the programme");
 });
 
 test("next action routes on the REAL objection, not the excuse", () => {

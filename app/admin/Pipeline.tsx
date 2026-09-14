@@ -23,8 +23,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LIGHT, DARK, FONT, RADIUS, ELEV, stageRamp, type Tokens } from "./tokens";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
+import { useMetrics, useRange, RANGE_CHOICES, rangeLabel, pct, rupees } from "./useMetrics";
+import { SCORECARD_LABEL } from "@/lib/scorecard";
 
-export type Stage = "new" | "booked" | "attended" | "pitched" | "won" | "no_show" | "cancelled" | "lost";
+export type Stage = "new" | "booked" | "unknown" | "attended" | "pitched" | "won" | "no_show" | "cancelled" | "lost";
 
 /** The four ordinal steps, in order. Everything else is an outcome. */
 const SEQUENCE: { id: Stage; label: string }[] = [
@@ -35,23 +37,14 @@ const SEQUENCE: { id: Stage; label: string }[] = [
 ];
 const OUTCOMES: { id: Stage; label: string; glyph: string }[] = [
   { id: "won", label: "Won", glyph: "●" },
+  { id: "unknown", label: "Unknown", glyph: "?" },
   { id: "no_show", label: "No-show", glyph: "◐" },
   { id: "cancelled", label: "Cancelled", glyph: "○" },
   { id: "lost", label: "Lost", glyph: "✕" },
 ];
 
-const SCORE_LABELS: Record<string, string> = {
-  past_spend_totalled: "Totalled her past spend before naming the price",
-  range_tested: "Asked what she had tried and why it stopped",
-  proof_shown_before_price: "Showed proof before the number",
-  decision_maker_found: "Handled the husband objection with her, not for her",
-  price_said_cleanly: "Named the price cleanly, with the guarantee",
-  silence_after_ask: "Held the price in silence for ten seconds",
-  total_held: "The total never went down",
-  results_gate_used: "Used the results gate, not a discount",
-  payment_on_screen: "Asked for payment while she was still on the call",
-  ended_with_clock_time: "Set a decision date before ending the call",
-};
+// The checklist wording lives in lib/scorecard — one copy for every screen.
+const SCORE_LABELS = SCORECARD_LABEL as Record<string, string>;
 
 type Check = { passed: boolean; evidence: string };
 export type MilestoneState = "done" | "not_applicable" | "missing";
@@ -566,10 +559,14 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
   const [stageFilter, setStageFilter] = useState<Stage | null>(null);
   const [view, setView] = useState<"urgent" | "all">("urgent");
   const [timeline, setTimeline] = useState<Record<string, Ev[] | "loading">>({});
+  // Business numbers come from the one metrics layer, over the shared range.
+  const [days, setDays] = useRange();
+  const metrics = useMetrics(key, days);
+  const m = metrics.data?.summary;
+  const cl = metrics.data?.checklist;
 
   useEffect(() => {
     const sync = () => setKey(readAdminKey() || null);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     sync();
     // A key entered on another tab of the panel unlocks this one too.
     window.addEventListener(ADMIN_KEY_EVENT, sync);
@@ -623,59 +620,36 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
     return c;
   }, [records]);
 
+  // List sizes for the board — how many cards need action. These are counts of
+  // what is on this screen, not business metrics; those come from `m` below.
   const stats = useMemo(() => {
     const all = records ?? [];
-    const won = all.filter((r) => r.stage === "won");
-    const pitched = all.filter((r) => r.call?.pricePitched);
-    const avgPitch = pitched.length ? Math.round(pitched.reduce((s, r) => s + (r.call!.pricePitched ?? 0), 0) / pitched.length) : null;
-    const discounted = pitched.filter((r) => r.call?.discountOffered).length;
-    const scored = all.filter((r) => r.call?.scorecardFailed != null);
-    const avgFail = scored.length ? (scored.reduce((s, r) => s + (r.call!.scorecardFailed ?? 0), 0) / scored.length).toFixed(1) : null;
-    const urgent = all.filter((r) => r.nextAction.urgency === "now" || r.agreedButUnpaid).length;
-    const overdue = all.filter((r) => r.agreedButUnpaid).length;
     return {
-      total: all.length,
       open: all.filter((r) => !["won", "lost"].includes(r.stage)).length,
-      won: won.length,
-      revenue: won.reduce((s, r) => s + (r.paidAmount ?? 0), 0),
-      avgPitch,
-      discounted,
-      pitchedN: pitched.length,
-      avgFail,
-      urgent,
-      overdue,
+      urgent: all.filter((r) => r.nextAction.urgency === "now" || r.agreedButUnpaid).length,
+      overdue: all.filter((r) => r.agreedButUnpaid).length,
     };
   }, [records]);
 
-  const funnel = useMemo(() => {
-    const all = records ?? [];
-    const has = (s: Stage[]) => all.filter((r) => s.includes(r.stage)).length;
-    return [
-      { label: "Leads", n: all.length },
-      { label: "Booked", n: has(["booked", "attended", "pitched", "won", "no_show", "lost", "cancelled"]) },
-      { label: "Attended", n: has(["attended", "pitched", "won", "lost"]) },
-      { label: "Pitched", n: has(["pitched", "won", "lost"]) },
-      { label: "Won", n: has(["won"]) },
-    ];
-  }, [records]);
+  // Funnel steps straight from the metrics summary. It used to count stages on
+  // the cards, where "won" meant any payment at all.
+  const funnel = useMemo(
+    () =>
+      m
+        ? [
+            { label: "Leads", n: m.leads },
+            { label: "Booked", n: m.booked },
+            { label: "Attended", n: m.attended },
+            { label: "Won", n: m.won },
+          ]
+        : [],
+    [m],
+  );
 
-  const weakest = useMemo(() => {
-    const tally = new Map<string, { failed: number; total: number }>();
-    for (const r of records ?? []) {
-      const sc = r.call?.scorecard;
-      if (!sc) continue;
-      for (const [k, v] of Object.entries(sc)) {
-        const e = tally.get(k) ?? { failed: 0, total: 0 };
-        e.total++;
-        if (!v.passed) e.failed++;
-        tally.set(k, e);
-      }
-    }
-    return [...tally.entries()]
-      .map(([k, v]) => ({ k, ...v, pct: Math.round((100 * v.failed) / v.total) }))
-      .sort((a, b) => b.pct - a.pct)
-      .slice(0, 10);
-  }, [records]);
+  const weakest = useMemo(
+    () => (cl?.checks ?? []).map((c) => ({ k: c.key, failed: c.missed, total: c.total, pct: Math.round((100 * c.missed) / c.total) })),
+    [cl],
+  );
 
   const recent = useMemo(
     () => [...(records ?? []).filter((r) => r.recent)].sort((a, b) => b.missing - a.missing).slice(0, 12),
@@ -730,13 +704,39 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
         </div>
       ) : null}
 
+      {/* The shared range. Moving it here moves Today and Analytics too. */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ ...micro(t), fontSize: 10 }}>Numbers for</span>
+        {RANGE_CHOICES.map((d) => (
+          <button
+            key={d}
+            onClick={() => setDays(d)}
+            style={{
+              background: days === d ? t.ink1 : "transparent",
+              color: days === d ? t.card : t.ink2,
+              border: `1px solid ${days === d ? t.ink1 : t.hairline}`,
+              padding: "4px 11px",
+              borderRadius: RADIUS.chip,
+              fontSize: 11.5,
+              fontFamily: FONT.sans,
+              cursor: "pointer",
+            }}
+          >
+            {rangeLabel(d)}
+          </button>
+        ))}
+        {metrics.error ? <span style={{ fontFamily: FONT.sans, fontSize: 12, color: t.clay }}>numbers unavailable: {metrics.error}</span> : null}
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(158px,1fr))", gap: 10 }}>
         <Tile t={t} label="Needs you now" value={String(stats.urgent)} tone={stats.urgent ? t.clay : t.ink1} sub={stats.overdue ? `${stats.overdue} agreed but never charged` : "nothing overdue"} />
-        <Tile t={t} label="In pipeline" value={String(stats.open)} sub="still open, not yet decided" />
-        <Tile t={t} label="Won" value={String(stats.won)} tone={t.won} sub={stats.revenue ? `${rupee(stats.revenue)} collected` : "nothing collected yet"} />
-        <Tile t={t} label="Avg price pitched" value={stats.avgPitch ? rupee(stats.avgPitch) : "—"} sub={`across ${stats.pitchedN} priced call${stats.pitchedN === 1 ? "" : "s"}`} />
-        <Tile t={t} label="Discounted" value={stats.pitchedN ? `${stats.discounted}/${stats.pitchedN}` : "—"} bad={stats.discounted > 0} tone={stats.discounted ? t.amber : t.ink1} sub="calls where you came down" />
-        <Tile t={t} label="Avg misses" value={stats.avgFail ? `${stats.avgFail}/10` : "—"} bad={!!stats.avgFail && parseFloat(stats.avgFail) >= 4} tone={stats.avgFail ? t.amber : t.ink1} sub="checks missed per call" />
+        <Tile t={t} label="Leads" value={m ? String(m.leads) : "…"} sub={m ? `${m.booked} booked · ${pct(m.leadToBooked)}` : "loading"} />
+        <Tile t={t} label="Show-up rate" value={m ? pct(m.showUpRate) : "…"} bad={!!m && m.showUpRate !== null && m.showUpRate < 0.6} tone={t.ink1}
+          sub={m ? `${m.attended} came · ${m.noShow} no-show${m.attendanceUnknown ? ` · ${m.attendanceUnknown} unknown` : ""}` : "loading"} />
+        <Tile t={t} label="Won" value={m ? String(m.won) : "…"} tone={t.won} sub={m ? (m.revenue ? `${rupees(m.revenue)} collected` : "no programme sales") : "loading"} />
+        <Tile t={t} label="Avg price pitched" value={cl?.pitched.avgPrice ? rupee(cl.pitched.avgPrice) : "—"} sub={`across ${cl?.pitched.calls ?? 0} priced call${cl?.pitched.calls === 1 ? "" : "s"}`} />
+        <Tile t={t} label="Discounted" value={cl?.pitched.calls ? `${cl.pitched.discounted}/${cl.pitched.calls}` : "—"} bad={(cl?.pitched.discounted ?? 0) > 0} tone={cl?.pitched.discounted ? t.amber : t.ink1} sub="calls where you came down" />
+        <Tile t={t} label="Avg misses" value={cl?.avgMisses != null ? `${cl.avgMisses}/10` : "—"} bad={(cl?.avgMisses ?? 0) >= 4} tone={cl?.avgMisses != null ? t.amber : t.ink1} sub="checks missed per call" />
       </div>
 
       <Card t={t}>

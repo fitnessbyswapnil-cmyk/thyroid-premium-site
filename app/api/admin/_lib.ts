@@ -81,6 +81,12 @@ export type LeadRow = {
   msg1: string; // "Y" | ""
   msg2: string; // "Y" | ""
   msg3: string; // "Y" | ""
+  /** His own test identity (lib/metrics). The queue and every count skip it. */
+  isTest: boolean;
+  /** A programme sale on this row (lib/metrics' isWonRow). */
+  won: boolean;
+  /** Latest outbound WhatsApp to her number — automated or by hand. */
+  lastOutboundAt: string;
 };
 
 // ── Cal.com live booking sync ────────────────────────────────────────────────

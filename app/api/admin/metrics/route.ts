@@ -22,6 +22,13 @@ export async function GET(req: NextRequest) {
     const { data, sources } = await loadMetricsDataset(req.nextUrl.searchParams.get("fresh") === "1");
     const now = Date.now();
     const summary = summarize(data, windowFor(days, now), now);
+    // Month-to-date and all-time, for the few figures that are about the month
+    // or the whole history rather than the chosen range (on-pace, close rate).
+    const monthStart = new Date(now);
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const month = summarize(data, { from: monthStart.getTime(), to: now + 1 }, now);
+    const allTime = summarize(data, windowFor(0, now), now);
     return NextResponse.json({
       days,
       summary: {
@@ -31,6 +38,8 @@ export async function GET(req: NextRequest) {
           bookings: summary.excludedTestRows.bookings + sources.ownerTestBookingsDroppedAtSource,
         },
       },
+      month: { revenue: month.revenue, won: month.won },
+      allTime: { won: allTime.won, attended: allTime.attended, revenue: allTime.revenue },
       checklist: checklistSummary(data.calls),
       sources,
       generatedAt: new Date(now).toISOString(),

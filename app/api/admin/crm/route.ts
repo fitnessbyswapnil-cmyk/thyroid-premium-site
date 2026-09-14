@@ -24,12 +24,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { budgetAnswer, scoreBooking } from "@/lib/lead-score";
-import { fetchBookings, type CalBookingRecord } from "@/lib/cal-bookings";
+import { fetchAllBookings, type CalBookingRecord } from "@/lib/cal-bookings";
 import { readCalls, writeCall, type CallRow, type CallFields } from "@/lib/crm-calls";
 import { deriveStage, nextAction, agreedButUnpaid, type Stage, type CallFacts } from "@/lib/crm-stage";
 import { milestonesFor, missingCount, withinDays, type Milestone, type MsEvent } from "@/lib/crm-milestones";
 import { readMessages } from "@/lib/wa-messages";
-import { isOwnerTest, canonicalEmail } from "@/lib/owner-filter";
+import { canonicalEmail } from "@/lib/owner-filter";
+import { isTestIdentity, isWonRow, coverageOf } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ type SheetLead = {
   city: string;
   paid: boolean;
   paidAmount: number | null;
+  /** A programme sale on any of her rows — lib/metrics' definition. */
+  won: boolean;
   timestamp: string;
 };
 
@@ -72,6 +75,8 @@ function parseLeads(values: string[][]): SheetLead[] {
     city: at("City"),
     paid: at("Paid"),
     paidAmount: at("Paid Amount"),
+    closedAmt: at("Closed ₹"),
+    programmeValue: at("Programme Value"),
     ts: at("Timestamp"),
   };
 
@@ -85,8 +90,9 @@ function parseLeads(values: string[][]): SheetLead[] {
     const get = (i: number) => (i >= 0 ? String(row[i] ?? "").trim() : "");
     const email = get(idx.email).toLowerCase();
     if (!email) continue;
-    // Same rule as the bookings: his own test submissions are not prospects.
-    if (isOwnerTest({ name: get(idx.name), email })) continue;
+    // His own test submissions are not prospects — the one test rule, which
+    // also knows his phone number (lib/metrics).
+    if (isTestIdentity({ name: get(idx.name), email, phone: get(idx.phone) })) continue;
 
     const canon = canonicalEmail(email);
     const seenAt = byEmail.get(canon);
@@ -98,15 +104,22 @@ function parseLeads(values: string[][]): SheetLead[] {
       city: get(idx.city),
       paid: isY(get(idx.paid)) || (num(get(idx.paidAmount)) ?? 0) > 0,
       paidAmount: num(get(idx.paidAmount)),
+      won: isWonRow({
+        closedAmt: num(get(idx.closedAmt)),
+        programmeValue: num(get(idx.programmeValue)),
+        paidAmount: num(get(idx.paidAmount)),
+      }),
       timestamp: get(idx.ts),
     };
     if (seenAt === undefined) {
       byEmail.set(canon, out.length);
       out.push(lead);
     } else {
-      // Keep whichever row actually paid — a later blank must never erase it.
+      // Keep whichever row actually paid — a later blank must never erase it —
+      // and a programme sale on ANY of her rows keeps her won.
       const prev = out[seenAt];
-      out[seenAt] = prev.paid && !lead.paid ? { ...lead, paid: prev.paid, paidAmount: prev.paidAmount } : lead;
+      const merged = prev.paid && !lead.paid ? { ...lead, paid: prev.paid, paidAmount: prev.paidAmount } : lead;
+      out[seenAt] = { ...merged, won: prev.won || lead.won };
     }
   }
   return out;
@@ -188,10 +201,13 @@ export async function GET(req: NextRequest) {
   const [sheetRes, bookingRes, callRes, msgRes] = await Promise.allSettled([
     (async () => {
       const { sheets, sheetId } = await getSheetsClient();
-      const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!A1:BC` });
+      // To ZZ, not BC: "Closed ₹" and "Programme Value" sit past column BC,
+      // so a marked programme sale was invisible to this tab.
+      const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!A1:ZZ` });
       return parseLeads((r.data.values as string[][]) ?? []);
     })(),
-    fetchBookings(50),
+    // Every booking, as the headline metrics count them — not the newest 50.
+    fetchAllBookings(),
     readCalls(),
     readMessages(),
   ]);
@@ -229,8 +245,11 @@ export async function GET(req: NextRequest) {
 
   // How far back the ingest has actually reached. Only bookings at or after this
   // point can be judged for attendance; older ones are un-searched, not missed.
-  const ingestTimes = calls.map((c) => new Date(c.occurredAt).getTime()).filter((n) => !Number.isNaN(n));
-  const callDataSince = ingestTimes.length ? new Date(Math.min(...ingestTimes)).toISOString() : "";
+  const coverage = coverageOf(
+    calls.map((c) => ({ bookingUid: c.bookingUid, occurredAt: c.occurredAt, attended: null, scorecard: null })),
+  );
+  const callDataSince = coverage.since ?? "";
+  const callDataUntil = coverage.until ?? "";
   if (!callDataSince && bookings.length) {
     warnings.push("No call recordings ingested yet — attendance, price and follow-up are unknown rather than missed.");
   } else if (callDataSince) {
@@ -241,6 +260,18 @@ export async function GET(req: NextRequest) {
     if (older) {
       warnings.push(
         `${older} bookings are older than the earliest ingested call (${new Date(callDataSince).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}) — their attendance is unknown, not missed. Run the backfill to judge them.`,
+      );
+    }
+    // The other edge. If nothing has been ingested for a while, calls after the
+    // last recording are unknown too — the ingest stopped, they were not missed.
+    const lastIngest = new Date(callDataUntil).getTime();
+    const after = bookings.filter((b) => {
+      const t0 = new Date(b.startIso).getTime();
+      return !b.cancelled && !Number.isNaN(t0) && t0 > lastIngest + 86_400_000 && t0 < now.getTime();
+    }).length;
+    if (after) {
+      warnings.push(
+        `${after} calls happened after the last ingested recording (${new Date(callDataUntil).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}) — their attendance is unknown, not missed. Check the Fathom webhook, or run the backfill.`,
       );
     }
   }
@@ -265,7 +296,9 @@ export async function GET(req: NextRequest) {
       sessionStart: b.startIso || null,
       call: facts,
       callDataSince,
+      callDataUntil,
       paid: lead?.paid ?? false,
+      won: lead?.won ?? false,
       now,
     };
     const stage = deriveStage(input);
@@ -342,7 +375,7 @@ export async function GET(req: NextRequest) {
   // Leads who are qualified but never booked — the top of the pipeline.
   for (const l of leads) {
     if (seenEmails.has(l.email)) continue;
-    const input = { hasBooking: false, bookingCancelled: false, sessionStart: null, call: null, paid: l.paid, now };
+    const input = { hasBooking: false, bookingCancelled: false, sessionStart: null, call: null, paid: l.paid, won: l.won, now };
     const stage = deriveStage(input);
     const evs = eventsByPhone.get(tail10(l.phone)) ?? [];
     const ms = milestonesFor({

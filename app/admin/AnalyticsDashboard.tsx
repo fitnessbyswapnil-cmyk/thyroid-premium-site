@@ -17,6 +17,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CreativeOutcomes from "./CreativeOutcomes";
+import { useMetrics, useRange, RANGE_CHOICES, rangeLabel } from "./useMetrics";
+import { buildQueue, waitLabel, type AgeTone } from "@/lib/follow-up-queue";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 
 type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean;
@@ -118,6 +120,9 @@ type Lead = {
   msg1: string;
   msg2: string;
   msg3: string;
+  isTest: boolean;
+  won: boolean;
+  lastOutboundAt: string;
 };
 
 // ── palette (validated: 3-slot categorical + purple ordinal, dark surface) ──
@@ -139,6 +144,9 @@ const CRIT = "#d03b3b";
  *  owner most needs it — a broken token should cost him a live number, not
  *  the ability to compute one at all. */
 const SPEND_STORE = "admin_manual_ad_spend";
+/** Queue age colours: neutral under 1 hr, amber to 6 hr, red beyond. */
+const TONE: Record<AgeTone, string> = { neutral: "#8a8494", amber: "#E0A93B", red: "#E5544B" };
+
 const dayMs = 86400000;
 
 // ── personalized WhatsApp message builder ───────────────────────────────────
@@ -719,12 +727,6 @@ function SequenceButtons({
 
 // ── page ─────────────────────────────────────────────────────────────────────
 
-const RANGES = [
-  { key: "7", label: "7D", days: 7 },
-  { key: "14", label: "14D", days: 14 },
-  { key: "30", label: "30D", days: 30 },
-  { key: "all", label: "All", days: 100000 },
-];
 
 export default function AnalyticsDashboard() {
   const [key, setKey] = useState<string | null>(null);
@@ -732,7 +734,12 @@ export default function AnalyticsDashboard() {
   const [authError, setAuthError] = useState("");
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [loadError, setLoadError] = useState("");
-  const [range, setRange] = useState("14");
+  // The range is SHARED with Today and Pipeline — one window, one set of
+  // numbers. Business figures below come from lib/metrics via useMetrics.
+  const [days, setDays] = useRange();
+  const range = days === 0 ? "all" : String(days);
+  const metrics = useMetrics(key, days);
+  const m = metrics.data?.summary;
   const [manualSpend, setManualSpend] = useState<number | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [calStatus, setCalStatus] = useState<{
@@ -934,21 +941,23 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  const days = RANGES.find((r) => r.key === range)?.days ?? 14;
+  // Lead rows in range, for the CHARTS only (per day, source, ad, city).
+  // His own test rows are out of every chart too.
   const inRange = useMemo(() => {
     if (!leads) return [];
-    const cutoff = Date.now() - days * dayMs;
-    return leads.filter((l) => new Date(l.ts).getTime() >= cutoff);
+    const cutoff = days === 0 ? 0 : Date.now() - days * dayMs;
+    return leads.filter((l) => !l.isTest && new Date(l.ts).getTime() >= cutoff);
   }, [leads, days]);
 
   const agg = useMemo(() => {
-    const total = inRange.length;
-    const booked = inRange.filter((l) => l.booked).length;
-    const cancelled = inRange.filter((l) => l.cancelled).length;
-    const showed = inRange.filter((l) => l.showed === "Y").length;
-    const noshow = inRange.filter((l) => l.showed === "N").length;
-    const closed = inRange.filter((l) => (l.closedAmt ?? 0) > 0);
-    const revenue = closed.reduce((s, l) => s + (l.closedAmt ?? 0), 0);
+    // The seven defined metrics come from lib/metrics, never from these rows.
+    const total = m?.leads ?? 0;
+    const booked = m?.booked ?? 0;
+    const cancelled = m?.cancelled ?? 0;
+    const showed = m?.attended ?? 0;
+    const noshow = m?.noShow ?? 0;
+    const closedN = m?.won ?? 0;
+    const revenue = m?.revenue ?? 0;
     const scores = inRange.map((l) => l.score).filter((s): s is number => s !== null);
     const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
@@ -1013,8 +1022,8 @@ export default function AnalyticsDashboard() {
       .filter((l) => l.booked && l.sessionDate && isToday(l.sessionDate))
       .sort((a, b) => (a.sessionDate < b.sessionDate ? -1 : 1));
 
-    return { total, booked, cancelled, showed, noshow, closedN: closed.length, revenue, avgScore, perDay, srcCount, buckets, ads, cities, todaySessions };
-  }, [inRange, leads, days]);
+    return { total, booked, cancelled, showed, noshow, closedN, revenue, avgScore, perDay, srcCount, buckets, ads, cities, todaySessions };
+  }, [inRange, leads, days, m]);
 
   // ── Ad Performance: Meta spend joined with the sheet's lead quality ──
   const adPerf = useMemo(() => {
@@ -1098,49 +1107,17 @@ export default function AnalyticsDashboard() {
     if (!leads) return null;
     const now = Date.now();
 
-    type QItem = { lead: Lead; label: string; kind: "Confirm" | "Nudge" | "Reports" | "Proof" | "Rebook" | "Follow-up"; urgent: boolean; due?: string };
-    const queue: QItem[] = [];
-    const DUE: Record<QItem["kind"], string> = {
+    // One queue definition, shared with the digest: lib/follow-up-queue. It
+    // excludes his test rows, counts an automated WhatsApp as contact (the
+    // old one read only the hand-ticked Msg1 box, so 16 women who HAD been
+    // messaged looked untouched), and sorts oldest wait first.
+    const DUE: Record<string, string> = {
       Confirm: "today", Nudge: "today", Reports: "before the session", Proof: "before the session", Rebook: "today", "Follow-up": "by evening",
     };
-    for (const l of leads) {
-      if ((l.closedAmt ?? 0) > 0) continue;
-      const ageMin = (now - new Date(l.ts).getTime()) / 60000;
-      const sess = parseSessionDate(l.sessionDate);
-      const hrsToSession = sess ? (sess.getTime() - now) / 3600000 : null;
-
-      // Cancellation outranks every other state: she paid, then took the call
-      // off the calendar. Left alone that is a refund request or a silent
-      // write-off, so it jumps the queue ahead of ordinary new-lead nudges.
-      if (l.cancelled && l.showed === "") {
-        queue.push({ lead: l, label: "Cancelled her call — win the slot back", kind: "Rebook", urgent: true });
-        continue;
-      }
-      if (l.showed === "N") {
-        if (ageMin < 14 * 1440) queue.push({ lead: l, label: "No-show — invite to rebook", kind: "Rebook", urgent: false });
-        continue;
-      }
-      if (l.showed === "Y") {
-        if (sess && now - sess.getTime() > 2 * 86400000 && now - sess.getTime() < 14 * 86400000)
-          queue.push({ lead: l, label: "Showed but not closed — follow up", kind: "Follow-up", urgent: false });
-        continue;
-      }
-      if (!l.msg1 && ageMin < 3 * 1440) {
-        queue.push({
-          lead: l,
-          label: ageMin > 30 ? `Waiting ${ageMin > 120 ? Math.round(ageMin / 60) + " hr" : Math.round(ageMin) + " min"} for first message` : "New lead — send first message",
-          kind: l.booked ? "Confirm" : "Nudge",
-          urgent: ageMin > 30,
-        });
-        continue;
-      }
-      if (l.booked && hrsToSession !== null && hrsToSession > 0 && hrsToSession <= 24) {
-        if (!l.msg2) queue.push({ lead: l, label: "Session in <24h — ask for reports", kind: "Reports", urgent: true });
-        else if (!l.msg3) queue.push({ lead: l, label: "Session in <24h — send proof story", kind: "Proof", urgent: false });
-      }
-    }
-    queue.forEach((q) => { q.due = q.urgent ? "asap" : DUE[q.kind]; });
-    queue.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0));
+    const queue = buildQueue(
+      leads.map((l) => ({ ...l, sessionAtMs: parseSessionDate(l.sessionDate)?.getTime() ?? null })),
+      now,
+    ).map((q) => ({ ...q, due: q.urgent ? "asap" : DUE[q.kind] }));
 
     // Speed to first touch — only leads whose msg1 stored a real timestamp
     const touches = leads
@@ -1161,7 +1138,7 @@ export default function AnalyticsDashboard() {
     // hides which half is carrying the account, and the ROAS the old code
     // reported — programme money only — quietly wrote off every Rs 299
     // collected, understating return on a real day of spend.
-    const cutoff = now - days * dayMs;
+    const cutoff = days === 0 ? 0 : now - days * dayMs;
     const spendDays = (adsData?.daily ?? [])
       .filter((d) => new Date(d.date + "T00:00:00").getTime() >= cutoff && d.spend > 0)
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -1173,10 +1150,6 @@ export default function AnalyticsDashboard() {
     // result return on ad spend. Revenue is therefore counted from the first
     // day money was actually spent, never earlier, so both halves of the
     // fraction describe the same days.
-    const moneyFrom = spendDays.length
-      ? Math.max(cutoff, new Date(spendDays[0].date + "T00:00:00").getTime())
-      : cutoff;
-    const moneyRows = inRange.filter((l) => new Date(l.ts).getTime() >= moneyFrom);
     const moneyWindowLabel = spendDays.length
       ? `${new Date(spendDays[0].date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – today`
       : range === "all" ? "all time" : `last ${range} days`;
@@ -1185,48 +1158,33 @@ export default function AnalyticsDashboard() {
     const spendIsManual = feedSpend <= 0 && (manualSpend ?? 0) > 0;
     const spendInRange = feedSpend > 0 ? feedSpend : manualSpend ?? 0;
 
-    // THREE LINES THAT NEVER OVERLAP. Cashfree's "Paid Amount" and the coach's
-    // "Closed" column can describe the SAME rupee — Nisha's Rs 2,000 lock went
-    // through Cashfree and is also a programme win — so summing both columns
-    // double-counts every online programme payment. The consultation line is
-    // therefore priced at the fee itself (Rs 299 x bookings), the programme
-    // line is whatever was marked closed, and anything Cashfree collected
-    // ABOVE Rs 299 that has not been marked yet gets its own line instead of
-    // silently joining either. Nothing is counted twice and nothing is hidden.
-    const CONSULT_PRICE = 299;
-    const paidLeads = moneyRows.filter((l) => l.paid || (l.paidAmount ?? 0) > 0);
-    const consultRevenue = paidLeads.length * CONSULT_PRICE;
-
-    const clients = moneyRows
-      .filter((l) => (l.closedAmt ?? 0) > 0)
-      .map((l) => ({ name: l.name || "(no name)", amount: l.closedAmt ?? 0 }))
-      .sort((a, b) => b.amount - a.amount);
-    const programRevenue = clients.reduce((s, c) => s + c.amount, 0);
-
-    // Money the gateway took beyond the consultation fee on rows with no
-    // recorded win — real income, and a standing prompt to go mark it.
-    const unmarkedExtra = moneyRows
-      .filter((l) => (l.closedAmt ?? 0) <= 0)
-      .reduce((s, l) => s + Math.max(0, (l.paidAmount ?? 0) - CONSULT_PRICE), 0);
-
-    const revenue = consultRevenue + programRevenue + unmarkedExtra;
+    // MONEY COMES FROM lib/metrics. This block used to price every paid row at
+    // ₹299 (23 of them had paid ₹1), call anything above ₹299 "unmarked extra"
+    // and add all three into one revenue figure. The owner's rules (14-Sep):
+    // revenue is programme money only, the ₹299 fees are their own line, and
+    // ₹300-14,999 payments are reported but are neither. Spend stays here: it
+    // is an ads figure, not a business metric.
+    const consultRevenue = m?.consultFees.amount ?? 0;
+    const programRevenue = m?.revenue ?? 0;
+    const unmarkedExtra = m?.otherPayments.amount ?? 0;
+    const revenue = programRevenue;
+    const clients = (m?.wins ?? []).map((w) => ({ name: w.name, amount: w.amount }));
+    const consultCount = m?.consultFees.count ?? 0;
 
     const roas = spendInRange > 0 ? revenue / spendInRange : null;
     const netProfit = revenue - spendInRange;
-    const costPerConsult = paidLeads.length > 0 && spendInRange > 0 ? spendInRange / paidLeads.length : null;
-    const costPerClient = clients.length > 0 && spendInRange > 0 ? spendInRange / clients.length : null;
-    const avgClientValue = clients.length > 0 ? programRevenue / clients.length : null;
+    const costPerConsult = consultCount > 0 && spendInRange > 0 ? spendInRange / consultCount : null;
+    const costPerClient = (m?.won ?? 0) > 0 && spendInRange > 0 ? spendInRange / (m?.won ?? 1) : null;
+    const avgClientValue = (m?.won ?? 0) > 0 ? programRevenue / (m?.won ?? 1) : null;
     const campaignsLive = (adsData?.campaigns ?? []).length;
 
-    // Pipeline forecast: upcoming booked calls × close rate × avg ticket
-    const upcoming = leads.filter((l) => {
-      const sess = parseSessionDate(l.sessionDate);
-      return l.booked && l.showed === "" && (l.closedAmt ?? 0) <= 0 && sess !== null && sess.getTime() > now;
-    }).length;
-    const showedAll = leads.filter((l) => l.showed === "Y").length;
-    const closedAll = leads.filter((l) => (l.closedAmt ?? 0) > 0);
-    const closeRate = showedAll >= 3 ? closedAll.length / showedAll : null;
-    const avgTicket = closedAll.length >= 1 ? closedAll.reduce((s, l) => s + (l.closedAmt ?? 0), 0) / closedAll.length : null;
+    // Pipeline forecast: calls still ahead × close rate × average ticket, all
+    // from lib/metrics (close rate over the whole history, so a short window
+    // cannot swing it on one sale).
+    const upcoming = m?.scheduledAhead ?? 0;
+    const at = metrics.data?.allTime;
+    const closeRate = at && at.attended >= 3 ? at.won / at.attended : null;
+    const avgTicket = at && at.won >= 1 ? at.revenue / at.won : null;
     const pipeline = closeRate !== null && avgTicket !== null ? Math.round(upcoming * closeRate * avgTicket) : null;
 
     // Arrivals by weekday (IST) — works from day one
@@ -1261,27 +1219,21 @@ export default function AnalyticsDashboard() {
       });
     }
 
-    // Month-to-date revenue + linear on-pace projection (design port)
+    // Month-to-date revenue + linear on-pace projection. Revenue from
+    // lib/metrics; only the projection's arithmetic stays here.
     const istNowD = new Date(now + 5.5 * 3600000);
-    const monthStartIso = `${istNowD.getUTCFullYear()}-${String(istNowD.getUTCMonth() + 1).padStart(2, "0")}`;
-    const monthRevenue = leads
-      .filter((l) => l.ts.startsWith(monthStartIso))
-      .reduce((s, l) => s + (l.closedAmt ?? 0), 0);
+    const monthRevenue = metrics.data?.month.revenue ?? 0;
     const daysInMonth = new Date(istNowD.getUTCFullYear(), istNowD.getUTCMonth() + 1, 0).getDate();
     const onPace = istNowD.getUTCDate() >= 3 && monthRevenue > 0
       ? Math.round((monthRevenue / istNowD.getUTCDate()) * daysInMonth)
       : null;
 
-    // Funnel stage-conversion caption (design port)
-    const totalR = inRange.length;
-    const bookedR = inRange.filter((l) => l.booked).length;
-    const showedR = inRange.filter((l) => l.showed === "Y").length;
-    const closedR = inRange.filter((l) => (l.closedAmt ?? 0) > 0).length;
-    const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : null);
+    // Stage conversion caption, from lib/metrics.
+    const pctOf = (x: number | null | undefined) => (x === null || x === undefined ? null : Math.round(x * 100));
     const stageRates = {
-      lb: pct(bookedR, totalR),
-      bs: pct(showedR, bookedR),
-      sc: pct(closedR, showedR),
+      lb: pctOf(m?.leadToBooked),
+      bs: pctOf(m?.showUpRate),
+      sc: m && m.attended > 0 ? Math.round((m.won / m.attended) * 100) : null,
     };
 
     // Arrivals auto-insight: top-2 weekdays' share (design port)
@@ -1297,10 +1249,10 @@ export default function AnalyticsDashboard() {
       closeRate, avgTicket, arrivals, arrivalsInsight, outcomes, INSIGHT_MIN, insights,
       monthRevenue, onPace, stageRates,
       consultRevenue, programRevenue, unmarkedExtra, netProfit, costPerConsult, costPerClient,
-      avgClientValue, consultCount: paidLeads.length, clients, clientCount: clients.length,
-      campaignsLive, CONSULT_PRICE, spendIsManual, moneyWindowLabel,
+      avgClientValue, consultCount, clients, clientCount: m?.won ?? 0,
+      campaignsLive, spendIsManual, moneyWindowLabel,
     };
-  }, [leads, inRange, days, adsData, manualSpend]);
+  }, [leads, inRange, days, adsData, manualSpend, m, metrics.data, range]);
 
   const queueMessage = (item: { lead: Lead; kind: string }): { text: string; step: "msg1" | "msg2" | "msg3" | null } => {
     const seq = buildSequence(item.lead);
@@ -1385,18 +1337,18 @@ export default function AnalyticsDashboard() {
             )}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            {RANGES.map((r) => (
+            {RANGE_CHOICES.map((d) => (
               <button
-                key={r.key}
-                onClick={() => setRange(r.key)}
+                key={d}
+                onClick={() => setDays(d)}
                 style={{
                   padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: range === r.key ? "#a855f7" : "transparent",
-                  color: range === r.key ? "#fff" : INK2,
-                  border: `1px solid ${range === r.key ? "#a855f7" : GRID}`,
+                  background: days === d ? "#a855f7" : "transparent",
+                  color: days === d ? "#fff" : INK2,
+                  border: `1px solid ${days === d ? "#a855f7" : GRID}`,
                 }}
               >
-                {r.label}
+                {rangeLabel(d)}
               </button>
             ))}
           </div>
@@ -1422,7 +1374,12 @@ export default function AnalyticsDashboard() {
                     const m = queueMessage(q);
                     const dKey = `${q.lead.row}-${q.kind}`;
                     return (
-                      <div key={dKey} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", background: "#0f1012", borderRadius: 10, borderLeft: `3px solid ${q.urgent ? CRIT : q.kind === "Follow-up" || q.kind === "Rebook" ? PURPLE : WARN}`, border: `1px solid ${q.urgent ? WARN : GRID}` }}>
+                      // Colour is AGE, one rule for every row: under 1 hr neutral,
+                      // 1-6 hr amber, over 6 hr red (lib/follow-up-queue).
+                      <div key={dKey} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", background: "#0f1012", borderRadius: 10, border: `1px solid ${GRID}`, borderLeft: `3px solid ${TONE[q.tone]}` }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: TONE[q.tone], fontVariantNumeric: "tabular-nums", minWidth: 44 }}>
+                          {waitLabel(q.waitMin)}
+                        </span>
                         <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: q.urgent ? CRIT : MUTED, border: `1px solid ${q.urgent ? CRIT : GRID}`, borderRadius: 5, padding: "2px 6px" }}>
                           {q.urgent ? "URGENT" : q.kind === "Follow-up" ? "CLOSE IT" : "TO DO"}
                         </span>
@@ -1532,8 +1489,8 @@ export default function AnalyticsDashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", rowGap: 7, columnGap: 16, fontSize: 12.5, marginBottom: 14 }}>
                   <span style={{ color: INK2 }}>
                     <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#e0c6ff", marginRight: 7, verticalAlign: -1 }} />
-                    ₹299 consultations · <b style={{ color: INK1 }}>{ops.consultCount}</b> booked
-                    <span style={{ color: MUTED }}> {" "}({ops.consultCount} × ₹{ops.CONSULT_PRICE})</span>
+                    ₹299 consultation fees · <b style={{ color: INK1 }}>{ops.consultCount}</b> paid
+                    <span style={{ color: MUTED }}> {" "}· not revenue</span>
                   </span>
                   <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
                     ₹{ops.consultRevenue.toLocaleString("en-IN")}
@@ -1565,7 +1522,7 @@ export default function AnalyticsDashboard() {
                     <>
                       <span style={{ color: WARN }}>
                         <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: WARN, marginRight: 7, verticalAlign: -1 }} />
-                        Collected above ₹299, not marked as a win yet
+                        Other payments (₹300–₹14,999) · not revenue, not a win
                       </span>
                       <span style={{ color: WARN, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
                         ₹{Math.round(ops.unmarkedExtra).toLocaleString("en-IN")}
@@ -1575,7 +1532,7 @@ export default function AnalyticsDashboard() {
 
                   <span style={{ gridColumn: "1 / -1", borderTop: `1px solid ${GRID}`, marginTop: 3 }} />
 
-                  <span style={{ color: INK1, fontWeight: 700 }}>Total collected</span>
+                  <span style={{ color: INK1, fontWeight: 700 }}>Programme revenue</span>
                   <span style={{ color: GOOD, fontWeight: 800, fontVariantNumeric: "tabular-nums", textAlign: "right", fontSize: 14 }}>
                     ₹{Math.round(ops.revenue).toLocaleString("en-IN")}
                   </span>
@@ -1626,9 +1583,7 @@ export default function AnalyticsDashboard() {
                             <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>₹{Math.round(ops.revenue).toLocaleString("en-IN")}</span>
                           </div>
                           <div style={{ height: H, background: GRID, borderRadius: 4, display: "flex", gap: 2, overflow: "hidden" }}>
-                            {ops.consultRevenue > 0 && <div style={{ width: pct(ops.consultRevenue), height: "100%", background: "#e0c6ff", borderRadius: "4px 0 0 4px" }} />}
                             {ops.programRevenue > 0 && <div style={{ width: pct(ops.programRevenue), height: "100%", background: "#a855f7", borderRadius: 4 }} />}
-                            {ops.unmarkedExtra > 0 && <div style={{ width: pct(ops.unmarkedExtra), height: "100%", background: WARN, borderRadius: 4 }} />}
                           </div>
                         </div>
                       );

@@ -38,13 +38,23 @@
  *  noShow             a slot in the window, not cancelled, past its grace
  *                     period, inside the dates the recording ingest covers,
  *                     with no attended recording.
- *  attendanceUnknown  the same, but BEFORE the earliest ingested call — nobody
- *                     looked, so it is unknown. NEVER counted as a no-show.
+ *  attendanceUnknown  the same, but OUTSIDE the stretch the recording ingest
+ *                     covers — before its first recording, or more than a day
+ *                     after its last. Nobody looked, so it is unknown. NEVER
+ *                     counted as a no-show. (14-Sep: all three recordings ever
+ *                     ingested were from 29-30 Aug, so every call after that
+ *                     with no recording was being called a no-show. The calls
+ *                     had not been missed; the recordings had stopped.)
  *  showUpRate         attended ÷ (attended + noShow). Cancelled, upcoming and
  *                     unknown calls are in neither half: a cancellation is not
  *                     a no-show and an unsearched call is not a miss.
  *  won                distinct women with a programme payment dated in window.
- *  revenue            the sum of those programme payments.
+ *  revenue            programme money COLLECTED in the window. A sale marked in
+ *                     Today on instalments (₹40,000 contracted, ₹20,000 paid
+ *                     now) contributes ₹20,000 — "Programme Collected" — never
+ *                     the contract value.
+ *  contracted         the contract value of those wins ("Programme Value"),
+ *                     reported beside revenue, never instead of it.
  *  consultFees        consultation payments dated in window (₹299, or ₹1 charged
  *                     to a real client during a test-mode window), count + ₹.
  *  otherPayments      anything between ₹300 and ₹14,999 — reported, not revenue.
@@ -56,6 +66,12 @@ export const PROGRAMME_MIN_AMOUNT = 15000;
 export const CONSULT_MAX_AMOUNT = 299;
 /** A slot this many minutes past its start, with no recording, may be judged. */
 export const NO_SHOW_GRACE_MIN = 90;
+/**
+ * How long after the LAST ingested recording a call can still be judged.
+ * Fathom delivers within hours; past this, a missing recording more likely
+ * means ingest has stopped than that she did not come.
+ */
+export const INGEST_GRACE_MS = 86_400_000;
 
 /** His own test phone(s). Extra ones via OWNER_TEST_PHONES, comma-separated. */
 const BUILT_IN_OWNER_PHONES = ["7987880954"];
@@ -74,6 +90,10 @@ export type LeadRecord = {
   paidAt: string;
   /** "Closed ₹" — a programme sale marked in Today. */
   closedAmt: number | null;
+  /** "Programme Value" — the contract, written when a sale is marked. */
+  programmeValue: number | null;
+  /** "Programme Collected" — what was actually paid of it so far. */
+  programmeCollected: number | null;
   /** "Programme Closed At" — when that sale's money moved. */
   closedAt: string;
 };
@@ -95,6 +115,9 @@ export type CallRecord = {
   attended: boolean | null;
   /** check key → passed. null when the call was never scored. */
   scorecard: Record<string, boolean> | null;
+  /** Rupee figure said out loud on the call; null when no price was named. */
+  pricePitched?: number | null;
+  discountOffered?: boolean;
 };
 
 export type Dataset = { leads: LeadRecord[]; bookings: BookingRecord[]; calls: CallRecord[] };
@@ -139,11 +162,21 @@ export function paymentKind(amount: number | null): PaymentKind {
 }
 
 /** Is THIS row a won programme sale? The card-level twin of `won`. */
-export function isWonRow(r: { closedAmt: number | null; paidAmount: number | null }): boolean {
-  return (r.closedAmt ?? 0) > 0 || (r.paidAmount ?? 0) >= PROGRAMME_MIN_AMOUNT;
+export function isWonRow(r: { closedAmt: number | null; paidAmount: number | null; programmeValue?: number | null }): boolean {
+  return (r.closedAmt ?? 0) > 0 || (r.programmeValue ?? 0) > 0 || (r.paidAmount ?? 0) >= PROGRAMME_MIN_AMOUNT;
 }
 
-export type Payment = { person: string; kind: PaymentKind; amount: number | null; at: string; marked: boolean };
+export type Payment = {
+  person: string;
+  name: string;
+  kind: PaymentKind;
+  /** Money collected. */
+  amount: number | null;
+  /** Contract value — equals amount except for a sale on instalments. */
+  contracted: number | null;
+  at: string;
+  marked: boolean;
+};
 
 /** Every payment in the sheet, de-duplicated per woman. */
 export function paymentsOf(leads: LeadRecord[]): Payment[] {
@@ -153,10 +186,16 @@ export function paymentsOf(leads: LeadRecord[]): Payment[] {
     if (isTestIdentity(r)) continue;
     const person = personKey(r) || `row:${r.row}`;
     let p: Payment | null = null;
-    if ((r.closedAmt ?? 0) > 0) {
-      p = { person, kind: "programme", amount: r.closedAmt, at: r.closedAt || r.paidAt || r.createdAt, marked: true };
+    if ((r.closedAmt ?? 0) > 0 || (r.programmeValue ?? 0) > 0) {
+      const contracted = r.programmeValue ?? r.closedAmt;
+      p = {
+        person, name: r.name, kind: "programme",
+        amount: r.programmeCollected ?? r.closedAmt ?? contracted,
+        contracted,
+        at: r.closedAt || r.paidAt || r.createdAt, marked: true,
+      };
     } else if (r.paid || (r.paidAmount ?? 0) > 0) {
-      p = { person, kind: paymentKind(r.paidAmount), amount: r.paidAmount, at: r.paidAt || r.createdAt, marked: false };
+      p = { person, name: r.name, kind: paymentKind(r.paidAmount), amount: r.paidAmount, contracted: r.paidAmount, at: r.paidAt || r.createdAt, marked: false };
     }
     if (!p) continue;
     // The same payment is copied onto each of her duplicate rows, and a sale
@@ -174,28 +213,38 @@ export function paymentsOf(leads: LeadRecord[]): Payment[] {
 
 export type AttendanceState = "attended" | "no_show" | "unknown" | "upcoming" | "cancelled";
 
+/** The stretch of dates the recording ingest actually covers. */
+export type Coverage = { since: string | null; until: string | null };
+
 export function attendanceOf(
   b: { cancelled: boolean; startAt: string },
   call: { attended: boolean | null } | undefined,
-  callDataSince: string | null,
+  coverage: Coverage,
   now: number,
 ): AttendanceState {
   if (b.cancelled) return "cancelled";
   if (call && call.attended !== null) return call.attended ? "attended" : "no_show";
   const start = Date.parse(b.startAt);
   if (!Number.isFinite(start) || now - start <= NO_SHOW_GRACE_MIN * 60000) return "upcoming";
-  const since = callDataSince ? Date.parse(callDataSince) : NaN;
-  return Number.isFinite(since) && start >= since ? "no_show" : "unknown";
+  const since = coverage.since ? Date.parse(coverage.since) : NaN;
+  const until = coverage.until ? Date.parse(coverage.until) + INGEST_GRACE_MS : NaN;
+  const covered = Number.isFinite(since) && Number.isFinite(until) && start >= since && start <= until;
+  return covered ? "no_show" : "unknown";
 }
 
-/** The earliest recording the ingest holds — the edge of "we looked". */
-export function callDataSinceOf(calls: CallRecord[]): string | null {
+/** First and last recording the ingest holds — the edges of "we looked". */
+export function coverageOf(calls: CallRecord[]): Coverage {
   let min = Infinity;
+  let max = -Infinity;
   for (const c of calls) {
     const t = Date.parse(c.occurredAt);
-    if (Number.isFinite(t) && t < min) min = t;
+    if (!Number.isFinite(t)) continue;
+    if (t < min) min = t;
+    if (t > max) max = t;
   }
-  return Number.isFinite(min) ? new Date(min).toISOString() : null;
+  return Number.isFinite(min)
+    ? { since: new Date(min).toISOString(), until: new Date(max).toISOString() }
+    : { since: null, until: null };
 }
 
 // ── The summary every tab renders ───────────────────────────────────────────
@@ -213,10 +262,16 @@ export type Summary = {
   leadToBooked: number | null;
   won: number;
   revenue: number;
+  contracted: number;
+  /** The programme payments behind `won`/`revenue`, largest first. */
+  wins: { name: string; amount: number; at: string }[];
+  /** Calls still on the calendar after now — regardless of the window. */
+  scheduledAhead: number;
   consultFees: { count: number; amount: number };
   otherPayments: { count: number; amount: number };
   excludedTestRows: { leads: number; bookings: number };
-  callDataSince: string | null;
+  /** Attendance is only judged inside this stretch. */
+  coverage: Coverage;
 };
 
 const inWindow = (iso: string, w: Window): boolean => {
@@ -247,12 +302,12 @@ export function summarize(data: Dataset, w: Window, now: number = w.to): Summary
   const bookedPeople = new Set(made.map((b) => personKey(b) || `b:${b.uid}`));
 
   // Attendance for calls whose slot is in the window.
-  const since = callDataSinceOf(data.calls);
+  const coverage = coverageOf(data.calls);
   const callByUid = new Map(data.calls.map((c) => [c.bookingUid, c]));
   const att = { attended: 0, noShow: 0, unknown: 0, upcoming: 0 };
   for (const b of bookings) {
     if (b.cancelled || !inWindow(b.startAt, w)) continue;
-    const s = attendanceOf(b, callByUid.get(b.uid), since, now);
+    const s = attendanceOf(b, callByUid.get(b.uid), coverage, now);
     if (s === "attended") att.attended++;
     else if (s === "no_show") att.noShow++;
     else if (s === "unknown") att.unknown++;
@@ -279,10 +334,15 @@ export function summarize(data: Dataset, w: Window, now: number = w.to): Summary
     leadToBooked: leadCount > 0 ? bookedPeople.size / leadCount : null,
     won: new Set(programme.map((p) => p.person)).size,
     revenue: sum(programme),
+    contracted: programme.reduce((t, p) => t + (p.contracted ?? p.amount ?? 0), 0),
+    wins: programme
+      .map((p) => ({ name: p.name || "(no name)", amount: p.amount ?? 0, at: p.at }))
+      .sort((a, b) => b.amount - a.amount),
+    scheduledAhead: bookings.filter((b) => !b.cancelled && Date.parse(b.startAt) > now).length,
     consultFees: { count: consult.length, amount: sum(consult) },
     otherPayments: { count: other.length, amount: sum(other) },
     excludedTestRows: { leads: testLeads, bookings: testBookings },
-    callDataSince: since,
+    coverage,
   };
 }
 
@@ -294,6 +354,8 @@ export type ChecklistSummary = {
   avgMisses: number | null;
   /** Most-missed first. */
   checks: { key: string; label: string; missed: number; total: number }[];
+  /** Calls where a price was said: how many, the average, how many came down. */
+  pitched: { calls: number; avgPrice: number | null; discounted: number };
 };
 
 export function checklistSummary(calls: CallRecord[]): ChecklistSummary {
@@ -315,10 +377,16 @@ export function checklistSummary(calls: CallRecord[]): ChecklistSummary {
   const checks = [...tally.entries()]
     .map(([key, v]) => ({ key, label: labelFor(key), ...v }))
     .sort((a, b) => b.missed / b.total - a.missed / a.total || b.missed - a.missed || (order.get(a.key) ?? 99) - (order.get(b.key) ?? 99));
+  const priced = calls.filter((c) => (c.pricePitched ?? 0) > 0);
   return {
     callsScored: scored.length,
     avgMisses: scored.length ? Math.round((misses / scored.length) * 10) / 10 : null,
     checks,
+    pitched: {
+      calls: priced.length,
+      avgPrice: priced.length ? Math.round(priced.reduce((t, c) => t + (c.pricePitched ?? 0), 0) / priced.length) : null,
+      discounted: priced.filter((c) => c.discountOffered).length,
+    },
   };
 }
 

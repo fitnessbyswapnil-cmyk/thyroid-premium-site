@@ -28,6 +28,10 @@ import {
 } from "@/lib/unmarked-outcomes";
 import { dmPresenceRate, formatDmPresence, type PresenceRecord } from "@/lib/dm-presence";
 import { IS_TEST_MODE } from "../../create-cashfree-order/route";
+import { summarize, isTestIdentity, isWonRow } from "@/lib/metrics";
+import { loadMetricsDataset } from "@/lib/metrics-source";
+import { buildQueue, type QueueLead } from "@/lib/follow-up-queue";
+import { readMessages } from "@/lib/wa-messages";
 
 export const dynamic = "force-dynamic";
 
@@ -65,10 +69,25 @@ export async function GET(req: NextRequest) {
         // are APPENDED by /api/admin/mark, and the payment webhook's own columns
         // have since pushed them past BG. Reading to BG left them all empty, so
         // every row looked unmarked. Same range the Today feed reads.
-        range: `${SHEET_NAME}!A1:BZ`,
+        // ZZ since the CRM consolidation: Paid Amount and Programme Value, which
+        // decide "won", can sit past BZ too.
+        range: `${SHEET_NAME}!A1:ZZ`,
       }),
       fetchCalBookingState(),
     ]);
+    // The WhatsApp log, grouped by number — the follow-up queue's definition of
+    // "a message has gone out" (lib/follow-up-queue). Empty on failure, which
+    // only makes the queue line more cautious.
+    const lastOutbound = new Map<string, string>();
+    try {
+      for (const m of await readMessages()) {
+        if (m.direction !== "out") continue;
+        const k = String(m.phone ?? "").replace(/\D/g, "").slice(-10);
+        if (k && (lastOutbound.get(k) ?? "") < m.ts) lastOutbound.set(k, m.ts);
+      }
+    } catch (msgErr) {
+      console.error("[admin/digest] message log unavailable:", msgErr instanceof Error ? msgErr.message : String(msgErr));
+    }
     const rows: string[][] = (res.data.values as string[][]) ?? [];
     const hdr = (rows[0] ?? []).map((h) => (h ?? "").trim());
     const col = (name: string, fallback: number) => {
@@ -86,6 +105,9 @@ export async function GET(req: NextRequest) {
       score: col("Lead Score", 52),
       showed: col("Showed", -1),
       msg1: col("Msg1 Sent", -1),
+      msg2: col("Msg2 Sent", -1),
+      msg3: col("Msg3 Sent", -1),
+      paidAmount: col("Paid Amount", -1),
       closed: col("Closed ₹", -1),
       programmeValue: col("Programme Value", -1),
       // Written by /api/admin/mark under a fixed title; -1 until the first call
@@ -99,9 +121,11 @@ export async function GET(req: NextRequest) {
     const nowMs = Date.now();
     const nowIst = istNow();
     const today = istDayString(nowIst);
-    const yesterday = istDayString(new Date(nowIst.getTime() - 86400000));
 
-    let yLeads = 0, yBooked = 0, unconfirmed = 0, cancelledOpen = 0;
+    let cancelledOpen = 0;
+    // Every row as the follow-up queue sees it — same fields the Analytics tab
+    // builds, so the brief and the tab count the same waiting women.
+    const queueLeads: QueueLead[] = [];
     const todaySessions: { time: string; name: string; risk: string }[] = [];
     // Consultations already held, for the unmarked-outcome nudge below.
     const held: ConsultationRecord[] = [];
@@ -114,22 +138,37 @@ export async function GET(req: NextRequest) {
       const r = rows[i];
       const ts = cell(r, C.ts);
       if (!/^\d{4}-\d{2}-\d{2}T/.test(ts)) continue;
-      const leadDayIst = istDayString(new Date(new Date(ts).getTime() + IST_OFFSET_MS));
       const emailKey = cell(r, C.email).toLowerCase();
       const calCancelled = !!emailKey && cal.state.cancelled.has(emailKey);
       const calActive = !!emailKey && cal.state.active.has(emailKey);
       // Cal.com wins over the sheet, which only ever records "Booked".
       const booked = calActive || (cell(r, C.bookingStatus) === "Booked" && !calCancelled);
       if (calCancelled && !calActive && cell(r, C.showed) === "") cancelledOpen++;
-      if (leadDayIst === yesterday) {
-        yLeads++;
-        if (booked) yBooked++;
-      }
-      // unconfirmed = recent lead (last 3 days) with no sequence msg yet
-      const ageMs = Date.now() - new Date(ts).getTime();
-      if (ageMs < 3 * 86400000 && !cell(r, C.msg1) && cell(r, C.showed) === "") unconfirmed++;
-
       const sd = cell(r, C.sessionDate);
+      const num = (v: string) => {
+        const n = parseFloat(v.replace(/[^\d.]/g, ""));
+        return Number.isFinite(n) ? n : null;
+      };
+      queueLeads.push({
+        ts,
+        name: cell(r, C.name),
+        phone: cell(r, C.phone),
+        booked,
+        cancelled: calCancelled && !calActive,
+        showed: cell(r, C.showed).toUpperCase(),
+        won: isWonRow({
+          closedAmt: num(cell(r, C.closed)),
+          programmeValue: num(cell(r, C.programmeValue)),
+          paidAmount: num(cell(r, C.paidAmount)),
+        }),
+        isTest: isTestIdentity({ name: cell(r, C.name), email: cell(r, C.email), phone: cell(r, C.phone) }),
+        sessionAtMs: sd ? parseIstSession(sd) : null,
+        msg1: cell(r, C.msg1).toUpperCase(),
+        msg2: cell(r, C.msg2).toUpperCase(),
+        msg3: cell(r, C.msg3).toUpperCase(),
+        lastOutboundAt: lastOutbound.get(cell(r, C.phone).replace(/\D/g, "").slice(-10)) ?? "",
+      });
+
       presenceRows.push({ sessionDate: sd, showed: cell(r, C.showed), dmPresent: cell(r, C.dmPresent) });
       const sess = sd ? parseSession(sd) : null;
       if (booked && sess && istDayString(new Date(sess.getTime() + IST_OFFSET_MS - IST_OFFSET_MS)) === today) {
@@ -168,6 +207,30 @@ export async function GET(req: NextRequest) {
         });
       }
     }
+    // Headline numbers from lib/metrics — the same definitions as every tab.
+    // Yesterday is the IST calendar day; the week is the last seven days.
+    const istMidnightUtc = Date.parse(`${today}T00:00:00Z`) - IST_OFFSET_MS;
+    let numberLines: string[];
+    try {
+      const { data } = await loadMetricsDataset();
+      const y = summarize(data, { from: istMidnightUtc - 86400000, to: istMidnightUtc }, nowMs);
+      const w = summarize(data, { from: nowMs - 7 * 86400000, to: nowMs + 1 }, nowMs);
+      const inr = (n: number) => `Rs ${n.toLocaleString("en-IN")}`;
+      numberLines = [
+        `Yesterday: ${y.leads} leads, ${y.booked} booked, ${y.won} won${y.revenue ? ` (${inr(y.revenue)})` : ""}.`,
+        `Last 7 days: ${w.leads} leads, ${w.booked} booked, ${w.won} won, ${inr(w.revenue)} programme revenue.`,
+      ];
+    } catch (mErr) {
+      console.error("[admin/digest] metrics unavailable:", mErr instanceof Error ? mErr.message : String(mErr));
+      numberLines = [`Numbers unavailable this morning — open the dashboard.`];
+    }
+
+    // The follow-up queue, same rule as the Analytics tab. Anything waiting
+    // over six hours is red there, and gets its own line here.
+    const queue = buildQueue(queueLeads, nowMs);
+    const overSixHours = queue.filter((q) => q.waitMin > 360).length;
+    const unsent = queue.filter((q) => q.label.includes("no WhatsApp") || q.label.startsWith("New lead")).length;
+
     todaySessions.sort((a, b) => (parseSession(`05 Aug 2026 ${a.time}`)?.getTime() ?? 0) - (parseSession(`05 Aug 2026 ${b.time}`)?.getTime() ?? 0));
 
     // Same warning as the dashboard banner: a forgotten test mode is invisible
@@ -180,13 +243,16 @@ export async function GET(req: NextRequest) {
       ...testModeLine,
       `MORNING BRIEF — ${nowIst.toISOString().slice(0, 10)}`,
       ``,
-      `Yesterday: ${yLeads} leads, ${yBooked} booked.`,
+      ...numberLines,
       ``,
       todaySessions.length
         ? `Today's sessions (${todaySessions.length}):\n${todaySessions.map((s) => `  ${s.time} — ${s.name} (${s.risk})`).join("\n")}`
         : `No sessions booked for today.`,
       ``,
-      unconfirmed > 0 ? `ACTION: ${unconfirmed} recent lead(s) still waiting for their first WhatsApp.` : `All recent leads contacted.`,
+      unsent > 0 ? `ACTION: ${unsent} recent lead(s) with no WhatsApp sent yet.` : `Every recent lead has had a WhatsApp.`,
+      overSixHours > 0
+        ? `ACTION: ${overSixHours} follow-up item(s) waiting over 6 hours — oldest first in the queue.`
+        : `Nothing in the follow-up queue has waited over 6 hours.`,
       // A paid lead with no call on the calendar is the most perishable thing
       // in the funnel, so it gets its own line rather than hiding in a count.
       ...(cancelledOpen > 0

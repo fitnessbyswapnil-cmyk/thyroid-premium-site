@@ -65,6 +65,7 @@ async function loadLeads(): Promise<LeadRecord[]> {
     name: col("Name"), phone: col("Phone"), email: col("Email"),
     paid: col("Paid"), paidAmount: col("Paid Amount"), paidAt: col("Paid At"),
     closedAmt: col("Closed ₹"), closedAt: col("Programme Closed At"),
+    programmeValue: col("Programme Value"), programmeCollected: col("Programme Collected"),
   };
   const cell = (r: string[], i: number) => (i >= 0 ? String(r[i] ?? "").trim() : "");
   const out: LeadRecord[] = [];
@@ -83,6 +84,8 @@ async function loadLeads(): Promise<LeadRecord[]> {
       paidAt: cell(r, C.paidAt),
       closedAmt: num(cell(r, C.closedAmt)),
       closedAt: cell(r, C.closedAt),
+      programmeValue: num(cell(r, C.programmeValue)),
+      programmeCollected: num(cell(r, C.programmeCollected)),
     });
   }
   return out;
@@ -100,6 +103,8 @@ export async function loadMetricsDataset(force = false): Promise<LoadedDataset> 
       occurredAt: c.occurredAt,
       attended: /^y/i.test(c.attended) ? true : /^n/i.test(c.attended) ? false : null,
       scorecard: parseScorecard(c.scorecard),
+      pricePitched: num(c.pricePitched),
+      discountOffered: /^y/i.test(c.discountOffered),
     }));
 
   const value: LoadedDataset = {

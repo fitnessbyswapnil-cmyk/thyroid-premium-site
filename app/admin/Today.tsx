@@ -3,7 +3,13 @@
 /**
  * /admin → Today. The only screen worth opening between calls.
  *
- * Four blocks, ordered by how fast they change a decision:
+ * Ordered by how fast they change a decision (CRM brief, 14-Sep):
+ *   0. What you miss most on calls — the only thing that says what to do
+ *      differently tomorrow, so it sits above everything, and the three
+ *      most-missed checks are repeated on every call happening today.
+ *   0b. The headline numbers — from lib/metrics, the same figures Pipeline and
+ *      Analytics show for the same shared range. This screen computes none.
+ *   0c. Mark your calls — the post-call checklist, which records the outcome.
  *   1. What acquisition costs — both numbers, because the Rs299 is a qualifier
  *      and the programme is the product. When they diverge, the screen says so.
  *   2. Who needs me now — ONE merged queue sorted by money at risk, not four
@@ -24,6 +30,9 @@ import { useCallback, useEffect, useState } from "react";
 import { paymentDateStatus, toDateInputValue, META_ATTRIBUTION_WINDOW_DAYS } from "@/lib/payment-date";
 import type { DecisionBadge } from "@/lib/decision-maker";
 import { DM_PRESENCE_TARGET_PCT, formatDmPresence, type PresenceRate } from "@/lib/dm-presence";
+import type { Summary, ChecklistSummary } from "@/lib/metrics";
+import { SCORECARD_KEYS, SCORECARD_LABEL, type ScorecardKey } from "@/lib/scorecard";
+import { useRange, RANGE_CHOICES, rangeLabel, pct } from "./useMetrics";
 
 const N = {
   bg: "#0B0E14",
@@ -52,12 +61,16 @@ type Data = {
   health: { sent24: number; failed24: number; byTemplate: { name: string; sent: number; last: string }[] };
   capacity: { closed: number; ceiling: number };
   caveats: string[];
+  metrics: Summary;
+  checklist: ChecklistSummary;
+  toMark: { bookingUid: string; name: string; phone: string; email: string; startAt: string; leadRow: number | null }[];
 };
 
 const inr = (n: number | null) => (n === null ? "—" : "₹" + n.toLocaleString("en-IN"));
 
 export default function Today({ adminKey }: { adminKey: string }) {
-  const [days, setDays] = useState(7);
+  // Shared with Pipeline and Analytics: one range, the same numbers everywhere.
+  const [days, setDays] = useRange();
   const [d, setD] = useState<Data | null>(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(true);
@@ -142,6 +155,35 @@ export default function Today({ adminKey }: { adminKey: string }) {
     } finally { setDmBusy(null); }
   }, [adminKey, load]);
 
+  // ── Mark your calls ────────────────────────────────────────────────────
+  // One card per past call with no outcome. "Did she join?" first; a yes opens
+  // the ten checks. Saving writes the Calls sheet through /api/admin/call-outcome,
+  // which is what show-up rate and the checklist read. Nothing here reaches
+  // Meta — a sale is still recorded with the green "Paid" buttons below.
+  const [joined, setJoined] = useState<Record<string, boolean>>({});
+  const [checks, setChecks] = useState<Record<string, Partial<Record<ScorecardKey, boolean>>>>({});
+  const [markBusy, setMarkBusy] = useState<string | null>(null);
+  const saveOutcome = useCallback(async (c: Data["toMark"][number], attended: boolean) => {
+    setMarkBusy(c.bookingUid); setErr("");
+    try {
+      const r = await fetch("/api/admin/call-outcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({
+          bookingUid: c.bookingUid, attended, occurredAt: c.startAt,
+          name: c.name, email: c.email, phone: c.phone,
+          ...(attended ? { checks: checks[c.bookingUid] ?? {} } : {}),
+        }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { reason?: string; error?: string };
+      if (!r.ok) throw new Error(j.reason || j.error || `HTTP ${r.status}`);
+      setNotice(attended ? `Saved — ${c.name || "her"} attended.` : `Saved — ${c.name || "she"} did not join.`);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setMarkBusy(null); }
+  }, [adminKey, checks, load]);
+
   // Reading the clock during render is impure — React can re-render at any
   // moment and two rows on the same screen would disagree about what "today"
   // is. Captured once, and refreshed on Refresh so a dashboard left open
@@ -186,6 +228,145 @@ export default function Today({ adminKey }: { adminKey: string }) {
           </button>
         </header>
 
+        {/* 0 — What you miss most on calls. Above everything: revenue says
+            what happened, this says what to change tomorrow. */}
+        {d?.checklist && d.checklist.callsScored > 0 && (
+          <div style={{ ...card, marginTop: 14, borderLeft: `3px solid ${N.warn}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+              <span style={kicker}>What you miss most on calls</span>
+              <span style={{ fontSize: 13, color: N.warn, fontWeight: 700 }}>
+                {d.checklist.avgMisses}/10 missed per call
+              </span>
+            </div>
+            <ol style={{ margin: "10px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+              {d.checklist.checks.slice(0, 3).map((c) => (
+                <li key={c.key} style={{ fontSize: 14, lineHeight: 1.45 }}>
+                  {c.label} <span style={{ color: N.dim, fontSize: 12 }}>· missed {c.missed} of {c.total}</span>
+                </li>
+              ))}
+            </ol>
+            <div style={{ fontSize: 11.5, color: N.dim, marginTop: 8 }}>
+              From {d.checklist.callsScored} scored call{d.checklist.callsScored === 1 ? "" : "s"}. Tick the checklist after each call to keep this true.
+            </div>
+          </div>
+        )}
+
+        {/* 0b — Headline numbers. From lib/metrics, over the shared range. */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "18px 0 8px", gap: 8, flexWrap: "wrap" }}>
+          <span style={kicker}>Numbers</span>
+          <div style={{ display: "flex", gap: 4 }}>
+            {RANGE_CHOICES.map((w) => (
+              <button key={w} onClick={() => setDays(w)}
+                style={{ background: days === w ? N.accent : "transparent", color: days === w ? "#0B0E14" : N.dim,
+                  border: `1px solid ${days === w ? N.accent : N.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12, cursor: "pointer" }}>
+                {rangeLabel(w)}
+              </button>
+            ))}
+          </div>
+        </div>
+        {(() => {
+          const m = d?.metrics;
+          const tiles: { label: string; value: string; sub: string; tone?: string }[] = [
+            { label: "Leads", value: m ? String(m.leads) : "…", sub: m ? `${pct(m.leadToBooked)} booked` : "" },
+            { label: "Booked", value: m ? String(m.booked) : "…", sub: m ? `${m.cancelled} cancelled` : "" },
+            {
+              label: "Show-up rate", value: m ? pct(m.showUpRate) : "…",
+              sub: m ? `${m.attended} came · ${m.noShow} no-show${m.attendanceUnknown ? ` · ${m.attendanceUnknown} unknown` : ""}` : "",
+              tone: m && m.showUpRate !== null && m.showUpRate < 0.6 ? N.warn : undefined,
+            },
+            { label: "Won", value: m ? String(m.won) : "…", sub: m ? (m.revenue > 0 ? `${inr(m.revenue)} collected` : "no programme sales") : "", tone: m && m.won > 0 ? N.good : undefined },
+            { label: "₹299 fees", value: m ? String(m.consultFees.count) : "…", sub: m ? `${inr(m.consultFees.amount)} · not revenue` : "" },
+          ];
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(104px,1fr))", gap: 8 }}>
+              {tiles.map((x) => (
+                <div key={x.label} style={{ ...card, padding: 12 }}>
+                  <div style={kicker}>{x.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4, color: x.tone ?? N.text }}>{x.value}</div>
+                  <div style={{ fontSize: 11.5, color: N.dim, marginTop: 3, lineHeight: 1.35 }}>{x.sub}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* 0c — Mark your calls: the checklist records the outcome. */}
+        {d && d.toMark.length > 0 && (
+          <>
+            <div style={h6}>Mark your calls · {d.toMark.length}</div>
+            <div style={{ fontSize: 12, color: N.dim, marginBottom: 8, lineHeight: 1.5 }}>
+              No recording reached the system for these, so their outcome is unknown until you mark them.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {d.toMark.map((c) => {
+                const j = joined[c.bookingUid];
+                const mine = checks[c.bookingUid] ?? {};
+                const when = new Date(c.startAt);
+                return (
+                  <div key={c.bookingUid} style={{ ...card, padding: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{c.name || "(no name)"}</div>
+                        <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
+                          {when.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      {c.phone && (
+                        <a href={`https://wa.me/91${c.phone}`} target="_blank" rel="noreferrer"
+                          style={{ flex: "none", alignSelf: "flex-start", color: N.accent, fontSize: 12.5, textDecoration: "none" }}>
+                          WhatsApp →
+                        </a>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 12.5 }}>Did she join?</span>
+                      <button disabled={markBusy === c.bookingUid} onClick={() => setJoined((x) => ({ ...x, [c.bookingUid]: true }))}
+                        style={{ background: j === true ? `${N.good}22` : "transparent", color: j === true ? N.good : N.dim,
+                          border: `1px solid ${j === true ? N.good : N.line}`, borderRadius: 999, padding: "5px 13px", fontSize: 12.5, cursor: "pointer" }}>
+                        Yes
+                      </button>
+                      <button disabled={markBusy === c.bookingUid} onClick={() => void saveOutcome(c, false)}
+                        style={{ background: "transparent", color: N.dim, border: `1px solid ${N.line}`, borderRadius: 999, padding: "5px 13px", fontSize: 12.5, cursor: "pointer" }}>
+                        No — no-show
+                      </button>
+                    </div>
+                    {j === true && (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${N.line}` }}>
+                        <div style={{ fontSize: 11.5, color: N.dim, marginBottom: 8 }}>Tap each check you did. Leave the ones that did not apply.</div>
+                        <div style={{ display: "grid", gap: 6 }}>
+                          {SCORECARD_KEYS.map((k) => {
+                            const v = mine[k];
+                            return (
+                              <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ flex: 1, fontSize: 13, lineHeight: 1.4 }}>{SCORECARD_LABEL[k]}</span>
+                                {([true, false] as const).map((val) => (
+                                  <button key={String(val)} onClick={() => setChecks((x) => ({ ...x, [c.bookingUid]: { ...mine, [k]: val } }))}
+                                    style={{ flex: "none", background: v === val ? (val ? `${N.good}22` : `${N.bad}22`) : "transparent",
+                                      color: v === val ? (val ? N.good : N.bad) : N.dim, border: `1px solid ${v === val ? (val ? N.good : N.bad) : N.line}`,
+                                      borderRadius: 999, padding: "3px 10px", fontSize: 11.5, cursor: "pointer" }}>
+                                    {val ? "Did" : "Missed"}
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <button disabled={markBusy === c.bookingUid} onClick={() => void saveOutcome(c, true)}
+                          style={{ marginTop: 12, background: N.good, color: "#06210f", border: 0, borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                          {markBusy === c.bookingUid ? "Saving…" : "Save call"}
+                        </button>
+                        <div style={{ fontSize: 11.5, color: N.dim, marginTop: 8 }}>
+                          If she paid for the programme, record it in &ldquo;Did she pay?&rdquo; — that is what tells Meta.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         {/* The one number this screen is trying to move. It sits above the
             money because the money follows it: a consultation held without the
             person who shares the decision is a consultation that ends in "let
@@ -217,15 +398,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
         {/* 1 — Acquisition */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 0 10px" }}>
           <span style={kicker}>Acquisition cost</span>
-          <div style={{ display: "flex", gap: 4 }}>
-            {[7, 14, 30].map((w) => (
-              <button key={w} onClick={() => setDays(w)}
-                style={{ background: days === w ? N.accent : "transparent", color: days === w ? "#0B0E14" : N.dim,
-                  border: `1px solid ${days === w ? N.accent : N.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12, cursor: "pointer" }}>
-                {w}d
-              </button>
-            ))}
-          </div>
+          <span style={{ fontSize: 12, color: N.dim }}>{rangeLabel(days)} · same range as above</span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 12 }}>
@@ -306,6 +479,16 @@ export default function Today({ adminKey }: { adminKey: string }) {
                     WhatsApp
                   </a>
                 </div>
+                {/* Before the call, not after it: the three checks missed most
+                    often, on every call happening today. */}
+                {q.kind === "call_today" && (d?.checklist.checks.length ?? 0) > 0 && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5 }}>
+                    <div style={{ color: N.warn, fontWeight: 700, marginBottom: 3 }}>On this call, don&rsquo;t miss:</div>
+                    {d!.checklist.checks.slice(0, 3).map((c, i) => (
+                      <div key={c.key} style={{ color: N.text }}>{i + 1}. {c.label}</div>
+                    ))}
+                  </div>
+                )}
                 {/* Always visible. Not a tooltip, not behind a tap — he reads
                     this between calls, one-handed. */}
                 {q.badge?.prompt && (

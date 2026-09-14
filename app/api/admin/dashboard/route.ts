@@ -21,6 +21,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { budgetAnswer, scoreBooking } from "@/lib/lead-score";
 import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME, type LeadRow } from "../_lib";
+import { readMessages } from "@/lib/wa-messages";
+import { isTestIdentity, isWonRow } from "@/lib/metrics";
 import { QUIZ_TIER_HEADER } from "@/lib/lead-scoring";
 import { draftMessage, draftWaLink } from "@/lib/draft-message";
 
@@ -42,10 +44,24 @@ export async function GET(req: NextRequest) {
     const [sheetRes, cal] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: sheetId,
-        range: `${SHEET_NAME}!A1:BC`,
+        // ZZ, not BC: Closed ₹, Programme Value and Paid At all sit past BC.
+        range: `${SHEET_NAME}!A1:ZZ`,
       }),
       fetchCalBookingState(),
     ]);
+    // The WhatsApp log, once, grouped by number — how the follow-up queue knows
+    // whether a message actually went out (lib/follow-up-queue). Degrades to
+    // empty, which only makes the queue more cautious, never silent.
+    const lastOutbound = new Map<string, string>();
+    try {
+      for (const m of await readMessages()) {
+        if (m.direction !== "out") continue;
+        const k = String(m.phone ?? "").replace(/\D/g, "").slice(-10);
+        if (k && (lastOutbound.get(k) ?? "") < m.ts) lastOutbound.set(k, m.ts);
+      }
+    } catch (msgErr) {
+      console.error("[admin/dashboard] message log unavailable:", msgErr instanceof Error ? msgErr.message : String(msgErr));
+    }
     const calMeetLinks = cal.state.meetLinks;
     const rows: string[][] = (sheetRes.data.values as string[][]) ?? [];
     if (rows.length < 2) return NextResponse.json({ leads: [], calStatus: cal.status });
@@ -92,6 +108,7 @@ export async function GET(req: NextRequest) {
       budget: col("Budget", -1),
       paid: col("Paid", -1),
       paidAmount: col("Paid Amount", -1),
+      programmeValue: col("Programme Value", -1),
       score: col("Lead Score", 52),
       // Outcome columns have NO positional fallback. Their old slots (BB–BG)
       // now hold Paid / Paid Amount / Budget / Paid At…, so falling back there
@@ -205,9 +222,17 @@ export async function GET(req: NextRequest) {
         // A cancelled call has no live room to join, so no link is offered.
         meetLink: calCancelled && !calActive ? "" : sheetMeetLink || calMeetLinks.get(emailKey) || "",
         ...draftFor(r, C, cleanPhone(cell(r, C.phone))),
-      msg1: cell(r, C.msg1).toUpperCase(),
+        msg1: cell(r, C.msg1).toUpperCase(),
         msg2: cell(r, C.msg2).toUpperCase(),
         msg3: cell(r, C.msg3).toUpperCase(),
+        // One test rule and one win rule, from lib/metrics.
+        isTest: isTestIdentity({ name: cell(r, C.name), email, phone: cell(r, C.phone) }),
+        won: isWonRow({
+          closedAmt: num(cell(r, C.closedAmt)),
+          programmeValue: C.programmeValue >= 0 ? num(cell(r, C.programmeValue)) : null,
+          paidAmount: C.paidAmount >= 0 ? num(cell(r, C.paidAmount)) : null,
+        }),
+        lastOutboundAt: lastOutbound.get(cleanPhone(cell(r, C.phone)).slice(-10)) ?? "",
       });
     }
     // Newest first; cap the payload — charts only need recent history.

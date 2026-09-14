@@ -22,19 +22,23 @@
  * (agreed on the call, no payment recorded) and never as proof.
  */
 
+import { attendanceOf, NO_SHOW_GRACE_MIN as GRACE } from "./metrics.ts";
+
 export type Stage =
   | "new" // qualified lead, no booking on the calendar
   | "booked" // call scheduled and still in the future
+  | "unknown" // slot passed outside the dates any recording was ingested for
   | "cancelled" // she cancelled and has not rebooked
   | "no_show" // call time passed, she never joined
   | "attended" // call happened, no price was said
   | "pitched" // price said, decision outstanding
-  | "won" // Cashfree confirmed money
+  | "won" // a programme sale — lib/metrics' definition, never a ₹299 fee
   | "lost"; // pitched, no money, follow-up window expired
 
 export const STAGE_ORDER: Stage[] = [
   "new",
   "booked",
+  "unknown",
   "cancelled",
   "no_show",
   "attended",
@@ -46,6 +50,7 @@ export const STAGE_ORDER: Stage[] = [
 export const STAGE_LABEL: Record<Stage, string> = {
   new: "New lead",
   booked: "Call booked",
+  unknown: "Attendance unknown",
   cancelled: "Cancelled",
   no_show: "No-show",
   attended: "Attended",
@@ -62,7 +67,7 @@ export const STAGE_LABEL: Record<Stage, string> = {
  * marking a woman who DID show as a no-show sends her the wrong WhatsApp
  * message, which is far more expensive than showing "booked" for an extra hour.
  */
-export const NO_SHOW_GRACE_MIN = 90;
+export const NO_SHOW_GRACE_MIN = GRACE; // one definition: lib/metrics
 
 /**
  * How long a pitched-but-unpaid call stays live before it counts as lost.
@@ -103,8 +108,21 @@ export type StageInput = {
    * can be called a no-show.
    */
   callDataSince?: string;
-  /** Cashfree truth. */
+  /**
+   * The LATEST ingested call. A slot more than a day after it is unknown, not
+   * a no-show: on 14-Sep every recording ever ingested was from 29-30 Aug, and
+   * nine later calls were being called no-shows because nothing had been
+   * ingested since — not because anyone stayed away.
+   */
+  callDataUntil?: string;
+  /** Any payment at all — the ₹299 fee included. Shown, never a win. */
   paid: boolean;
+  /**
+   * A programme sale, by lib/metrics' isWonRow: ₹15,000+ or marked in Today.
+   * "won" used to be `paid`, which made three ₹299 consultation fees into
+   * three wins on the Pipeline tab.
+   */
+  won: boolean;
   now: Date;
 };
 
@@ -114,7 +132,6 @@ function parse(iso: string | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-const minutesBetween = (a: Date, b: Date) => (a.getTime() - b.getTime()) / 60000;
 const daysBetween = (a: Date, b: Date) => (a.getTime() - b.getTime()) / 86400000;
 
 /**
@@ -123,9 +140,10 @@ const daysBetween = (a: Date, b: Date) => (a.getTime() - b.getTime()) / 86400000
  * the calendar told us.
  */
 export function deriveStage(input: StageInput): Stage {
-  // 1. Money outranks every other signal. A woman who paid is Won even if the
+  // 1. A programme sale outranks every other signal: Won even if the
   //    transcript never mentioned payment and even if Fathom missed the call.
-  if (input.paid) return "won";
+  //    A ₹299 consultation fee is NOT a sale and falls through.
+  if (input.won) return "won";
 
   // 2. The call, if it happened, is the next most informative thing we have.
   const call = input.call;
@@ -147,13 +165,16 @@ export function deriveStage(input: StageInput): Stage {
   const start = parse(input.sessionStart);
   if (!start) return "booked";
 
-  // Past its slot with no recording: a no-show only once Fathom has had time,
-  // AND only if the ingest has actually covered this booking's date. Absence of
-  // evidence is not evidence of absence outside the window that was searched.
-  const since = parse(input.callDataSince ?? null);
-  const covered = !!since && start.getTime() >= since.getTime();
-  if (covered && minutesBetween(input.now, start) > NO_SHOW_GRACE_MIN) return "no_show";
-  return "booked";
+  // Past its slot with no recording: lib/metrics decides, with the same rule the
+  // headline numbers use — a no-show only once Fathom has had time AND only
+  // inside the dates the ingest actually covers. Outside them it is unknown.
+  const state = attendanceOf(
+    { cancelled: false, startAt: start.toISOString() },
+    undefined,
+    { since: input.callDataSince || null, until: input.callDataUntil || null },
+    input.now.getTime(),
+  );
+  return state === "no_show" ? "no_show" : state === "unknown" ? "unknown" : "booked";
 }
 
 export type Urgency = "now" | "today" | "soon" | "none";
@@ -189,6 +210,13 @@ export function nextAction(
 
     case "booked":
       return { label: "Hold the slot", urgency: "none", reason: "Call is scheduled. Send the reminder the evening before." };
+
+    case "unknown":
+      return {
+        label: "Mark whether she joined",
+        urgency: "today",
+        reason: "Her slot has passed, but no recording was ingested for that date — unknown, not missed. Mark it on Today, or run the Fathom backfill.",
+      };
 
     case "cancelled":
       return { label: "Rebook her", urgency: "now", reason: "She cancelled and has no call on the calendar. This is the most perishable state in the pipeline." };
@@ -246,5 +274,6 @@ export function nextAction(
  * it is invisible to a CRM that reads either system on its own.
  */
 export function agreedButUnpaid(input: StageInput): boolean {
-  return !!input.call?.moneyMovedOnCall && !input.paid;
+  // Against the PROGRAMME: her ₹299 fee does not settle a programme she agreed to.
+  return !!input.call?.moneyMovedOnCall && !input.won;
 }
