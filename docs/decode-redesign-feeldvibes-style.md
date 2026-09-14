@@ -5,6 +5,12 @@
 ## Context
 You want /decode to look like **feeldvibes.in** (Coach Feelics). You say that page gets consistent clients and closes deals, and you want a detailed md file for similar changes on your site, using their colour scheme with **red** buttons.
 
+**Owner's answers to the open questions (14 Sep, second round):**
+- **The call stays ₹299.** Ads are running on it. It is never made free.
+- **Use the existing video.** The VSL already on the home page ("why thyroid fat loss is not the same") goes into the /decode hero.
+- **No more proof exists.** Use the current 4 before/afters, 3 videos and 3 WhatsApp screenshots.
+- **Coach line, in the owner's words:** "ACE, INFS, BLS certified" and "Scientific Thyroid Lean Method for fat loss".
+
 **Your decisions (14 Sep):**
 - **Page:** /decode only.
 - **Colours:** gold/yellow labels with red buttons.
@@ -93,20 +99,20 @@ The spec copies the look and the section types. The free-call difference is **yo
 
 | # | Section | Background | Content (your words only) |
 |---|---|---|---|
-| 1 | **Hero** | white | Grey audience line: "For women 30+ with a slow thyroid". Headline (black, Inter 800): *Eating less but still not losing weight? **Your blood report shows why.*** The existing "why" sentence + 60-min call line. Refund sentence **word for word**. **Red button.** 100+ laurel. |
+| 1 | **Hero** | white | Grey audience line: "For women 30+ with a slow thyroid". Headline (black, Inter 800): *Eating less but still not losing weight? **Your blood report shows why.*** The existing "why" sentence + 60-min call line. **Your existing video** (`app/components/HeroVideo.tsx`, the home page VSL) with the caption "Why thyroid fat loss is not the same". Only its poster loads until she taps play, so the page stays light. Refund sentence **word for word**. **Red button.** 100+ laurel. |
 | 2 | **Sound familiar?** | dark | Six symptom tick-boxes (as now), white rows on dark. Gold eyebrow "— SOUND FAMILIAR?" |
 | 3 | **The proof** | dark | Eyebrow "— THE PROOF"; heading "Four Women. **Four Reports.**" (second half gold); the 4 before/after cards unchanged. **Red button.** |
 | 4 | **Video stories** | dark | Heading "When the Method Is Right, **the Results Speak.**"; 3 video cards unchanged (headline above, name under). |
 | 5 | **What they sent afterwards** | darker `#080c08` | 3 WhatsApp cards, headline above each screenshot. **No red box drawn on the screenshot** (existing rule: nothing printed on top of the evidence). **Red button.** |
-| 6 | **Meet your coach** *(new)* | dark | Eyebrow "— MEET YOUR COACH". "Hey, I'm **Coach Swapnil**." Subtitle: "Thyroid fat-loss coach for Indian women 30+". Credentials line: ACE · INFS · AIHM (Nutrition for Hashimoto's) · AHA BLS · **100+ thyroid women coached** (gold highlights). Photo `COACH_IMAGE`, rounded. 2–3 sentences in your own words. **Quote with a gold 4px left bar.** |
-| 7 | **The method** *(new)* | dark | Eyebrow "— THE METHOD"; heading "The **T.H.Y.R.O.I.D.** Lean Method" (gold). **3 dark cards**: Fix the Root · Fuel the Body · Flow into Fitness, each with the existing one-line body from `PillarsSection.tsx`. |
+| 6 | **Meet your coach** *(new)* | dark | Eyebrow "— MEET YOUR COACH". "Hey, I'm **Coach Swapnil**." Subtitle (owner's words): "**Scientific Thyroid Lean Method** for fat loss". Credentials line (owner's words): **ACE · INFS · BLS certified** · **100+ thyroid women coached** (gold highlights). Photo `COACH_IMAGE`, rounded. **Quote with a gold 4px left bar**, taken from the owner's existing site line: "Your report will show why." No invented story paragraph. |
+| 7 | **The method** *(new)* | dark | Eyebrow "— THE METHOD"; heading "The **Scientific Thyroid Lean Method**" (gold, the owner's name for it). **3 dark cards**: Fix the Root · Fuel the Body · Flow into Fitness, each with the existing one-line body from `PillarsSection.tsx`. |
 | 8 | **What you get + how booking works** | dark | The 3 "what you get" lines as dark cards with gold dots; "How booking works" as **3 steps with gold-outlined number boxes** (01 Answer 12 quick questions · 02 Pay ₹299 · 03 Pick your slot), their divider style. **Red button.** |
 | 9 | **Who this is for** *(new)* | dark | Eyebrow "— WHO THIS IS FOR"; heading "Not another diet chart. **Your report, read properly.**"; **gold checkmark list** of the 5 existing lines from the old page. No "not for you" list. |
 | 10 | **Quick questions** | dark | The 3 FAQs as dark cards. |
 | 11 | **Final button** | dark | **Red button** + one honest trust line: "₹299 · 60 minutes · one to one with Swapnil". + a small footer: "Individual results vary. Not a substitute for medical advice." |
 | — | **Sticky bar** | white | Red button, visible from load. |
 
-**Size:** about **~560 visible words** (365 today + ~70 coach + ~60 method + ~65 who-for), about 9–10 phone screens, **7 Book buttons** plus the sticky bar.
+**Size:** about **~540 visible words** (no coach story paragraph) (365 today + ~70 coach + ~60 method + ~65 who-for), about 9–10 phone screens, **7 Book buttons** plus the sticky bar.
 
 ---
 
@@ -131,7 +137,8 @@ The spec copies the look and the section types. The free-call difference is **yo
   - a `.gold` heading highlight
   - a dark-card utility (`#151b15`, 1px border, 12px corners)
   - `.band-deep` already exists.
-- **New `app/decode/CoachIntro.tsx`:** reuses `COACH_IMAGE`, `COACH_NAME`, `CERTIFICATIONS` from `app/lib/authority.ts`. Owner supplies the 2–3 sentences and the quote.
+- **New `app/decode/CoachIntro.tsx`:** reuses `COACH_IMAGE` and `COACH_NAME` from `app/lib/authority.ts`. Credentials line exactly "ACE · INFS · BLS certified"; subtitle "Scientific Thyroid Lean Method for fat loss"; quote "Your report will show why."
+- **Hero video:** import `app/components/HeroVideo.tsx` into the /decode hero with the caption "Why thyroid fat loss is not the same". Checked 14 Sep: it has no booking link (its only event is the play tracking), and the live build already carries the video file (`vsl-1080-v2.mp4`), so nothing else is needed.
 - **Pillars:** reuse the `PILLARS` data from `app/components/PillarsSection.tsx` (export it) and render dark cards in the page. `/` keeps its own light version, unchanged.
 - **`app/decode/DecodeStickyCta.tsx`:** a `showFromTop` prop (threshold 0), red fill.
 - **Existing components (`SymptomChips`, `TransformationWall`, `WhatsappProofSection`, `VideoTestimonial`):** unchanged; they already restyle inside `.band-deep`.
@@ -147,8 +154,9 @@ The spec copies the look and the section types. The free-call difference is **yo
   - `/` unchanged
   - after deploy, a week-on-week comparison in Windsor and the CRM (page loads → quiz starts → ₹299 paid → bookings)
 
-## 6. Your decisions still open (not part of this build)
-1. **Free call vs ₹299.** Their biggest difference is not visual. Your free funnel on `/` exists. Changing /decode's offer changes Meta events and ads, so it's a separate decision.
-2. **Coach video in the hero.** They open with the coach talking. /decode deliberately has no video (page weight, 59% vs 71% of clicks reaching the page). A short 30–45s face-to-camera clip, loaded only on tap, is an option if you record one.
-3. **More proof.** They show 7 videos and 6 before/afters; you have 3 and 4. Adding more needs real, consented client assets from you.
-4. **Your words for "Meet your coach":** 2–3 sentences and one quote line.
+## 6. Decisions (all answered 14 Sep)
+1. **Offer:** stays **₹299**. The button label, price line, quiz, payment and Meta events are unchanged.
+2. **Hero video:** reuse `HeroVideo` (the home page VSL). It is already lazy: poster only until play, no video bytes before the tap. Its existing `video_*` dataLayer events are unchanged. Page weight is checked in verification (the old concern was 59% vs 71% of clicks reaching the page).
+3. **Proof:** no new assets. Keep 4 before/afters, 3 videos, 3 screenshots.
+4. **Coach section:** the owner's words only — "Scientific Thyroid Lean Method for fat loss", "ACE, INFS, BLS certified". AIHM is also in `app/lib/authority.ts` and the handover doc but was not in the owner's list, so it is **left off the new coach line**. Confirm before building if it should stay.
+5. **Method name on /decode:** "Scientific Thyroid Lean Method", as the owner wrote it. The home page keeps "T.H.Y.R.O.I.D. Lean Method" until the owner says otherwise.
