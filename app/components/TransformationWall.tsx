@@ -151,7 +151,9 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
   );
 }
 
-export default function TransformationWall() {
+/** `compact`: drops the line under the heading (the 100+ claim, already in the
+ *  /decode hero). The cards and their words are never touched. Default off. */
+export default function TransformationWall({ compact = false }: { compact?: boolean } = {}) {
   return (
     <section
       className="cv-auto section-pad-tight relative bg-[var(--bg-elevated)]"
@@ -173,9 +175,11 @@ export default function TransformationWall() {
           >
             {COUNT_WORD} Women. {COUNT_WORD} Reports.
           </h2>
-          <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-center text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-            100+ Indian women with hypothyroidism coached, one to one.
-          </p>
+          {!compact && (
+            <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-center text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t3)]">
+              100+ Indian women with hypothyroidism coached, one to one.
+            </p>
+          )}
         </header>
 
         {/* Grid at every breakpoint — never a rail. This was a horizontal

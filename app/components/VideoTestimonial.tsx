@@ -351,7 +351,9 @@ function VideoCard({
 
 // ── Main section ──────────────────────────────────────────────────────────────
 
-export default function VideoTestimonial() {
+/** `compact`: drops the "Video testimonials" line under the heading — the cards
+ *  are visibly videos. The stories are never touched. Default off. */
+export default function VideoTestimonial({ compact = false }: { compact?: boolean } = {}) {
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   const handlePlay = useCallback((playedIdx: number) => {
@@ -393,13 +395,15 @@ export default function VideoTestimonial() {
           {/* Was "🎬 Video testimonials" — the only emoji on the page, under a
               heading written in a practitioner's voice. The cards below are
               visibly videos. */}
-          <Reveal
-            as="p"
-            delay={0.2}
-            className="mx-auto mt-3 text-[length:var(--fs-2xs)] font-medium tracking-[var(--ls-caps)] text-[var(--t3)]"
-          >
-            Video testimonials
-          </Reveal>
+          {!compact && (
+            <Reveal
+              as="p"
+              delay={0.2}
+              className="mx-auto mt-3 text-[length:var(--fs-2xs)] font-medium tracking-[var(--ls-caps)] text-[var(--t3)]"
+            >
+              Video testimonials
+            </Reveal>
+          )}
         </div>
 
         {/* ── Video grid ── */}

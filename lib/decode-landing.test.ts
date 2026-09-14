@@ -48,6 +48,14 @@ test("every /decode CTA carries the ad's own label", () => {
   assert.ok(STICKY.includes(CTA_LABEL), "the sticky bar must use the same label");
 });
 
+test("a Book button after the hero, the proof, the steps and at the end", () => {
+  // The long page had two in 14 phone screens. Every button goes to the quiz.
+  const inline = (PAGE.match(/className="cta-button/g) ?? []).length - 1; // minus BookButton's own definition
+  const reused = (PAGE.match(/<BookButton \/>/g) ?? []).length;
+  assert.ok(inline + reused >= 4, `expected at least 4 Book buttons, found ${inline + reused}`);
+  for (const href of PAGE.matchAll(/href="([^"]+)"/g)) assert.equal(href[1], "/decode/quiz");
+});
+
 test("every /decode CTA shows the price", () => {
   const subs = [...`${PAGE}${STICKY}`.matchAll(/<span className="cta-sub">([^<]+)</g)]
     .map((m) => m[1].trim());
@@ -81,48 +89,26 @@ test("the ₹15,000-₹30,000 line stays off until the quiz gates are measured",
   assert.match(PAGE, /const SHOW_PROGRAMME_PRICE = (true|false);/);
 });
 
-test("the qualification section keeps the two excluded filters out", () => {
-  // Only the rendered lists, not the comments above them — the comments say
-  // why these two are absent, which is the point of keeping them.
-  const lists = [...PAGE.matchAll(/const (?:FOR_YOU|NOT_FOR_YOU) = \[([\s\S]*?)\] as const;/g)]
-    .map((m) => m[1])
-    .join("\n");
-  assert.ok(lists.length > 0, "the qualification lists must exist");
-  assert.ok(!/invest|₹15,000|cost|afford/i.test(lists), "price must not be a stated filter");
-  assert.ok(
-    !/decision|husband|family decide/i.test(lists),
-    "the decision-maker question is the quiz's job, softly — not the page's",
-  );
+test("the refund sentence is on the page, word for word", () => {
+  // Quoted from docs/business-handover.md §1 and never reworded.
+  assert.ok(PAGE.includes("Leave the call without knowing your blocker and the ₹299 is refunded."));
+  // A method name with a pillar breakdown is the programme's sales material.
+  assert.ok((PAGE.match(/T\.H\.Y\.R\.O\.I\.D\./g) ?? []).length <= 1);
 });
 
-test("the guarantee and the method are both on the page", () => {
-  assert.ok(PAGE.includes("My commitment to you"));
-  assert.ok(PAGE.includes("the ₹299 is"), "the refund term must be stated");
-  assert.equal(
-    (PAGE.match(/T\.H\.Y\.R\.O\.I\.D\. Lean Method/g) ?? []).length,
-    2,
-    "two mentions only: the hero eyebrow and the 60-minutes heading. A name is positioning; a full pillar breakdown is the programme's sales material, not this page's",
-  );
-});
-
-test("the page answers her questions in the order she asks them", () => {
-  // The one that has already been wrong once: the agenda sat ABOVE the proof,
-  // which tells her what happens in the 60 minutes before she believes the 60
-  // minutes work. Process detail only lands on someone already convinced.
+test("the short page keeps its order: what she needs to book, and nothing else", () => {
+  // Owner's call, 14-Sep-2026: the long argument read as noise. The long page
+  // is kept at /decode-long; this one must not grow back into it.
   const ORDER = [
-    ["hero", "for women 30+ with a slow"],
-    ["symptom checklist", "<SymptomChips hideCta />"],
-    ["the gap chart", "<DeficitDiagram />"],
-    ["you didn't fail", "<AbsolveBlock />"],
-    ["the comparison", 'id="compare-heading"'],
-    ["proof", "<TransformationWall />"],
-    ["credentials", 'id="credentials-heading"'],
-    ["the 60 minutes", 'id="agenda-heading"'],
-    ["who this is for", 'id="fit-heading"'],
+    ["hero", 'className="decode-hero'],
+    ["symptoms", "<SymptomChips hideCta compact"],
+    ["proof: transformations", "<TransformationWall compact />"],
+    ["proof: screenshots", "<WhatsappProofSection hideCta limit={3} />"],
+    ["proof: videos", "<VideoTestimonial compact />"],
+    ["what you get", 'id="get-heading"'],
+    ["how booking works", 'id="steps-heading"'],
     ["FAQ", 'id="faq-heading"'],
-    ["share with family", "<ShareWithFamily />"],
   ] as const;
-
   let previous = -1;
   for (const [name, marker] of ORDER) {
     const at = PAGE.indexOf(marker);
@@ -130,14 +116,31 @@ test("the page answers her questions in the order she asks them", () => {
     assert.ok(at > previous, `${name} must come after the section before it`);
     previous = at;
   }
+  const code = rendered("app/decode/page.tsx");
+  for (const gone of ["<DeficitDiagram", "<AbsolveBlock", "<ShareWithFamily", 'id="fit-heading"', 'id="compare-heading"']) {
+    assert.ok(!code.includes(gone), `${gone} was removed on purpose — it lives on /decode-long`);
+  }
 });
 
-test("proof is capped, and the argument is not", () => {
+test("the page's own words stay under budget", () => {
+  // Text the page itself writes: JSX text and string constants, not the proof
+  // components. ~1,850 words became ~200; the ceiling leaves room, not a license.
+  const code = rendered("app/decode/page.tsx")
+    .replace(/^import[\s\S]*?;$/gm, "")
+    .replace(/export const metadata[\s\S]*?\};/, "")
+    .replace(/className="[^"]*"|style=\{\{[\s\S]*?\}\}|href="[^"]*"|aria-[a-z]+="[^"]*"|id="[^"]*"|key=\{[^}]*\}/g, " ");
+  const text = [...code.matchAll(/>([^<>{}]+)</g), ...code.matchAll(/"([^"\n]{12,})"/g)].map((m) => m[1]).join(" ");
+  const words = text.match(/[A-Za-z₹0-9']+/g) ?? [];
+  assert.ok(words.length > 100, `word count looks broken (${words.length})`);
+  assert.ok(words.length <= 320, `the page writes ${words.length} words of its own — keep it minimal`);
+  assert.ok(PAGE.includes("SYMPTOM_PICK") && /SYMPTOM_PICK = \[(\s*\d+,?){6}\s*\]/.test(PAGE), "six symptom lines");
+});
+
+test("proof is capped, and never cut", () => {
   assert.match(PAGE, /<WhatsappProofSection hideCta limit=\{3\} \/>/);
-  // The four transformation composites and the video testimonials are the
-  // proof that carries faces and voices. Owner's explicit call: never cut.
-  assert.ok(PAGE.includes("<TransformationWall />"));
-  assert.ok(PAGE.includes("<VideoTestimonial />"));
+  // Faces and voices: owner's explicit call — never cut.
+  assert.ok(PAGE.includes("<TransformationWall compact />"));
+  assert.ok(PAGE.includes("<VideoTestimonial compact />"));
   assert.equal((WALL.match(/src: "\/transformations\//g) ?? []).length, 4);
 });
 
@@ -209,13 +212,9 @@ test("neither templated \"Real X. Real Y.\" heading is back", () => {
   assert.ok(!/\b(Three|Four|Five) women\./.test(wall), "the count must not be typed by hand");
 });
 
-test("the credentials are a line, and the scans are behind a disclosure", () => {
-  assert.match(PAGE, /ACE Certified/);
-  assert.match(PAGE, /View certificates/);
-  // The <ul> must not be the direct child of <details>: a closed <details>
-  // hides its non-summary children with display:none, and an explicit display
-  // on that child (grid, here) wins — which rendered all four scans on load.
-  assert.match(rendered("app/decode/page.tsx"), /<\/summary>\s*<div>\s*<ul/);
+test("the credentials are one line", () => {
+  assert.match(PAGE, /ACE &middot; INFS &middot; AIHM/);
+  assert.ok(!PAGE.includes("<Image"), "no certificate scans on the short page");
 });
 
 test("the proof claim is never inflated", () => {

@@ -56,11 +56,21 @@ function encouragementFor(n: number): string {
  * needs the recognition this section produces — it is the second question she
  * asks, right after "is this about me?" — but must not hand paid-intent
  * traffic to the free flow. Default false: the home page is unchanged.
+ *
+ * `pick`: which lines to show, by index into SYMPTOMS, so a shorter page can
+ * show fewer without a second copy of the wording. `compact` drops the two
+ * explanatory lines under the list. Both default off: the home page is
+ * unchanged.
  */
-export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } = {}) {
+export default function SymptomChips({
+  hideCta = false,
+  pick,
+  compact = false,
+}: { hideCta?: boolean; pick?: readonly number[]; compact?: boolean } = {}) {
+  const symptoms = pick ? pick.map((i) => SYMPTOMS[i]).filter(Boolean) : SYMPTOMS;
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const count = picked.size;
-  const total = SYMPTOMS.length;
+  const total = symptoms.length;
   const pct = Math.round((count / total) * 100);
   const encourage = encouragementFor(count);
 
@@ -127,7 +137,7 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
         </div>
 
         <ul className="mb-10 w-full max-w-[640px] overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_rgba(36,31,26,0.06)]" role="list">
-          {SYMPTOMS.map((s, i) => {
+          {symptoms.map((s, i) => {
             const on = picked.has(s);
             return (
               <li key={s}>
@@ -137,7 +147,7 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
                   onClick={() => toggle(s)}
                   className={[
                     "flex w-full cursor-pointer items-start gap-[14px] px-4 py-[14px] text-left transition-colors duration-150 md:px-[22px] md:py-4",
-                    i < SYMPTOMS.length - 1 ? "border-b border-[var(--border-hairline)]" : "",
+                    i < symptoms.length - 1 ? "border-b border-[var(--border-hairline)]" : "",
                   ].join(" ")}
                   style={{ background: on ? "var(--p-tint)" : "#fff" }}
                 >
@@ -187,6 +197,11 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
           })}
         </ul>
 
+        {compact ? (
+          <p className="mb-6 text-center text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]">
+            Tap the ones that are true for you.
+          </p>
+        ) : (
         <div className="mb-9 max-w-[600px] text-center">
           <p className="mb-2.5 text-[length:var(--fs-lg)] leading-[var(--lh-tight)] text-[var(--t1)]">
             <strong className="font-medium">Tap the ones that are true for you.</strong>{" "}
@@ -196,6 +211,7 @@ export default function SymptomChips({ hideCta = false }: { hideCta?: boolean } 
             No tablet, and your report says &ldquo;normal&rdquo; but your body disagrees? This still applies.
           </p>
         </div>
+        )}
 
         {encourage && (
           <div
