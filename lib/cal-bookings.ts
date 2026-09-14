@@ -23,6 +23,12 @@ export type CalBookingRecord = {
   name: string;
   phone: string;
   startIso: string;
+  /**
+   * When the booking was MADE, as distinct from when the call is. Metrics count
+   * "booked" by this date (owner decision, 14-Sep: "when each thing happened").
+   * Empty when Cal.com did not send it.
+   */
+  createdAt: string;
   /** Raw Cal.com status, lowercased. */
   status: string;
   cancelled: boolean;
@@ -37,6 +43,8 @@ type RawBooking = {
   status?: string;
   startTime?: string;
   start?: string;
+  createdAt?: string;
+  created_at?: string;
   attendees?: { name?: string; email?: string; phoneNumber?: string }[];
   responses?: Record<string, unknown>;
   bookingFieldsResponses?: Record<string, unknown>;
@@ -65,6 +73,7 @@ export function normaliseBooking(b: RawBooking): CalBookingRecord | null {
     name: a.name || str(merged.name),
     phone: a.phoneNumber || str(merged.attendeePhoneNumber) || str(merged.phone),
     startIso: b.startTime ?? b.start ?? "",
+    createdAt: b.createdAt ?? b.created_at ?? "",
     status,
     cancelled: CANCELLED.has(status),
     answers: merged,
@@ -167,4 +176,42 @@ export async function fetchBookings(take = 50): Promise<BookingsResult> {
         ? `cal.com returned ${rows.length} bookings but none had a uid`
         : "",
   };
+}
+
+/**
+ * EVERY booking, for the metrics layer — not the recent slice.
+ *
+ * fetchBookings reads one page, and its callers asked for different sizes (50
+ * on Pipeline, 100 on Today), which is one reason the two tabs reported
+ * different "Booked" totals for the same business. Metrics must count the
+ * same set everywhere, so they read all of it: pages of 100, newest first,
+ * until a short page or the cap. Owner tests are dropped exactly as
+ * fetchBookings drops them.
+ *
+ * Deliberately a separate function: fetchBookings also feeds the Fathom
+ * recording matcher, and its behaviour is left exactly as it was.
+ */
+export async function fetchAllBookings(maxPages = 6): Promise<BookingsResult> {
+  const apiKey = process.env.CAL_API_KEY;
+  if (!apiKey) return { bookings: [], error: "CAL_API_KEY is not set on this deployment", ownerTestsRemoved: 0 };
+
+  const seen = new Set<string>();
+  const out: CalBookingRecord[] = [];
+  let ownerTests = 0;
+  for (let p = 0; p < maxPages; p++) {
+    const { rows, error } = await page(apiKey, `take=100&skip=${p * 100}&sortCreated=desc`);
+    if (error) return { bookings: out, error, ownerTestsRemoved: ownerTests };
+    for (const b of rows) {
+      const rec = normaliseBooking(b);
+      if (!rec || seen.has(rec.uid)) continue;
+      seen.add(rec.uid);
+      if (isOwnerTest({ name: rec.name, email: rec.email })) {
+        ownerTests++;
+        continue;
+      }
+      out.push(rec);
+    }
+    if (rows.length < 100) break;
+  }
+  return { bookings: out, error: "", ownerTestsRemoved: ownerTests };
 }

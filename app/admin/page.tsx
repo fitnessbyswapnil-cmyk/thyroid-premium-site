@@ -22,7 +22,7 @@ import AnalyticsDashboard from "./AnalyticsDashboard";
 import Today from "./Today";
 import Pipeline from "./Pipeline";
 import { LIGHT, DARK, FONT, RADIUS, type Tokens } from "./tokens";
-import { readAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
+import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 
 type Tab = "today" | "pipeline" | "analytics";
 const THEME_STORE = "admin_theme";
@@ -39,6 +39,9 @@ export default function AdminShell() {
       setTab(h === "analytics" ? "analytics" : h === "pipeline" ? "pipeline" : "today");
     };
     read();
+    // A bare /admin lands on Today AND says so in the address bar, so the URL
+    // he bookmarks or pins to a home screen is the one he actually uses.
+    if (!window.location.hash) window.history.replaceState(null, "", "#today");
     window.addEventListener("hashchange", read);
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -161,11 +164,11 @@ export default function AdminShell() {
         {/* Both mount; only one is shown. The analytics tab holds a lot of fetched
             state and re-mounting it on every tab switch would re-run every call. */}
         <div style={{ display: tab === "today" ? "block" : "none" }}>
-          {adminKey
-            ? <Today adminKey={adminKey} />
-            : <p style={{ color: "#8A93A6", fontSize: 14, padding: "24px 0" }}>
-                Open the Pipeline tab once to enter your admin key. This device will remember it until you log out.
-              </p>}
+          {/* Today asks for the key itself. It used to say "open the Pipeline
+              tab once to enter your admin key", which made the screen he opens
+              most a dead end from a bookmark or a home-screen shortcut — and a
+              blank Today is a big part of why outcomes never got marked. */}
+          {adminKey ? <Today adminKey={adminKey} /> : <KeyGate />}
         </div>
         <div style={{ display: onPipeline ? "block" : "none" }}>
           <Pipeline dark={dark} />
@@ -175,5 +178,41 @@ export default function AdminShell() {
         </div>
       </div>
     </main>
+  );
+}
+
+/** The key prompt, for whichever tab is opened first. Saving unlocks all tabs. */
+function KeyGate() {
+  const [entry, setEntry] = useState("");
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const k = entry.trim();
+        if (k) saveAdminKey(k);
+      }}
+      style={{ display: "grid", gap: 12, width: "min(340px,100%)", margin: "48px auto" }}
+    >
+      <label htmlFor="today-key" style={{ color: "#C9CED9", fontFamily: FONT.sans, fontSize: 15 }}>
+        Admin key
+      </label>
+      <input
+        id="today-key"
+        type="password"
+        autoComplete="current-password"
+        value={entry}
+        onChange={(e) => setEntry(e.target.value)}
+        style={{ padding: "12px 14px", borderRadius: RADIUS.chip, border: "1px solid #2A3040", background: "#12161F", color: "#F4F2F7", fontSize: 16 }}
+      />
+      <button
+        type="submit"
+        style={{ padding: "12px 14px", borderRadius: RADIUS.chip, border: 0, background: "#C793FF", color: "#0B0E14", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+      >
+        Open Today
+      </button>
+      <p style={{ margin: 0, color: "#8A93A6", fontFamily: FONT.sans, fontSize: 13 }}>
+        This device remembers it until you log out. It unlocks every tab.
+      </p>
+    </form>
   );
 }
