@@ -6,7 +6,9 @@
  *    the Analytics route read A:BC, and "Paid At" / "Programme Closed At" live
  *    past BC, so it could never date a payment;
  *  - EVERY Cal.com booking (fetchAllBookings), not a 50- or 100-row slice;
- *  - the Calls sheet (Fathom ingest + hand-ticked checklists).
+ *  - the Calls sheet (Fathom ingest + hand-ticked checklists);
+ *  - the WhatsApp log, reduced to who was messaged when (lib/journey's action
+ *    list and nurture rule read it).
  *
  * The raw dataset is cached per worker for a minute: each tab asks on load, and
  * the Cal.com pages are the slow part. Summaries are cheap and computed fresh.
@@ -14,7 +16,8 @@
 import { getSheetsClient, SHEET_NAME } from "@/app/api/admin/_lib";
 import { fetchAllBookings } from "@/lib/cal-bookings";
 import { readCalls } from "@/lib/crm-calls";
-import type { CallRecord, Dataset, LeadRecord } from "./metrics.ts";
+import { readMessages } from "@/lib/wa-messages";
+import type { CallRecord, Dataset, LeadRecord, MessageEvent } from "./metrics.ts";
 
 export type LoadedDataset = {
   data: Dataset;
@@ -22,6 +25,7 @@ export type LoadedDataset = {
     leadRows: number;
     bookings: number;
     calls: number;
+    messages: number;
     bookingsError: string;
     ownerTestBookingsDroppedAtSource: number;
     loadedAt: string;
@@ -66,6 +70,9 @@ async function loadLeads(): Promise<LeadRecord[]> {
     paid: col("Paid"), paidAmount: col("Paid Amount"), paidAt: col("Paid At"),
     closedAmt: col("Closed ₹"), closedAt: col("Programme Closed At"),
     programmeValue: col("Programme Value"), programmeCollected: col("Programme Collected"),
+    city: col("City"),
+    // The quiz score the Today queue has always used; the plain header is newer.
+    score: col("Lead Score (/100)") >= 0 ? col("Lead Score (/100)") : col("Lead Score"),
   };
   const cell = (r: string[], i: number) => (i >= 0 ? String(r[i] ?? "").trim() : "");
   const out: LeadRecord[] = [];
@@ -86,6 +93,8 @@ async function loadLeads(): Promise<LeadRecord[]> {
       closedAt: cell(r, C.closedAt),
       programmeValue: num(cell(r, C.programmeValue)),
       programmeCollected: num(cell(r, C.programmeCollected)),
+      city: cell(r, C.city),
+      leadScore: num(cell(r, C.score)),
     });
   }
   return out;
@@ -94,7 +103,25 @@ async function loadLeads(): Promise<LeadRecord[]> {
 export async function loadMetricsDataset(force = false): Promise<LoadedDataset> {
   if (!force && cache && Date.now() - cache.at < TTL_MS) return cache.value;
 
-  const [leads, bookingsRes, callRows] = await Promise.all([loadLeads(), fetchAllBookings(), readCalls()]);
+  const [leads, bookingsRes, callRows, messageRows] = await Promise.all([
+    loadLeads(),
+    fetchAllBookings(),
+    readCalls(),
+    // The log degrades to empty, which only makes the action list more cautious.
+    readMessages().catch(() => []),
+  ]);
+
+  const messages: MessageEvent[] = messageRows
+    .map((m) => ({
+      phone: String(m.phone ?? "").replace(/\D/g, "").slice(-10),
+      at: m.ts,
+      dir: m.direction,
+      // Templates are logged as "[template_name] …" and failures as
+      // "[delivery failed] …"; anything else was typed by a person.
+      manual: m.direction === "out" && !/^\[/.test(m.text ?? ""),
+      mediaType: m.mediaType ?? "",
+    }))
+    .filter((m) => m.phone.length === 10);
 
   const calls: CallRecord[] = callRows
     .filter((c) => c.bookingUid)
@@ -105,6 +132,8 @@ export async function loadMetricsDataset(force = false): Promise<LoadedDataset> 
       scorecard: parseScorecard(c.scorecard),
       pricePitched: num(c.pricePitched),
       discountOffered: /^y/i.test(c.discountOffered),
+      moneyMovedOnCall: /^y/i.test(c.moneyMovedOnCall),
+      detail: Object.fromEntries(Object.entries(c).map(([k, v]) => [k, String(v ?? "")])),
     }));
 
   const value: LoadedDataset = {
@@ -118,13 +147,16 @@ export async function loadMetricsDataset(force = false): Promise<LoadedDataset> 
         name: b.name,
         email: b.email,
         phone: b.phone,
+        answers: b.answers,
       })),
       calls,
+      messages,
     },
     sources: {
       leadRows: leads.length,
       bookings: bookingsRes.bookings.length,
       calls: calls.length,
+      messages: messages.length,
       bookingsError: bookingsRes.error,
       ownerTestBookingsDroppedAtSource: bookingsRes.ownerTestsRemoved,
       loadedAt: new Date().toISOString(),

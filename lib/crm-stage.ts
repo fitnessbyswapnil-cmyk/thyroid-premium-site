@@ -33,7 +33,8 @@ export type Stage =
   | "attended" // call happened, no price was said
   | "pitched" // price said, decision outstanding
   | "won" // a programme sale — lib/metrics' definition, never a ₹299 fee
-  | "lost"; // pitched, no money, follow-up window expired
+  | "lost" // pitched, no money, follow-up window expired
+  | "nurture"; // dormant 30 days — out of the working pipeline, never deleted (lib/journey)
 
 export const STAGE_ORDER: Stage[] = [
   "new",
@@ -45,6 +46,7 @@ export const STAGE_ORDER: Stage[] = [
   "pitched",
   "won",
   "lost",
+  "nurture",
 ];
 
 export const STAGE_LABEL: Record<Stage, string> = {
@@ -57,6 +59,7 @@ export const STAGE_LABEL: Record<Stage, string> = {
   pitched: "Pitched",
   won: "Won",
   lost: "Lost",
+  nurture: "Nurture",
 };
 
 /**
@@ -82,6 +85,13 @@ export type CallFacts = {
   attended: boolean;
   /** Rupee figure actually said out loud. 0 / null = no price was named. */
   pricePitched: number | null;
+  /**
+   * The checklist says the price was named ("Named the price cleanly, with the
+   * guarantee" ticked Did). Pitched's second write path: the free transcript
+   * ingest records no price, so without this Pitched stayed at zero while
+   * sales were being won.
+   */
+  namedPrice?: boolean;
   /** Transcript SIGNAL that money moved. Never proof — Cashfree is proof. */
   moneyMovedOnCall: boolean;
   /** ISO timestamp of the call itself. */
@@ -150,7 +160,7 @@ export function deriveStage(input: StageInput): Stage {
   if (call) {
     if (!call.attended) return "no_show";
 
-    const pitched = (call.pricePitched ?? 0) > 0;
+    const pitched = (call.pricePitched ?? 0) > 0 || !!call.namedPrice;
     if (!pitched) return "attended";
 
     const occurred = parse(call.occurredAt);
@@ -258,6 +268,13 @@ export function nextAction(
       }
       return { label: "Get a clock time out of her", urgency: "now", reason: "Pitched and undecided. Ask what time TODAY she will decide — not whether." };
     }
+
+    case "nurture":
+      return {
+        label: "Leave her in nurture",
+        urgency: "none",
+        reason: "Thirty days with no reply and no booking. She comes back into the pipeline the moment she messages, books or pays.",
+      };
 
     case "lost":
       return {

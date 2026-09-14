@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import type { Summary, ChecklistSummary } from "@/lib/metrics";
+import type { FunnelStep, NeedsAction, PipelineCounts } from "@/lib/journey";
 
 export type MetricsPayload = {
   days: number;
@@ -18,6 +19,13 @@ export type MetricsPayload = {
   month: { revenue: number; won: number };
   allTime: { won: number; attended: number; revenue: number };
   checklist: ChecklistSummary;
+  /** Per woman: funnel by furthest stage, pipeline/nurture, the one action list. */
+  journey: {
+    funnel: FunnelStep[];
+    pipeline: PipelineCounts;
+    needsAction: NeedsAction;
+    rules: { overdueAfterMin: number; nurtureAfterDays: number };
+  };
   sources: { leadRows: number; bookings: number; calls: number; bookingsError: string; loadedAt: string };
   generatedAt: string;
 };

@@ -96,6 +96,11 @@ export type LeadRecord = {
   programmeCollected: number | null;
   /** "Programme Closed At" — when that sale's money moved. */
   closedAt: string;
+  /** Extra columns the Pipeline cards and the action list read. Optional so
+   *  fixtures stay small. */
+  city?: string;
+  /** "Lead Score" — quiz score, used for the abandoned-checkout nudge. */
+  leadScore?: number | null;
 };
 
 export type BookingRecord = {
@@ -106,6 +111,8 @@ export type BookingRecord = {
   name: string;
   email: string;
   phone: string;
+  /** Her Cal.com qualifying answers — they exist nowhere else. */
+  answers?: Record<string, unknown>;
 };
 
 export type CallRecord = {
@@ -118,9 +125,30 @@ export type CallRecord = {
   /** Rupee figure said out loud on the call; null when no price was named. */
   pricePitched?: number | null;
   discountOffered?: boolean;
+  /** Transcript SIGNAL that money moved on the call. Never proof of payment. */
+  moneyMovedOnCall?: boolean;
+  /** The full Calls-sheet row, for the Pipeline card. Not read by any metric. */
+  detail?: Record<string, string>;
 };
 
-export type Dataset = { leads: LeadRecord[]; bookings: BookingRecord[]; calls: CallRecord[] };
+/** One WhatsApp message, reduced to what the action list needs. */
+export type MessageEvent = {
+  /** Last 10 digits. */
+  phone: string;
+  at: string;
+  dir: "in" | "out";
+  /** A message typed by a person — not a "[template]" send or a delivery failure. */
+  manual: boolean;
+  mediaType: string;
+};
+
+export type Dataset = {
+  leads: LeadRecord[];
+  bookings: BookingRecord[];
+  calls: CallRecord[];
+  /** Absent in older fixtures; the action list then treats nobody as messaged. */
+  messages?: MessageEvent[];
+};
 
 /** Half-open [from, to). from = null means all time. */
 export type Window = { from: number | null; to: number };
@@ -157,9 +185,21 @@ export function looksLikeTestData(who: { name?: string; email?: string; phone?: 
   return p.length === 10 && (/^(\d)\1{9}$/.test(p) || DUMMY_PHONES.has(p));
 }
 
+/**
+ * The address the payment flow writes when a woman gives no email
+ * (the PLACEHOLDER_EMAIL constant the payment routes share). It is on his own domain, so the
+ * owner rule would call every such woman a test — and it is shared by all of
+ * them, so it must never join two people. Treated as "no email" here.
+ */
+export const PLACEHOLDER_EMAIL = "noreply@swapnilumbarkarfitness.in";
+const realEmail = (e: string | undefined): string => {
+  const v = String(e ?? "").trim();
+  return v.toLowerCase() === PLACEHOLDER_EMAIL ? "" : v;
+};
+
 /** The one test rule. Every metric, every tab, the queue. */
 export function isTestIdentity(who: { name?: string; email?: string; phone?: string }): boolean {
-  if (isOwnerTest({ name: who.name ?? "", email: who.email ?? "" })) return true;
+  if (isOwnerTest({ name: who.name ?? "", email: realEmail(who.email) })) return true;
   if (looksLikeTestData(who)) return true;
   const p = phoneKey(who.phone ?? "");
   return p.length === 10 && ownerPhones().has(p);
@@ -169,8 +209,95 @@ export function isTestIdentity(who: { name?: string; email?: string; phone?: str
 export function personKey(who: { phone?: string; email?: string }): string {
   const p = phoneKey(who.phone ?? "");
   if (p.length === 10) return `p:${p}`;
-  const e = canonicalEmail(who.email ?? "");
+  const e = canonicalEmail(realEmail(who.email));
   return e ? `e:${e}` : "";
+}
+
+/** Every identity a record carries: its phone and its email, each on its own. */
+export function identityKeys(who: { phone?: string; email?: string }): string[] {
+  const out: string[] = [];
+  const p = phoneKey(who.phone ?? "");
+  if (p.length === 10) out.push(`p:${p}`);
+  const e = canonicalEmail(realEmail(who.email));
+  if (e) out.push(`e:${e}`);
+  return out;
+}
+
+export type Person = {
+  /** Stable id: the smallest identity key in her cluster. */
+  id: string;
+  /** Every phone and email seen for her. */
+  keys: string[];
+  name: string;
+  email: string;
+  phone: string;
+  rows: LeadRecord[];
+  bookings: BookingRecord[];
+};
+
+/**
+ * PEOPLE, not rows. One woman is often three sheet rows (quiz, payment, the
+ * Cal.com scenario) and two bookings, and those carry her phone on one and her
+ * email on another. Anything that shares a phone OR an email is the same
+ * person. Test identities are left out entirely.
+ *
+ * Every per-person number — leads, the funnel, the pipeline, the action list —
+ * counts these, so a woman can never be two leads on one tab and one on another.
+ */
+export function clusterPeople(data: Pick<Dataset, "leads" | "bookings">): Person[] {
+  type Rec = { kind: "row"; r: LeadRecord } | { kind: "booking"; b: BookingRecord };
+  const recs: Rec[] = [
+    ...data.leads.filter((r) => !isTestIdentity(r)).map((r) => ({ kind: "row" as const, r })),
+    ...data.bookings.filter((b) => !isTestIdentity(b)).map((b) => ({ kind: "booking" as const, b })),
+  ];
+  const parent = recs.map((_, i) => i);
+  const find = (i: number): number => {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i]];
+      i = parent[i];
+    }
+    return i;
+  };
+  const owner = new Map<string, number>();
+  recs.forEach((rec, i) => {
+    const who = rec.kind === "row" ? rec.r : rec.b;
+    for (const k of identityKeys(who)) {
+      const j = owner.get(k);
+      if (j === undefined) owner.set(k, i);
+      else parent[find(i)] = find(j);
+    }
+  });
+
+  const groups = new Map<number, Rec[]>();
+  recs.forEach((rec, i) => {
+    const who = rec.kind === "row" ? rec.r : rec.b;
+    // A record with neither a phone nor an email cannot be joined to anyone.
+    if (!identityKeys(who).length) return;
+    const g = find(i);
+    const list = groups.get(g) ?? [];
+    list.push(rec);
+    groups.set(g, list);
+  });
+
+  const people: Person[] = [];
+  for (const list of groups.values()) {
+    const rows = list.flatMap((x) => (x.kind === "row" ? [x.r] : [])).sort((a, b) => a.row - b.row);
+    const bookings = list.flatMap((x) => (x.kind === "booking" ? [x.b] : [])).sort((a, b) => a.startAt.localeCompare(b.startAt));
+    const keys = [...new Set(list.flatMap((x) => identityKeys(x.kind === "row" ? x.r : x.b)))].sort();
+    // Newest non-empty value wins: the latest row carries the freshest details.
+    const latest = <T,>(vals: T[]) => [...vals].reverse().find((v) => !!v) ?? ("" as T);
+    const who = [...rows.map((r) => ({ name: r.name, email: realEmail(r.email), phone: r.phone })), ...bookings.map((b) => ({ name: b.name, email: realEmail(b.email), phone: b.phone }))];
+    people.push({
+      id: keys[0],
+      keys,
+      name: latest(who.map((w) => w.name)),
+      email: latest(who.map((w) => w.email)),
+      phone: latest(who.map((w) => phoneKey(w.phone)).filter((p) => p.length === 10)),
+      rows,
+      bookings,
+    });
+  }
+  return people.sort((a, b) => a.id.localeCompare(b.id));
 }
 
 // ── Money ───────────────────────────────────────────────────────────────────
@@ -309,21 +436,29 @@ export function summarize(data: Dataset, w: Window, now: number = w.to): Summary
   const leads = data.leads.filter((r) => !isTestIdentity(r));
   const bookings = data.bookings.filter((b) => !isTestIdentity(b));
 
-  // Leads: each woman once, dated by her FIRST row.
-  const firstSeen = new Map<string, number>();
-  for (const r of leads) {
-    const key = personKey(r) || `row:${r.row}`;
-    const t = Date.parse(r.createdAt);
-    if (!Number.isFinite(t)) continue;
-    const prev = firstSeen.get(key);
-    if (prev === undefined || t < prev) firstSeen.set(key, t);
-  }
+  // One person per woman however many rows and bookings she has
+  // (clusterPeople), so Leads here and the Pipeline funnel count the same women.
+  const people = clusterPeople({ leads, bookings });
+  const personOf = new Map<string, string>();
+  for (const p of people) for (const k of p.keys) personOf.set(k, p.id);
+  const idOf = (who: { phone?: string; email?: string }, fallback: string) => {
+    for (const k of identityKeys(who)) {
+      const id = personOf.get(k);
+      if (id) return id;
+    }
+    return fallback;
+  };
+
+  // Leads: each woman once, dated by her FIRST sheet row.
   let leadCount = 0;
-  for (const t of firstSeen.values()) if ((w.from === null || t >= w.from) && t < w.to) leadCount++;
+  for (const p of people) {
+    const t = Math.min(...p.rows.map((r) => Date.parse(r.createdAt)).filter(Number.isFinite));
+    if (Number.isFinite(t) && (w.from === null || t >= w.from) && t < w.to) leadCount++;
+  }
 
   // Bookings made in the window.
   const made = bookings.filter((b) => inWindow(b.createdAt || b.startAt, w));
-  const bookedPeople = new Set(made.map((b) => personKey(b) || `b:${b.uid}`));
+  const bookedPeople = new Set(made.map((b) => idOf(b, `b:${b.uid}`)));
 
   // Attendance for calls whose slot is in the window.
   const coverage = coverageOf(data.calls);
@@ -356,7 +491,7 @@ export function summarize(data: Dataset, w: Window, now: number = w.to): Summary
     upcoming: att.upcoming,
     showUpRate: att.attended + att.noShow > 0 ? att.attended / (att.attended + att.noShow) : null,
     leadToBooked: leadCount > 0 ? bookedPeople.size / leadCount : null,
-    won: new Set(programme.map((p) => p.person)).size,
+    won: new Set(programme.map((p) => personOf.get(p.person) ?? p.person)).size,
     revenue: sum(programme),
     contracted: programme.reduce((t, p) => t + (p.contracted ?? p.amount ?? 0), 0),
     wins: programme

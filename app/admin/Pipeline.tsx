@@ -26,7 +26,8 @@ import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./ad
 import { useMetrics, useRange, RANGE_CHOICES, rangeLabel, pct, rupees } from "./useMetrics";
 import { SCORECARD_LABEL } from "@/lib/scorecard";
 
-export type Stage = "new" | "booked" | "unknown" | "attended" | "pitched" | "won" | "no_show" | "cancelled" | "lost";
+export type Stage = "new" | "booked" | "unknown" | "attended" | "pitched" | "won" | "no_show" | "cancelled" | "lost" | "nurture";
+type FunnelStage = "new" | "booked" | "attended" | "pitched" | "won";
 
 /** The four ordinal steps, in order. Everything else is an outcome. */
 const SEQUENCE: { id: Stage; label: string }[] = [
@@ -41,6 +42,8 @@ const OUTCOMES: { id: Stage; label: string; glyph: string }[] = [
   { id: "no_show", label: "No-show", glyph: "◐" },
   { id: "cancelled", label: "Cancelled", glyph: "○" },
   { id: "lost", label: "Lost", glyph: "✕" },
+  // Dormant 30 days: out of the working pipeline, never deleted.
+  { id: "nurture", label: "Nurture", glyph: "◌" },
 ];
 
 // The checklist wording lives in lib/scorecard — one copy for every screen.
@@ -50,8 +53,19 @@ type Check = { passed: boolean; evidence: string };
 export type MilestoneState = "done" | "not_applicable" | "missing";
 export type Milestone = { id: string; label: string; state: MilestoneState; value: string; note?: string };
 
+export type ActionItem = {
+  personId: string;
+  kind: string;
+  label: string;
+  since: string;
+  waitMin: number;
+  overdue: boolean;
+  tone: "neutral" | "amber" | "red";
+};
+
 export type Rec = {
   key: string;
+  personId: string;
   bookingUid: string;
   name: string;
   email: string;
@@ -62,8 +76,15 @@ export type Rec = {
   budget: string;
   paid: boolean;
   paidAmount: number | null;
+  /** Where she is now. */
   stage: Stage;
+  /** How far she ever got, and which of those steps were inferred. */
+  furthest: FunnelStage;
+  inferredStages: FunnelStage[];
+  nurtureSince: string;
   nextAction: { label: string; urgency: string; reason: string };
+  /** On the one needs-action list (lib/journey) — the same list every tab shows. */
+  action: ActionItem | null;
   agreedButUnpaid: boolean;
   milestones: Milestone[];
   missing: number;
@@ -384,7 +405,8 @@ function MilestoneBoard({ t, rows }: { t: Tokens; rows: Rec[] }) {
 
 // ── charts ──────────────────────────────────────────────────────────────────
 
-function Funnel({ t, steps }: { t: Tokens; steps: { label: string; n: number }[] }) {
+function Funnel({ t, steps, cohortLabel }: { t: Tokens; steps: { label: string; n: number; inferred?: number }[]; cohortLabel?: string }) {
+  const inferredTotal = steps.reduce((n, s) => n + (s.inferred ?? 0), 0);
   const max = Math.max(1, steps[0]?.n ?? 1);
   let worst = { label: "", drop: 0, from: 0 };
   steps.forEach((s, i) => {
@@ -406,14 +428,19 @@ function Funnel({ t, steps }: { t: Tokens; steps: { label: string; n: number }[]
               <div style={{ background: t.sunk, height: 14, borderRadius: 2 }}>
                 <div style={{ width: `${Math.max((100 * s.n) / max, s.n > 0 ? 2 : 0)}%`, height: "100%", background: t.teal, borderRadius: 2, transition: "width .5s cubic-bezier(.16,1,.3,1)" }} />
               </div>
-              <span style={{ ...mono(t), fontSize: 12.5, textAlign: "right" }}>{s.n}</span>
+              <span style={{ ...mono(t), fontSize: 12.5, textAlign: "right" }} title={s.inferred ? `${s.inferred} inferred from a later step` : undefined}>
+                {s.n}
+                {s.inferred ? <sup style={{ color: t.ink3, fontSize: 9 }}>*</sup> : null}
+              </span>
               <span style={{ ...mono(t), fontSize: 11, color: t.ink3, textAlign: "right" }}>{conv != null ? `${conv}%` : ""}</span>
             </div>
           );
         })}
       </div>
       <Conclusion t={t}>
-        Percentages are of the step directly above, not of all leads.
+        {cohortLabel ? `${cohortLabel}, counted by the furthest step each reached. ` : ""}
+        Percentages are of the step directly above.
+        {inferredTotal > 0 ? ` * includes steps inferred from a later one — a sale proves the call and the price.` : ""}
         {worst.drop > 0 ? (
           <>
             {" "}Biggest single loss: <strong style={{ color: t.ink1 }}>{worst.drop} of {worst.from}</strong> never reached {worst.label.toLowerCase()}.
@@ -620,30 +647,17 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
     return c;
   }, [records]);
 
-  // List sizes for the board — how many cards need action. These are counts of
-  // what is on this screen, not business metrics; those come from `m` below.
-  const stats = useMemo(() => {
-    const all = records ?? [];
-    return {
-      open: all.filter((r) => !["won", "lost"].includes(r.stage)).length,
-      urgent: all.filter((r) => r.nextAction.urgency === "now" || r.agreedButUnpaid).length,
-      overdue: all.filter((r) => r.agreedButUnpaid).length,
-    };
-  }, [records]);
+  // "Needs you now" is the ONE action list (lib/journey), the same count and the
+  // same items Analytics and Today show. It used to be this screen's own count
+  // of "urgent" cards, and "nothing overdue" meant only "no agreed-but-unpaid".
+  const na = metrics.data?.journey.needsAction;
+  const pl = metrics.data?.journey.pipeline;
 
-  // Funnel steps straight from the metrics summary. It used to count stages on
-  // the cards, where "won" meant any payment at all.
+  // The funnel counts each woman once, by the furthest step she ever reached —
+  // never by where she sits now — so Attended can never be below Won.
   const funnel = useMemo(
-    () =>
-      m
-        ? [
-            { label: "Leads", n: m.leads },
-            { label: "Booked", n: m.booked },
-            { label: "Attended", n: m.attended },
-            { label: "Won", n: m.won },
-          ]
-        : [],
-    [m],
+    () => (metrics.data?.journey.funnel ?? []).map((s) => ({ label: s.label, n: s.n, inferred: s.inferred })),
+    [metrics.data],
   );
 
   const weakest = useMemo(
@@ -658,10 +672,13 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
 
   const shown = useMemo(() => {
     const all = records ?? [];
-    let list = stageFilter ? all.filter((r) => r.stage === stageFilter) : all;
-    if (!stageFilter && view === "urgent") list = list.filter((r) => r.nextAction.urgency === "now" || r.agreedButUnpaid);
-    const rank = (r: Rec) => (r.agreedButUnpaid ? 0 : r.nextAction.urgency === "now" ? 1 : r.nextAction.urgency === "today" ? 2 : 3);
-    return [...list].sort((a, b) => rank(a) - rank(b) || (b.score ?? -1) - (a.score ?? -1));
+    const list = stageFilter ? all.filter((r) => r.stage === stageFilter) : all;
+    // "Needs you first" is exactly the action list: oldest wait first.
+    if (!stageFilter && view === "urgent") {
+      return list.filter((r) => r.action).sort((a, b) => b.action!.waitMin - a.action!.waitMin);
+    }
+    const rank = (r: Rec) => (r.action ? 0 : r.nextAction.urgency === "now" ? 1 : r.nextAction.urgency === "today" ? 2 : 3);
+    return [...list].sort((a, b) => rank(a) - rank(b) || (b.action?.waitMin ?? 0) - (a.action?.waitMin ?? 0) || (b.score ?? -1) - (a.score ?? -1));
   }, [records, stageFilter, view]);
 
   if (!key) {
@@ -729,7 +746,10 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(158px,1fr))", gap: 10 }}>
-        <Tile t={t} label="Needs you now" value={String(stats.urgent)} tone={stats.urgent ? t.clay : t.ink1} sub={stats.overdue ? `${stats.overdue} agreed but never charged` : "nothing overdue"} />
+        <Tile t={t} label="Needs you now" value={na ? String(na.count) : "…"} tone={na?.count ? t.clay : t.ink1} bad={!!na?.overdue}
+          sub={!na ? "loading" : na.overdue > 0 ? `${na.overdue} overdue — waiting over 6 hr` : na.count ? "none overdue yet" : "nothing waiting"} />
+        <Tile t={t} label="In pipeline" value={pl ? String(pl.inPipeline) : "…"} sub="open — not won, lost or dormant" />
+        <Tile t={t} label="Nurture" value={pl ? String(pl.nurture) : "…"} sub="30 days quiet · kept, not deleted" />
         <Tile t={t} label="Leads" value={m ? String(m.leads) : "…"} sub={m ? `${m.booked} booked · ${pct(m.leadToBooked)}` : "loading"} />
         <Tile t={t} label="Show-up rate" value={m ? pct(m.showUpRate) : "…"} bad={!!m && m.showUpRate !== null && m.showUpRate < 0.6} tone={t.ink1}
           sub={m ? `${m.attended} came · ${m.noShow} no-show${m.attendanceUnknown ? ` · ${m.attendanceUnknown} unknown` : ""}` : "loading"} />
@@ -740,7 +760,7 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
       </div>
 
       <Card t={t}>
-        <SectionTitle t={t} aside={stageFilter ? undefined : "click a stage to filter the list"}>
+        <SectionTitle t={t} aside={stageFilter ? undefined : "where each woman is now · click to filter"}>
           Where everyone is
         </SectionTitle>
         {stageFilter ? (
@@ -761,8 +781,8 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 12 }}>
         <Card t={t}>
-          <SectionTitle t={t}>Where they fall out</SectionTitle>
-          <Funnel t={t} steps={funnel} />
+          <SectionTitle t={t} aside={rangeLabel(days)}>Where they fall out</SectionTitle>
+          <Funnel t={t} steps={funnel} cohortLabel={days === 0 ? "Every woman who came in" : `Women who came in over the last ${days} days`} />
         </Card>
         <Card t={t}>
           <SectionTitle t={t}>What you fail most on calls</SectionTitle>
@@ -839,7 +859,24 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
                   <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
                     <div style={{ flex: "1 1 380px", minWidth: 260, display: "grid", gap: 7 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                        {!severe ? (
+                        {!severe && r.action ? (
+                          // On the action list: its wait, coloured by age — the
+                          // same rule and the same number Analytics and Today show.
+                          <span
+                            style={{
+                              fontFamily: FONT.mono,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              padding: "2px 7px",
+                              borderRadius: 2,
+                              color: r.action.tone === "red" ? t.clay : r.action.tone === "amber" ? t.amber : t.ink3,
+                              border: `1px solid ${r.action.tone === "red" ? t.clay : r.action.tone === "amber" ? t.amber : t.hairline}`,
+                            }}
+                          >
+                            {r.action.overdue ? "OVERDUE · " : ""}
+                            {r.action.waitMin >= 120 ? `${Math.round(r.action.waitMin / 60)} HR` : `${Math.round(r.action.waitMin)} MIN`}
+                          </span>
+                        ) : !severe ? (
                           <span
                             style={{
                               fontFamily: FONT.sans,
@@ -863,7 +900,16 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
                           {[...SEQUENCE, ...OUTCOMES].find((s) => s.id === r.stage)?.label ?? r.stage}
                         </span>
                         {r.score != null ? <span style={{ ...mono(t), fontSize: 11, color: t.ink3 }}>score {r.score}</span> : null}
+                        {r.furthest !== r.stage && r.furthest !== "new" ? (
+                          <span style={{ fontFamily: FONT.sans, fontSize: 11, color: t.ink3 }} title={r.inferredStages.length ? `Inferred: ${r.inferredStages.join(", ")}` : undefined}>
+                            got as far as {r.furthest}
+                            {r.inferredStages.length ? " *" : ""}
+                          </span>
+                        ) : null}
                       </div>
+                      {r.action ? (
+                        <div style={{ fontFamily: FONT.sans, fontSize: 12.5, color: r.action.overdue ? t.clay : t.ink1, fontWeight: 600 }}>{r.action.label}</div>
+                      ) : null}
 
                       <div style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2, display: "flex", gap: 14, flexWrap: "wrap" }}>
                         {r.city ? <span>{r.city}</span> : null}

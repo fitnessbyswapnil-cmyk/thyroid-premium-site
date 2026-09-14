@@ -26,11 +26,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { readMessages } from "@/lib/wa-messages";
 import { summarize, windowFor, checklistSummary, coverageOf, attendanceOf, isTestIdentity, personKey } from "@/lib/metrics";
-import { loadMetricsDataset } from "@/lib/metrics-source";
+import { loadJourneys } from "@/lib/journey-source";
 import { readCalls } from "@/lib/crm-calls";
 import { fetchBookings } from "@/lib/cal-bookings";
 import { draftMessage, draftWaLink } from "@/lib/draft-message";
-import { decisionBadge, findColumn, type DecisionBadge } from "@/lib/decision-maker";
+import { decisionBadge, findColumn } from "@/lib/decision-maker";
 import { dmPresenceRate, type PresenceRecord } from "@/lib/dm-presence";
 import { IS_TEST_MODE } from "../../create-cashfree-order/route";
 import { cachedSpend } from "@/lib/ads-cache";
@@ -114,7 +114,8 @@ export async function GET(req: NextRequest) {
   // Paid = Y row as a consult payer, a third definition beside the other two
   // tabs' two. The owner's rules now: a win is ₹15,000+ or a sale marked here,
   // revenue is programme money collected, ₹299 fees are their own line.
-  const { data: metricsData } = await loadMetricsDataset();
+  const J = await loadJourneys();
+  const metricsData = J.loaded.data;
   const m = summarize(metricsData, windowFor(days, now), now);
   const monthStart = new Date();
   monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
@@ -162,37 +163,19 @@ export async function GET(req: NextRequest) {
   const cpp = spend !== null && consultPayers > 0 ? Math.round(spend / consultPayers) : null;
   const cppc = spend !== null && programmeCloses > 0 ? Math.round(spend / programmeCloses) : null;
 
-  // ── Queue ─────────────────────────────────────────────────────────────────
-  type QRow = {
-    name: string; phone: string; reason: string; kind: string;
-    risk: number; when: string; leadId: string; wa: string;
-    /** Only on an upcoming call, and only when her answers support one. */
-    badge?: DecisionBadge;
-  };
-  const queue: QRow[] = [];
-  const todayEnd = now + 86400000;
-
-  for (const r of rows) {
-    const name = cell(r, C.name);
-    const phone = digits10(cell(r, C.phone));
-    if (!name || phone.length !== 10) continue;
-    // Test rows would otherwise dominate a queue sorted by money at risk, and a
-    // queue you have to mentally filter is one you stop reading. The one test
-    // rule (lib/metrics): his identity, the "test" keyword, dummy numbers.
-    if (isTestIdentity({ name, email: cell(r, C.email), phone })) continue;
-    if (/^(9{6,}|1234|0000)/.test(phone)) continue;
-    const leadId = cell(r, C.leadId);
-    const paid = cell(r, C.paid).toUpperCase() === "Y";
-    const session = parseWhen(cell(r, C.sessionDate));
-    const booked = !!session && !/cancel/i.test(cell(r, C.bookingStatus));
-    const created = parseWhen(cell(r, C.ts));
-    const score = num(cell(r, C.score));
-
-    // The tap opens WhatsApp with the message already written, built from her
-    // own answers and carrying the link back to her unpaid checkout. Typing it
-    // fresh each time is the reason a queue stops getting worked.
-    const wa = draftWaLink(phone, draftMessage({
-      name, leadId,
+  // ── Needs me now ─────────────────────────────────────────────────────────
+  // The ONE needs-action list (lib/journey): the same items and the same count
+  // Pipeline and Analytics show, oldest wait first, overdue past 6 hours. This
+  // screen used to build its own queue from sheet rows, sorted by money at risk,
+  // so the three tabs gave three different counts. Here it only adds the
+  // WhatsApp draft, written from her own answers.
+  const rowAt = (sheetRow: number | null) => (sheetRow !== null && sheetRow >= 2 ? rows[sheetRow - 2] : undefined);
+  const waFor = (sheetRow: number | null, phoneRaw: string) => {
+    const phone = digits10(phoneRaw);
+    const r = rowAt(sheetRow);
+    if (!r || phone.length !== 10) return phone.length === 10 ? `https://wa.me/91${phone}` : "";
+    return draftWaLink(phone, draftMessage({
+      name: cell(r, C.name), leadId: cell(r, C.leadId),
       score: (Number(cell(r, C.thyroidScore)) || null)
         ?? (Number(cell(r, C.struggles).match(/Pattern score:\s*(\d{1,3})/i)?.[1]) || null),
       markers: (Number(cell(r, C.blockers)) || null)
@@ -204,24 +187,39 @@ export async function GET(req: NextRequest) {
       duration: cell(r, C.duration),
       tried: cell(r, C.tried),
     })) || `https://wa.me/91${phone}`;
+  };
+  const queue = J.needsAction.items.map((item) => ({
+    name: item.name,
+    phone: digits10(item.phone),
+    kind: item.kind,
+    reason: item.label,
+    since: item.since,
+    waitMin: item.waitMin,
+    overdue: item.overdue,
+    tone: item.tone,
+    bookingUid: item.bookingUid,
+    leadId: cell(rowAt(item.leadRow) ?? [], C.leadId),
+    wa: item.kind === "mark_call" ? "" : waFor(item.leadRow, item.phone),
+  }));
 
-    if (booked && session! >= now && session! <= todayEnd) {
-      // Computed only for calls that are actually about to happen. It is two
-      // regexes on two short cells, but this route runs under a 10ms CPU
-      // budget and the sheet is thousands of rows long.
-      const badge = decisionBadge(cell(r, C.decisionMaker), cell(r, C.partnerOnCall));
-      queue.push({ name, phone, leadId, kind: "call_today", wa, risk: 30000,
-        reason: "Call today", when: new Date(session!).toISOString(),
-        ...(badge ? { badge } : {}) });
-    } else if (paid && !booked) {
-      queue.push({ name, phone, leadId, kind: "paid_not_booked", wa, risk: 20000,
-        reason: "Paid, no slot chosen", when: cell(r, C.paidAt) });
-    } else if (!paid && created !== null && now - created < 3 * 86400000 && score >= 57) {
-      queue.push({ name, phone, leadId, kind: "hot_abandon", wa, risk: 5000,
-        reason: `Abandoned checkout · score ${Math.round(score)}`, when: cell(r, C.ts) });
-    }
-  }
-  queue.sort((a, b) => b.risk - a.risk || (a.when < b.when ? -1 : 1));
+  // ── Calls in the next 24 hours ────────────────────────────────────────────
+  // Not action items — the calendar has them — but this is where the pre-call
+  // reminders and the decision-maker badge live.
+  const callsToday = J.journeys
+    .filter((j) => j.state === "booked" && j.booking && Date.parse(j.booking.startAt) >= now - 90 * 60_000 && Date.parse(j.booking.startAt) <= now + 86400000)
+    .sort((a, b) => Date.parse(a.booking!.startAt) - Date.parse(b.booking!.startAt))
+    .map((j) => {
+      const r = rowAt(j.leadRow);
+      const badge = r ? decisionBadge(cell(r, C.decisionMaker), cell(r, C.partnerOnCall)) : null;
+      return {
+        name: j.name,
+        phone: digits10(j.phone),
+        when: j.booking!.startAt,
+        bookingUid: j.booking!.uid,
+        wa: waFor(j.leadRow, j.phone),
+        ...(badge ? { badge } : {}),
+      };
+    });
 
   // ── Decision-maker presence ───────────────────────────────────────────────
   // The scoreboard for the badges above. Of the consultations actually held in
@@ -356,7 +354,10 @@ export async function GET(req: NextRequest) {
       spendAvailable: spend !== null,
       spendAsOf,
     },
-    queue: queue.slice(0, 25),
+    // The shared action list, whole — its count is the count on every tab.
+    queue,
+    needsAction: { count: J.needsAction.count, overdue: J.needsAction.overdue },
+    callsToday,
     dmPresence: presence,
     // True means Cashfree is charging Rs 1 while every page still reads Rs 299.
     // Left on by accident it costs roughly Rs 900/day and fills the calendar

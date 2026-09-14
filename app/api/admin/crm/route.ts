@@ -1,8 +1,10 @@
 /**
  * /api/admin/crm — the joined pipeline feed.
  *
- *   GET  → one record per booking (plus leads that never booked), with a stage
- *          and a next action DERIVED from four systems.
+ *   GET  → one record per WOMAN (lib/journey), however many rows and bookings
+ *          she has: where she is now (state), how far she got (furthest stage,
+ *          with inferred steps flagged), her next action, and — if she needs
+ *          the coach — the same action item every tab shows.
  *   POST → writes a Calls row. { bookingUid, fields, mode }.
  *          mode "correction" (default) = the coach fixing the extraction; stamps
  *          Reviewed=Y and is protected from every later automated write.
@@ -22,128 +24,27 @@
  * ever means "the coach has checked this row", never "the coach typed this row".
  */
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
+import { checkAdminKey } from "../_lib";
 import { budgetAnswer, scoreBooking } from "@/lib/lead-score";
-import { fetchAllBookings, type CalBookingRecord } from "@/lib/cal-bookings";
-import { readCalls, writeCall, type CallRow, type CallFields } from "@/lib/crm-calls";
-import { deriveStage, nextAction, agreedButUnpaid, type Stage, type CallFacts } from "@/lib/crm-stage";
+import { writeCall, type CallFields } from "@/lib/crm-calls";
+import { nextAction, type Stage } from "@/lib/crm-stage";
 import { milestonesFor, missingCount, withinDays, type Milestone, type MsEvent } from "@/lib/crm-milestones";
-import { readMessages } from "@/lib/wa-messages";
-import { canonicalEmail } from "@/lib/owner-filter";
-import { isTestIdentity, isWonRow, coverageOf } from "@/lib/metrics";
+import { coverageOf } from "@/lib/metrics";
+import { loadJourneys } from "@/lib/journey-source";
+import type { ActionItem, FunnelStage, Reached } from "@/lib/journey";
 
 export const dynamic = "force-dynamic";
 
-const norm = (s: string) => String(s ?? "").trim().toLowerCase();
 const isY = (s: string) => /^y(es)?$/i.test(String(s ?? "").trim());
-/** Indian numbers arrive with and without the 91 prefix — compare on the last 10. */
-const tail10 = (s: string) => String(s ?? "").replace(/\D/g, "").slice(-10);
 
 const num = (s: string): number | null => {
   const n = parseFloat(String(s ?? "").replace(/[^\d.-]/g, ""));
   return Number.isFinite(n) ? n : null;
 };
 
-type SheetLead = {
-  row: number;
-  name: string;
-  email: string;
-  phone: string;
-  city: string;
-  paid: boolean;
-  paidAmount: number | null;
-  /** A programme sale on any of her rows — lib/metrics' definition. */
-  won: boolean;
-  timestamp: string;
-};
-
-/** Reads only the columns the CRM needs, by header NAME. */
-function parseLeads(values: string[][]): SheetLead[] {
-  if (values.length < 2) return [];
-  const header = values[0].map(norm);
-  const at = (...names: string[]) => {
-    for (const n of names) {
-      const i = header.indexOf(norm(n));
-      if (i >= 0) return i;
-    }
-    return -1;
-  };
-  const idx = {
-    name: at("Name"),
-    email: at("Email"),
-    phone: at("Phone"),
-    city: at("City"),
-    paid: at("Paid"),
-    paidAmount: at("Paid Amount"),
-    closedAmt: at("Closed ₹"),
-    programmeValue: at("Programme Value"),
-    ts: at("Timestamp"),
-  };
-
-  const out: SheetLead[] = [];
-  // One woman who filled the form three times is one lead, not three. Later rows
-  // win, because the sheet is append-ordered and the newest submission carries
-  // the freshest phone number and payment state.
-  //
-  // Matched on email OR phone. A Cashfree payment row can carry only a phone
-  // number — the Rs 30,000 sale on 11 Sep did — and keying on email alone
-  // dropped that row entirely, so Pipeline showed the sale as unjudged while
-  // every other tab counted it won.
-  const byEmail = new Map<string, number>();
-  const byPhone = new Map<string, number>();
-  for (let r = 1; r < values.length; r++) {
-    const row = values[r] ?? [];
-    const get = (i: number) => (i >= 0 ? String(row[i] ?? "").trim() : "");
-    const email = get(idx.email).toLowerCase();
-    const phone10 = tail10(get(idx.phone));
-    if (!email && phone10.length < 10) continue;
-    // His own test submissions are not prospects — the one test rule, which
-    // also knows his phone number (lib/metrics).
-    if (isTestIdentity({ name: get(idx.name), email, phone: get(idx.phone) })) continue;
-
-    const canon = email ? canonicalEmail(email) : "";
-    const seenAt = (canon ? byEmail.get(canon) : undefined) ?? (phone10.length === 10 ? byPhone.get(phone10) : undefined);
-    const lead = {
-      row: r + 1,
-      name: get(idx.name),
-      email,
-      phone: get(idx.phone),
-      city: get(idx.city),
-      paid: isY(get(idx.paid)) || (num(get(idx.paidAmount)) ?? 0) > 0,
-      paidAmount: num(get(idx.paidAmount)),
-      won: isWonRow({
-        closedAmt: num(get(idx.closedAmt)),
-        programmeValue: num(get(idx.programmeValue)),
-        paidAmount: num(get(idx.paidAmount)),
-      }),
-      timestamp: get(idx.ts),
-    };
-    if (seenAt === undefined) {
-      if (canon) byEmail.set(canon, out.length);
-      if (phone10.length === 10) byPhone.set(phone10, out.length);
-      out.push(lead);
-    } else {
-      // Keep whichever row actually paid — a later blank must never erase it —
-      // and a programme sale on ANY of her rows keeps her won. A blank email or
-      // phone on the newer row keeps the one already known.
-      const prev = out[seenAt];
-      const merged = prev.paid && !lead.paid ? { ...lead, paid: prev.paid, paidAmount: prev.paidAmount } : lead;
-      out[seenAt] = {
-        ...merged,
-        name: merged.name || prev.name,
-        email: merged.email || prev.email,
-        phone: merged.phone || prev.phone,
-        won: prev.won || lead.won,
-      };
-      if (canon) byEmail.set(canon, seenAt);
-      if (phone10.length === 10) byPhone.set(phone10, seenAt);
-    }
-  }
-  return out;
-}
-
 export type CrmRecord = {
   key: string;
+  personId: string;
   bookingUid: string;
   name: string;
   email: string;
@@ -156,13 +57,23 @@ export type CrmRecord = {
   budget: string;
   paid: boolean;
   paidAmount: number | null;
+  /** Where she is now — current_state. Drives the working list. */
   stage: Stage;
+  /** How far she ever got — furthest_stage_reached. Drives the funnel. */
+  furthest: FunnelStage;
+  reached: Reached;
+  /** Stages set because a later one proved them, not because they were seen. */
+  inferredStages: FunnelStage[];
+  /** ISO date the daily job moved her to nurture; "" when she is not in it. */
+  nurtureSince: string;
   nextAction: { label: string; urgency: string; reason: string };
+  /** Set when she is on the one needs-action list (lib/journey). */
+  action: ActionItem | null;
   /** Set when the tape says she agreed and no payment ever arrived. */
   agreedButUnpaid: boolean;
   /** What has and has not happened to her — three-state, see lib/crm-milestones. */
   milestones: Milestone[];
-  /** How many milestones genuinely need action. Drives the row's urgency. */
+  /** How many milestones genuinely need action. */
   missing: number;
   /** Whether she falls inside the 3-day board window. */
   recent: boolean;
@@ -185,17 +96,7 @@ export type CrmRecord = {
   } | null;
 };
 
-function toFacts(c: CallRow | undefined, sessionStart: string): CallFacts | null {
-  if (!c) return null;
-  return {
-    attended: isY(c.attended),
-    pricePitched: num(c.pricePitched),
-    moneyMovedOnCall: isY(c.moneyMovedOnCall),
-    occurredAt: c.occurredAt || sessionStart,
-  };
-}
-
-function parseScorecard(raw: string): CrmRecord["call"] extends null ? null : Record<string, { passed: boolean; evidence: string }> | null {
+function parseScorecard(raw: string): Record<string, { passed: boolean; evidence: string }> | null {
   if (!raw) return null;
   try {
     const p = JSON.parse(raw) as Record<string, { passed: boolean; evidence: string }>;
@@ -208,237 +109,149 @@ function parseScorecard(raw: string): CrmRecord["call"] extends null ? null : Re
 export async function GET(req: NextRequest) {
   if (!checkAdminKey(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const now = new Date();
-  let leads: SheetLead[] = [];
-  let bookings: CalBookingRecord[] = [];
-  let calls: CallRow[] = [];
   const warnings: string[] = [];
-
-  // Each source degrades independently — one being down must not blank the page.
-  const [sheetRes, bookingRes, callRes, msgRes] = await Promise.allSettled([
-    (async () => {
-      const { sheets, sheetId } = await getSheetsClient();
-      // To ZZ, not BC: "Closed ₹" and "Programme Value" sit past column BC,
-      // so a marked programme sale was invisible to this tab.
-      const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!A1:ZZ` });
-      return parseLeads((r.data.values as string[][]) ?? []);
-    })(),
-    // Every booking, as the headline metrics count them — not the newest 50.
-    fetchAllBookings(),
-    readCalls(),
-    readMessages(),
-  ]);
-
-  if (sheetRes.status === "fulfilled") leads = sheetRes.value;
-  else warnings.push(`leads sheet unavailable: ${String(sheetRes.reason).slice(0, 120)}`);
-  if (bookingRes.status === "fulfilled") {
-    // The source drops his own identity; the rest of the test rule (the "test"
-    // keyword, placeholder emails, dummy numbers) is applied here.
-    const all = bookingRes.value.bookings;
-    bookings = all.filter((b) => !isTestIdentity({ name: b.name, email: b.email, phone: b.phone }));
-    const keywordTests = all.length - bookings.length;
-    // A silent zero is indistinguishable from a true zero, so say why.
-    if (bookingRes.value.error) warnings.push(`No bookings loaded — ${bookingRes.value.error}`);
-    // Say what was removed rather than quietly shrinking the pipeline.
-    if (bookingRes.value.ownerTestsRemoved + keywordTests > 0) {
-      warnings.push(`${bookingRes.value.ownerTestsRemoved + keywordTests} test bookings hidden.`);
-    }
-  } else {
-    warnings.push(`cal.com unavailable: ${String(bookingRes.reason).slice(0, 120)}`);
+  let loaded;
+  try {
+    loaded = await loadJourneys();
+  } catch (err) {
+    return NextResponse.json({ records: [], warnings: [`pipeline unavailable: ${String(err).slice(0, 160)}`], generatedAt: new Date().toISOString() });
   }
-  if (callRes.status === "fulfilled") calls = callRes.value;
-  else warnings.push(`calls tab unavailable: ${String(callRes.reason).slice(0, 120)}`);
+  const { journeys, needsAction, pipeline, now: nowMs } = loaded;
+  const { data, sources } = loaded.loaded;
+  const now = new Date(nowMs);
 
-  // One read, grouped by phone — milestones need her message history, and doing
-  // this per-lead would be a hundred reads of the same sheet.
-  const eventsByPhone = new Map<string, MsEvent[]>();
-  if (msgRes.status === "fulfilled") {
-    for (const m of msgRes.value) {
-      const k = tail10(m.phone);
-      if (!k) continue;
-      const list = eventsByPhone.get(k) ?? [];
-      list.push({ at: m.ts, kind: m.direction === "in" ? "message_in" : "message_out", mediaType: m.mediaType || "" });
-      eventsByPhone.set(k, list);
-    }
-  } else {
-    warnings.push("whatsapp history unavailable — milestones will be partial");
-  }
+  if (sources.bookingsError) warnings.push(`No bookings loaded — ${sources.bookingsError}`);
+  const testBookings = data.bookings.length - journeys.reduce((n, j) => n + j.person.bookings.length, 0) + sources.ownerTestBookingsDroppedAtSource;
+  if (testBookings > 0) warnings.push(`${testBookings} test bookings hidden.`);
+  if (!sources.messages) warnings.push("whatsapp history unavailable — milestones and the action list will be partial");
 
-  // How far back the ingest has actually reached. Only bookings at or after this
-  // point can be judged for attendance; older ones are un-searched, not missed.
-  const coverage = coverageOf(
-    calls.map((c) => ({ bookingUid: c.bookingUid, occurredAt: c.occurredAt, attended: null, scorecard: null })),
-  );
-  const callDataSince = coverage.since ?? "";
-  const callDataUntil = coverage.until ?? "";
-  if (!callDataSince && bookings.length) {
+  // How far back the ingest has actually reached — see lib/metrics attendanceOf.
+  const coverage = coverageOf(data.calls);
+  const realBookings = journeys.flatMap((j) => j.person.bookings);
+  if (!coverage.since && realBookings.length) {
     warnings.push("No call recordings ingested yet — attendance, price and follow-up are unknown rather than missed.");
-  } else if (callDataSince) {
-    const older = bookings.filter((b) => {
-      const t0 = new Date(b.startIso).getTime();
-      return !Number.isNaN(t0) && t0 < new Date(callDataSince).getTime();
-    }).length;
+  } else if (coverage.since && coverage.until) {
+    const since = Date.parse(coverage.since);
+    const until = Date.parse(coverage.until);
+    const older = realBookings.filter((b) => !b.cancelled && Date.parse(b.startAt) < since).length;
     if (older) {
       warnings.push(
-        `${older} bookings are older than the earliest ingested call (${new Date(callDataSince).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}) — their attendance is unknown, not missed. Run the backfill to judge them.`,
+        `${older} bookings are older than the earliest ingested call (${new Date(since).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}) — their attendance is unknown, not missed.`,
       );
     }
-    // The other edge. If nothing has been ingested for a while, calls after the
-    // last recording are unknown too — the ingest stopped, they were not missed.
-    const lastIngest = new Date(callDataUntil).getTime();
-    const after = bookings.filter((b) => {
-      const t0 = new Date(b.startIso).getTime();
-      return !b.cancelled && !Number.isNaN(t0) && t0 > lastIngest + 86_400_000 && t0 < now.getTime();
+    const after = realBookings.filter((b) => {
+      const t0 = Date.parse(b.startAt);
+      return !b.cancelled && t0 > until + 86_400_000 && t0 < nowMs;
     }).length;
     if (after) {
       warnings.push(
-        `${after} calls happened after the last ingested recording (${new Date(callDataUntil).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}) — their attendance is unknown, not missed. Check the Fathom webhook, or run the backfill.`,
+        `${after} calls happened after the last ingested recording (${new Date(until).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}) — their attendance is unknown, not missed. Check the Fathom webhook, or mark them on Today.`,
       );
     }
   }
 
-  const leadByEmail = new Map(leads.filter((l) => l.email).map((l) => [canonicalEmail(l.email), l]));
-  const leadByPhone = new Map(leads.filter((l) => tail10(l.phone).length === 10).map((l) => [tail10(l.phone), l]));
-  const leadFor = (email: string, phone: string) =>
-    (email ? leadByEmail.get(canonicalEmail(email)) : undefined) ?? (tail10(phone).length === 10 ? leadByPhone.get(tail10(phone)) : undefined);
-  const callByUid = new Map(calls.map((c) => [c.bookingUid, c]));
+  // Her message history, grouped by phone, for the milestone board.
+  const eventsByPhone = new Map<string, MsEvent[]>();
+  for (const m of data.messages ?? []) {
+    const list = eventsByPhone.get(m.phone) ?? [];
+    list.push({ at: m.at, kind: m.dir === "in" ? "message_in" : "message_out", mediaType: m.mediaType });
+    eventsByPhone.set(m.phone, list);
+  }
+  const actionByPerson = new Map(needsAction.items.map((i) => [i.personId, i]));
 
-  const records: CrmRecord[] = [];
-  // Leads already shown against a booking, so the never-booked list below does
-  // not repeat them.
-  const shownLeads = new Set<SheetLead>();
+  const records: CrmRecord[] = journeys.map((j) => {
+    const b = j.booking;
+    const c = j.call?.detail ?? null;
+    const answers = (b?.answers ?? {}) as Record<string, unknown>;
+    const score = b ? scoreBooking(answers) : { score: null, answered: 0 };
+    const paidAmounts = j.person.rows.map((r) => r.paidAmount).filter((x): x is number => x !== null);
+    const paidAmount = paidAmounts.length ? Math.max(...paidAmounts) : null;
+    const paid = j.won || !!j.consultPaidAt;
+    const events = j.keys.filter((k) => k.startsWith("p:")).flatMap((k) => eventsByPhone.get(k.slice(2)) ?? []);
 
-  for (const b of bookings) {
-    const lead = leadFor(b.email, b.phone);
-    if (lead) shownLeads.add(lead);
-
-    const c = callByUid.get(b.uid);
-    const facts = toFacts(c, b.startIso);
-    const score = scoreBooking(b.answers);
-
-    const input = {
-      hasBooking: !b.cancelled,
-      bookingCancelled: b.cancelled,
-      sessionStart: b.startIso || null,
-      call: facts,
-      callDataSince,
-      callDataUntil,
-      paid: lead?.paid ?? false,
-      won: lead?.won ?? false,
+    const stageInput = {
+      hasBooking: !!b && !b.cancelled,
+      bookingCancelled: !!b?.cancelled,
+      sessionStart: b?.startAt || null,
+      call: null,
+      paid,
+      won: j.won,
       now,
     };
-    const stage = deriveStage(input);
-    const objection = c?.objection ?? "";
-    const action = nextAction(stage, input, {
-      objection,
+    const action = nextAction(j.state, stageInput, {
+      objection: c?.objection ?? "",
       excuse: c?.excuse ?? "",
       agreedCallbackAt: c?.agreedCallbackAt || null,
     });
-
-    const evs = eventsByPhone.get(tail10(b.phone || lead?.phone || "")) ?? [];
-    const msInput = {
-      hasBooking: !b.cancelled,
-      cancelled: b.cancelled,
-      sessionStart: b.startIso || null,
+    const ms = milestonesFor({
+      hasBooking: !!b && !b.cancelled,
+      cancelled: !!b?.cancelled,
+      sessionStart: b?.startAt || null,
       call: c
-        ? {
-            attended: isY(c.attended),
-            pricePitched: num(c.pricePitched),
-            lowestPriceSaid: num(c.lowestPriceSaid),
-            occurredAt: c.occurredAt || b.startIso,
-          }
+        ? { attended: isY(c.attended), pricePitched: num(c.pricePitched), lowestPriceSaid: num(c.lowestPriceSaid), occurredAt: c.occurredAt || b?.startAt || "" }
         : null,
-      paid: lead?.paid ?? false,
-      paidAmount: lead?.paidAmount ?? null,
-      events: evs,
-      callDataSince,
+      paid,
+      paidAmount,
+      events,
+      callDataSince: coverage.since ?? undefined,
       now,
-    };
-    const ms = milestonesFor(msInput);
+    });
 
-    records.push({
-      key: b.uid,
-      bookingUid: b.uid,
-      name: b.name || lead?.name || "",
-      email: b.email || lead?.email || "",
-      phone: b.phone || lead?.phone || "",
-      city: lead?.city ?? "",
-      sessionStart: b.startIso,
-      cancelled: b.cancelled,
+    return {
+      key: j.id,
+      personId: j.id,
+      bookingUid: b?.uid ?? "",
+      name: j.name,
+      email: j.email,
+      phone: j.phone,
+      city: j.city,
+      sessionStart: b?.startAt ?? "",
+      cancelled: !!b?.cancelled,
       score: score.score,
       answered: score.answered,
-      budget: budgetAnswer(b.answers),
-      paid: lead?.paid ?? false,
-      paidAmount: lead?.paidAmount ?? null,
-      stage,
+      budget: b ? budgetAnswer(answers) : "",
+      paid,
+      paidAmount,
+      stage: j.state,
+      furthest: j.furthest,
+      reached: j.reached,
+      inferredStages: j.inferredStages,
+      nurtureSince: j.state === "nurture" && j.nurtureSince ? new Date(j.nurtureSince).toISOString() : "",
       nextAction: action,
-      agreedButUnpaid: agreedButUnpaid(input),
+      action: actionByPerson.get(j.id) ?? null,
+      agreedButUnpaid: j.agreedButUnpaid,
       milestones: ms,
       missing: missingCount(ms),
-      recent: withinDays({ sessionStart: b.startIso || null, events: evs, now }, 3),
+      recent: withinDays({ sessionStart: b?.startAt || null, events, now }, 3),
       call: c
         ? {
             attended: isY(c.attended),
             pricePitched: num(c.pricePitched),
             lowestPriceSaid: num(c.lowestPriceSaid),
             discountOffered: isY(c.discountOffered),
-            discountAt: c.discountAt,
-            objection,
-            excuse: c.excuse,
-            agreedCallbackAt: c.agreedCallbackAt,
-            summary: c.summary,
-            scorecardFailed: num(c.scorecardFailed),
-            scorecard: parseScorecard(c.scorecard),
-            coachTalkPct: num(c.coachTalkPct),
-            fathomUrl: c.fathomUrl,
-            reviewed: isY(c.reviewed),
-            occurredAt: c.occurredAt,
+            discountAt: c.discountAt ?? "",
+            objection: c.objection ?? "",
+            excuse: c.excuse ?? "",
+            agreedCallbackAt: c.agreedCallbackAt ?? "",
+            summary: c.summary ?? "",
+            scorecardFailed: num(c.scorecardFailed ?? ""),
+            scorecard: parseScorecard(c.scorecard ?? ""),
+            coachTalkPct: num(c.coachTalkPct ?? ""),
+            fathomUrl: c.fathomUrl ?? "",
+            reviewed: isY(c.reviewed ?? ""),
+            occurredAt: c.occurredAt ?? "",
           }
         : null,
-    });
-  }
+    };
+  });
 
-  // Leads who are qualified but never booked — the top of the pipeline.
-  for (const l of leads) {
-    if (shownLeads.has(l)) continue;
-    const input = { hasBooking: false, bookingCancelled: false, sessionStart: null, call: null, paid: l.paid, won: l.won, now };
-    const stage = deriveStage(input);
-    const evs = eventsByPhone.get(tail10(l.phone)) ?? [];
-    const ms = milestonesFor({
-      hasBooking: false,
-      cancelled: false,
-      sessionStart: null,
-      call: null,
-      paid: l.paid,
-      paidAmount: l.paidAmount,
-      events: evs,
-      now,
-    });
-    records.push({
-      key: `lead:${l.email}`,
-      bookingUid: "",
-      name: l.name,
-      email: l.email,
-      phone: l.phone,
-      city: l.city,
-      sessionStart: "",
-      cancelled: false,
-      score: null,
-      answered: 0,
-      budget: "",
-      paid: l.paid,
-      paidAmount: l.paidAmount,
-      stage,
-      nextAction: nextAction(stage, input),
-      agreedButUnpaid: false,
-      milestones: ms,
-      missing: missingCount(ms),
-      recent: withinDays({ sessionStart: null, events: evs, now }, 3),
-      call: null,
-    });
-  }
-
-  return NextResponse.json({ records, warnings, generatedAt: now.toISOString() });
+  return NextResponse.json({
+    records,
+    needsAction: { count: needsAction.count, overdue: needsAction.overdue },
+    pipeline,
+    warnings,
+    generatedAt: now.toISOString(),
+  });
 }
 
 /**

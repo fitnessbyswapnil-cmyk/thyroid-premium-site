@@ -56,7 +56,10 @@ type Data = {
     /** When the cached ad spend was fetched (hourly refresh). */
     spendAsOf?: string | null;
   };
-  queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string; badge?: DecisionBadge }[];
+  /** The one needs-action list (lib/journey) — same items and count as Pipeline and Analytics. */
+  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string }[];
+  needsAction: { count: number; overdue: number };
+  callsToday: { name: string; phone: string; when: string; bookingUid: string; wa: string; badge?: DecisionBadge }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
   dmPresence?: PresenceRate;
   testMode?: boolean;
@@ -176,6 +179,8 @@ export default function Today({ adminKey }: { adminKey: string }) {
   const [joined, setJoined] = useState<Record<string, boolean>>({});
   const [checks, setChecks] = useState<Record<string, Partial<Record<ScorecardKey, boolean>>>>({});
   const [markBusy, setMarkBusy] = useState<string | null>(null);
+  // The price named on the call — Pitched's write path. 0 = no price was named.
+  const [priced, setPriced] = useState<Record<string, number>>({});
   const saveOutcome = useCallback(async (c: Data["toMark"][number], attended: boolean) => {
     setMarkBusy(c.bookingUid); setErr("");
     try {
@@ -186,6 +191,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
           bookingUid: c.bookingUid, attended, occurredAt: c.startAt,
           name: c.name, email: c.email, phone: c.phone,
           ...(attended ? { checks: checks[c.bookingUid] ?? {} } : {}),
+          ...(attended && (priced[c.bookingUid] ?? 0) > 0 ? { pricePitched: priced[c.bookingUid] } : {}),
         }),
       });
       const j = (await r.json().catch(() => ({}))) as { reason?: string; error?: string };
@@ -195,7 +201,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setMarkBusy(null); }
-  }, [adminKey, checks, load]);
+  }, [adminKey, checks, priced, load]);
 
   // Reading the clock during render is impure — React can re-render at any
   // moment and two rows on the same screen would disagree about what "today"
@@ -345,6 +351,19 @@ export default function Today({ adminKey }: { adminKey: string }) {
                     </div>
                     {j === true && (
                       <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${N.line}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+                          <span style={{ fontSize: 12.5, marginRight: 2 }}>Price you named</span>
+                          {[0, 15000, 20000, 25000, 30000].map((amt) => {
+                            const on = (priced[c.bookingUid] ?? -1) === amt;
+                            return (
+                              <button key={amt} onClick={() => setPriced((x) => ({ ...x, [c.bookingUid]: amt }))}
+                                style={{ background: on ? `${N.accent}22` : "transparent", color: on ? N.accent : N.dim,
+                                  border: `1px solid ${on ? N.accent : N.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12, cursor: "pointer" }}>
+                                {amt === 0 ? "None" : inr(amt)}
+                              </button>
+                            );
+                          })}
+                        </div>
                         <div style={{ fontSize: 11.5, color: N.dim, marginBottom: 8 }}>Tap each check you did. Leave the ones that did not apply.</div>
                         <div style={{ display: "grid", gap: 6 }}>
                           {SCORECARD_KEYS.map((k) => {
@@ -461,58 +480,93 @@ export default function Today({ adminKey }: { adminKey: string }) {
           </div>
         )}
 
-        {/* 2 — Queue */}
-        <div style={h6}>Needs me now{d ? ` · ${d.queue.length}` : ""}</div>
+        {/* 1b — Calls in the next 24 hours: the calendar, with what to remember. */}
+        {d && d.callsToday.length > 0 && (
+          <>
+            <div style={h6}>Calls in the next 24 hours · {d.callsToday.length}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {d.callsToday.map((c) => {
+                const badgeColor = c.badge?.tone === "warn" ? N.warn : N.good;
+                return (
+                  <div key={c.bookingUid} style={{ ...card, padding: 14, borderLeft: `3px solid ${N.accent}` }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{c.name || "(no name)"}</div>
+                        <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
+                          {new Date(c.when).toLocaleString("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit" })}
+                        </div>
+                        {c.badge && (
+                          <span style={{ display: "inline-block", marginTop: 6, padding: "2px 8px", borderRadius: 999,
+                            fontSize: 10, fontWeight: 800, letterSpacing: ".07em", color: badgeColor,
+                            border: `1px solid ${badgeColor}44`, background: `${badgeColor}14` }}>
+                            {c.badge.label}
+                          </span>
+                        )}
+                      </div>
+                      {c.wa && (
+                        <a href={c.wa} target="_blank" rel="noreferrer"
+                          style={{ flex: "none", background: N.accent, color: "#0B0E14", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
+                    {/* Before the call, not after it: the three checks missed most often. */}
+                    {(d.checklist.checks.length ?? 0) > 0 && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5 }}>
+                        <div style={{ color: N.warn, fontWeight: 700, marginBottom: 3 }}>On this call, don&rsquo;t miss:</div>
+                        {d.checklist.checks.slice(0, 3).map((ck, i) => (
+                          <div key={ck.key} style={{ color: N.text }}>{i + 1}. {ck.label}</div>
+                        ))}
+                      </div>
+                    )}
+                    {c.badge?.prompt && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5, color: N.warn }}>
+                        {c.badge.prompt}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* 2 — Needs me now: the one action list, shared with Pipeline and Analytics. */}
+        <div style={h6}>
+          Needs me now{d ? ` · ${d.needsAction.count}` : ""}
+          {d && d.needsAction.overdue > 0 ? <span style={{ color: N.bad }}> · {d.needsAction.overdue} overdue</span> : null}
+        </div>
         {d && d.queue.length === 0 && (
           <div style={{ ...card, color: N.dim, fontSize: 14 }}>Nothing waiting on you. Rare — enjoy it.</div>
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {d?.queue.map((q) => {
-            const accent = q.kind === "call_today" ? N.bad : q.kind === "paid_not_booked" ? N.warn : N.accent;
-            // Green means nothing to do about it. Amber means open the call a
-            // particular way — and the way is printed underneath, because a
-            // label he has to remember the meaning of is a label he stops
-            // reading. No badge at all is a lead from before the question
-            // existed; silence is honest there.
-            const badgeColor = q.badge?.tone === "warn" ? N.warn : N.good;
+            // Colour is age, the same rule on every tab: under 1 hr neutral,
+            // 1-6 hr amber, over 6 hr red.
+            const accent = q.tone === "red" ? N.bad : q.tone === "amber" ? N.warn : N.dim;
+            const wait = q.waitMin >= 120 ? `${Math.round(q.waitMin / 60)} hr` : `${Math.round(q.waitMin)} min`;
             return (
-              <div key={q.leadId + q.kind} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
+              <div key={`${q.phone}-${q.kind}-${q.since}`} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name}</div>
-                    <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>{q.reason}</div>
-                    {q.badge && (
-                      <span style={{ display: "inline-block", marginTop: 6, padding: "2px 8px", borderRadius: 999,
-                        fontSize: 10, fontWeight: 800, letterSpacing: ".07em", color: badgeColor,
-                        border: `1px solid ${badgeColor}44`, background: `${badgeColor}14` }}>
-                        {q.badge.label}
+                    <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name || "(no name)"}</div>
+                    <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
+                      <span style={{ color: accent, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                        {q.overdue ? "Overdue · " : ""}{wait}
                       </span>
-                    )}
+                      {" · "}{q.reason}
+                    </div>
                   </div>
-                  <a href={q.wa || `https://wa.me/91${q.phone}`} target="_blank" rel="noreferrer"
-                    style={{ flex: "none", background: accent, color: "#0B0E14", borderRadius: 999,
-                      padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
-                    WhatsApp
-                  </a>
+                  {q.kind === "mark_call" ? (
+                    <span style={{ flex: "none", color: N.warn, fontSize: 12.5, fontWeight: 700 }}>Mark above ↑</span>
+                  ) : q.wa ? (
+                    <a href={q.wa} target="_blank" rel="noreferrer"
+                      style={{ flex: "none", background: accent === N.dim ? N.accent : accent, color: "#0B0E14", borderRadius: 999,
+                        padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+                      WhatsApp
+                    </a>
+                  ) : null}
                 </div>
-                {/* Before the call, not after it: the three checks missed most
-                    often, on every call happening today. */}
-                {q.kind === "call_today" && (d?.checklist.checks.length ?? 0) > 0 && (
-                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5 }}>
-                    <div style={{ color: N.warn, fontWeight: 700, marginBottom: 3 }}>On this call, don&rsquo;t miss:</div>
-                    {d!.checklist.checks.slice(0, 3).map((c, i) => (
-                      <div key={c.key} style={{ color: N.text }}>{i + 1}. {c.label}</div>
-                    ))}
-                  </div>
-                )}
-                {/* Always visible. Not a tooltip, not behind a tap — he reads
-                    this between calls, one-handed. */}
-                {q.badge?.prompt && (
-                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`,
-                    fontSize: 12.5, lineHeight: 1.5, color: N.warn }}>
-                    {q.badge.prompt}
-                  </div>
-                )}
               </div>
             );
           })}

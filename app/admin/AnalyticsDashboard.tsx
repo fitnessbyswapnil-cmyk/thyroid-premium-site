@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CreativeOutcomes from "./CreativeOutcomes";
 import { useMetrics, useRange, RANGE_CHOICES, rangeLabel } from "./useMetrics";
-import { buildQueue, waitLabel, type AgeTone } from "@/lib/follow-up-queue";
+import { waitLabel, type AgeTone, type ActionItem } from "@/lib/journey";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 
 type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean;
@@ -1109,17 +1109,26 @@ export default function AnalyticsDashboard() {
     if (!leads) return null;
     const now = Date.now();
 
-    // One queue definition, shared with the digest: lib/follow-up-queue. It
-    // excludes his test rows, counts an automated WhatsApp as contact (the
-    // old one read only the hand-ticked Msg1 box, so 16 women who HAD been
-    // messaged looked untouched), and sorts oldest wait first.
-    const DUE: Record<string, string> = {
-      Confirm: "today", Nudge: "today", Reports: "before the session", Proof: "before the session", Rebook: "today", "Follow-up": "by evening",
+    // The ONE needs-action list (lib/journey, via /api/admin/metrics) — the same
+    // items and the same count Pipeline and Today show. Each item is matched to
+    // her sheet row here only to write the WhatsApp draft. It used to be this
+    // tab's own queue, capped at eight.
+    const DRAFT: Record<string, string> = {
+      first_message: "Nudge", hot_abandon: "Nudge", paid_not_booked: "Nudge",
+      rebook_cancelled: "Rebook", rebook_no_show: "Rebook",
+      send_price: "Follow-up", follow_up: "Follow-up", agreed_unpaid: "Follow-up",
+      mark_call: "",
     };
-    const queue = buildQueue(
-      leads.map((l) => ({ ...l, sessionAtMs: parseSessionDate(l.sessionDate)?.getTime() ?? null })),
-      now,
-    ).map((q) => ({ ...q, due: q.urgent ? "asap" : DUE[q.kind] }));
+    const byRow = new Map(leads.map((l) => [l.row, l]));
+    const queue = (metrics.data?.journey.needsAction.items ?? []).map((item: ActionItem) => ({
+      item,
+      lead: item.leadRow !== null ? byRow.get(item.leadRow) ?? null : null,
+      kind: DRAFT[item.kind] ?? "",
+      label: item.label,
+      urgent: item.overdue,
+      waitMin: item.waitMin,
+      tone: item.tone,
+    }));
 
     // Speed to first touch — only leads whose msg1 stored a real timestamp
     const touches = leads
@@ -1247,7 +1256,7 @@ export default function AnalyticsDashboard() {
         : null;
 
     return {
-      queue: queue.slice(0, 8), avgTouchMin, revenue, spendInRange, roas, upcoming, pipeline,
+      queue, avgTouchMin, revenue, spendInRange, roas, upcoming, pipeline,
       closeRate, avgTicket, arrivals, arrivalsInsight, outcomes, INSIGHT_MIN, insights,
       monthRevenue, onPace, stageRates,
       consultRevenue, programRevenue, unmarkedExtra, netProfit, costPerConsult, costPerClient,
@@ -1360,11 +1369,21 @@ export default function AnalyticsDashboard() {
           <p style={{ color: MUTED, padding: 40, textAlign: "center" }}>Loading your leads…</p>
         ) : (
           <>
-            {/* ── ACTION QUEUE: what needs your hands right now ── */}
-            {ops && ops.queue.filter((q) => !dismissed.has(`${q.lead.row}-${q.kind}`)).length > 0 && (
-              <div style={{ ...card, marginBottom: 12, borderColor: ops.queue.some((q) => q.urgent && !dismissed.has(`${q.lead.row}-${q.kind}`)) ? WARN : GRID }}>
+            {/* ── ACTION QUEUE: the one needs-action list (lib/journey) ── */}
+            {ops && ops.queue.length > 0 && (() => {
+              // "Done" hides a row on this device only. The count stays the shared
+              // one, so this tab can never disagree with Pipeline or Today; the
+              // item leaves every list once she is messaged or her call is marked.
+              const dKeyOf = (q: (typeof ops.queue)[number]) => `${q.item.personId}-${q.item.kind}-${q.item.since}`;
+              const visible = ops.queue.filter((q) => !dismissed.has(dKeyOf(q)));
+              const hidden = ops.queue.length - visible.length;
+              const overdue = ops.queue.filter((q) => q.urgent).length;
+              return (
+              <div style={{ ...card, marginBottom: 12, borderColor: overdue ? WARN : GRID }}>
                 <p style={cardTitle}>
-                  Needs Action Now · {ops.queue.filter((q) => !dismissed.has(`${q.lead.row}-${q.kind}`)).length}
+                  Needs Action Now · {ops.queue.length}
+                  {overdue > 0 ? <span style={{ color: CRIT }}> · {overdue} overdue (over 6 hr)</span> : null}
+                  {hidden > 0 ? <span style={{ color: MUTED, textTransform: "none", letterSpacing: 0 }}> · {hidden} hidden on this device</span> : null}
                   {ops.avgTouchMin !== null && (
                     <span style={{ float: "right", textTransform: "none", letterSpacing: 0, color: ops.avgTouchMin <= 15 ? GOOD : ops.avgTouchMin <= 60 ? WARN : CRIT }}>
                       avg first touch: {ops.avgTouchMin < 60 ? `${ops.avgTouchMin} min` : `${(ops.avgTouchMin / 60).toFixed(1)} hr`}
@@ -1372,41 +1391,50 @@ export default function AnalyticsDashboard() {
                   )}
                 </p>
                 <div style={{ display: "grid", gap: 6 }}>
-                  {ops.queue.filter((q) => !dismissed.has(`${q.lead.row}-${q.kind}`)).map((q) => {
-                    const m = queueMessage(q);
-                    const dKey = `${q.lead.row}-${q.kind}`;
+                  {visible.map((q) => {
+                    const m = q.lead && q.kind ? queueMessage({ lead: q.lead, kind: q.kind }) : { text: "", step: null };
+                    const dKey = dKeyOf(q);
+                    const phone = q.lead?.phone || q.item.phone;
                     return (
                       // Colour is AGE, one rule for every row: under 1 hr neutral,
-                      // 1-6 hr amber, over 6 hr red (lib/follow-up-queue).
+                      // 1-6 hr amber, over 6 hr red (lib/journey).
                       <div key={dKey} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", background: "#0f1012", borderRadius: 10, border: `1px solid ${GRID}`, borderLeft: `3px solid ${TONE[q.tone]}` }}>
                         <span style={{ fontSize: 11, fontWeight: 800, color: TONE[q.tone], fontVariantNumeric: "tabular-nums", minWidth: 44 }}>
                           {waitLabel(q.waitMin)}
                         </span>
                         <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: q.urgent ? CRIT : MUTED, border: `1px solid ${q.urgent ? CRIT : GRID}`, borderRadius: 5, padding: "2px 6px" }}>
-                          {q.urgent ? "URGENT" : q.kind === "Follow-up" ? "CLOSE IT" : "TO DO"}
+                          {q.urgent ? "OVERDUE" : "TO DO"}
                         </span>
-                        <span style={{ fontSize: 10, color: MUTED }}>{q.due}</span>
-                        <span style={{ fontWeight: 700, fontSize: 12.5 }}>{q.lead.name || "(no name)"}</span>
+                        <span style={{ fontWeight: 700, fontSize: 12.5 }}>{q.item.name || q.lead?.name || "(no name)"}</span>
                         <span style={{ fontSize: 11.5, color: q.urgent ? WARN : INK2 }}>{q.label}</span>
                         <span style={{ marginLeft: "auto", display: "inline-flex", gap: 5 }}>
-                          {q.lead.phone && m.text ? (
+                          {q.item.kind === "mark_call" ? (
+                            <a href="#today" style={{ fontSize: 11, fontWeight: 700, color: "#0f1012", background: WARN, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
+                              Mark on Today
+                            </a>
+                          ) : phone && m.text ? (
                             <a
-                              href={waHref(q.lead.phone, m.text)}
+                              href={waHref(phone, m.text)}
                               target="_blank" rel="noreferrer"
-                              onClick={() => { if (m.step) mark(q.lead.row, m.step, new Date().toISOString()); }}
+                              onClick={() => { if (m.step && q.lead) mark(q.lead.row, m.step, new Date().toISOString()); }}
                               style={{ fontSize: 11, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}
                             >
                               WA · {q.kind}
+                            </a>
+                          ) : phone ? (
+                            <a href={`https://wa.me/91${String(phone).replace(/\D/g, "").slice(-10)}`} target="_blank" rel="noreferrer"
+                              style={{ fontSize: 11, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
+                              WhatsApp
                             </a>
                           ) : m.text ? (
                             <CopyBtn text={m.text} />
                           ) : null}
                           <button
                             onClick={() => dismissQueueItem(dKey)}
-                            title="Handled outside WhatsApp — clear from queue"
+                            title="Handled outside WhatsApp — hide it here. It stays counted until her state changes."
                             style={{ fontSize: 11, fontWeight: 600, color: MUTED, background: "transparent", border: `1px solid ${GRID}`, borderRadius: 999, padding: "4px 10px", cursor: "pointer" }}
                           >
-                            Done
+                            Hide
                           </button>
                         </span>
                       </div>
@@ -1414,7 +1442,8 @@ export default function AnalyticsDashboard() {
                   })}
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {/* stat tiles */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 12 }}>

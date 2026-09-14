@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
       fetchCalBookingState(),
     ]);
     // The WhatsApp log, once, grouped by number — how the follow-up queue knows
-    // whether a message actually went out (lib/follow-up-queue). Degrades to
+    // whether a message actually went out (the tab's speed-to-touch figure). Degrades to
     // empty, which only makes the queue more cautious, never silent.
     const lastOutbound = new Map<string, string>();
     try {

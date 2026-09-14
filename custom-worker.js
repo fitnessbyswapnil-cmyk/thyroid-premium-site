@@ -13,9 +13,15 @@
  */
 import { default as handler } from "./.open-next/worker.js";
 
-/** Cron expression (UTC) → route. Must match `triggers.crons` in wrangler.jsonc. */
+/**
+ * Cron expression (UTC) → route, or routes run one after another. Must match
+ * `triggers.crons` in wrangler.jsonc. Sharing a trigger keeps the fifth (last
+ * free-plan) slot spare.
+ */
 const CRON_ROUTES = {
-  "30 2 * * *": "/api/admin/digest", // 08:00 IST daily digest
+  // 08:00 IST: pipeline housekeeping (stages, nurture), THEN the digest, so the
+  // brief counts the pipeline after the day's moves.
+  "30 2 * * *": ["/api/cron/journey", "/api/admin/digest"],
   "50 23 * * *": "/api/cron/payment-reminder", // daily safety net; cron-job.org polls every 5 min
   "*/15 * * * *": "/api/cron/meta-retry", // resend failed Meta CAPI events recorded in the D1 ledger
   "7 * * * *": "/api/cron/ads-refresh", // cache Windsor ad spend in D1 — pages never call Windsor
@@ -45,19 +51,26 @@ export default {
 
   /** @param {{ cron: string }} controller */
   async scheduled(controller, env, ctx) {
-    const path = CRON_ROUTES[controller.cron];
-    if (!path) {
+    const route = CRON_ROUTES[controller.cron];
+    if (!route) {
       console.warn(`[cron] no route for "${controller.cron}"`);
       return;
     }
-    const req = new Request(`https://www.swapnilumbarkarfitness.in${path}`, {
-      headers: { authorization: `Bearer ${env.CRON_SECRET}` },
-    });
-    ctx.waitUntil(
-      handler
-        .fetch(req, env, ctx)
-        .then((res) => console.log(`[cron] ${path} → ${res.status}`))
-        .catch((err) => console.error(`[cron] ${path} failed:`, err)),
-    );
+    const paths = Array.isArray(route) ? route : [route];
+    const run = async () => {
+      // In order: a failure is logged and the next route still runs.
+      for (const path of paths) {
+        const req = new Request(`https://www.swapnilumbarkarfitness.in${path}`, {
+          headers: { authorization: `Bearer ${env.CRON_SECRET}` },
+        });
+        try {
+          const res = await handler.fetch(req, env, ctx);
+          console.log(`[cron] ${path} → ${res.status}`);
+        } catch (err) {
+          console.error(`[cron] ${path} failed:`, err);
+        }
+      }
+    };
+    ctx.waitUntil(run());
   },
 };

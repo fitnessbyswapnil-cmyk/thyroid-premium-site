@@ -30,6 +30,7 @@
   // "*/15 * * * *" resends failed Meta CAPI events from the ledger (/api/cron/meta-retry).
   // "7 * * * *" caches Windsor ad spend in D1 for the admin pages (/api/cron/ads-refresh).
   // Free plan allows 5 cron triggers; this is the fourth.
+  // "30 2 * * *" also runs /api/cron/journey (stages + nurture) before the digest.
   "triggers": {
     "crons": ["30 2 * * *", "50 23 * * *", "*/15 * * * *", "7 * * * *"]
   },

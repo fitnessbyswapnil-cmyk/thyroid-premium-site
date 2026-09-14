@@ -5,12 +5,17 @@
  * digest. Every figure is computed by lib/metrics from the dataset
  * lib/metrics-source loads; this route only chooses the window.
  *
+ * `journey` is the per-woman layer (lib/journey): the funnel by furthest stage
+ * reached, the pipeline and nurture counters, and the ONE needs-action list —
+ * Pipeline, Analytics and Today all show this list and this count.
+ *
  * Read-only. Sends nothing to Meta, writes nothing to the sheet.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey } from "../_lib";
 import { summarize, checklistSummary, windowFor } from "@/lib/metrics";
-import { loadMetricsDataset } from "@/lib/metrics-source";
+import { loadJourneys } from "@/lib/journey-source";
+import { funnelOf, OVERDUE_AFTER_MIN, NURTURE_AFTER_DAYS } from "@/lib/journey";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +24,9 @@ export async function GET(req: NextRequest) {
   const raw = Number(req.nextUrl.searchParams.get("days") ?? 14);
   const days = Number.isFinite(raw) ? Math.max(0, Math.min(3650, Math.floor(raw))) : 14;
   try {
-    const { data, sources } = await loadMetricsDataset(req.nextUrl.searchParams.get("fresh") === "1");
-    const now = Date.now();
+    const j = await loadJourneys({ force: req.nextUrl.searchParams.get("fresh") === "1" });
+    const { data, sources } = j.loaded;
+    const now = j.now;
     const summary = summarize(data, windowFor(days, now), now);
     // Month-to-date and all-time, for the few figures that are about the month
     // or the whole history rather than the chosen range (on-pace, close rate).
@@ -41,6 +47,12 @@ export async function GET(req: NextRequest) {
       month: { revenue: month.revenue, won: month.won },
       allTime: { won: allTime.won, attended: allTime.attended, revenue: allTime.revenue },
       checklist: checklistSummary(data.calls),
+      journey: {
+        funnel: funnelOf(j.journeys, windowFor(days, now)),
+        pipeline: j.pipeline,
+        needsAction: j.needsAction,
+        rules: { overdueAfterMin: OVERDUE_AFTER_MIN, nurtureAfterDays: NURTURE_AFTER_DAYS },
+      },
       sources,
       generatedAt: new Date(now).toISOString(),
     });

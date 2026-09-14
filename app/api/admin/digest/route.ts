@@ -27,10 +27,8 @@ import {
 } from "@/lib/unmarked-outcomes";
 import { dmPresenceRate, formatDmPresence, type PresenceRecord } from "@/lib/dm-presence";
 import { IS_TEST_MODE } from "../../create-cashfree-order/route";
-import { summarize, isTestIdentity, isWonRow } from "@/lib/metrics";
-import { loadMetricsDataset } from "@/lib/metrics-source";
-import { buildQueue, type QueueLead } from "@/lib/follow-up-queue";
-import { readMessages } from "@/lib/wa-messages";
+import { summarize, isTestIdentity } from "@/lib/metrics";
+import { loadJourneys } from "@/lib/journey-source";
 
 export const dynamic = "force-dynamic";
 
@@ -74,19 +72,6 @@ export async function GET(req: NextRequest) {
       }),
       fetchCalBookingState(),
     ]);
-    // The WhatsApp log, grouped by number — the follow-up queue's definition of
-    // "a message has gone out" (lib/follow-up-queue). Empty on failure, which
-    // only makes the queue line more cautious.
-    const lastOutbound = new Map<string, string>();
-    try {
-      for (const m of await readMessages()) {
-        if (m.direction !== "out") continue;
-        const k = String(m.phone ?? "").replace(/\D/g, "").slice(-10);
-        if (k && (lastOutbound.get(k) ?? "") < m.ts) lastOutbound.set(k, m.ts);
-      }
-    } catch (msgErr) {
-      console.error("[admin/digest] message log unavailable:", msgErr instanceof Error ? msgErr.message : String(msgErr));
-    }
     const rows: string[][] = (res.data.values as string[][]) ?? [];
     const hdr = (rows[0] ?? []).map((h) => (h ?? "").trim());
     const col = (name: string, fallback: number) => {
@@ -121,9 +106,6 @@ export async function GET(req: NextRequest) {
     const nowIst = istNow();
     const today = istDayString(nowIst);
 
-    // Every row as the follow-up queue sees it — same fields the Analytics tab
-    // builds, so the brief and the tab count the same waiting women.
-    const queueLeads: QueueLead[] = [];
     const todaySessions: { time: string; name: string; risk: string }[] = [];
     // Consultations already held, for the unmarked-outcome nudge below.
     const held: ConsultationRecord[] = [];
@@ -142,30 +124,6 @@ export async function GET(req: NextRequest) {
       // Cal.com wins over the sheet, which only ever records "Booked".
       const booked = calActive || (cell(r, C.bookingStatus) === "Booked" && !calCancelled);
       const sd = cell(r, C.sessionDate);
-      const num = (v: string) => {
-        const n = parseFloat(v.replace(/[^\d.]/g, ""));
-        return Number.isFinite(n) ? n : null;
-      };
-      queueLeads.push({
-        ts,
-        name: cell(r, C.name),
-        phone: cell(r, C.phone),
-        booked,
-        cancelled: calCancelled && !calActive,
-        showed: cell(r, C.showed).toUpperCase(),
-        won: isWonRow({
-          closedAmt: num(cell(r, C.closed)),
-          programmeValue: num(cell(r, C.programmeValue)),
-          paidAmount: num(cell(r, C.paidAmount)),
-        }),
-        isTest: isTestIdentity({ name: cell(r, C.name), email: cell(r, C.email), phone: cell(r, C.phone) }),
-        sessionAtMs: sd ? parseIstSession(sd) : null,
-        msg1: cell(r, C.msg1).toUpperCase(),
-        msg2: cell(r, C.msg2).toUpperCase(),
-        msg3: cell(r, C.msg3).toUpperCase(),
-        lastOutboundAt: lastOutbound.get(cell(r, C.phone).replace(/\D/g, "").slice(-10)) ?? "",
-      });
-
       presenceRows.push({ sessionDate: sd, showed: cell(r, C.showed), dmPresent: cell(r, C.dmPresent) });
       const sess = sd ? parseSession(sd) : null;
       if (booked && sess && istDayString(new Date(sess.getTime() + IST_OFFSET_MS - IST_OFFSET_MS)) === today) {
@@ -208,8 +166,11 @@ export async function GET(req: NextRequest) {
     // Yesterday is the IST calendar day; the week is the last seven days.
     const istMidnightUtc = Date.parse(`${today}T00:00:00Z`) - IST_OFFSET_MS;
     let numberLines: string[];
+    // The same journeys every tab reads (lib/journey): numbers, pipeline, and
+    // the one needs-action list.
+    const J = await loadJourneys();
     try {
-      const { data } = await loadMetricsDataset();
+      const { data } = J.loaded;
       const y = summarize(data, { from: istMidnightUtc - 86400000, to: istMidnightUtc }, nowMs);
       const w = summarize(data, { from: nowMs - 7 * 86400000, to: nowMs + 1 }, nowMs);
       const inr = (n: number) => `Rs ${n.toLocaleString("en-IN")}`;
@@ -222,14 +183,13 @@ export async function GET(req: NextRequest) {
       numberLines = [`Numbers unavailable this morning — open the dashboard.`];
     }
 
-    // The follow-up queue, same rule as the Analytics tab. Anything waiting
-    // over six hours is red there, and gets its own line here.
-    const queue = buildQueue(queueLeads, nowMs);
-    const overSixHours = queue.filter((q) => q.waitMin > 360).length;
-    const unsent = queue.filter((q) => q.label.includes("no WhatsApp") || q.label.startsWith("New lead")).length;
-    // Counted from the queue too, which drops test rows and anyone already won.
-    // Counting sheet rows directly reported 95 — mostly his own test bookings.
-    const cancelledOpen = queue.filter((q) => q.kind === "Rebook" && q.label.startsWith("Cancelled")).length;
+    // The one needs-action list, same count as every tab. Overdue (over six
+    // hours) gets its own line.
+    const na = J.needsAction;
+    const overSixHours = na.overdue;
+    const unsent = na.items.filter((i) => i.kind === "first_message").length;
+    // Counting sheet rows directly once reported 95 — mostly his own test bookings.
+    const cancelledOpen = na.items.filter((i) => i.kind === "rebook_cancelled").length;
 
     todaySessions.sort((a, b) => (parseSession(`05 Aug 2026 ${a.time}`)?.getTime() ?? 0) - (parseSession(`05 Aug 2026 ${b.time}`)?.getTime() ?? 0));
 
@@ -249,10 +209,11 @@ export async function GET(req: NextRequest) {
         ? `Today's sessions (${todaySessions.length}):\n${todaySessions.map((s) => `  ${s.time} — ${s.name} (${s.risk})`).join("\n")}`
         : `No sessions booked for today.`,
       ``,
+      `Needs you: ${na.count} item(s) · in pipeline ${J.pipeline.inPipeline} · nurture ${J.pipeline.nurture}.`,
       unsent > 0 ? `ACTION: ${unsent} recent lead(s) with no WhatsApp sent yet.` : `Every recent lead has had a WhatsApp.`,
       overSixHours > 0
-        ? `ACTION: ${overSixHours} follow-up item(s) waiting over 6 hours — oldest first in the queue.`
-        : `Nothing in the follow-up queue has waited over 6 hours.`,
+        ? `ACTION: ${overSixHours} item(s) OVERDUE — waiting over 6 hours. Oldest first on every tab.`
+        : `Nothing has waited over 6 hours.`,
       // A paid lead with no call on the calendar is the most perishable thing
       // in the funnel, so it gets its own line rather than hiding in a count.
       ...(cancelledOpen > 0
