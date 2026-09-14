@@ -185,6 +185,39 @@ export async function listMeetings(): Promise<FathomMeeting[]> {
   return (Array.isArray(items) ? items : []).map(normaliseMeeting);
 }
 
+/**
+ * Every meeting, following Fathom's cursor. `/meetings` returns one page, so
+ * the plain listMeetings() above only ever saw the newest handful — which is
+ * why the backfill had ingested three calls. Stops at maxPages so a runaway
+ * cursor cannot loop, and returns whatever it has if a later page fails.
+ */
+export async function listAllMeetings(maxPages = 10): Promise<FathomMeeting[]> {
+  const out: FathomMeeting[] = [];
+  const seen = new Set<string>();
+  let cursor = "";
+  for (let p = 0; p < maxPages; p++) {
+    let json: Json;
+    try {
+      json = await get<Json>(`/meetings${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
+    } catch (err) {
+      if (p === 0) throw err;
+      console.warn(`[fathom] meetings page ${p + 1} failed — using the ${out.length} already read:`, err instanceof Error ? err.message : String(err));
+      break;
+    }
+    const items = (json.items ?? json.meetings ?? json.data ?? json.results ?? []) as unknown[];
+    for (const m of (Array.isArray(items) ? items : []).map(normaliseMeeting)) {
+      const key = m.recordingId || `${m.title}|${m.startedAt}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(m);
+    }
+    const next = pick(json, ["next_cursor", "nextCursor", "cursor.next", "pagination.next_cursor"]);
+    if (!next || next === cursor) break;
+    cursor = next;
+  }
+  return out;
+}
+
 export async function fetchTranscript(recordingId: string): Promise<string> {
   if (!recordingId) return "";
   const json = await get<Json>(`/recordings/${encodeURIComponent(recordingId)}/transcript`);
