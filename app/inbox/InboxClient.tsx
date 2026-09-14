@@ -16,8 +16,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { readAdminKey, saveAdminKey, clearAdminKey } from "../admin/adminKey";
 
-const KEY_STORE = "admin_dash_key";
 
 const BG = "#0e0e11";
 const PANEL = "#17171b";
@@ -153,9 +153,7 @@ export default function InboxClient() {
       await Promise.resolve();
       if (!alive) return;
       let k = "";
-      try {
-        k = localStorage.getItem(KEY_STORE) || sessionStorage.getItem(KEY_STORE) || "";
-      } catch { /* storage blocked */ }
+      k = readAdminKey();
       if (!alive) return;
       setApiKey(k);
     })();
@@ -175,7 +173,7 @@ export default function InboxClient() {
       if (mRes.status === 401) {
         setErr("That key was rejected.");
         setApiKey("");
-        try { localStorage.removeItem(KEY_STORE); } catch { /* ignore */ }
+        clearAdminKey();
         return;
       }
       const m = (await mRes.json()) as { threads?: Thread[] };
@@ -297,7 +295,7 @@ export default function InboxClient() {
             onClick={() => {
               const k = keyInput.trim();
               if (!k) return;
-              try { localStorage.setItem(KEY_STORE, k); } catch { /* ignore */ }
+              saveAdminKey(k);
               setApiKey(k);
             }}
             style={{ ...primaryBtn, width: "100%", marginTop: 10 }}

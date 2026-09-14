@@ -22,11 +22,9 @@ import AnalyticsDashboard from "./AnalyticsDashboard";
 import Today from "./Today";
 import Pipeline from "./Pipeline";
 import { LIGHT, DARK, FONT, RADIUS, type Tokens } from "./tokens";
+import { readAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 
 type Tab = "today" | "pipeline" | "analytics";
-// Same sessionStorage slot the pipeline already uses, so entering the key once
-// unlocks every tab rather than asking again per screen.
-const KEY_STORE = "admin_dash_key";
 const THEME_STORE = "admin_theme";
 
 export default function AdminShell() {
@@ -46,9 +44,16 @@ export default function AdminShell() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDark(localStorage.getItem(THEME_STORE) === "dark");
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAdminKey(sessionStorage.getItem(KEY_STORE) ?? "");
+      setAdminKey(readAdminKey());
     } catch {}
-    return () => window.removeEventListener("hashchange", read);
+    // Entering the key on ANY tab unlocks every tab at once — Today used to
+    // stay locked until a reload after the key went in on Pipeline.
+    const onKey = () => setAdminKey(readAdminKey());
+    window.addEventListener(ADMIN_KEY_EVENT, onKey);
+    return () => {
+      window.removeEventListener("hashchange", read);
+      window.removeEventListener(ADMIN_KEY_EVENT, onKey);
+    };
   }, []);
 
   const go = (x: Tab) => {
@@ -134,6 +139,20 @@ export default function AdminShell() {
             <a href="/inbox" style={{ fontFamily: FONT.sans, fontSize: 12.5, color: onPipeline ? t.teal : "#8a8494", textDecoration: "none" }}>
               Inbox
             </a>
+            {/* This device stays signed in until this is pressed — the key now
+                survives closing the tab. Reload so every tab drops the data it
+                had already fetched, not just the key. */}
+            {adminKey ? (
+              <button
+                onClick={() => {
+                  clearAdminKey();
+                  window.location.reload();
+                }}
+                style={{ background: "transparent", border: 0, color: onPipeline ? t.ink3 : "#8a8494", padding: 0, fontSize: 12.5, fontFamily: FONT.sans, cursor: "pointer" }}
+              >
+                Log out
+              </button>
+            ) : null}
           </span>
         </div>
       </header>
@@ -145,7 +164,7 @@ export default function AdminShell() {
           {adminKey
             ? <Today adminKey={adminKey} />
             : <p style={{ color: "#8A93A6", fontSize: 14, padding: "24px 0" }}>
-                Open the Pipeline tab once to enter your admin key — Today reads the same key.
+                Open the Pipeline tab once to enter your admin key. This device will remember it until you log out.
               </p>}
         </div>
         <div style={{ display: onPipeline ? "block" : "none" }}>

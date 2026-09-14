@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CreativeOutcomes from "./CreativeOutcomes";
+import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 
 type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean;
   // /api/admin/messages has always returned these; the type simply never
@@ -133,7 +134,6 @@ const GOOD = "#0ca30c";
 const WARN = "#fab219";
 const CRIT = "#d03b3b";
 
-const KEY_STORE = "admin_dash_key";
 /** Manually entered ad spend, used while the Meta ads token cannot read the
  *  account. Without it the whole ROAS panel is dark on the exact days the
  *  owner most needs it — a broken token should cost him a live number, not
@@ -774,18 +774,22 @@ export default function AnalyticsDashboard() {
   };
 
   useEffect(() => {
-    try { setKey(sessionStorage.getItem(KEY_STORE)); } catch { setKey(null); }
+    const sync = () => setKey(readAdminKey() || null);
+    sync();
+    // A key entered on another tab of the panel unlocks this one too.
+    window.addEventListener(ADMIN_KEY_EVENT, sync);
     try {
       const v = parseFloat(localStorage.getItem(SPEND_STORE) ?? "");
       if (Number.isFinite(v) && v > 0) setManualSpend(v);
     } catch { /* ignore */ }
+    return () => window.removeEventListener(ADMIN_KEY_EVENT, sync);
   }, []);
 
   const load = useCallback(async (k: string) => {
     try {
       const res = await fetch("/api/admin/dashboard", { headers: { "x-admin-key": k } });
       if (res.status === 401) {
-        try { sessionStorage.removeItem(KEY_STORE); } catch { /* ignore */ }
+        clearAdminKey();
         setKey(null);
         setAuthError("Wrong passcode");
         return;
@@ -887,7 +891,7 @@ export default function AnalyticsDashboard() {
     e.preventDefault();
     const k = input.trim();
     if (!k) return;
-    try { sessionStorage.setItem(KEY_STORE, k); } catch { /* ignore */ }
+    saveAdminKey(k);
     setAuthError("");
     setLeads(null);
     setKey(k);

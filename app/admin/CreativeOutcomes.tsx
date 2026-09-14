@@ -2,6 +2,7 @@
 
 /** Cost per client by creative — the report that decides budget, not clicks. */
 import { useEffect, useState } from "react";
+import { readAdminKey } from "./adminKey";
 
 type Row = { creative: string; spend: number; leads: number; booked: number; showed: number; clients: number; revenue: number; costPerBooking: number | null; costPerClient: number | null };
 const rupee = (n: number | null) => (n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`);
@@ -10,8 +11,7 @@ export default function CreativeOutcomes() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [note, setNote] = useState("");
   useEffect(() => {
-    let key: string | null = null;
-    try { key = sessionStorage.getItem("admin_dash_key"); } catch { /* none */ }
+    const key = readAdminKey();
     if (!key) return;
     fetch("/api/admin/creative-outcomes", { headers: { "x-admin-key": key } })
       .then((r) => (r.ok ? r.json() : null))

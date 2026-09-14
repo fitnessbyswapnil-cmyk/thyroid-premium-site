@@ -22,6 +22,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LIGHT, DARK, FONT, RADIUS, ELEV, stageRamp, type Tokens } from "./tokens";
+import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 
 export type Stage = "new" | "booked" | "attended" | "pitched" | "won" | "no_show" | "cancelled" | "lost";
 
@@ -95,7 +96,6 @@ export type Rec = {
 
 type Ev = { at: string; kind: string; title: string; body?: string; meta?: Record<string, string> };
 
-const KEY_STORE = "admin_dash_key";
 const rupee = (n: number | null) => (n == null ? "—" : `₹${n.toLocaleString("en-IN")}`);
 const initials = (n: string) =>
   (n || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
@@ -568,12 +568,12 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
   const [timeline, setTimeline] = useState<Record<string, Ev[] | "loading">>({});
 
   useEffect(() => {
-    try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setKey(sessionStorage.getItem(KEY_STORE));
-    } catch {
-      setKey(null);
-    }
+    const sync = () => setKey(readAdminKey() || null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    sync();
+    // A key entered on another tab of the panel unlocks this one too.
+    window.addEventListener(ADMIN_KEY_EVENT, sync);
+    return () => window.removeEventListener(ADMIN_KEY_EVENT, sync);
   }, []);
 
   const load = useCallback(async (k: string) => {
@@ -581,9 +581,7 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
     try {
       const res = await fetch("/api/admin/crm", { headers: { "x-admin-key": k } });
       if (res.status === 401) {
-        try {
-          sessionStorage.removeItem(KEY_STORE);
-        } catch {}
+        clearAdminKey();
         setKey(null);
         setErr("That key was rejected.");
         return;
@@ -700,9 +698,7 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
             e.preventDefault();
             const k = entry.trim();
             if (!k) return;
-            try {
-              sessionStorage.setItem(KEY_STORE, k);
-            } catch {}
+            saveAdminKey(k);
             setKey(k);
           }}
           style={{ display: "grid", gap: 12, width: "min(340px,100%)" }}
