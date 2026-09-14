@@ -44,7 +44,8 @@
  *   attended, no price (≤14 days)           → send the price
  *   pitched                                 → get a decision
  *   said yes on the call, no payment        → check the payment
- *   new, paid the ₹299 (≤30 days)           → get her to pick a slot
+ *   new, paid (₹299 or any non-programme
+ *   amount, ≤30 days), no booking           → get her to pick a slot
  *   new, no WhatsApp at all (≤3 days)       → first message
  *   new, score ≥57, unpaid (≤3 days)        → abandoned-checkout nudge
  * An item is DONE — and leaves every list at once — when the thing it asks for
@@ -194,7 +195,7 @@ export type Journey = {
   booking: BookingRecord | null;
   call: CallRecord | null;
   won: boolean;
-  /** Latest ₹299 (consultation) payment. */
+  /** Latest payment that is not a programme sale — the ₹299 fee, or another amount. */
   consultPaidAt: string | null;
   leadScore: number | null;
   city: string;
@@ -231,7 +232,9 @@ export function journeysOf(data: Dataset, ctx: JourneyContext): Journey[] {
     if (pay.kind === "programme") {
       const prev = programmeAt.get(id);
       if (!prev || ms(pay.at) < ms(prev)) programmeAt.set(id, pay.at);
-    } else if (pay.kind === "consult") {
+    } else {
+      // The ₹299 fee, or any other non-programme payment (a ₹2,000 deposit on
+      // 31 Aug): money from a woman with no call booked is the same task.
       const prev = consultAt.get(id);
       if (!prev || ms(pay.at) > ms(prev)) consultAt.set(id, pay.at);
     }
@@ -410,10 +413,11 @@ export const ACTION_LABEL: Record<ActionKind, string> = {
   rebook_cancelled: "Cancelled her call — win the slot back",
   rebook_no_show: "No-show — offer two new times",
   mark_call: "Mark whether she joined the call",
-  send_price: "Attended, never priced — send the price",
+  // Transcript-only calls record no price, so this does not claim none was said.
+  send_price: "Call held, no price recorded — follow up",
   follow_up: "Pitched — get her decision",
   agreed_unpaid: "Said yes on the call — no payment arrived",
-  paid_not_booked: "Paid ₹299, no slot chosen",
+  paid_not_booked: "Paid, no slot chosen",
   first_message: "New lead — no WhatsApp has gone out",
   hot_abandon: "High score, didn't pay — nudge her",
 };
@@ -478,12 +482,15 @@ export function needsActionOf(journeys: Journey[], data: Pick<Dataset, "messages
   for (const j of journeys) {
     const b = j.booking;
     const start = ms(b?.startAt);
+    // Every item but "mark the call" is a WhatsApp. With no number there is
+    // nothing to do, so she is not on the list (she still counts as a lead).
+    const reachable = j.phone.length === 10;
     const slotDue = start + NO_SHOW_GRACE_MIN * 60_000;
     const callAt = ms(j.call?.occurredAt) || start;
 
     switch (j.state) {
       case "cancelled": {
-        if (!(start > now || within(start, ACTION_WINDOW_DAYS))) break;
+        if (!reachable || !(start > now || within(start, ACTION_WINDOW_DAYS))) break;
         // Cal.com does not say when she cancelled. A slot already passed dates
         // it by the slot; a future one by when she booked it.
         const since = start <= now ? start : ms(b?.createdAt) || start;
@@ -491,20 +498,21 @@ export function needsActionOf(journeys: Journey[], data: Pick<Dataset, "messages
         break;
       }
       case "no_show":
-        if (within(start, ACTION_WINDOW_DAYS) && !sentAfter(j, slotDue, true)) push(j, "rebook_no_show", slotDue);
+        if (reachable && within(start, ACTION_WINDOW_DAYS) && !sentAfter(j, slotDue, true)) push(j, "rebook_no_show", slotDue);
         break;
       case "unknown":
         if (within(start, ACTION_WINDOW_DAYS)) push(j, "mark_call", slotDue);
         break;
       case "attended":
         if (j.agreedButUnpaid) push(j, "agreed_unpaid", callAt);
-        else if (within(callAt, ACTION_WINDOW_DAYS) && !sentAfter(j, callAt, true)) push(j, "send_price", callAt);
+        else if (reachable && within(callAt, ACTION_WINDOW_DAYS) && !sentAfter(j, callAt, true)) push(j, "send_price", callAt);
         break;
       case "pitched":
         if (j.agreedButUnpaid) push(j, "agreed_unpaid", callAt);
-        else if (!sentAfter(j, callAt, true)) push(j, "follow_up", callAt);
+        else if (reachable && !sentAfter(j, callAt, true)) push(j, "follow_up", callAt);
         break;
       case "new": {
+        if (!reachable) break;
         const paidAt = ms(j.consultPaidAt);
         const newest = ms(j.person.rows[j.person.rows.length - 1]?.createdAt);
         if (within(paidAt, PAID_NOT_BOOKED_WINDOW_DAYS)) {

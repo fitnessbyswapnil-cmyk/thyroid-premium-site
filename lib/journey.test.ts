@@ -236,3 +236,22 @@ test("won, booked-ahead and nurture women never need action", () => {
   };
   assert.equal(needsActionOf(run(data), data, NOW).count, 0);
 });
+
+test("a quiz row with no phone or email is still a lead, and never an action item", () => {
+  const anon = { ...lead({ phone: "" }), email: "", createdAt: iso(NOW - HOUR) };
+  const data: Dataset = { leads: [anon, lead({ phone: "9000001101", createdAt: iso(NOW - HOUR) })], bookings: [], calls: [] };
+  const js = run(data);
+  assert.equal(js.length, 2);
+  assert.equal(funnelOf(js, { from: null, to: NOW + 1 })[0].n, 2);
+  assert.deepEqual(needsActionOf(js, data, NOW).items.map((i) => i.phone), ["9000001101"]);
+  assert.ok(js.every((j) => j.keys.length === 1), "the anonymous one still has a key to store nurture under");
+});
+
+test("a non-programme payment with no booking is 'paid, no slot chosen'", () => {
+  const data: Dataset = {
+    leads: [lead({ phone: "9000001201", paid: true, paidAmount: 2000, paidAt: iso(NOW - 3 * DAY), createdAt: iso(NOW - 3 * DAY) })],
+    bookings: [],
+    calls: [],
+  };
+  assert.deepEqual(needsActionOf(run(data), data, NOW).items.map((i) => i.kind), ["paid_not_booked"]);
+});

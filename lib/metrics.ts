@@ -270,9 +270,10 @@ export function clusterPeople(data: Pick<Dataset, "leads" | "bookings">): Person
 
   const groups = new Map<number, Rec[]>();
   recs.forEach((rec, i) => {
-    const who = rec.kind === "row" ? rec.r : rec.b;
-    // A record with neither a phone nor an email cannot be joined to anyone.
-    if (!identityKeys(who).length) return;
+    // A record with neither a phone nor an email cannot be joined to anyone, so
+    // it is a person of its own. These are real: women who finished the quiz
+    // and left at the ₹299 step before giving a number (54 rows on 14-Sep).
+    // They have always counted as leads, and still do.
     const g = find(i);
     const list = groups.get(g) ?? [];
     list.push(rec);
@@ -283,7 +284,10 @@ export function clusterPeople(data: Pick<Dataset, "leads" | "bookings">): Person
   for (const list of groups.values()) {
     const rows = list.flatMap((x) => (x.kind === "row" ? [x.r] : [])).sort((a, b) => a.row - b.row);
     const bookings = list.flatMap((x) => (x.kind === "booking" ? [x.b] : [])).sort((a, b) => a.startAt.localeCompare(b.startAt));
-    const keys = [...new Set(list.flatMap((x) => identityKeys(x.kind === "row" ? x.r : x.b)))].sort();
+    const found = [...new Set(list.flatMap((x) => identityKeys(x.kind === "row" ? x.r : x.b)))].sort();
+    // No phone or email: a stable stand-in so her stored stage and nurture date
+    // still have a key. Sheet rows are append-only and booking uids never change.
+    const keys = found.length ? found : [list[0].kind === "row" ? `row:${list[0].r.row}` : `booking:${list[0].b.uid}`];
     // Newest non-empty value wins: the latest row carries the freshest details.
     const latest = <T,>(vals: T[]) => [...vals].reverse().find((v) => !!v) ?? ("" as T);
     const who = [...rows.map((r) => ({ name: r.name, email: realEmail(r.email), phone: r.phone })), ...bookings.map((b) => ({ name: b.name, email: realEmail(b.email), phone: b.phone }))];
