@@ -750,6 +750,8 @@ export default function AnalyticsDashboard() {
     ads: { adId: string; adName: string; spend: number; impressions: number; linkClicks: number; cpm: number; frequency: number }[];
     campaigns?: { campaignId: string; campaignName: string; spend: number }[];
     status: { tokenSet: boolean; tokenSource: string; ok: boolean; error: string };
+    /** When the hourly refresh fetched these numbers — the page never calls Windsor. */
+    asOf?: string | null;
   } | null>(null);
   const timer = useRef<number | null>(null);
   const adsTimer = useRef<number | null>(null);
@@ -1330,8 +1332,8 @@ export default function AnalyticsDashboard() {
                 Ads data:{" "}
                 {adsData.status.ok
                   ? adsData.status.error
-                    ? `⚠ partial — ${adsData.status.error}`
-                    : `✓ live from Meta (${adsData.status.tokenSource})`
+                    ? `⚠ ${adsData.asOf ? `as of ${new Date(adsData.asOf).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })} — ` : ""}${adsData.status.error}`
+                    : `✓ ${adsData.asOf ? `as of ${new Date(adsData.asOf).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })}` : "cached"} (${adsData.status.tokenSource}, refreshed hourly)`
                   : `⚠ ${adsData.status.error}`}
               </p>
             )}

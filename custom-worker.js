@@ -18,6 +18,7 @@ const CRON_ROUTES = {
   "30 2 * * *": "/api/admin/digest", // 08:00 IST daily digest
   "50 23 * * *": "/api/cron/payment-reminder", // daily safety net; cron-job.org polls every 5 min
   "*/15 * * * *": "/api/cron/meta-retry", // resend failed Meta CAPI events recorded in the D1 ledger
+  "7 * * * *": "/api/cron/ads-refresh", // cache Windsor ad spend in D1 — pages never call Windsor
 };
 
 /** The bare domain answers only with a redirect to www, exactly as Vercel did. */

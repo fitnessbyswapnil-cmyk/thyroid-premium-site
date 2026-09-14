@@ -53,6 +53,8 @@ type Data = {
     spend: number | null; consultPayers: number; programmeCloses: number;
     contracted: number; collected: number; costPerConsultPayer: number | null;
     costPerProgrammeClient: number | null; spendAvailable: boolean;
+    /** When the cached ad spend was fetched (hourly refresh). */
+    spendAsOf?: string | null;
   };
   queue: { name: string; phone: string; reason: string; kind: string; risk: number; when: string; leadId: string; wa: string; badge?: DecisionBadge }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
@@ -65,6 +67,17 @@ type Data = {
   checklist: ChecklistSummary;
   toMark: { bookingUid: string; name: string; phone: string; email: string; startAt: string; leadRow: number | null }[];
 };
+
+/** "14:07" today, "13 Sep 14:07" otherwise — IST, the coach's clock. */
+function asOfLabel(iso: string): string {
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return "unknown";
+  const opts: Intl.DateTimeFormatOptions = { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false };
+  const day = (x: Date) => x.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+  return day(t) === day(new Date())
+    ? t.toLocaleTimeString("en-IN", opts)
+    : `${t.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })} ${t.toLocaleTimeString("en-IN", opts)}`;
+}
 
 const inr = (n: number | null) => (n === null ? "—" : "₹" + n.toLocaleString("en-IN"));
 
@@ -398,7 +411,10 @@ export default function Today({ adminKey }: { adminKey: string }) {
         {/* 1 — Acquisition */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 0 10px" }}>
           <span style={kicker}>Acquisition cost</span>
-          <span style={{ fontSize: 12, color: N.dim }}>{rangeLabel(days)} · same range as above</span>
+          <span style={{ fontSize: 12, color: N.dim }}>
+            {rangeLabel(days)} · same range as above
+            {d?.acquisition.spendAsOf ? ` · ad spend as of ${asOfLabel(d.acquisition.spendAsOf)}` : ""}
+          </span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 12 }}>

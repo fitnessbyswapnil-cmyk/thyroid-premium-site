@@ -84,18 +84,25 @@ function parseLeads(values: string[][]): SheetLead[] {
   // One woman who filled the form three times is one lead, not three. Later rows
   // win, because the sheet is append-ordered and the newest submission carries
   // the freshest phone number and payment state.
+  //
+  // Matched on email OR phone. A Cashfree payment row can carry only a phone
+  // number — the Rs 30,000 sale on 11 Sep did — and keying on email alone
+  // dropped that row entirely, so Pipeline showed the sale as unjudged while
+  // every other tab counted it won.
   const byEmail = new Map<string, number>();
+  const byPhone = new Map<string, number>();
   for (let r = 1; r < values.length; r++) {
     const row = values[r] ?? [];
     const get = (i: number) => (i >= 0 ? String(row[i] ?? "").trim() : "");
     const email = get(idx.email).toLowerCase();
-    if (!email) continue;
+    const phone10 = tail10(get(idx.phone));
+    if (!email && phone10.length < 10) continue;
     // His own test submissions are not prospects — the one test rule, which
     // also knows his phone number (lib/metrics).
     if (isTestIdentity({ name: get(idx.name), email, phone: get(idx.phone) })) continue;
 
-    const canon = canonicalEmail(email);
-    const seenAt = byEmail.get(canon);
+    const canon = email ? canonicalEmail(email) : "";
+    const seenAt = (canon ? byEmail.get(canon) : undefined) ?? (phone10.length === 10 ? byPhone.get(phone10) : undefined);
     const lead = {
       row: r + 1,
       name: get(idx.name),
@@ -112,14 +119,24 @@ function parseLeads(values: string[][]): SheetLead[] {
       timestamp: get(idx.ts),
     };
     if (seenAt === undefined) {
-      byEmail.set(canon, out.length);
+      if (canon) byEmail.set(canon, out.length);
+      if (phone10.length === 10) byPhone.set(phone10, out.length);
       out.push(lead);
     } else {
       // Keep whichever row actually paid — a later blank must never erase it —
-      // and a programme sale on ANY of her rows keeps her won.
+      // and a programme sale on ANY of her rows keeps her won. A blank email or
+      // phone on the newer row keeps the one already known.
       const prev = out[seenAt];
       const merged = prev.paid && !lead.paid ? { ...lead, paid: prev.paid, paidAmount: prev.paidAmount } : lead;
-      out[seenAt] = { ...merged, won: prev.won || lead.won };
+      out[seenAt] = {
+        ...merged,
+        name: merged.name || prev.name,
+        email: merged.email || prev.email,
+        phone: merged.phone || prev.phone,
+        won: prev.won || lead.won,
+      };
+      if (canon) byEmail.set(canon, seenAt);
+      if (phone10.length === 10) byPhone.set(phone10, seenAt);
     }
   }
   return out;
@@ -276,15 +293,20 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const leadByEmail = new Map(leads.map((l) => [l.email, l]));
+  const leadByEmail = new Map(leads.filter((l) => l.email).map((l) => [canonicalEmail(l.email), l]));
+  const leadByPhone = new Map(leads.filter((l) => tail10(l.phone).length === 10).map((l) => [tail10(l.phone), l]));
+  const leadFor = (email: string, phone: string) =>
+    (email ? leadByEmail.get(canonicalEmail(email)) : undefined) ?? (tail10(phone).length === 10 ? leadByPhone.get(tail10(phone)) : undefined);
   const callByUid = new Map(calls.map((c) => [c.bookingUid, c]));
 
   const records: CrmRecord[] = [];
-  const seenEmails = new Set<string>();
+  // Leads already shown against a booking, so the never-booked list below does
+  // not repeat them.
+  const shownLeads = new Set<SheetLead>();
 
   for (const b of bookings) {
-    const lead = b.email ? leadByEmail.get(b.email) : undefined;
-    if (b.email) seenEmails.add(b.email);
+    const lead = leadFor(b.email, b.phone);
+    if (lead) shownLeads.add(lead);
 
     const c = callByUid.get(b.uid);
     const facts = toFacts(c, b.startIso);
@@ -374,7 +396,7 @@ export async function GET(req: NextRequest) {
 
   // Leads who are qualified but never booked — the top of the pipeline.
   for (const l of leads) {
-    if (seenEmails.has(l.email)) continue;
+    if (shownLeads.has(l)) continue;
     const input = { hasBooking: false, bookingCancelled: false, sessionStart: null, call: null, paid: l.paid, won: l.won, now };
     const stage = deriveStage(input);
     const evs = eventsByPhone.get(tail10(l.phone)) ?? [];

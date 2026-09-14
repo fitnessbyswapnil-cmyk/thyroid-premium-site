@@ -17,8 +17,8 @@
  * dashboard that counts sends reads healthy while nothing lands — which is how
  * the welcome message went 18 days unnoticed. This counts failures.
  *
- * Everything degrades rather than throws: a missing WINDSOR_API_KEY costs the
- * spend figures, not the page.
+ * Everything degrades rather than throws: an empty ad cache costs the spend
+ * figures, not the page. Spend comes from D1 (lib/ads-cache), filled hourly.
  *
  * Auth: x-admin-key.
  */
@@ -34,6 +34,7 @@ import { draftMessage, draftWaLink } from "@/lib/draft-message";
 import { decisionBadge, findColumn, type DecisionBadge } from "@/lib/decision-maker";
 import { dmPresenceRate, type PresenceRecord } from "@/lib/dm-presence";
 import { IS_TEST_MODE } from "../../create-cashfree-order/route";
+import { cachedSpend } from "@/lib/ads-cache";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -49,23 +50,6 @@ function parseWhen(s: string): number | null {
   if (!s) return null;
   const t = Date.parse(s);
   return Number.isFinite(t) ? t : null;
-}
-
-async function windsorSpend(from: Date, to: Date): Promise<number | null> {
-  const key = process.env.WINDSOR_API_KEY;
-  if (!key) return null;
-  const d = (x: Date) => x.toISOString().slice(0, 10);
-  const url =
-    `https://connectors.windsor.ai/facebook?api_key=${encodeURIComponent(key)}` +
-    `&date_from=${d(from)}&date_to=${d(to)}&fields=date,spend`;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
-    const j = (await res.json()) as { data?: Array<{ spend?: string | number }> };
-    return (j.data ?? []).reduce((s, r) => s + (parseFloat(String(r.spend ?? 0)) || 0), 0);
-  } catch {
-    return null;
-  }
 }
 
 export async function GET(req: NextRequest) {
@@ -174,7 +158,8 @@ export async function GET(req: NextRequest) {
       leadRow: leadRowByPerson.get(personKey(b)) ?? null,
     }));
 
-  const spend = await windsorSpend(new Date(since), new Date(now));
+  // From the D1 cache the hourly refresh keeps — never a live Windsor call.
+  const { spend, asOf: spendAsOf } = await cachedSpend(since, now);
   const cpp = spend !== null && consultPayers > 0 ? Math.round(spend / consultPayers) : null;
   const cppc = spend !== null && programmeCloses > 0 ? Math.round(spend / programmeCloses) : null;
 
@@ -369,6 +354,7 @@ export async function GET(req: NextRequest) {
       spend, consultPayers, programmeCloses, contracted, collected,
       costPerConsultPayer: cpp, costPerProgrammeClient: cppc,
       spendAvailable: spend !== null,
+      spendAsOf,
     },
     queue: queue.slice(0, 25),
     dmPresence: presence,
@@ -381,7 +367,7 @@ export async function GET(req: NextRequest) {
     health: { sent24, failed24, byTemplate: health },
     capacity: { closed: monthCloses, ceiling: CEILING },
     caveats: [
-      spend === null ? "WINDSOR_API_KEY is not set, so no spend and no cost-per figures." : null,
+      spend === null ? "No ad spend cached yet (the hourly refresh fills it), so no cost-per figures." : null,
       heuristicUsed
         ? "Some older rows have no Programme Value, so a payment of Rs 5,000 or more was read as a programme close for those."
         : null,

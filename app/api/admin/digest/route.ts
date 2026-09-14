@@ -18,7 +18,6 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME } from "../_lib";
-import { isOwnerTest } from "@/lib/owner-filter";
 import {
   IST_OFFSET_MS,
   parseIstSession,
@@ -122,7 +121,6 @@ export async function GET(req: NextRequest) {
     const nowIst = istNow();
     const today = istDayString(nowIst);
 
-    let cancelledOpen = 0;
     // Every row as the follow-up queue sees it — same fields the Analytics tab
     // builds, so the brief and the tab count the same waiting women.
     const queueLeads: QueueLead[] = [];
@@ -143,7 +141,6 @@ export async function GET(req: NextRequest) {
       const calActive = !!emailKey && cal.state.active.has(emailKey);
       // Cal.com wins over the sheet, which only ever records "Booked".
       const booked = calActive || (cell(r, C.bookingStatus) === "Booked" && !calCancelled);
-      if (calCancelled && !calActive && cell(r, C.showed) === "") cancelledOpen++;
       const sd = cell(r, C.sessionDate);
       const num = (v: string) => {
         const n = parseFloat(v.replace(/[^\d.]/g, ""));
@@ -196,7 +193,7 @@ export async function GET(req: NextRequest) {
       const sessAt = sd ? parseIstSession(sd) : null;
       if (
         booked && sessAt !== null && sessAt < nowMs &&
-        !isOwnerTest({ name: cell(r, C.name), email: cell(r, C.email) })
+        !isTestIdentity({ name: cell(r, C.name), email: cell(r, C.email), phone: cell(r, C.phone) })
       ) {
         held.push({
           name: cell(r, C.name),
@@ -230,6 +227,9 @@ export async function GET(req: NextRequest) {
     const queue = buildQueue(queueLeads, nowMs);
     const overSixHours = queue.filter((q) => q.waitMin > 360).length;
     const unsent = queue.filter((q) => q.label.includes("no WhatsApp") || q.label.startsWith("New lead")).length;
+    // Counted from the queue too, which drops test rows and anyone already won.
+    // Counting sheet rows directly reported 95 — mostly his own test bookings.
+    const cancelledOpen = queue.filter((q) => q.kind === "Rebook" && q.label.startsWith("Cancelled")).length;
 
     todaySessions.sort((a, b) => (parseSession(`05 Aug 2026 ${a.time}`)?.getTime() ?? 0) - (parseSession(`05 Aug 2026 ${b.time}`)?.getTime() ?? 0));
 
@@ -256,7 +256,7 @@ export async function GET(req: NextRequest) {
       // A paid lead with no call on the calendar is the most perishable thing
       // in the funnel, so it gets its own line rather than hiding in a count.
       ...(cancelledOpen > 0
-        ? [``, `ACTION: ${cancelledOpen} paid lead(s) cancelled and have NOT rebooked — win the slot back today.`]
+        ? [``, `ACTION: ${cancelledOpen} lead(s) cancelled their call and have NOT rebooked — win the slot back today.`]
         : []),
       // An outcome that never gets marked is a sale Meta is never told about,
       // and Meta stops accepting it after seven days. Names and dates only —

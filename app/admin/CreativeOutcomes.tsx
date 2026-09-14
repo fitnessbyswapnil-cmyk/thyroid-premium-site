@@ -15,7 +15,13 @@ export default function CreativeOutcomes() {
     if (!key) return;
     fetch("/api/admin/creative-outcomes", { headers: { "x-admin-key": key } })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { rows?: Row[]; spendNote?: string } | null) => { if (d?.rows) setRows(d.rows); if (d?.spendNote) setNote(d.spendNote); })
+      .then((d: { rows?: Row[]; spendNote?: string; spendAsOf?: string | null } | null) => {
+        if (d?.rows) setRows(d.rows);
+        const asOf = d?.spendAsOf
+          ? `spend as of ${new Date(d.spendAsOf).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })}`
+          : "";
+        setNote([asOf, d?.spendNote ?? ""].filter(Boolean).join(" · "));
+      })
       .catch(() => {});
   }, []);
   if (!rows) return null;
