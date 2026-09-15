@@ -126,9 +126,9 @@ export default function DecodePage() {
             className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]"
             style={{ fontFamily: "var(--font-body), Inter, system-ui, sans-serif" }}
           >
-            Eating less but still not losing weight?{" "}
+            Lose 8–10 kg in 90 days, even with thyroid.{" "}
             <span className="block" style={{ color: "#dc3434" }}>
-              Your blood report shows why.
+              Your blood report shows what&apos;s actually blocking it.
             </span>
           </h1>
 
