@@ -32,6 +32,10 @@ type Step = {
   options?: Option[];
   multiCap?: number;
   placeholder?: string;
+  // single-choice "Other" affordance: this option reveals a free-text input
+  // instead of auto-advancing, and its value is stored in place of a preset.
+  otherLabel?: string;
+  otherPlaceholder?: string;
   // value-moment body builder (can read prior answers)
   body?: (a: Answers) => string;
 };
@@ -138,6 +142,8 @@ const STEPS: Step[] = [
       { label: "Homemaker", points: 3 },
       { label: "Something else", points: 3 },
     ],
+    otherLabel: "Something else",
+    otherPlaceholder: "What do you do?",
   },
   {
     id: "tried",
@@ -227,7 +233,14 @@ function pointsFor(step: Step, value: string | string[] | number | undefined): n
   }
   if (typeof value === "string") {
     const opt = step.options?.find((o) => o.label === value);
-    return opt?.points ?? 0;
+    if (opt) return opt.points ?? 0;
+    // Free-text "Other" value (doesn't match any preset): score it as the
+    // neutral Other option so it never disqualifies or zeroes the points.
+    if (step.otherLabel) {
+      const other = step.options?.find((o) => o.label === step.otherLabel);
+      return other?.points ?? 0;
+    }
+    return 0;
   }
   return 0;
 }
@@ -357,8 +370,55 @@ function TextField({
 // ── Validation ─────────────────────────────────────────────────────────────
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function phoneDigits(v: string) {
-  return v.replace(/\D/g, "");
+// Indian mobile: exactly 10 digits, first digit 6-9 (the +91 is a fixed prefix).
+const PHONE_RE = /^[6-9]\d{9}$/;
+const PHONE_ERROR = "Please enter a valid 10-digit mobile number";
+
+// WhatsApp field with a fixed, non-editable "+91" affordance on the left. The
+// user types only the 10 local digits; we store/send E.164 ("+91" + digits).
+function PhoneField({
+  value,
+  onChange,
+  onEnter,
+  error,
+}: {
+  value: string; // the 10 local digits only
+  onChange: (v: string) => void;
+  onEnter: () => void;
+  error?: string;
+}) {
+  // Live error: nudge only once they've started typing something invalid.
+  const liveError = value.length > 0 && !PHONE_RE.test(value) ? PHONE_ERROR : "";
+  const shownError = error || liveError;
+  return (
+    <div className="w-full">
+      <div
+        className="flex w-full items-stretch overflow-hidden rounded-2xl border bg-white/[0.04] transition-colors"
+        style={{ borderColor: shownError ? "rgba(248,113,113,0.6)" : "rgba(168,85,247,0.35)" }}
+      >
+        <span
+          className="flex select-none items-center border-r border-white/10 px-4 text-[1.05rem] font-semibold text-white/55"
+          aria-hidden
+        >
+          +91
+        </span>
+        <input
+          autoFocus
+          type="tel"
+          inputMode="numeric"
+          value={value}
+          maxLength={10}
+          placeholder="98765 43210"
+          aria-label="WhatsApp mobile number, 10 digits"
+          // Strip spaces/dashes/any non-digit and cap at 10 as they type.
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 10))}
+          onKeyDown={(e) => { if (e.key === "Enter") onEnter(); }}
+          className="w-full bg-transparent px-4 py-4 text-[1.05rem] text-white outline-none placeholder:text-white/25"
+        />
+      </div>
+      <div className="mt-2 min-h-[1.1rem] text-[0.78rem] text-rose-300/80">{shownError}</div>
+    </div>
+  );
 }
 
 // Normalise an Indian mobile number to E.164 (+91XXXXXXXXXX). Handles bare
@@ -481,6 +541,7 @@ export default function QualifyingFlow() {
   const [answers, setAnswers] = useState<Answers>({});
   const [draft, setDraft] = useState(""); // current text/tel/email/scale input
   const [error, setError] = useState("");
+  const [otherActive, setOtherActive] = useState(false); // single-choice "Other" text reveal
   const leadFiredRef = useRef(false);
   const leadIdRef = useRef("");
 
@@ -530,21 +591,54 @@ export default function QualifyingFlow() {
     setIdx((i) => Math.max(i - 1, 0));
   }, []);
 
-  // Sync draft when arriving on a text-like step (so back/forward keeps values)
+  // Sync draft/other-state when arriving on a step (so back/forward keeps values)
   useEffect(() => {
-    if (["text", "tel", "email"].includes(step.type)) {
-      setDraft(typeof answers[step.id] === "string" ? (answers[step.id] as string) : "");
+    const stored = typeof answers[step.id] === "string" ? (answers[step.id] as string) : "";
+    if (step.type === "text" || step.type === "email") {
+      setDraft(stored);
+    } else if (step.type === "tel") {
+      // Stored value is E.164 ("+91" + 10 digits); the editable draft is the 10 digits.
+      setDraft(stored.replace(/^\+91/, "").replace(/\D/g, ""));
+    }
+    // Restore the "Other" free-text reveal: a stored value that isn't a preset
+    // label means the user previously typed an Other answer.
+    if (step.otherLabel) {
+      const presets = (step.options ?? []).map((o) => o.label);
+      if (stored && !presets.includes(stored)) {
+        setOtherActive(true);
+        setDraft(stored);
+      } else {
+        setOtherActive(false);
+      }
+    } else {
+      setOtherActive(false);
     }
   }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectSingle = useCallback(
     (label: string) => {
+      // "Other" reveals a free-text input and waits for a typed value — it must
+      // NOT auto-advance like the preset options do.
+      if (step.otherLabel && label === step.otherLabel) {
+        setOtherActive(true);
+        setError("");
+        return;
+      }
+      setOtherActive(false);
       setAnswers((a) => ({ ...a, [step.id]: label }));
       // brief auto-advance (~200ms) so the selection is felt
       setTimeout(() => goNext(), 200);
     },
     [step, goNext],
   );
+
+  // Submit the "Other" free-text value (Continue/Enter on a single+Other step).
+  const submitOther = useCallback(() => {
+    const v = draft.trim();
+    if (!v) { setError("Please tell me what you do."); return; }
+    setAnswers((a) => ({ ...a, [step.id]: v }));
+    goNext();
+  }, [draft, step, goNext]);
 
   const toggleMulti = useCallback(
     (label: string) => {
@@ -558,11 +652,16 @@ export default function QualifyingFlow() {
 
   const submitText = useCallback(() => {
     const v = draft.trim();
+    if (step.type === "tel") {
+      const digits = draft.replace(/\D/g, "");
+      if (!PHONE_RE.test(digits)) { setError(PHONE_ERROR); return; }
+      // Store/send E.164 so Meta CAPI phone matching (EMQ) works.
+      setAnswers((a) => ({ ...a, [step.id]: `+91${digits}` }));
+      goNext();
+      return;
+    }
     if (step.type === "text") {
       if (!v) { setError("Please enter a response to continue."); return; }
-    }
-    if (step.type === "tel") {
-      if (phoneDigits(v).length < 10) { setError("Please enter a valid WhatsApp number."); return; }
     }
     if (step.type === "email") {
       if (!EMAIL_RE.test(v)) { setError("Please enter a valid email address."); return; }
@@ -644,12 +743,14 @@ export default function QualifyingFlow() {
 
   // ── Keyboard control ──────────────────────────────────────────────────────
   useEffect(() => {
+    // True when a text input owns the keystrokes (don't hijack digits/arrows).
+    const typingHere =
+      step.type === "text" || step.type === "tel" || step.type === "email" ||
+      (step.type === "single" && otherActive);
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" || (e.key === "ArrowLeft" && step.type !== "text" && step.type !== "tel" && step.type !== "email")) {
-        goBack();
-        return;
-      }
-      if (step.type === "single" && /^[1-9]$/.test(e.key)) {
+      if (e.key === "Escape") { goBack(); return; }
+      if (e.key === "ArrowLeft" && !typingHere) { goBack(); return; }
+      if (step.type === "single" && !otherActive && /^[1-9]$/.test(e.key)) {
         const i = Number(e.key) - 1;
         const opt = step.options?.[i];
         if (opt) selectSingle(opt.label);
@@ -659,7 +760,7 @@ export default function QualifyingFlow() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, selectSingle, goNext, goBack]);
+  }, [step, selectSingle, goNext, goBack, otherActive]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   // Show the "Press Enter" hint only on screens where Enter actually advances
@@ -732,15 +833,39 @@ export default function QualifyingFlow() {
           {/* SINGLE */}
           {step.type === "single" && (
             <div className="mt-7 flex flex-col gap-3">
-              {step.options!.map((opt, i) => (
-                <OptionCard
-                  key={opt.label}
-                  option={opt}
-                  index={i}
-                  selected={answers[step.id] === opt.label}
-                  onClick={() => selectSingle(opt.label)}
-                />
-              ))}
+              {step.options!.map((opt, i) => {
+                const isOther = !!step.otherLabel && opt.label === step.otherLabel;
+                const selected = isOther
+                  ? otherActive
+                  : answers[step.id] === opt.label && !otherActive;
+                return (
+                  <div key={opt.label}>
+                    <OptionCard
+                      option={opt}
+                      index={i}
+                      selected={selected}
+                      onClick={() => selectSingle(opt.label)}
+                    />
+                    {isOther && otherActive && (
+                      <div className="mt-3">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={draft}
+                          placeholder={step.otherPlaceholder || "Tell me more"}
+                          aria-label={step.otherPlaceholder || "Tell me more"}
+                          onChange={(e) => { setDraft(e.target.value); if (error) setError(""); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") submitOther(); }}
+                          className="w-full rounded-2xl border bg-white/[0.04] px-5 py-4 text-[1.05rem] text-white outline-none placeholder:text-white/25"
+                          style={{ borderColor: error ? "rgba(248,113,113,0.6)" : "rgba(168,85,247,0.35)" }}
+                        />
+                        <div className="mt-2 min-h-[1.1rem] text-[0.78rem] text-rose-300/80">{error || ""}</div>
+                        <ContinueButton onClick={submitOther} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -804,14 +929,27 @@ export default function QualifyingFlow() {
             </div>
           )}
 
-          {/* TEXT / TEL / EMAIL */}
-          {(step.type === "text" || step.type === "tel" || step.type === "email") && (
+          {/* TEL — fixed +91 prefix, 10-digit local number */}
+          {step.type === "tel" && (
+            <div className="mt-7">
+              <PhoneField
+                value={draft}
+                onChange={(v) => { setDraft(v); if (error) setError(""); }}
+                onEnter={submitText}
+                error={error}
+              />
+              <ContinueButton onClick={submitText} />
+            </div>
+          )}
+
+          {/* TEXT / EMAIL */}
+          {(step.type === "text" || step.type === "email") && (
             <div className="mt-7">
               <TextField
                 value={draft}
                 onChange={(v) => { setDraft(v); if (error) setError(""); }}
                 onEnter={submitText}
-                type={step.type === "text" ? "text" : step.type}
+                type={step.type === "text" ? "text" : "email"}
                 placeholder={step.placeholder}
                 error={error}
               />
