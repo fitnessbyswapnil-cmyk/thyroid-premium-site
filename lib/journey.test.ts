@@ -6,6 +6,7 @@ import {
   pipelineCounts,
   needsActionOf,
   nurtureMoves,
+  staleDecisionsOf,
   ratchet,
   fillInferred,
   FUNNEL_STAGES,
@@ -254,4 +255,26 @@ test("a non-programme payment with no booking is 'paid, no slot chosen'", () => 
     calls: [],
   };
   assert.deepEqual(needsActionOf(run(data), data, NOW).items.map((i) => i.kind), ["paid_not_booked"]);
+});
+
+test("the digest's stale-decision counts: unmarked calls and held calls with no sale, 3-14 days old", () => {
+  const coverageEnd = call({ bookingUid: "cov", occurredAt: iso(NOW - 20 * DAY) }); // where the ingest window starts
+  const data: Dataset = {
+    leads: [
+      lead({ phone: "9000001301", createdAt: iso(NOW - 10 * DAY) }),
+      lead({ phone: "9000001302", createdAt: iso(NOW - 10 * DAY) }),
+      lead({ phone: "9000001303", createdAt: iso(NOW - 10 * DAY) }),
+      lead({ phone: "9000001304", createdAt: iso(NOW - 10 * DAY), paidAmount: 20000, paid: true, paidAt: iso(NOW - 4 * DAY) }),
+    ],
+    bookings: [
+      // Recordings stop at the attended calls 6 days ago, so a slot 4 days ago is
+      // past the ingest window (+1 day grace) → unknown, not a no-show.
+      booking({ uid: "u", phone: "9000001301", startAt: iso(NOW - 4 * DAY) }), // unknown, 4 days → unmarked
+      booking({ uid: "a", phone: "9000001302", startAt: iso(NOW - 6 * DAY) }), // attended, no sale → undecided
+      booking({ uid: "r", phone: "9000001303", startAt: iso(NOW - DAY) }), // unknown but only 1 day → not yet
+      booking({ uid: "w", phone: "9000001304", startAt: iso(NOW - 6 * DAY) }), // attended and won → neither
+    ],
+    calls: [coverageEnd, call({ bookingUid: "a", occurredAt: iso(NOW - 6 * DAY) }), call({ bookingUid: "w", occurredAt: iso(NOW - 6 * DAY) })],
+  };
+  assert.deepEqual(staleDecisionsOf(run(data), NOW), { unmarked: 1, undecided: 1 });
 });

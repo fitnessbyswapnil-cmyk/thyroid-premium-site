@@ -18,17 +18,12 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, fetchCalBookingState, SHEET_NAME } from "../_lib";
-import {
-  IST_OFFSET_MS,
-  parseIstSession,
-  selectUnmarkedOutcomes,
-  formatUnmarkedOutcomes,
-  type ConsultationRecord,
-} from "@/lib/unmarked-outcomes";
+import { IST_OFFSET_MS, parseIstSession } from "@/lib/unmarked-outcomes";
 import { dmPresenceRate, formatDmPresence, type PresenceRecord } from "@/lib/dm-presence";
 import { IS_TEST_MODE } from "../../create-cashfree-order/route";
-import { summarize, isTestIdentity } from "@/lib/metrics";
+import { summarize } from "@/lib/metrics";
 import { loadJourneys } from "@/lib/journey-source";
+import { staleDecisionsOf, STALE_AFTER_DAYS } from "@/lib/journey";
 
 export const dynamic = "force-dynamic";
 
@@ -107,8 +102,6 @@ export async function GET(req: NextRequest) {
     const today = istDayString(nowIst);
 
     const todaySessions: { time: string; name: string; risk: string }[] = [];
-    // Consultations already held, for the unmarked-outcome nudge below.
-    const held: ConsultationRecord[] = [];
     // Every row, unfiltered, for the rolling presence figure — it does its own
     // held-and-in-window test, and it is the one number on this brief that is
     // about the coach's habit rather than about a particular woman.
@@ -143,24 +136,6 @@ export async function GET(req: NextRequest) {
         });
       }
 
-      // Consultations already held. cal.state.active only lists UPCOMING
-      // bookings, so a past call is "held" per the sheet's own Booked status
-      // minus whatever Cal.com says was cancelled. The coach's own test rows are
-      // dropped — nearly half the pipeline is his, and a nudge list he learns to
-      // scroll past is a nudge list he stops reading.
-      const sessAt = sd ? parseIstSession(sd) : null;
-      if (
-        booked && sessAt !== null && sessAt < nowMs &&
-        !isTestIdentity({ name: cell(r, C.name), email: cell(r, C.email), phone: cell(r, C.phone) })
-      ) {
-        held.push({
-          name: cell(r, C.name),
-          sessionAtMs: sessAt,
-          showed: cell(r, C.showed),
-          closedAmount: cell(r, C.closed),
-          programmeValue: cell(r, C.programmeValue),
-        });
-      }
     }
     // Headline numbers from lib/metrics — the same definitions as every tab.
     // Yesterday is the IST calendar day; the week is the last seven days.
@@ -190,6 +165,7 @@ export async function GET(req: NextRequest) {
     const unsent = na.items.filter((i) => i.kind === "first_message").length;
     // Counting sheet rows directly once reported 95 — mostly his own test bookings.
     const cancelledOpen = na.items.filter((i) => i.kind === "rebook_cancelled").length;
+    const stale = staleDecisionsOf(J.journeys, nowMs);
 
     todaySessions.sort((a, b) => (parseSession(`05 Aug 2026 ${a.time}`)?.getTime() ?? 0) - (parseSession(`05 Aug 2026 ${b.time}`)?.getTime() ?? 0));
 
@@ -219,10 +195,16 @@ export async function GET(req: NextRequest) {
       ...(cancelledOpen > 0
         ? [``, `ACTION: ${cancelledOpen} lead(s) cancelled their call and have NOT rebooked — win the slot back today.`]
         : []),
-      // An outcome that never gets marked is a sale Meta is never told about,
-      // and Meta stops accepting it after seven days. Names and dates only —
-      // this text leaves the building through Make and Gmail.
-      ...formatUnmarkedOutcomes(selectUnmarkedOutcomes(held, nowMs), IST_OFFSET_MS),
+      // Calls with no outcome, from the same journeys as every tab (lib/journey
+      // staleDecisionsOf). The old line counted the Leads sheet's Showed/Closed
+      // columns, which Today no longer writes, so it never went down. Counts
+      // only — this text leaves the building through Make and Gmail.
+      ...(stale.unmarked > 0
+        ? [``, `ACTION: ${stale.unmarked} call(s) from ${STALE_AFTER_DAYS}+ days ago not marked yet — joined or not? Mark them on Today.`]
+        : []),
+      ...(stale.undecided > 0
+        ? [`ACTION: ${stale.undecided} held call(s) from ${STALE_AFTER_DAYS}+ days ago with no sale decision. If she paid, mark it on Today — Meta stops accepting a sale after 7 days.`]
+        : []),
       ``,
       // The habit number, in the same words the dashboard uses so the two can
       // never quietly disagree about the same fortnight. A count, no names.

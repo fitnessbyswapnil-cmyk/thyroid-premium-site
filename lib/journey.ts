@@ -541,3 +541,36 @@ export function nurtureMoves(journeys: Journey[]): { move: Journey[]; release: J
     release: journeys.filter((j) => j.nurtureSince !== null && !j.nurtureDue),
   };
 }
+
+// ── Stale decisions (the morning digest) ───────────────────────────────────
+
+export const STALE_AFTER_DAYS = 3;
+
+export type StaleDecisions = {
+  /** Slot passed 3-14 days ago and nobody has said whether she joined. */
+  unmarked: number;
+  /** She attended (or was priced) 3-14 days ago, and no sale has been recorded. */
+  undecided: number;
+};
+
+/**
+ * The digest's "still no outcome" nudge, read off the same journeys as every
+ * tab. It used to count the Leads sheet's Showed / Closed columns, which the
+ * Today tab no longer writes — calls are marked in the Calls sheet — so the
+ * number never went down however many calls were marked. Counts only: this
+ * text leaves the building through Make and Gmail.
+ */
+export function staleDecisionsOf(journeys: Journey[], now: number): StaleDecisions {
+  const from = now - ACTION_WINDOW_DAYS * DAY;
+  const to = now - STALE_AFTER_DAYS * DAY;
+  const inWindow = (t: number) => Number.isFinite(t) && t >= from && t <= to;
+  let unmarked = 0;
+  let undecided = 0;
+  for (const j of journeys) {
+    if (j.won) continue;
+    if (j.state === "unknown" && inWindow(ms(j.booking?.startAt))) unmarked++;
+    else if ((j.state === "attended" || j.state === "pitched") && inWindow(ms(j.call?.occurredAt) || ms(j.booking?.startAt))) undecided++;
+  }
+  return { unmarked, undecided };
+}
+
