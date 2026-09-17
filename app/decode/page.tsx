@@ -136,8 +136,10 @@ export default function DecodePage() {
             </span>
           </h1>
 
-          <p className="mx-auto mt-3 text-[length:var(--fs-xs)] font-bold text-[#0b1120] md:text-[length:var(--fs-base)]">
-            Lose 8–10 kg in 90 days, even with thyroid.
+          <p className="mx-auto mt-4 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-[#0b1120] md:text-[length:var(--fs-lg)]">
+            <span className="rounded-md px-2 py-1" style={{ background: "#ffe98a", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
+              Lose 8–10 Kg In 90 Days, Even With Thyroid.
+            </span>
           </p>
 
           <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
