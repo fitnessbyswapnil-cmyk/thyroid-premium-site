@@ -3,60 +3,51 @@
 /**
  * /webinar — registration for the free live masterclass.
  *
- * The design is a warm editorial system, not the site's white-and-green: cream
- * ground, near-black and deep-teal bands alternating down the page, gold for
- * the live signal, vermilion for the one action. Sections alternate ground
- * colour deliberately — that rhythm is what carries the length, and flattening
- * it to white cards is what makes a long page read cheap.
+ * The copy is the page that was already live and is deliberate: the symptom
+ * list, the four takeaways, the agenda, come-if / skip-it-if, the bio, the
+ * proof, the bonus, the FAQ and the disclaimer. What changed is the mechanics
+ * around it, and the angle: since 15-Sep-2026 this is a general thyroid
+ * fat-loss class, titled "Thyroid Fat Loss Masterclass" (owner's choice,
+ * 17-Sep-2026): the headline says what she gets, not why she is stuck. A
+ * report helps and is never required, so nothing on the page may read as if
+ * she needs one to register or to attend. Never "naturally": in this niche it
+ * reads as "without medicine".
+ *
+ *  1. The form is inside the first screen on a phone (390 wide).
+ *  2. A sticky bar (phones) once the form has scrolled away.
+ *  3. One modal per session: exit intent on desktop, 55% scroll on phones.
+ *     Never after she has registered.
+ *  4. A call to action after the symptoms, takeaways, agenda, proof, bonus and
+ *     FAQ. Each scrolls to the form and puts the cursor in it.
+ *  5. The approach is named, in exactly three places (WEBINAR_METHOD).
+ *  6. The bonus shows its price inside the programme, once one is set.
+ *  7. The real date, a countdown to the fixed start time, and the real coaching
+ *     cap. No seat counter, no "people registered in the last hour".
  *
  * Language rule: short sentences, ordinary words. The reader is a woman in her
- * forties on a phone, often in her second language, and a clever phrase is one
- * more thing between her and the form.
- *
- * Proof is the same media the main site serves, at the same paths, with the
- * stories verbatim.
+ * forties on a phone, often in her second language. No exclamation marks, no
+ * emoji. Meta reviews this page, not only the ad: nothing here may promise to
+ * reverse, cure or fix a thyroid condition, touch medication, or assert
+ * anything about her body. lib/webinar-page.test.ts checks the banned phrases.
  */
 
-import { useState } from "react";
-import { WEBINAR_WHEN_SHORT, WEBINAR_WHEN_LONG } from "@/lib/webinar";
-import { useTurnstile, TurnstileBox, postWithBotCheck } from "@/app/components/TurnstileWidget";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  WEBINAR_WHEN_LONG,
+  WEBINAR_WHEN_SHORT,
+  WEBINAR_START_ISO,
+  WEBINAR_METHOD,
+  THYROID_PLATE_PRICE_INR,
+  countdownTo,
+  formatCountdown,
+  type Countdown,
+} from "@/lib/webinar";
+import RegisterForm from "./RegisterForm";
+import { hasRegistered, trackWebinarView } from "./pixel";
+import s from "./webinar.module.css";
 
-// ── Palette ───────────────────────────────────────────────────────────────────
-const C = {
-  cream: "#FBF7F0",
-  creamDeep: "#F4EDE1",
-  hair: "#E7DCC9",
-  ink: "#17140F",
-  inkSoft: "#221E18",
-  teal: "#0E4C43",
-  mint: "#7FC4B6",
-  mintPale: "#B9D6CF",
-  gold: "#C9922F",
-  goldPale: "#E0B25C",
-  fire: "#DE4B25",
-  sand: "#D9D0C0",
-  sandMute: "#A79D8B",
-  line: "#DCD1BD",
-};
+// ── Copy (kept from the live page) ────────────────────────────────────────────
 
-// next/font hashes the family name, so the CSS variables set on the wrapper in
-// page.tsx are the only reliable handle. The literal names stay as fallbacks
-// for the moment before the font loads.
-const DISPLAY = "var(--webinar-display), 'Bricolage Grotesque', system-ui, sans-serif";
-const BODY = "var(--webinar-body), 'Instrument Sans', system-ui, -apple-system, sans-serif";
-
-const CAL_LINK =
-  "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-  "&text=" + encodeURIComponent("Free Thyroid Masterclass with Swapnil") +
-  "&dates=20260917T143000Z/20260917T160000Z" +
-  "&details=" + encodeURIComponent("Keep your last thyroid report (TSH, T3, T4) next to you.");
-
-const LEARN = [
-  { h: "Why eating less stops working", p: "When the thyroid slows, the body burns less too. So the gap you made closes. I will show you what to do instead." },
-  { h: "The four numbers to ask for", p: "TSH alone is not enough. There are three more your doctor can test. I will tell you which, and why they matter." },
-  { h: "The Indian plate that works", p: "Roti, dal, sabzi, curd. Same food, put together differently, so you get enough protein without eating things you hate." },
-  { h: "Movement that does not wreck you", p: "More cardio is the wrong answer for a thyroid body. I will show you the weekly plan that actually helps." },
-];
 const FAMILIAR = [
   "You eat less than everyone at home, and you are still the heaviest",
   "Your report came back normal, but you do not feel normal",
@@ -65,11 +56,17 @@ const FAMILIAR = [
   "You have tried keto, fasting and 1,200-calorie plans",
   "The weight comes off, then comes straight back",
 ];
+const LEARN = [
+  { h: "Why eating less stops working", p: "When the thyroid slows, the body burns less too. So the gap you made closes. I will show you what to do instead." },
+  { h: "The four numbers to ask for", p: "TSH alone is not enough. There are three more your doctor can test. I will tell you which, and why they matter." },
+  { h: "The Indian plate that works", p: "Roti, dal, sabzi, curd. Same food, put together differently, so you get enough protein without eating things you hate." },
+  { h: "Movement that does not wreck you", p: "More cardio is the wrong answer for a thyroid body. I will show you the weekly plan that actually helps." },
+];
 const RUN = [
-  { t: "0–15 min", h: "Why your report says normal", p: "What the numbers mean, and what they hide." },
+  { t: "0–15 min", h: "Why the weight will not move", p: "What a slow thyroid changes, and what the numbers on a report mean." },
   { t: "15–45 min", h: "The four blockers", p: "The reasons weight stops moving on a thyroid body." },
   { t: "45–70 min", h: "Your plate and your week", p: "Food and movement, built for an Indian home." },
-  { t: "70–90 min", h: "Your questions", p: "Bring your report. I will read one live." },
+  { t: "70–90 min", h: "Your questions", p: "Ask anything. If you have a report with you, I will read one live." },
 ];
 const FOR_YOU = [
   "You have a thyroid problem and the weight will not shift",
@@ -83,16 +80,31 @@ const NOT_FOR_YOU = [
   "You want a supplement that burns fat while you sleep",
   "You need 10 kg gone before a wedding next month",
 ];
+/**
+ * Square crops of the same images the main site serves (public/transformations),
+ * cut to the photos, the weights and the name. The original files also carry a
+ * printed caption ("balanced her thyroid naturally", "reversed hair loss caused
+ * by thyroid issues", "Fixed Her Hormonal Imbalance") that this page may not
+ * show, because Meta reads text inside images too. Regenerate with the same
+ * crop (x 0, y 220, 1080 × 1080) if a source image changes.
+ */
 const TRANSFORM = [
-  { src: "/transformations/Vaidehi 1.png", name: "Vaidehi", story: "Balanced her thyroid naturally. Down from 72 kg to 60 kg." },
-  { src: "/transformations/Surekha 3.png", name: "Surekha", story: "Bloating and afternoon tiredness, gone." },
-  { src: "/transformations/Namrata 5.png", name: "Namrata", story: "16 kg down, and the all-day tiredness went with it." },
-  { src: "/transformations/Heenal 7.png", name: "Heenal", story: "IT professional, Bengaluru. Her blocker was the root, not her diet." },
+  { src: "/webinar/vaidehi.webp", name: "Vaidehi", story: "Down from 72 kg to 60 kg." },
+  { src: "/webinar/surekha.webp", name: "Surekha", story: "Bloating and afternoon tiredness, gone." },
+  { src: "/webinar/namrata.webp", name: "Namrata", story: "16 kg down, and the all-day tiredness went with it." },
+  { src: "/webinar/heenal.webp", name: "Heenal", story: "IT professional, Bengaluru. Her blocker was the root, not her diet." },
 ];
+/**
+ * "Heenal R4" is deliberately absent. Its printed headline and the coach's own
+ * reply in it ("reversing this naturally without meds") break both the reversal
+ * and the medication rule. Do not add it back to this page.
+ */
 const PROOF = [
-  "/whatsapp-proof/Shariya-Sultana.jpeg", "/whatsapp-proof/Pooja-Sharma.jpeg",
-  "/whatsapp-proof/Priya-Shree.jpeg", "/whatsapp-proof/Ritika-Deshmukh.jpeg",
-  "/whatsapp-proof/Sruthi-Reddy.jpeg", "/whatsapp-proof/Heenal R4.png",
+  { src: "/webinar/proof-shariya.webp", w: 303, h: 640 },
+  { src: "/webinar/proof-pooja.webp", w: 360, h: 640 },
+  { src: "/webinar/proof-priya.webp", w: 427, h: 640 },
+  { src: "/webinar/proof-ritika.webp", w: 345, h: 640 },
+  { src: "/webinar/proof-sruthi.webp", w: 302, h: 640 },
 ];
 const BONUS = [
   "7 days of breakfast, lunch, dinner and two snacks",
@@ -108,356 +120,426 @@ const FAQ = [
   { q: "I am not diagnosed. Should I come?", a: "Yes. Symptoms show up long before a report goes abnormal. That gap is where most women get stuck." },
 ];
 
-const PAD = "clamp(52px,8vw,96px) clamp(20px,5vw,32px)";
-const wrap: React.CSSProperties = { maxWidth: 1120, margin: "0 auto" };
-const kicker = (color: string): React.CSSProperties => ({
-  fontSize: 12, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase", color,
-});
-const head = (color: string, size = "clamp(30px,5.4vw,46px)"): React.CSSProperties => ({
-  fontFamily: DISPLAY, fontWeight: 800, fontSize: size, lineHeight: 1.05,
-  letterSpacing: "-.03em", color, margin: "14px 0 0", textWrap: "balance",
-});
-const lede = (color: string): React.CSSProperties => ({
-  fontSize: "clamp(16px,2.2vw,18px)", lineHeight: 1.6, color, margin: "16px 0 0", maxWidth: "38em",
-});
+/** "Thursday", from the start time itself, so it can never disagree with it. */
+const WEEKDAY = new Date(WEBINAR_START_ISO).toLocaleDateString("en-IN", { weekday: "long", timeZone: "Asia/Kolkata" });
+const CTA_LINE = `${WEBINAR_WHEN_LONG}. Free.`;
 
-export default function WebinarClient() {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [med, setMed] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
-  const [err, setErr] = useState("");
-  // Bot check on registration: each one sends a paid WhatsApp. Inert unless
-  // NEXT_PUBLIC_TURNSTILE_SITE_KEY was set at build time.
-  const bot = useTurnstile("webinar_register");
+const MODAL_KEY = "webinar_modal_shown";
+const MOBILE_SCROLL_DEPTH = 0.55;
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const digits = phone.replace(/\D/g, "").slice(-10);
-    if (!name.trim()) { setErr("Please enter your name"); return; }
-    if (digits.length !== 10) { setErr("Enter a 10-digit WhatsApp number"); return; }
-    setErr(""); setBusy(true);
-    try {
-      const r = await postWithBotCheck(bot, "/api/webinar-register", { name: name.trim(), phone: digits, medication: med });
-      if (!r.ok) throw new Error("failed");
-      setDone(true);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch { setErr("Something went wrong. Please try again."); }
-    finally { setBusy(false); }
-  }
+// ── Hooks ─────────────────────────────────────────────────────────────────────
 
-  const input: React.CSSProperties = {
-    width: "100%", boxSizing: "border-box", background: "#FFF", border: `1px solid ${C.line}`,
-    borderRadius: 11, padding: 15, color: C.ink, fontSize: 17, outline: "none", fontFamily: BODY,
-  };
-  const fire: React.CSSProperties = {
-    width: "100%", background: C.fire, color: "#FFF", border: "none", borderRadius: 11,
-    padding: "18px 20px", fontSize: 17, fontWeight: 600, cursor: "pointer",
-    letterSpacing: "-.01em", minHeight: 44, fontFamily: BODY,
-  };
+/** Null until mounted, so the server HTML and the first client render agree. */
+function useCountdown(): Countdown | null {
+  const [c, setC] = useState<Countdown | null>(null);
+  useEffect(() => {
+    const tick = () => setC(countdownTo(Date.now()));
+    tick();
+    const id = window.setInterval(tick, 20000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, []);
+  return c;
+}
 
-  const RegisterCard = (
-    <div id="register" style={{
-      background: C.cream, color: C.ink, borderRadius: 20,
-      padding: "clamp(24px,4vw,34px)", boxShadow: "0 24px 60px -28px rgba(0,0,0,.7)",
-    }}>
-      {done ? (
-        <div>
-          <div style={kicker(C.teal)}>You are in</div>
-          <h2 style={head(C.ink, "clamp(26px,4vw,34px)")}>Your seat is saved.</h2>
-          <p style={{ ...lede(C.inkSoft), fontSize: 16 }}>
-            <strong>{WEBINAR_WHEN_LONG}.</strong> Your joining link and reminders come on WhatsApp.
-          </p>
-          <div style={{ background: C.creamDeep, border: `1px solid ${C.hair}`, borderRadius: 13, padding: 16, marginTop: 18 }}>
-            <strong style={{ fontSize: 15 }}>One thing before then</strong>
-            <p style={{ fontSize: 15, lineHeight: 1.55, color: C.inkSoft, margin: "5px 0 0" }}>
-              Find your last thyroid report (TSH, T3, T4) and keep it next to you. I will show you how to read it, live.
-            </p>
-          </div>
-          <a href={CAL_LINK} target="_blank" rel="noreferrer" style={{ ...fire, display: "block", textAlign: "center", textDecoration: "none", marginTop: 14 }}>
-            Add to my calendar
-          </a>
-        </div>
-      ) : (
-        <form onSubmit={submit}>
-          <div style={kicker(C.teal)}>Save my seat</div>
-          <h2 style={{ ...head(C.ink, "clamp(24px,3.4vw,30px)"), marginBottom: 4 }}>Two boxes. That is all.</h2>
-          <p style={{ fontSize: 14.5, lineHeight: 1.55, color: "#6B6355", margin: "8px 0 20px" }}>
-            {WEBINAR_WHEN_LONG}. Everything after this comes on WhatsApp.
-          </p>
-          <div style={{ display: "grid", gap: 13 }}>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your first name" style={input} />
-            <div style={{ display: "flex" }}>
-              <span style={{ ...input, width: "auto", borderRadius: "11px 0 0 11px", borderRight: 0, background: C.creamDeep, color: "#6B6355" }}>+91</span>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="numeric"
-                placeholder="WhatsApp number" style={{ ...input, borderRadius: "0 11px 11px 0" }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, marginBottom: 8 }}>Are you taking thyroid medicine?</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {["Yes", "No", "Not sure"].map((o) => (
-                  <button key={o} type="button" onClick={() => setMed(o)} style={{
-                    flex: 1, padding: "12px 8px", fontSize: 15, fontWeight: 600, borderRadius: 11, cursor: "pointer",
-                    fontFamily: BODY, minHeight: 44,
-                    border: `1.5px solid ${med === o ? C.teal : C.line}`,
-                    background: med === o ? "rgba(14,76,67,.07)" : "#FFF",
-                    color: med === o ? C.teal : "#6B6355",
-                  }}>{o}</button>
-                ))}
-              </div>
-            </div>
-            {err && <div style={{ color: C.fire, fontSize: 14 }}>{err}</div>}
-            <button type="submit" disabled={busy} style={fire}>
-              {busy ? "Saving your seat…" : "Reserve my free seat →"}
-            </button>
-          </div>
-          {/* Outside the grid so the invisible widget adds no gap. */}
-          <TurnstileBox bot={bot} hint="One quick check. Tap the box and your seat is saved." hintColor="#6B6355" />
-          <p style={{ fontSize: 12.5, color: "#6B6355", textAlign: "center", margin: "14px 0 0", lineHeight: 1.5 }}>
-            Taught to 100+ women with a slow thyroid. No spam — reply stop any time.
-          </p>
-        </form>
-      )}
+const reducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Scroll to the hero form and put the cursor in the number field. */
+function goToForm() {
+  const input = document.getElementById("wb-phone-hero") as HTMLInputElement | null;
+  const target = document.getElementById("register");
+  if (!target) return;
+  // Focus inside the tap itself: iOS only opens the keyboard for a focus that
+  // happens during the user's gesture.
+  input?.focus({ preventScroll: true });
+  target.scrollIntoView({ behavior: reducedMotion() ? "instant" : "smooth", block: "start" });
+}
+
+function Cta({ label }: { label: string }) {
+  return (
+    <div className={s.cta}>
+      <a
+        href="#register"
+        className={s.button}
+        onClick={(e) => { e.preventDefault(); goToForm(); }}
+      >
+        {label}
+      </a>
+      <p className={s.ctaLine}>{CTA_LINE}</p>
     </div>
   );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default function WebinarClient() {
+  const countdown = useCountdown();
+  const closed = countdown !== null && countdown.state !== "before";
+
+  const formRef = useRef<HTMLDivElement>(null);
+  const [barShown, setBarShown] = useState(false);
+  const [barAnimate, setBarAnimate] = useState(false);
+  const barSeen = useRef(false);
+
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => { trackWebinarView(); }, []);
+
+  // Sticky bar: shown once the form has scrolled up out of view, hidden while
+  // it is on screen. Below the form only — not before she has seen it.
+  useEffect(() => {
+    const el = formRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => {
+      const past = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      setBarShown(past);
+      if (past && !barSeen.current) {
+        barSeen.current = true;
+        setBarAnimate(true);
+      }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const openModal = useCallback(() => {
+    const d = dialogRef.current;
+    if (!d || d.open) return;
+    try {
+      if (sessionStorage.getItem(MODAL_KEY)) return;
+      sessionStorage.setItem(MODAL_KEY, "1");
+    } catch {
+      return; // no session storage means no way to keep it to once: never show it
+    }
+    setModalOpen(true);
+    d.showModal();
+  }, []);
+
+  // Modal triggers. Once per session, never after registering, never once the
+  // session has started, and never while she is typing into the hero form.
+  useEffect(() => {
+    if (closed) return;
+    let seen = false;
+    try { seen = !!sessionStorage.getItem(MODAL_KEY); } catch { seen = true; }
+    if (seen || hasRegistered()) return;
+
+    const busyInForm = () => {
+      const a = document.activeElement;
+      const phone = document.getElementById("wb-phone-hero") as HTMLInputElement | null;
+      return (!!a && !!formRef.current?.contains(a)) || !!phone?.value.trim();
+    };
+    const tryOpen = () => {
+      if (hasRegistered() || busyInForm()) return;
+      openModal();
+      cleanup();
+    };
+
+    const desktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    let armed = false;
+    const armTimer = window.setTimeout(() => { armed = true; }, 4000);
+
+    const onMouseOut = (e: MouseEvent) => {
+      if (!armed || e.relatedTarget || e.clientY > 0) return;
+      tryOpen();
+    };
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const depth = (window.scrollY + window.innerHeight) / doc.scrollHeight;
+      if (depth >= MOBILE_SCROLL_DEPTH) tryOpen();
+    };
+
+    function cleanup() {
+      window.clearTimeout(armTimer);
+      document.removeEventListener("mouseout", onMouseOut);
+      window.removeEventListener("scroll", onScroll);
+    }
+    if (desktop) document.addEventListener("mouseout", onMouseOut);
+    else window.addEventListener("scroll", onScroll, { passive: true });
+    return cleanup;
+  }, [closed, openModal]);
+
+  const closeModal = () => {
+    dialogRef.current?.close();
+  };
 
   return (
-    <main style={{ background: C.cream, color: C.ink, fontFamily: BODY, overflowX: "hidden" }}>
-      <style>{`@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}`}</style>
+    <main className={s.page}>
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className={s.hero} aria-labelledby="wb-title">
+        <div className={`${s.wrap} ${s.heroGrid}`}>
+          <div className={s.heroWhen}>
+            <span className={s.whenDate}>{WEBINAR_WHEN_LONG}</span>
+            <span className={s.whenCount} aria-live="off">{countdown ? formatCountdown(countdown) : ""}</span>
+          </div>
 
-      {/* Live bar */}
-      <div style={{
-        position: "sticky", top: 0, zIndex: 40, background: C.teal, color: C.cream,
-        padding: "10px clamp(14px,4vw,28px)", display: "flex", flexWrap: "wrap",
-        alignItems: "center", justifyContent: "center", gap: "6px 16px",
-      }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.gold, animation: "pulseDot 1.6s ease-in-out infinite", display: "block" }} />
-          <span style={kicker(C.cream)}>Live · {WEBINAR_WHEN_SHORT}</span>
-        </span>
-        <span style={{ fontSize: 13, color: C.mintPale }}>Registration closes when we go live.</span>
-      </div>
-
-      {/* Hero */}
-      <section style={{ background: C.ink, color: C.cream, padding: "clamp(36px,6vw,74px) clamp(20px,5vw,32px) clamp(48px,7vw,84px)" }}>
-        <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "clamp(34px,5vw,60px)", alignItems: "start" }}>
-          <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(251,247,240,.35)", borderRadius: 999, padding: "6px 13px 6px 10px", marginBottom: 22 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold, display: "block" }} />
-              <span style={kicker(C.cream)}>Free live masterclass · 90 min</span>
-            </div>
-            <h1 style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: "clamp(38px,8.2vw,64px)", lineHeight: 1, letterSpacing: "-.035em", margin: 0, textWrap: "balance" }}>
-              Your report says normal
-              <span style={{ color: C.mint }}> and you still cannot lose weight.</span>
+          <div className={s.heroCopy}>
+            <p className={s.eyebrow}>Thyroid Fat Loss Masterclass</p>
+            <h1 id="wb-title" className={s.h1}>
+              How to lose weight with a slow thyroid, <span className={s.h1Quiet}>eating Indian home food.</span>
             </h1>
-            <p style={{ fontSize: "clamp(17px,2.6vw,20px)", lineHeight: 1.5, color: C.sand, margin: "22px 0 0", maxWidth: "30em" }}>
-              A free 90-minute class. Bring your last thyroid report — I will read one live.
+          </div>
+
+          <div className={s.heroForm} id="register" ref={formRef} style={{ scrollMarginTop: 16 }}>
+            <RegisterForm place="hero" submitLabel="Save my free seat" closed={closed} />
+          </div>
+
+          <div className={s.heroMore}>
+            <p className={s.heroSub}>
+              A free 90-minute class on {WEBINAR_METHOD}. No report needed to join.
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 30, paddingTop: 24, borderTop: "1px solid rgba(251,247,240,.16)" }}>
-              <span style={{ width: 58, height: 58, borderRadius: "50%", flexShrink: 0, boxShadow: `0 0 0 2px ${C.gold}`, background: C.inkSoft, display: "grid", placeItems: "center", fontFamily: DISPLAY, fontWeight: 800, fontSize: 20, color: C.gold }}>SU</span>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 16 }}>Swapnil Umbarkar</div>
-                <div style={{ fontSize: 14, color: C.sandMute }}>Thyroid Fat Loss Coach · 100+ thyroid women coached</div>
-              </div>
-            </div>
+            <p className={s.host}>
+              <strong>Swapnil Umbarkar</strong>
+              Thyroid fat loss coach and Assistant Professor, KJ Somaiya. 100+ thyroid women coached.
+            </p>
           </div>
-          {RegisterCard}
         </div>
       </section>
 
-      {/* Checklist */}
-      <section style={{ background: C.cream, padding: PAD }}>
-        <div style={wrap}>
-          <div style={kicker(C.fire)}>Sound familiar?</div>
-          <h2 style={head(C.ink)}>You did everything right. The scale did not agree.</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: "12px 34px", marginTop: 30 }}>
-            {FAMILIAR.map((f) => (
-              <div key={f} style={{ display: "flex", gap: 13, alignItems: "flex-start", paddingBottom: 12, borderBottom: `1px solid ${C.hair}` }}>
-                <span aria-hidden style={{ flex: "none", marginTop: 8, width: 7, height: 7, borderRadius: 99, background: C.gold }} />
-                <span style={{ fontSize: 16.5, lineHeight: 1.5, color: C.inkSoft }}>{f}</span>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize: 16, color: "#5C5446", marginTop: 26, fontStyle: "italic" }}>If two or more are you, this class was built for you.</p>
+      {/* ── Sound familiar ───────────────────────────────────────────────── */}
+      <section className={s.section} aria-labelledby="wb-familiar">
+        <div className={s.wrap}>
+          <p className={s.label}>Sound familiar?</p>
+          <h2 id="wb-familiar" className={s.h2}>You did everything right. The scale did not agree.</h2>
+          <ul className={`${s.rows} ${s.rowsTwo}`}>
+            {FAMILIAR.map((f) => <li key={f}>{f}</li>)}
+          </ul>
+          <p className={s.prose} style={{ fontStyle: "italic" }}>If two or more are you, this class was built for you.</p>
+          <Cta label="Save my seat" />
         </div>
       </section>
 
-      {/* Bring your report */}
-      <section style={{ background: C.creamDeep, borderTop: `1px solid ${C.hair}`, borderBottom: `1px solid ${C.hair}`, padding: "clamp(26px,4vw,36px) clamp(20px,5vw,32px)" }}>
-        <div style={{ ...wrap, display: "flex", gap: 14, alignItems: "center", justifyContent: "center", flexWrap: "wrap", textAlign: "center" }}>
-          <span style={{ fontSize: 16.5, color: C.inkSoft, lineHeight: 1.5 }}>
-            <strong>Before Thursday:</strong> find your last thyroid report and keep it next to you. I will show you what to look for on it, live.
-          </span>
+      {/* ── Report: helpful, never required ──────────────────────────────── */}
+      <section className={`${s.section} ${s.sectionRaised}`} style={{ paddingBlock: "clamp(28px,4vw,40px)" }}>
+        <div className={`${s.wrap} ${s.narrow}`}>
+          <p className={s.prose} style={{ margin: 0 }}>
+            <strong>Have a thyroid report?</strong> Keep it next to you on {WEEKDAY} and I will show you what to look for on it. No report? Still come. I will tell you which tests to ask for.
+          </p>
         </div>
       </section>
 
-      {/* What you learn */}
-      <section style={{ background: C.teal, color: C.cream, padding: PAD }}>
-        <div style={wrap}>
-          <div style={kicker(C.mint)}>What you take away</div>
-          <h2 style={head(C.cream)}>Four things nobody told you.</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 1, marginTop: 34, background: "rgba(251,247,240,.16)" }}>
+      {/* ── What you take away ───────────────────────────────────────────── */}
+      <section className={s.section} aria-labelledby="wb-learn">
+        <div className={s.wrap}>
+          <p className={s.label}>What you take away</p>
+          <h2 id="wb-learn" className={s.h2}>Four things nobody told you.</h2>
+          <ol className={s.takeaways}>
             {LEARN.map((l, i) => (
-              <div key={l.h} style={{ background: C.teal, padding: "26px 22px" }}>
-                <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 30, color: C.goldPale, lineHeight: 1 }}>{String(i + 1).padStart(2, "0")}</div>
-                <h3 style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", margin: "12px 0 8px" }}>{l.h}</h3>
-                <p style={{ fontSize: 15.5, lineHeight: 1.55, color: C.mintPale, margin: 0 }}>{l.p}</p>
-              </div>
+              <li key={l.h}>
+                <span className={s.takeNum} aria-hidden="true">{i + 1}</span>
+                <div>
+                  <h3 className={s.h3}>{l.h}</h3>
+                  <p>{l.p}</p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
+          <Cta label="Reserve my seat" />
         </div>
       </section>
 
-      {/* Agenda */}
-      <section style={{ background: C.cream, borderBottom: `1px solid ${C.hair}`, padding: PAD }}>
-        <div style={wrap}>
-          <div style={kicker(C.fire)}>The 90 minutes</div>
-          <h2 style={head(C.ink)}>No filler. Here is the plan.</h2>
-          <div style={{ marginTop: 30 }}>
+      {/* ── Agenda ───────────────────────────────────────────────────────── */}
+      <section className={s.section} aria-labelledby="wb-agenda">
+        <div className={s.wrap}>
+          <p className={s.label}>The 90 minutes</p>
+          <h2 id="wb-agenda" className={s.h2}>No filler. Here is the plan.</h2>
+          <p className={s.prose}>
+            The class follows {WEBINAR_METHOD}: the right tests to ask for, then the plate, then the week.
+          </p>
+          <ol className={s.agenda}>
             {RUN.map((r) => (
-              <div key={r.t} style={{ display: "flex", gap: "clamp(16px,3vw,34px)", alignItems: "flex-start", padding: "20px 0", borderTop: `1px solid ${C.hair}` }}>
-                <span style={{ flex: "none", fontSize: 13.5, fontWeight: 600, color: C.fire, minWidth: 88, paddingTop: 3, letterSpacing: ".02em" }}>{r.t}</span>
+              <li key={r.t}>
+                <span className={s.agendaTime}>{r.t}</span>
                 <div>
-                  <strong style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 19, letterSpacing: "-.02em", color: C.ink }}>{r.h}</strong>
-                  <p style={{ fontSize: 15.5, lineHeight: 1.55, color: "#5C5446", margin: "5px 0 0" }}>{r.p}</p>
+                  <h3 className={s.h3}>{r.h}</h3>
+                  <p>{r.p}</p>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
-          <p style={{ fontSize: 14.5, color: "#6B6355", marginTop: 22, lineHeight: 1.55 }}>
+          </ol>
+          <p className={s.small} style={{ marginTop: 20, maxWidth: "64ch" }}>
             The class teaches the plan. At the end I will mention my coaching if you want help running it. You can leave before that.
           </p>
+          <Cta label="Send me the link" />
         </div>
       </section>
 
-      {/* Fit */}
-      <section style={{ background: C.creamDeep, borderBottom: `1px solid ${C.hair}`, padding: PAD }}>
-        <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(290px,1fr))", gap: "clamp(24px,4vw,44px)" }}>
+      {/* ── Fit ──────────────────────────────────────────────────────────── */}
+      <section className={`${s.section} ${s.sectionRaised}`} aria-label="Who this class is for">
+        <div className={`${s.wrap} ${s.fit}`}>
           <div>
-            <h3 style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 22, color: C.teal, margin: "0 0 16px", letterSpacing: "-.02em" }}>Come if</h3>
-            {FOR_YOU.map((x) => (
-              <p key={x} style={{ fontSize: 16, lineHeight: 1.5, color: C.inkSoft, margin: "0 0 12px", paddingLeft: 20, position: "relative" }}>
-                <span aria-hidden style={{ position: "absolute", left: 0, color: C.teal, fontWeight: 700 }}>✓</span>{x}
-              </p>
-            ))}
+            <h2 className={s.h3} style={{ fontSize: "var(--fs-lg)" }}>Come if</h2>
+            <ul>
+              {FOR_YOU.map((x) => (
+                <li key={x}><span className={s.fitMark} aria-hidden="true">✓</span>{x}</li>
+              ))}
+            </ul>
           </div>
-          <div>
-            <h3 style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 22, color: "#6B6355", margin: "0 0 16px", letterSpacing: "-.02em" }}>Skip it if</h3>
-            {NOT_FOR_YOU.map((x) => (
-              <p key={x} style={{ fontSize: 16, lineHeight: 1.5, color: "#5C5446", margin: "0 0 12px", paddingLeft: 20, position: "relative" }}>
-                <span aria-hidden style={{ position: "absolute", left: 0, color: C.sandMute }}>×</span>{x}
-              </p>
-            ))}
+          <div className={s.fitSkip}>
+            <h2 className={s.h3} style={{ fontSize: "var(--fs-lg)", color: "var(--text-2)" }}>Skip it if</h2>
+            <ul>
+              {NOT_FOR_YOU.map((x) => (
+                <li key={x}><span className={s.fitMark} aria-hidden="true">×</span>{x}</li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* Host */}
-      <section style={{ background: C.cream, borderBottom: `1px solid ${C.hair}`, padding: PAD }}>
-        <div style={wrap}>
-          <div style={kicker(C.fire)}>Your host</div>
-          <h2 style={head(C.ink)}>Swapnil Umbarkar</h2>
-          <p style={{ fontSize: 15, color: "#6B6355", margin: "14px 0 0", letterSpacing: ".01em" }}>
-            Thyroid Fat Loss Coach · Assistant Professor, KJ Somaiya · <strong style={{ color: C.ink }}>100+ thyroid women coached</strong>
+      {/* ── Host ─────────────────────────────────────────────────────────── */}
+      <section className={s.section} aria-labelledby="wb-host">
+        <div className={s.wrap}>
+          <p className={s.label}>Your host</p>
+          <h2 id="wb-host" className={s.h2}>Swapnil Umbarkar</h2>
+          <p className={s.small} style={{ margin: "12px 0 0" }}>
+            Thyroid fat loss coach. Assistant Professor, KJ Somaiya. <strong style={{ color: "var(--text)" }}>100+ thyroid women coached.</strong>
           </p>
-          <p style={{ ...lede(C.inkSoft), fontSize: "clamp(17px,2.4vw,20px)" }}>
-            Most thyroid coaching starts with a diet plan. Mine starts with your blood report.
+          <p className={s.prose} style={{ fontSize: "var(--fs-md)", lineHeight: 1.5, color: "var(--text)" }}>
+            Most thyroid coaching starts with a diet plan. Mine starts with the right tests, then the plate, then the week, which is why I call it {WEBINAR_METHOD}.
             A plan built on the wrong reason fails by week six — and you have already lived that.
           </p>
-          <div style={{ display: "flex", gap: 9, flexWrap: "wrap", marginTop: 22 }}>
-            {["ACE", "INFS", "AIHM"].map((c) => (
-              <span key={c} style={{ padding: "7px 14px", borderRadius: 999, border: `1px solid ${C.line}`, fontSize: 12.5, fontWeight: 600, color: "#5C5446", letterSpacing: ".08em" }}>{c}</span>
-            ))}
-          </div>
+          <p className={s.small} style={{ margin: "18px 0 0" }}>
+            Certified: ACE, INFS, and AIHM Nutrition for Hashimoto&rsquo;s Thyroiditis.
+          </p>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section style={{ background: C.ink, color: C.cream, padding: PAD }}>
-        <div style={wrap}>
-          <div style={kicker(C.goldPale)}>From women I have coached</div>
-          <h2 style={head(C.cream)}>What changed for them.</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 16, marginTop: 34 }}>
+      {/* ── Proof ────────────────────────────────────────────────────────── */}
+      <section className={s.section} aria-labelledby="wb-proof">
+        <div className={s.wrap}>
+          <p className={s.label}>From women I have coached</p>
+          <h2 id="wb-proof" className={s.h2}>What changed for them.</h2>
+          <p className={s.vary}>Results vary from person to person. These are their results, not a promise.</p>
+          <ul className={s.cases}>
             {TRANSFORM.map((t) => (
-              <figure key={t.name} style={{ margin: 0 }}>
+              <li key={t.name}>
+                <figure>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={t.src} alt={`${t.name}, two photos with her weight at each`} width={600} height={600} loading="lazy" decoding="async" />
+                  <figcaption>
+                    <strong>{t.name}</strong>
+                    {t.story}
+                  </figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+
+          <h3 className={s.h3} style={{ marginTop: 48 }}>In their own words</h3>
+          <ul className={s.proofStrip} aria-label="WhatsApp messages from clients">
+            {PROOF.map((p) => (
+              <li key={p.src}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={t.src} alt={`${t.name}, before and after`} loading="lazy"
-                  style={{ width: "100%", borderRadius: 14, display: "block", border: "1px solid rgba(251,247,240,.14)" }} />
-                <figcaption style={{ marginTop: 12 }}>
-                  <strong style={{ fontSize: 15.5 }}>{t.name}</strong>
-                  <p style={{ fontSize: 14.5, lineHeight: 1.5, color: C.sandMute, margin: "4px 0 0" }}>{t.story}</p>
-                </figcaption>
-              </figure>
+                <img src={p.src} alt="WhatsApp message from a client" width={p.w} height={p.h} loading="lazy" decoding="async"
+                  style={{ aspectRatio: `${p.w} / ${p.h}` }} />
+              </li>
             ))}
-          </div>
-          <h3 style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 20, margin: "40px 0 14px", letterSpacing: "-.02em" }}>In their own words</h3>
-          <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10 }}>
-            {PROOF.map((src) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={src} src={src} alt="Message from a client" loading="lazy"
-                style={{ height: 320, borderRadius: 14, border: "1px solid rgba(251,247,240,.14)", flex: "none" }} />
-            ))}
-          </div>
-          <p style={{ fontSize: 12.5, color: C.sandMute, marginTop: 12 }}>Results are different for every person.</p>
+          </ul>
+          <Cta label="Save my seat" />
         </div>
       </section>
 
-      {/* Bonus */}
-      <section style={{ background: C.cream, borderBottom: `1px solid ${C.hair}`, padding: PAD }}>
-        <div style={wrap}>
-          <div style={kicker(C.fire)}>Free for everyone who attends</div>
-          <h2 style={head(C.ink)}>The Thyroid Plate — 7 days of meals.</h2>
-          <p style={lede(C.inkSoft)}>
+      {/* ── Bonus ────────────────────────────────────────────────────────── */}
+      <section className={`${s.section} ${s.sectionRaised}`} aria-labelledby="wb-bonus">
+        <div className={s.wrap}>
+          <p className={s.label}>Free for everyone who attends</p>
+          <h2 id="wb-bonus" className={s.h2}>The Thyroid Plate — 7 days of meals.</h2>
+          <p className={s.prose}>
             A printable week of Indian meals with enough protein and fibre, and swaps for veg, egg and non-veg.
             Sent the moment the class ends, to everyone in the room.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: "10px 30px", marginTop: 26 }}>
-            {BONUS.map((x) => (
-              <div key={x} style={{ display: "flex", gap: 12, alignItems: "flex-start", paddingBottom: 11, borderBottom: `1px solid ${C.hair}` }}>
-                <span aria-hidden style={{ flex: "none", marginTop: 7, width: 6, height: 6, borderRadius: 99, background: C.gold }} />
-                <span style={{ fontSize: 15.5, lineHeight: 1.5, color: C.inkSoft }}>{x}</span>
-              </div>
-            ))}
+          <div className={s.price}>
+            {THYROID_PLATE_PRICE_INR !== null && (
+              <span className={s.priceWas}>
+                <span className="sr-only">Price inside the coaching programme: </span>
+                ₹{THYROID_PLATE_PRICE_INR.toLocaleString("en-IN")}
+              </span>
+            )}
+            <span className={s.priceNow}>Free with your seat</span>
+            {THYROID_PLATE_PRICE_INR !== null && (
+              <span className={s.small}>Part of the coaching programme. Free to everyone who attends.</span>
+            )}
           </div>
+          <ul className={`${s.rows} ${s.rowsTwo}`}>
+            {BONUS.map((x) => <li key={x}>{x}</li>)}
+          </ul>
+          <Cta label="Reserve my seat" />
         </div>
       </section>
 
-      {/* FAQ */}
-      <section style={{ background: C.creamDeep, padding: PAD }}>
-        <div style={{ ...wrap, maxWidth: 760 }}>
-          <div style={kicker(C.fire)}>Before you ask</div>
-          <h2 style={head(C.ink)}>Questions.</h2>
-          <div style={{ marginTop: 26 }}>
+      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
+      <section className={s.section} aria-labelledby="wb-faq">
+        <div className={`${s.wrap} ${s.narrow}`}>
+          <p className={s.label}>Before you ask</p>
+          <h2 id="wb-faq" className={s.h2}>Questions.</h2>
+          <div className={s.faq}>
             {FAQ.map((f) => (
-              <details key={f.q} style={{ borderTop: `1px solid ${C.hair}`, padding: "18px 0" }}>
-                <summary style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 17.5, letterSpacing: "-.015em", color: C.ink, cursor: "pointer", listStyle: "none" }}>{f.q}</summary>
-                <p style={{ fontSize: 15.5, lineHeight: 1.6, color: "#5C5446", margin: "10px 0 0" }}>{f.a}</p>
+              <details key={f.q}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section style={{ background: C.ink, color: C.cream, padding: "clamp(56px,9vw,104px) clamp(20px,5vw,32px)", textAlign: "center" }}>
-        <div style={{ maxWidth: 660, margin: "0 auto" }}>
-          <h2 style={{ ...head(C.cream, "clamp(30px,6vw,50px)"), margin: 0 }}>One evening. A plan that fits your body.</h2>
-          <p style={{ fontSize: "clamp(16px,2.2vw,18px)", lineHeight: 1.55, color: C.sand, margin: "18px auto 0", maxWidth: "34em" }}>
-            {WEBINAR_WHEN_LONG} · Free. Registration closes when we go live.
-          </p>
-          <a href="#register" style={{ ...fire, display: "inline-block", width: "auto", padding: "18px 34px", textDecoration: "none", marginTop: 26 }}>
-            Save my seat →
-          </a>
-          <p style={{ fontSize: 13.5, color: C.sandMute, marginTop: 20 }}>
+      {/* ── Final ────────────────────────────────────────────────────────── */}
+      <section className={`${s.section} ${s.final}`} aria-labelledby="wb-final">
+        <div className={s.wrap}>
+          <h2 id="wb-final" className={s.h2}>One evening. A plan that fits your body.</h2>
+          <p className={s.prose}>Registration closes when we go live.</p>
+          <Cta label="Send me the link" />
+          <p className={s.cap}>
             I coach seven clients a month. That is the cap, and it is why this stays small.
           </p>
-          <p style={{ fontSize: 12, color: "#6B6355", marginTop: 34, lineHeight: 1.7 }}>
+          <p className={s.disclaimer}>
             Educational content only. Nothing in this class is medical advice, and it does not replace your
             doctor or endocrinologist. Never change or stop thyroid medicine without your doctor.
           </p>
         </div>
       </section>
+
+      {/* ── Sticky bar (phones) ──────────────────────────────────────────── */}
+      {!closed && (
+        <div
+          className={`${s.bar} ${barShown ? s.barShown : ""} ${barShown && barAnimate ? s.barAnimate : ""}`}
+          aria-hidden={!barShown}
+          onAnimationEnd={() => setBarAnimate(false)}
+        >
+          <span className={s.barWhen}>
+            <strong>{WEBINAR_WHEN_SHORT}</strong>
+            {countdown ? formatCountdown(countdown) : "Free live class"}
+          </span>
+          <a
+            href="#register"
+            className={s.button}
+            tabIndex={barShown ? 0 : -1}
+            onClick={(e) => { e.preventDefault(); goToForm(); }}
+          >
+            Save my seat
+          </a>
+        </div>
+      )}
+
+      {/* ── Modal ────────────────────────────────────────────────────────── */}
+      <dialog
+        ref={dialogRef}
+        className={s.modal}
+        aria-labelledby="wb-modal-title"
+        onClose={() => setModalOpen(false)}
+        onClick={(e) => { if (e.target === dialogRef.current) closeModal(); }}
+      >
+        <div className={s.modalInner}>
+          <button type="button" className={s.close} onClick={closeModal} aria-label="Close">×</button>
+          <h2 id="wb-modal-title" className={s.modalTitle}>Keep a seat for {WEEKDAY}?</h2>
+          <p className={s.modalWhen}>{WEBINAR_WHEN_LONG}. Free, 90 minutes.</p>
+          {modalOpen && <RegisterForm place="modal" submitLabel="Save my free seat" closed={closed} />}
+        </div>
+      </dialog>
     </main>
   );
 }

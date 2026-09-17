@@ -15,14 +15,14 @@ const display = Bricolage_Grotesque({
 });
 const body = Instrument_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   variable: "--webinar-body",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Free Thyroid Masterclass | Swapnil Umbarkar",
-  description: `Your report says normal and you still cannot lose weight. A free 90-minute live class for women with a slow thyroid. ${WEBINAR_WHEN_LONG}.`,
+  title: "Thyroid Fat Loss Masterclass | Swapnil Umbarkar",
+  description: `How to lose weight with a slow thyroid, eating Indian home food. A free 90-minute live class. ${WEBINAR_WHEN_LONG}.`,
   robots: { index: false, follow: false },
 };
 
