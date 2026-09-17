@@ -50,12 +50,15 @@ export default function RegisterForm({
   place,
   submitLabel,
   closed,
+  head,
 }: {
   /** "hero" | "modal": ids, and the Turnstile action. */
   place: "hero" | "modal";
   submitLabel: string;
   /** True once the session has started: the form is replaced by a notice. */
   closed: boolean;
+  /** The hero card's top row: the date and the countdown. The modal has none. */
+  head?: { when: string; countdown: string };
 }) {
   const router = useRouter();
   const uid = useId();
@@ -70,12 +73,18 @@ export default function RegisterForm({
 
   useEffect(() => { rememberAttribution(); }, []);
 
+  const cardHead = head && (
+    <div className={s.cardHead}>
+      <p>{head.when}</p>
+      <p aria-live="off">{head.countdown}</p>
+    </div>
+  );
+
   if (closed) {
     return (
-      <div className={s.formBox}>
-        <p className={s.closed}>
-          Registration for this session has closed. The next date will be announced here.
-        </p>
+      <div className={`${s.card} ${s.closedCard}`}>
+        <p>{head?.countdown || "This session has started"}</p>
+        <p>Registration for this session has closed. The next date will be announced here.</p>
       </div>
     );
   }
@@ -128,10 +137,11 @@ export default function RegisterForm({
     }
   }
 
-  return (
-    <form className={s.formBox} onSubmit={submit} noValidate aria-label="Register for the free masterclass">
-      <div className={s.field}>
-        <label htmlFor={phoneId} className={s.fieldLabel}>WhatsApp number</label>
+  const box = (
+    <>
+    <form className={s.form} onSubmit={submit} noValidate aria-label="Register for the free masterclass">
+      <div>
+        <label htmlFor={phoneId} className={s.label}>WhatsApp number</label>
         <div className={`${s.phoneRow} ${phoneErr ? s.phoneRowInvalid : ""}`}>
           <span className={s.prefix} aria-hidden="true">+91</span>
           <input
@@ -154,11 +164,11 @@ export default function RegisterForm({
             onBlur={() => { if (phone.trim()) validate(); }}
           />
         </div>
-        {phoneErr && <p id={errId} className={s.fieldError} role="alert">{phoneErr}</p>}
+        {phoneErr && <p id={errId} className={s.error} role="alert">{phoneErr}</p>}
       </div>
 
       <fieldset className={s.radios}>
-        <legend className={s.fieldLabel}>Are you taking thyroid medicine?</legend>
+        <legend className={s.label}>Are you taking thyroid medicine?</legend>
         <div className={s.radioRow}>
           {MEDICATION.map((o) => (
             <label key={o} className={s.radio}>
@@ -175,13 +185,26 @@ export default function RegisterForm({
         </div>
       </fieldset>
 
-      <button type="submit" className={`${s.button} ${s.buttonFull}`} disabled={busy} aria-busy={busy}>
-        {busy ? "Saving your seat…" : submitLabel}
-      </button>
-      {submitErr && <p className={s.fieldError} role="alert" style={{ marginTop: 10 }}>{submitErr}</p>}
+      <div>
+        <button type="submit" className={s.button} disabled={busy} aria-busy={busy}>
+          {busy ? "Saving your seat…" : submitLabel}
+        </button>
+        {submitErr && <p className={s.error} role="alert">{submitErr}</p>}
+      </div>
 
-      <TurnstileBox bot={bot} hint="One quick check. Tap the box and your seat is saved." />
-      <p className={s.formNote}>Your joining link comes on WhatsApp. No spam, reply stop any time.</p>
+      <p className={s.note}>Your joining link comes on WhatsApp. No spam, reply stop any time.</p>
     </form>
+    {/* Outside the form's gap stack: the widget is invisible for most visitors. */}
+    <TurnstileBox bot={bot} hint="One quick check. Tap the box and your seat is saved." />
+    </>
+  );
+
+  // The modal already sits on the card surface; only the hero draws its own.
+  if (place === "modal") return box;
+  return (
+    <div className={s.card}>
+      {cardHead}
+      {box}
+    </div>
   );
 }

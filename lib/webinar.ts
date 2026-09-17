@@ -4,16 +4,21 @@
  * The design said "Thursday 18 September". 18 September 2026 is a FRIDAY, so
  * shipping it would have put a wrong weekday in front of every registrant and
  * in the WhatsApp confirmation. Set to the Thursday before; change the two ISO
- * constants and the two display strings together and every surface follows —
+ * constants and WEBINAR_WHEN_LONG together and every surface follows —
  * the page, the countdown, both calendar buttons and the WhatsApp template.
  *
  * No imports: node --test loads this file directly.
  */
-export const WEBINAR_WHEN_SHORT = "Thursday 17 Sept, 8 PM IST";
-export const WEBINAR_WHEN_LONG = "Thursday 17 September, 8:00 PM IST";
+export const WEBINAR_WHEN_LONG = "Thursday 24 September, 8:00 PM IST";
 /** Start time in IST, for the calendar link. */
-export const WEBINAR_START_ISO = "2026-09-17T14:30:00.000Z"; // 8:00 PM IST
-export const WEBINAR_END_ISO = "2026-09-17T16:00:00.000Z";   // 9:30 PM IST
+export const WEBINAR_START_ISO = "2026-09-24T14:30:00.000Z"; // 8:00 PM IST
+export const WEBINAR_END_ISO = "2026-09-24T16:00:00.000Z";   // 9:30 PM IST
+
+const IST = "Asia/Kolkata";
+/** "Thursday", derived from the start time so it can never disagree with it. */
+export const WEBINAR_WEEKDAY = new Date(WEBINAR_START_ISO).toLocaleDateString("en-IN", { weekday: "long", timeZone: IST });
+/** "Thursday, 8:00 PM IST": the sticky bar's line. Also derived. */
+export const WEBINAR_WHEN_SHORT = `${WEBINAR_WEEKDAY}, ${new Date(WEBINAR_START_ISO).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: IST })} IST`;
 
 export const WEBINAR_TITLE = "Thyroid Fat Loss Masterclass with Swapnil";
 
@@ -116,7 +121,7 @@ export function formatCountdown(c: Countdown): string {
 const CAL_DETAILS =
   "If you have a thyroid report (TSH, T3, T4), keep it next to you. The joining link comes on WhatsApp.";
 
-/** 2026-09-17T14:30:00.000Z → 20260917T143000Z */
+/** 2026-09-24T14:30:00.000Z → 20260917T143000Z */
 const calStamp = (iso: string) => iso.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
 export function googleCalendarUrl(): string {

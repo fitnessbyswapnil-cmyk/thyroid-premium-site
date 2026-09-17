@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
+import { Newsreader, Instrument_Sans } from "next/font/google";
 import WebinarClient from "./WebinarClient";
 import { WEBINAR_WHEN_LONG } from "@/lib/webinar";
 
-// The design's own pairing, and the reason it reads the way it does: a
-// high-contrast display face for the headlines against a plain, wide-aperture
-// text face. Loaded here rather than in the root layout so no other page pays
-// for two extra families it never renders.
-const display = Bricolage_Grotesque({
+// The "Case Notes" pairing: Newsreader (a text serif, with its italic for the
+// section marks) for headings against Instrument Sans for everything else.
+// Loaded here rather than in the root layout so no other page pays for two
+// extra families it never renders.
+const display = Newsreader({
   subsets: ["latin"],
-  weight: ["800"],
+  weight: ["400", "600"],
+  style: ["normal", "italic"],
   variable: "--webinar-display",
   display: "swap",
 });

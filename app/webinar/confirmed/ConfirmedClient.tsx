@@ -36,50 +36,39 @@ export default function ConfirmedClient() {
 
   return (
     <main className={s.page}>
-      <section className={`${s.wrap} ${s.confirmed}`} aria-labelledby="wb-done">
-        <p className={s.eyebrow}>You are registered</p>
-        <h1 id="wb-done" className={s.h1}>Your seat is saved.</h1>
-        <p className={s.prose} style={{ fontSize: "var(--fs-md)", lineHeight: 1.5 }}>
-          <strong>{WEBINAR_WHEN_LONG}.</strong> Your joining link and reminders come on WhatsApp.
-        </p>
+      <div className={s.column}>
+        <section className={s.confirmed} aria-labelledby="wb-done">
+          <div className={`${s.mark} ${s.markHero}`}>
+            <p>Thyroid Fat Loss Masterclass</p>
+          </div>
+          <h1 id="wb-done" className={s.h1}>Your seat is saved.</h1>
 
-        <ol className={s.steps}>
-          <li>
-            <h2 className={s.h3}>Put it in your calendar</h2>
-            <div className={s.actions}>
-              <a className={s.button} href={googleCalendarUrl()} target="_blank" rel="noreferrer">
-                Add to Google Calendar
-              </a>
-              <a className={s.button} href="/webinar/calendar.ics">
-                Add to Apple Calendar
-              </a>
-            </div>
-          </li>
-          <li>
-            <h2 className={s.h3}>Say hello on WhatsApp</h2>
-            <p className={s.prose} style={{ marginTop: 6 }}>
-              Send one message so I know it is you, and so the reminders reach the right number.
-            </p>
-            <div className={s.actions} style={{ gridTemplateColumns: "1fr" }}>
-              <a className={s.button} href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-                Message me on WhatsApp
-              </a>
-            </div>
-          </li>
-          <li>
-            <h2 className={s.h3}>If you have a thyroid report, keep it ready</h2>
-            <p className={s.prose} style={{ marginTop: 6 }}>
-              Your most recent report (TSH, T3, T4) is useful to have next to you during the class. I will show you
-              what to look for on it, live. No report? Still come. I will tell you which tests to ask for.
-            </p>
-          </li>
-        </ol>
+          <div className={`${s.card} ${s.confirmedCard}`}>
+            <p>{WEBINAR_WHEN_LONG}</p>
+            <p>Your joining link comes on WhatsApp.</p>
+          </div>
 
-        <p className={s.disclaimer} style={{ textAlign: "left", marginInline: 0 }}>
-          Educational content only. Nothing in this class is medical advice, and it does not replace your
-          doctor or endocrinologist.
-        </p>
-      </section>
+          <div className={s.actions}>
+            <a className={s.button} href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+              Message me on WhatsApp
+            </a>
+            <a className={`${s.button} ${s.secondary}`} href={googleCalendarUrl()} target="_blank" rel="noreferrer">
+              Add to Google Calendar
+            </a>
+            <a className={`${s.button} ${s.secondary}`} href="/webinar/calendar.ics">
+              Add to Apple Calendar
+            </a>
+          </div>
+
+          <p className={s.confirmedNote}>
+            If you have a thyroid report, keep it ready and I will show you what to look for on it. No report? Still come.
+          </p>
+          <p className={s.disclaimer} style={{ marginTop: 26 }}>
+            Educational content only. Nothing in this class is medical advice, and it does not replace your
+            doctor or endocrinologist.
+          </p>
+        </section>
+      </div>
     </main>
   );
 }

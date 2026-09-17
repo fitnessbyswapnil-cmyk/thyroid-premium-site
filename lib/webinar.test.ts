@@ -4,6 +4,7 @@ import {
   WEBINAR_START_ISO,
   WEBINAR_END_ISO,
   WEBINAR_WHEN_LONG,
+  WEBINAR_WHEN_SHORT,
   checkIndianMobile,
   countdownTo,
   formatCountdown,
@@ -49,6 +50,7 @@ test("the display string and the ISO start agree on day and time in IST", () => 
   const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
   assert.ok(WEBINAR_WHEN_LONG.startsWith(`${weekday} ${day} `), WEBINAR_WHEN_LONG);
   assert.ok(WEBINAR_WHEN_LONG.includes(time), `${WEBINAR_WHEN_LONG} vs ${time}`);
+  assert.equal(WEBINAR_WHEN_SHORT, `${weekday}, ${time} IST`);
 });
 
 test("both calendar buttons carry the real start and end", () => {
