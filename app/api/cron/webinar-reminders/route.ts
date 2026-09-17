@@ -7,7 +7,7 @@
  *
  *   webinar_reminder_day  5–8 PM the day before   {{1}} = date and time
  *   webinar_reminder_1h   75–45 min before        {{1}} = "8:00 PM IST"
- *   webinar_live_now      0–20 min after start    no parameters
+ *   webinar_live_now      0–20 min after start    {{1}} = date and time
  *   webinar_replay        8:30 AM–12 PM next day  {{1}} = hours the replay stays up
  *
  * OFF UNTIL APPROVED: only templates listed in the Worker variable
@@ -46,7 +46,10 @@ function paramsFor(kind: ReminderKind): string[] {
   switch (kind) {
     case "day": return [WEBINAR_WHEN_LONG];
     case "hour": return [WEBINAR_WHEN_SHORT.split(", ").pop() ?? WEBINAR_WHEN_SHORT];
-    case "live": return [];
+    // Meta's classifier pushed this one to Marketing until the body named the
+    // registration it belongs to ("you registered for … on {{1}}"), the same
+    // shape as the two reminders it accepted. So it carries the date too.
+    case "live": return [WEBINAR_WHEN_LONG];
     case "replay": return [String(REPLAY_HOURS)];
   }
 }
