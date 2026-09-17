@@ -14,7 +14,10 @@
  *                               whatsapp_business_messaging + _management.
  *                               WHATSAPP_ACCESS_TOKEN is accepted as an alias
  *                               so either naming works; whichever is set wins.
- *   WHATSAPP_PHONE_NUMBER_ID  — 1187443147793855 (+91 79784 60386)
+ *   WHATSAPP_PHONE_NUMBER_ID  — 1238533092683765 (+91 79784 60386), on WABA
+ *     976081968452524. The id CHANGED when /api/admin/wa-migrate moved the
+ *     number off WABA 864737596644382 (17-Sep-2026): a migration issues a new
+ *     phone number id. The old one, 1187443147793855, is dead.
  *   WHATSAPP_TEMPLATE_LANG    — optional, defaults to "en". Meta stores some
  *                               templates as "en_US"; if sends fail with
  *                               (#132001) template does not exist, set this

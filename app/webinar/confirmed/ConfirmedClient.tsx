@@ -10,9 +10,19 @@
  * never count as a registration. Once per id per browser (see ../pixel.ts).
  *
  * The page stays static; the id is read in the browser.
+ *
+ * Buttons, in order of what matters most to show-up:
+ *   1. Join the class group    only when a Community link is set
+ *   2. Download the Starter Kit only when the kit is set
+ *   3. Google / Apple Calendar
+ *   4. Message me on WhatsApp  opens a chat with the API number
+ *   5. Share with a friend     a WhatsApp share of /webinar, tagged
+ *                               utm_medium=whatsapp_share
+ * 1 and 2 can be switched on by a Worker variable without a deploy, so the
+ * page asks /webinar/links whether they are set before showing them.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   WEBINAR_WHEN_LONG,
   WHATSAPP_BUSINESS_NUMBER,
@@ -20,10 +30,13 @@ import {
   googleCalendarUrl,
   isRegistrationEventId,
 } from "@/lib/webinar";
-import { markRegistered, trackRegistrationComplete } from "../pixel";
+import { markRegistered, trackRegistrationComplete, trackWebinarAction } from "../pixel";
 import s from "../webinar.module.css";
 
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(WHATSAPP_CONFIRM_TEXT)}`;
+const SHARE_URL = `https://wa.me/?text=${encodeURIComponent(
+  `I have registered for a free Thyroid Fat Loss Masterclass on ${WEBINAR_WHEN_LONG}. You can join too: https://www.swapnilumbarkarfitness.in/webinar?utm_medium=whatsapp_share`,
+)}`;
 
 export default function ConfirmedClient() {
   useEffect(() => {
@@ -32,6 +45,24 @@ export default function ConfirmedClient() {
     if (!isRegistrationEventId(id)) return;
     markRegistered();
     trackRegistrationComplete(id);
+  }, []);
+
+  // Clicks are tracked, not the redirects themselves: /webinar/group and
+  // /webinar/starter-kit are also opened from WhatsApp, where no page runs.
+  const messageButton = (secondary: boolean) => (
+    <a className={`${s.button} ${secondary ? s.secondary : ""}`} href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+      Message me on WhatsApp
+    </a>
+  );
+
+  const [links, setLinks] = useState({ group: false, starterKit: false });
+  useEffect(() => {
+    let live = true;
+    fetch("/webinar/links", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (live && j) setLinks({ group: !!j.group, starterKit: !!j.starterKit }); })
+      .catch(() => { /* buttons stay hidden */ });
+    return () => { live = false; };
   }, []);
 
   return (
@@ -45,18 +76,39 @@ export default function ConfirmedClient() {
 
           <div className={`${s.card} ${s.confirmedCard}`}>
             <p>{WEBINAR_WHEN_LONG}</p>
-            <p>Your joining link comes on WhatsApp.</p>
+            <p>
+              {links.group
+                ? "Reminders and your joining link are posted in the class group."
+                : "Your joining link comes on WhatsApp."}
+            </p>
           </div>
 
           <div className={s.actions}>
-            <a className={s.button} href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-              Message me on WhatsApp
-            </a>
-            <a className={`${s.button} ${s.secondary}`} href={googleCalendarUrl()} target="_blank" rel="noreferrer">
+            {!links.group && !links.starterKit && messageButton(false)}
+            {links.group && (
+              <a className={s.button} href="/webinar/group" target="_blank" rel="noreferrer"
+                onClick={() => trackWebinarAction("WebinarGroupJoin")}>
+                Join the class group on WhatsApp
+              </a>
+            )}
+            {links.starterKit && (
+              <a className={`${s.button} ${links.group ? s.secondary : ""}`} href="/webinar/starter-kit" target="_blank" rel="noreferrer"
+                onClick={() => trackWebinarAction("WebinarKitDownload")}>
+                Download your Starter Kit
+              </a>
+            )}
+            <a className={`${s.button} ${s.secondary}`} href={googleCalendarUrl()} target="_blank" rel="noreferrer"
+              onClick={() => trackWebinarAction("WebinarCalendarAdd")}>
               Add to Google Calendar
             </a>
-            <a className={`${s.button} ${s.secondary}`} href="/webinar/calendar.ics">
+            <a className={`${s.button} ${s.secondary}`} href="/webinar/calendar.ics"
+              onClick={() => trackWebinarAction("WebinarCalendarAdd")}>
               Add to Apple Calendar
+            </a>
+            {(links.group || links.starterKit) && messageButton(true)}
+            <a className={`${s.button} ${s.secondary}`} href={SHARE_URL} target="_blank" rel="noreferrer"
+              onClick={() => trackWebinarAction("WebinarShare")}>
+              Share with a friend or sister
             </a>
           </div>
 

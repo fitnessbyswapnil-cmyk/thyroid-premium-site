@@ -55,6 +55,92 @@ export const WHATSAPP_BUSINESS_NUMBER = "917978460386";
 export const WHATSAPP_CONFIRM_TEXT =
   `Hi Swapnil, I have registered for the free Thyroid Fat Loss Masterclass on ${WEBINAR_WHEN_LONG}. Please confirm my seat.`;
 
+// ── Bonuses ───────────────────────────────────────────────────────────────────
+
+/**
+ * The bonus stack, split by what each one is for:
+ *   instant  given on the thank-you page the moment she registers (raises
+ *            registrations)
+ *   class    given at the end of the live class (raises show-up and keeps her
+ *            to the pitch)
+ *   buyer    given only to buyers inside 48 hours; pitched in the class, never
+ *            shown on the registration page
+ *
+ * `ready` is the owner's promise that the thing exists. The page shows ONLY
+ * ready bonuses: promising a PDF that never arrives costs the trust the pitch
+ * needs. `priceInr` is set only when the owner really charges it.
+ */
+export type BonusTier = "instant" | "class" | "buyer";
+export type Bonus = {
+  tier: BonusTier;
+  title: string;
+  /** How it reads inside "Free with your seat: …". */
+  short: string;
+  line: string;
+  ready: boolean;
+  priceInr: number | null;
+};
+
+export const BONUSES: Bonus[] = [
+  { tier: "instant", title: "Thyroid Report Decoder", short: "the Thyroid Report Decoder", line: "Which blood tests to ask your doctor for, and how to read the ranges on your report.", ready: false, priceInr: null },
+  { tier: "instant", title: "Thyroid-friendly Indian grocery list", short: "a grocery list", line: "One page to take to the market.", ready: false, priceInr: null },
+  { tier: "instant", title: "21-day habit and weigh-in tracker", short: "a 21-day tracker", line: "A printable sheet for your fridge.", ready: false, priceInr: null },
+  { tier: "class", title: "The Thyroid Plate: 7 days of Indian meals", short: "the 7-day Thyroid Plate meal guide", line: "Breakfast, lunch, dinner and two snacks, with protein in katori and spoon measures, and swaps for veg, egg and non-veg.", ready: true, priceInr: THYROID_PLATE_PRICE_INR },
+  { tier: "class", title: "4-week home workout plan", short: "a 4-week home workout plan", line: "20 minutes a day, no equipment, built for a slow thyroid.", ready: false, priceInr: null },
+  { tier: "class", title: "Festival-season eating guide", short: "a festival-season eating guide", line: "How to enjoy Navratri and Diwali food without undoing your month.", ready: false, priceInr: null },
+  { tier: "class", title: "Live report reading", short: "a live report reading", line: "I read three reports from the class, live.", ready: true, priceInr: null },
+  { tier: "buyer", title: "15-minute 1:1 check-in call", short: "a 1:1 check-in call", line: "For plan buyers in the first 48 hours.", ready: false, priceInr: null },
+];
+
+/** "Free with your seat: a, b and c." from the ready bonuses, or "" if none. */
+export function perkLine(list: Bonus[]): string {
+  const names = list.map((b) => b.short);
+  if (!names.length) return "";
+  const joined = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return `Free with your seat: ${joined}.`;
+}
+
+/** Ready bonuses of one tier, in page order. */
+export function readyBonuses(tier: BonusTier, list: Bonus[] = BONUSES): Bonus[] {
+  return list.filter((b) => b.tier === tier && b.ready);
+}
+
+// ── Links behind the WhatsApp template buttons ────────────────────────────────
+
+/**
+ * Template buttons never point at a Community or Zoom link directly. They point
+ * at our own /webinar/group, /webinar/join, /webinar/replay and
+ * /webinar/starter-kit, which redirect to whatever is current. A new class date
+ * or a new invite link then needs no template re-approval.
+ *
+ * Each can be set here (deployed) or overridden by a Worker variable of the
+ * same name (no deploy). Null everywhere means "not set up yet": the route
+ * sends her back to /webinar and the page hides the button.
+ */
+export const WEBINAR_COMMUNITY_URL: string | null = null;
+export const WEBINAR_JOIN_URL: string | null = null;
+export const WEBINAR_REPLAY_URL: string | null = null;
+/** e.g. "/webinar/thyroid-starter-kit.pdf" once the PDF is in public/webinar. */
+export const WEBINAR_STARTER_KIT_URL: string | null = null;
+/** How long the replay stays up, in hours. Used in the replay template. */
+export const REPLAY_HOURS = 48;
+
+export type WebinarLink = "group" | "join" | "replay" | "starter-kit";
+
+const LINKS: Record<WebinarLink, { env: string; value: string | null; valid: (u: string) => boolean }> = {
+  group: { env: "WEBINAR_COMMUNITY_URL", value: WEBINAR_COMMUNITY_URL, valid: (u) => /^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]+$/.test(u) },
+  join: { env: "WEBINAR_JOIN_URL", value: WEBINAR_JOIN_URL, valid: (u) => /^https:\/\/[^\s]+$/.test(u) },
+  replay: { env: "WEBINAR_REPLAY_URL", value: WEBINAR_REPLAY_URL, valid: (u) => /^https:\/\/[^\s]+$/.test(u) },
+  "starter-kit": { env: "WEBINAR_STARTER_KIT_URL", value: WEBINAR_STARTER_KIT_URL, valid: (u) => /^(\/webinar\/[\w.-]+|https:\/\/[^\s]+)$/.test(u) },
+};
+
+/** The current target for a button, or null. A malformed value counts as unset. */
+export function resolveWebinarLink(kind: WebinarLink, env: Record<string, string | undefined> = {}): string | null {
+  const l = LINKS[kind];
+  const candidate = (env[l.env] ?? "").trim() || l.value || "";
+  return candidate && l.valid(candidate) ? candidate : null;
+}
+
 /** The event_id both CompleteRegistration legs carry. One per registration. */
 export function registrationEventId(leadId: string): string {
   return `CompleteRegistration_${leadId}`;

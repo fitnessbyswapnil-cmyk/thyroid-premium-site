@@ -16,7 +16,7 @@ test("starting soon reaches the Rs 299 checkout, exactly as before", () => {
 test("not starting yet is sent to the free masterclass instead", () => {
   assert.equal(gateOutcome("In a month or two"), "nurture_timing");
   assert.equal(gateOutcome("Just exploring for now"), "nurture_timing");
-  assert.equal(NURTURE_DESTINATION, "/webinar");
+  assert.equal(NURTURE_DESTINATION, "/webinar?src=decode_nurture");
 });
 
 test("an unanswered or unrecognised timing never gates", () => {

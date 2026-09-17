@@ -7,6 +7,9 @@
  * of them learning a new shape. Source is "webinar" so she can be told apart
  * from a quiz lead later.
  *
+ * Also writes a "Webinar Date" cohort key, which is how the reminder cron
+ * (/api/cron/webinar-reminders) knows which class she registered for.
+ *
  * Then confirms on WhatsApp. webinar_confirmed_v1 is UTILITY: a registration
  * confirmation is transactional, and utility is not subject to the frequency
  * cap that silently eats marketing templates — the cap that blocked a real
@@ -40,6 +43,7 @@ import {
   buildUserData,
   sendCAPIEvent,
 } from "@/lib/server-tracking";
+import { cohortKey, SOURCE_PATH_HEADER, WEBINAR_DATE_HEADER } from "@/lib/webinar-reminders";
 import { WEBINAR_WHEN_LONG, WEBINAR_START_ISO, checkIndianMobile, registrationEventId, WEBINAR_REGISTRATION_VALUE_INR } from "@/lib/webinar";
 import { checkTurnstile, turnstileConfig, findOrAddColumn, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
 import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
@@ -81,6 +85,9 @@ export async function POST(req: NextRequest) {
   const utmContent = utm("utm_content");
   const utmTerm = utm("utm_term");
   const fbclid = str(body.attribution?.fbclid).slice(0, 300) || getCookieFromReq(req, "_fbclid_raw");
+  // Ours, not Meta's: "decode_nurture" means the /decode gate sent her here, so
+  // the webinar's own cost per registration must not count her.
+  const src = str(body.attribution?.src).slice(0, 40);
   const visitorId = getCookieFromReq(req, "_visitor_id");
 
   // Bot check (Cloudflare Turnstile); the policy lives in lib/turnstile.ts.
@@ -106,7 +113,7 @@ export async function POST(req: NextRequest) {
   try {
     const { sheets, sheetId } = await getSheetsClient();
     const hdrRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId, range: `${SHEET_NAME}!A1:BZ1`,
+      spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1`,
     });
     const hdr = ((hdrRes.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? "").trim());
     const at = (title: string) => hdr.lastIndexOf(title);
@@ -128,27 +135,42 @@ export async function POST(req: NextRequest) {
     put("FBclid", fbclid);
     put("Visitor ID", visitorId);
 
+    const addColumn = (title: string) => findOrAddColumn({
+      known: hdr,
+      title,
+      readFullHeader: async () => {
+        const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1` });
+        return ((r.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? ""));
+      },
+      writeHeaderCell: async (i, t) => {
+        // The Leads grid is fixed-width; widen it first or the write fails.
+        await ensureGridColumns(sheets, sheetId, SHEET_NAME, i);
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range: `${SHEET_NAME}!${colLetter(i)}1`,
+          valueInputOption: "RAW",
+          requestBody: { values: [[t]] },
+        });
+        // Later lookups in this request must see the new column too.
+        hdr[i] = t;
+      },
+    });
+
+    // Which class she registered for, so the reminder cron reaches only this
+    // class's registrants. A cohort key, not a date: see lib/webinar-reminders.
+    if (src) {
+      const srcIdx = await addColumn(SOURCE_PATH_HEADER);
+      if (srcIdx >= 0) cells.set(srcIdx, src);
+    }
+
+    const dateIdx = await addColumn(WEBINAR_DATE_HEADER);
+    if (dateIdx >= 0) cells.set(dateIdx, cohortKey(WEBINAR_START_ISO));
+    else console.error("[webinar-register] could not place the Webinar Date column; she will get no reminders");
+
     // Bot check marker, only on an unverified registration. Same column and
     // value the quiz uses, so one filter covers both.
     if (unverified) {
-      const botIdx = await findOrAddColumn({
-        known: hdr,
-        title: BOT_CHECK_HEADER,
-        readFullHeader: async () => {
-          const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1` });
-          return ((r.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? ""));
-        },
-        writeHeaderCell: async (i, title) => {
-          // The Leads grid is fixed-width; widen it first or the write fails.
-          await ensureGridColumns(sheets, sheetId, SHEET_NAME, i);
-          await sheets.spreadsheets.values.update({
-            spreadsheetId: sheetId,
-            range: `${SHEET_NAME}!${colLetter(i)}1`,
-            valueInputOption: "RAW",
-            requestBody: { values: [[title]] },
-          });
-        },
-      });
+      const botIdx = await addColumn(BOT_CHECK_HEADER);
       if (botIdx >= 0) cells.set(botIdx, UNVERIFIED);
       else console.error("[webinar-register] could not place the Bot Check marker; registration saved unmarked");
     }
@@ -164,11 +186,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "sheet_write_failed" }, { status: 500 });
   }
 
+  // Which confirmation to send. webinar_registered_v2 carries the class-group
+  // and Starter Kit buttons; switch to it with a Worker variable once Meta has
+  // approved it. The two take different body parameters.
+  const template = (process.env.WEBINAR_CONFIRM_TEMPLATE ?? "").trim() || "webinar_confirmed_v1";
+  const params = template === "webinar_confirmed_v1"
+    ? [name.split(/\s+/)[0] || "there", WEBINAR_WHEN_LONG]
+    : [WEBINAR_WHEN_LONG];
+
   // Unverified: no paid WhatsApp. The coach can still reach her from the sheet.
   if (!unverified) after(async () => {
     try {
-      const first = name.split(/\s+/)[0] || "there";
-      const r = await sendWhatsAppTemplate(phone, "webinar_confirmed_v1", [first, WEBINAR_WHEN_LONG]);
+      const r = await sendWhatsAppTemplate(phone, template, params);
       console.log(`[webinar-register] confirmation sent=${r.sent}` + (r.error ? ` error=${r.error}` : ""));
     } catch (e) {
       console.error("[webinar-register] confirmation threw (swallowed):", e instanceof Error ? e.message : String(e));

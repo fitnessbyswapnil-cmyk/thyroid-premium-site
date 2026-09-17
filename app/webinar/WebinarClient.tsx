@@ -21,10 +21,13 @@
  *  2. A sticky bar (phones) once the form has scrolled away.
  *  3. One modal per session: exit intent on desktop, 55% scroll on phones.
  *     Never after she has registered.
- *  4. A call to action after the symptoms, proof, takeaways, agenda, bonus and
- *     in the closing section. Each scrolls to the form and focuses it.
+ *  4. A call to action after the symptoms, proof, the 90 minutes, the bonuses
+ *     and in the closing section. Each scrolls to the form and focuses it.
  *  5. The approach is named, in exactly three places (WEBINAR_METHOD).
- *  6. The bonus shows its price inside the programme, once one is set.
+ *  6. Bonuses in two tiers (the moment she registers / end of the class), and
+ *     a "Free with your seat" line under the form. Only bonuses marked ready
+ *     in lib/webinar.ts appear: a promised PDF that never arrives costs the
+ *     trust the pitch needs.
  *  7. The real date, a countdown to the fixed start time, and the real coaching
  *     cap. No seat counter, no "people registered in the last hour".
  *
@@ -41,9 +44,11 @@ import {
   WEBINAR_WHEN_SHORT,
   WEBINAR_WEEKDAY,
   WEBINAR_METHOD,
-  THYROID_PLATE_PRICE_INR,
+  readyBonuses,
+  perkLine,
   countdownTo,
   formatCountdown,
+  type Bonus,
   type Countdown,
 } from "@/lib/webinar";
 import RegisterForm from "./RegisterForm";
@@ -52,24 +57,20 @@ import s from "./webinar.module.css";
 
 // ── Copy (kept from the live page) ────────────────────────────────────────────
 
+// Shortened 17-Sep-2026 (owner): the page was ~1,030 words, about twice what a
+// free registration from cold traffic needs. Takeaways and agenda are one list,
+// the FAQ is three questions, the report note lives in the FAQ.
 const FAMILIAR = [
   "You eat less than everyone at home, and you are still the heaviest",
   "Your report came back normal, but you do not feel normal",
   "You take the medicine and the weight still will not move",
-  "You are tired by 4pm every single day",
-  "You have tried keto, fasting and 1,200-calorie plans",
   "The weight comes off, then comes straight back",
 ];
-const LEARN = [
-  { h: "Why eating less stops working", p: "When the thyroid slows, the body burns less too. So the gap you made closes. I will show you what to do instead." },
-  { h: "The four numbers to ask for", p: "TSH alone is not enough. There are three more your doctor can test. I will tell you which, and why they matter." },
-  { h: "The Indian plate that works", p: "Roti, dal, sabzi, curd. Same food, put together differently, so you get enough protein without eating things you hate." },
-  { h: "Movement that does not wreck you", p: "More cardio is the wrong answer for a thyroid body. I will show you the weekly plan that actually helps." },
-];
+/** The 90 minutes: what she learns, in the order it is taught. */
 const RUN = [
-  { t: "0–15 min", h: "Why the weight will not move", p: "What a slow thyroid changes, and what the numbers on a report mean." },
-  { t: "15–45 min", h: "The four blockers", p: "The reasons weight stops moving on a thyroid body." },
-  { t: "45–70 min", h: "Your plate and your week", p: "Food and movement, built for an Indian home." },
+  { t: "0–15 min", h: "Why eating less stops working", p: "When the thyroid slows, the body burns less too, so the gap you made closes. What to do instead." },
+  { t: "15–45 min", h: "The four blockers, and the tests to ask for", p: "Why weight stops moving, and why TSH alone is not enough." },
+  { t: "45–70 min", h: "Your plate and your week", p: "Roti, dal, sabzi, curd, put together for enough protein, and a weekly movement plan that does not wreck you." },
   { t: "70–90 min", h: "Your questions", p: "Ask anything. If you have a report with you, I will read one live." },
 ];
 const FOR_YOU = [
@@ -113,18 +114,14 @@ const PROOF = [
   { src: "/webinar/proof-ritika.webp", w: 345, h: 640 },
   { src: "/webinar/proof-sruthi.webp", w: 302, h: 640 },
 ];
-const BONUS = [
-  "7 days of breakfast, lunch, dinner and two snacks",
-  "Protein in katori and spoon measures, not grams you have to guess",
-  "A swap list for eating out and travel days",
-  "When to take your thyroid medicine around meals",
-];
+const INSTANT = readyBonuses("instant");
+const CLASS = readyBonuses("class");
+/** "Free with your seat: …", from the bonuses that actually exist. */
+const PERK = perkLine([...INSTANT, ...CLASS]);
 const FAQ = [
   { q: "Is it really free?", a: "Yes. The full 90 minutes is free. At the end I will mention my coaching if you want help, and you can leave before that." },
-  { q: "What if I cannot come live?", a: "Come live if you can — I answer questions and read reports on the call. The replay goes only to people who attend." },
-  { q: "Do I need my blood report?", a: "Bring it if you have one. If you do not, still come. I will tell you exactly which tests to ask for." },
+  { q: "Do I need my blood report?", a: "No. If you have one, keep it next to you and I will show you what to look for on it. If you do not, still come. I will tell you which tests to ask for." },
   { q: "Will you tell me to stop my medicine?", a: "No. Never. I do not touch your medication and I do not sell supplements." },
-  { q: "I am not diagnosed. Should I come?", a: "Yes. Symptoms show up long before a report goes abnormal. That gap is where most women get stuck." },
 ];
 
 const WEEKDAY = WEBINAR_WEEKDAY;
@@ -181,6 +178,29 @@ function Cta({ label, sub = CTA_LINE }: { label: string; sub?: string }) {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
+
+function BonusTier({ title, items }: { title: string; items: Bonus[] }) {
+  return (
+    <div className={s.tier}>
+      <h3 className={s.tierHead}>{title}</h3>
+      <ul className={s.bonusList}>
+        {items.map((b) => (
+          <li key={b.title}>
+            <p className={s.itemHead}>
+              {b.title}
+              {b.priceInr !== null && (
+                <span className={s.worth}>
+                  {" "}<s>₹{b.priceInr.toLocaleString("en-IN")}</s> free
+                </span>
+              )}
+            </p>
+            <p>{b.line}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function Mark({ children, hero = false }: { children: React.ReactNode; hero?: boolean }) {
   return (
@@ -298,6 +318,7 @@ export default function WebinarClient() {
               submitLabel="Save my free seat"
               closed={closed}
               head={{ when: WEBINAR_WHEN_LONG, countdown: countdownText }}
+              perk={PERK}
             />
           </div>
 
@@ -355,34 +376,11 @@ export default function WebinarClient() {
           <Cta label="Send me the link" />
         </div>
 
-        {/* ── Report: helpful, never required ────────────────────────────── */}
-        <p className={s.reportNote}>
-          Have a thyroid report? Keep it next to you on {WEEKDAY} and I will show you what to look for on it. No report? Still come. I will tell you which tests to ask for.
-        </p>
-
-        {/* ── What you take away ─────────────────────────────────────────── */}
-        <section className={s.section} style={{ paddingBottom: 20 }} aria-labelledby="wb-learn">
-          <Mark>What you take away</Mark>
-          <h2 id="wb-learn" className={s.h2} style={{ marginBottom: 32 }}>Four things nobody told you.</h2>
-          <ol className={s.takeaways}>
-            {LEARN.map((l, i) => (
-              <li key={l.h}>
-                <span className={s.num} aria-hidden="true">{i + 1}</span>
-                <div>
-                  <h3 className={s.itemHead}>{l.h}.</h3>
-                  <p>{l.p}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-        <Cta label="Reserve my seat" />
-
         {/* ── Agenda ─────────────────────────────────────────────────────── */}
         <div className={s.alt}>
           <section className={s.section} style={{ paddingBottom: 36 }} aria-labelledby="wb-agenda">
-            <Mark>The 90 minutes</Mark>
-            <h2 id="wb-agenda" className={s.h2} style={{ marginBottom: 16 }}>No filler. Here is the plan.</h2>
+            <Mark>What you will learn</Mark>
+            <h2 id="wb-agenda" className={s.h2} style={{ marginBottom: 16 }}>90 minutes, no filler.</h2>
             <p className={s.lead}>
               The class follows {WEBINAR_METHOD}: the right tests to ask for, then the plate, then the week.
             </p>
@@ -428,34 +426,20 @@ export default function WebinarClient() {
           <p className={s.certs}>Certifications: ACE, INFS, and AIHM Nutrition for Hashimoto&rsquo;s Thyroiditis.</p>
         </section>
 
-        {/* ── Bonus ──────────────────────────────────────────────────────── */}
+        {/* ── Bonuses ────────────────────────────────────────────────────── */}
         <section className={s.section} style={{ paddingBottom: 36 }} aria-labelledby="wb-bonus">
-          <div className={s.bonusHead}>
-            <Mark>Free for everyone who attends</Mark>
-            <p className={s.pill}>
-              {THYROID_PLATE_PRICE_INR !== null && (
-                <s>
-                  <span className="sr-only">Price inside the coaching programme: </span>
-                  ₹{THYROID_PLATE_PRICE_INR.toLocaleString("en-IN")}
-                </s>
-              )}
-              Free with your seat
-            </p>
-          </div>
-          <h2 id="wb-bonus" className={s.h2} style={{ marginBottom: 16 }}>The Thyroid Plate — 7 days of meals.</h2>
-          <p className={s.lead}>
-            A printable week of Indian meals with enough protein and fibre, and swaps for veg, egg and non-veg.
-            Sent the moment the class ends, to everyone in the room.
-          </p>
-          <div className={`${s.rows} ${s.bonusRows}`}>
-            {BONUS.map((x) => <p key={x}>{x}</p>)}
-          </div>
+          <Mark>Free with your seat</Mark>
+          <h2 id="wb-bonus" className={s.h2} style={{ marginBottom: 8 }}>Your bonuses.</h2>
+          {INSTANT.length > 0 && (
+            <BonusTier title="The moment you register" items={INSTANT} />
+          )}
+          <BonusTier title="At the end of the live class" items={CLASS} />
         </section>
         <Cta label="Reserve my seat" />
 
         {/* ── FAQ ────────────────────────────────────────────────────────── */}
         <section className={s.section} style={{ paddingBottom: 40 }} aria-labelledby="wb-faq">
-          <div style={{ marginBottom: 20 }}><Mark>Questions</Mark></div>
+          <div style={{ marginBottom: 20 }}><Mark>Before you ask</Mark></div>
           <h2 id="wb-faq" className="sr-only">Questions</h2>
           <div className={s.faq}>
             {FAQ.map((f, i) => (

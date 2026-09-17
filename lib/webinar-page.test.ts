@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 
-const FILES = ["app/webinar/WebinarClient.tsx", "app/webinar/RegisterForm.tsx", "app/webinar/confirmed/ConfirmedClient.tsx"];
+const FILES = ["app/webinar/WebinarClient.tsx", "app/webinar/RegisterForm.tsx", "app/webinar/confirmed/ConfirmedClient.tsx", "lib/webinar.ts"];
 const src = (f: string) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8");
 
 /** Rendered copy only: string literals and JSX text. Comments are not copy. */
@@ -71,9 +71,26 @@ test("the method name appears exactly three times on the page", () => {
   assert.equal(uses, 3);
 });
 
-test("six repeated calls to action", () => {
+test("five repeated calls to action on the shortened page", () => {
   const code = src("app/webinar/WebinarClient.tsx");
-  assert.equal((code.match(/<Cta label=/g) ?? []).length, 6);
+  assert.equal((code.match(/<Cta label=/g) ?? []).length, 5);
+});
+
+test("bonuses come only from lib/webinar.ts, and only the ready ones reach the page", () => {
+  const code = src("app/webinar/WebinarClient.tsx");
+  assert.match(code, /readyBonuses\("instant"\)/);
+  assert.match(code, /readyBonuses\("class"\)/);
+  assert.doesNotMatch(code, /readyBonuses\("buyer"\)/, "buyer bonuses are pitched in the class, not on this page");
+});
+
+test("Community, class and replay links never appear in page code", () => {
+  for (const f of ["app/webinar/WebinarClient.tsx", "app/webinar/confirmed/ConfirmedClient.tsx", "app/webinar/RegisterForm.tsx"]) {
+    const code = src(f);
+    assert.doesNotMatch(code, /chat\.whatsapp\.com|zoom\.us|meet\.google\.com/, f);
+  }
+  const confirmed = src("app/webinar/confirmed/ConfirmedClient.tsx");
+  assert.match(confirmed, /href="\/webinar\/group"/);
+  assert.match(confirmed, /href="\/webinar\/starter-kit"/);
 });
 
 test("the hero never makes a report sound required", () => {

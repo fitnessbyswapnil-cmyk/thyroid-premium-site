@@ -16,6 +16,10 @@
  *
  *   ViewContent          once per page load of /webinar             browser only
  *   WebinarFormStart     first focus on a phone field, per load     browser only
+ *   WebinarGroupJoin     taps "Join the class group"                browser only
+ *   WebinarCalendarAdd   taps a calendar button                     browser only
+ *   WebinarKitDownload   taps "Download your Starter Kit"           browser only
+ *   WebinarShare         taps "Share with a friend"                 browser only
  *   CompleteRegistration once per registration, on the thank-you    browser leg;
  *                        page, id CompleteRegistration_<leadId>     server leg in
  *                                                                   /api/webinar-register
@@ -62,6 +66,21 @@ export function trackWebinarView() {
   whenPixelReady((fbq) =>
     fbq("track", "ViewContent", { content_name: "thyroid_masterclass", content_type: "webinar" }, { eventID }),
   );
+}
+
+/**
+ * The small actions on the thank-you page. Each is its own custom event, once
+ * per page load per name, so a double tap is one signal. Audience and
+ * diagnostic events: never an optimisation target.
+ */
+export type WebinarAction = "WebinarGroupJoin" | "WebinarCalendarAdd" | "WebinarKitDownload" | "WebinarShare";
+const actionsSent = new Set<string>();
+
+export function trackWebinarAction(name: WebinarAction) {
+  if (actionsSent.has(name)) return;
+  actionsSent.add(name);
+  const eventID = `${name}_${Date.now()}_${rand()}`;
+  whenPixelReady((fbq) => fbq("trackCustom", name, { content_name: "thyroid_masterclass" }, { eventID }));
 }
 
 export function trackWebinarFormStart() {

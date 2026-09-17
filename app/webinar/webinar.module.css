@@ -330,6 +330,13 @@
 .secondary:hover { background: var(--card); border-color: #7a7060; color: var(--ink); }
 
 .note { font-size: 13px; line-height: 1.55; color: var(--ink-55); }
+.perk {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink-82);
+}
 
 .closedCard p:first-child { margin-bottom: 12px; font-size: 13px; color: var(--ink-55); }
 .closedCard { padding: 22px 18px; }
@@ -497,30 +504,23 @@
 
 /* ── Bonus ───────────────────────────────────────────────────────────────── */
 
-.bonusHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
+
+/* ── Bonus tiers ─────────────────────────────────────────────────────────── */
+
+.tier { margin-top: 28px; }
+.tierHead {
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 17px;
+  color: var(--ink-60);
 }
-.bonusHead .mark { margin-bottom: 0; }
-.pill {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: rgba(246, 240, 230, 0.78);
-  white-space: nowrap;
-  padding: 5px 9px;
-  border: 1px solid #3a322a;
-  border-radius: 6px;
-}
-.pill s { font-weight: 400; color: var(--ink-45); }
-.bonusRows { margin-top: 26px; }
-.bonusRows p { padding: 15px 0; font-size: 16px; }
+.bonusList { list-style: none; margin: 0; padding: 0; }
+.bonusList li { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.bonusList p:last-child { color: var(--ink-72); font-size: 16px; line-height: 1.6; }
+.worth { font-weight: 400; color: var(--ink-60); }
+.worth s { color: var(--ink-45); }
 
 /* ── FAQ ─────────────────────────────────────────────────────────────────── */
 

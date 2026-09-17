@@ -70,3 +70,18 @@ test("the thank-you page only accepts an id the register route could have minted
   assert.equal(isRegistrationEventId(""), false);
   assert.equal(isRegistrationEventId(id + "<script>"), false);
 });
+
+test("button targets: unset or malformed means no button, a Worker variable wins", async () => {
+  const { resolveWebinarLink, perkLine, readyBonuses, BONUSES } = await import("./webinar.ts");
+  assert.equal(resolveWebinarLink("group"), null);
+  assert.equal(resolveWebinarLink("group", { WEBINAR_COMMUNITY_URL: "https://evil.example/x" }), null);
+  assert.equal(resolveWebinarLink("group", { WEBINAR_COMMUNITY_URL: " https://chat.whatsapp.com/AbC123 " }), "https://chat.whatsapp.com/AbC123");
+  assert.equal(resolveWebinarLink("join", { WEBINAR_JOIN_URL: "http://zoom.us/j/1" }), null);
+  assert.equal(resolveWebinarLink("join", { WEBINAR_JOIN_URL: "https://zoom.us/j/1" }), "https://zoom.us/j/1");
+  assert.equal(resolveWebinarLink("starter-kit", { WEBINAR_STARTER_KIT_URL: "/webinar/kit.pdf" }), "/webinar/kit.pdf");
+  assert.equal(resolveWebinarLink("starter-kit", { WEBINAR_STARTER_KIT_URL: "//evil.example/kit.pdf" }), null);
+
+  assert.equal(perkLine([]), "");
+  const two = readyBonuses("class", BONUSES.map((b) => ({ ...b, ready: b.tier === "class" && b.short.startsWith("the") || b.short === "a live report reading" })));
+  assert.equal(perkLine(two), "Free with your seat: the 7-day Thyroid Plate meal guide and a live report reading.");
+});

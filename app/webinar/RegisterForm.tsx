@@ -16,7 +16,10 @@ import { markRegistered, trackWebinarFormStart } from "./pixel";
 import s from "./webinar.module.css";
 
 const MEDICATION = ["Yes", "No", "Not sure"] as const;
-const ATTRIBUTION_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid"] as const;
+// "src" is ours, not Meta's: the /decode gate sends non-qualifying women here
+// with src=decode_nurture, and those registrations are excluded from the
+// webinar's own cost per registration.
+const ATTRIBUTION_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "src"] as const;
 const STORE_PREFIX = "webinar_attr_";
 
 /**
@@ -51,6 +54,7 @@ export default function RegisterForm({
   submitLabel,
   closed,
   head,
+  perk,
 }: {
   /** "hero" | "modal": ids, and the Turnstile action. */
   place: "hero" | "modal";
@@ -59,6 +63,8 @@ export default function RegisterForm({
   closed: boolean;
   /** The hero card's top row: the date and the countdown. The modal has none. */
   head?: { when: string; countdown: string };
+  /** "Free with your seat: …", shown right under the button. */
+  perk?: string;
 }) {
   const router = useRouter();
   const uid = useId();
@@ -190,6 +196,7 @@ export default function RegisterForm({
           {busy ? "Saving your seat…" : submitLabel}
         </button>
         {submitErr && <p className={s.error} role="alert">{submitErr}</p>}
+        {perk && <p className={s.perk}>{perk}</p>}
       </div>
 
       <p className={s.note}>Your joining link comes on WhatsApp. No spam, reply stop any time.</p>

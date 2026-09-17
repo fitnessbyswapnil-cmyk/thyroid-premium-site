@@ -26,8 +26,16 @@
 /** Sheet header for the outcome. Appended by header name, never by index. */
 export const GATE_OUTCOME_HEADER = "Gate Outcome";
 
-/** The live free masterclass. Already built, already running. */
-export const NURTURE_DESTINATION = "/webinar";
+/**
+ * The live free masterclass. Already built, already running.
+ *
+ * The marker rides along so a registration that came from this gate can be
+ * told apart from one an ad paid for: Meta still attributes her to the /decode
+ * ad she clicked (nothing in a tag can change that), but the webinar's own
+ * cost per registration must not count her. /api/webinar-register stores it.
+ */
+export const NURTURE_SRC = "decode_nurture";
+export const NURTURE_DESTINATION = `/webinar?src=${NURTURE_SRC}`;
 
 export type GateOutcome = "eligible" | "nurture_timing";
 
