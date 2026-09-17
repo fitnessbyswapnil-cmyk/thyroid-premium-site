@@ -52,14 +52,16 @@ export const metadata: Metadata = {
 /** The six most recognisable lines, by index into SymptomChips' own list. */
 const SYMPTOM_PICK = [0, 1, 2, 3, 8, 9] as const;
 
+// Mirrors the video ad (17-Sep): she was promised a Root Cause Map, her
+// report read, and what the next 90 days should look like.
 const GET = [
-  "Your report, read line by line",
-  "What is stopping your weight loss, in simple words",
-  "What to do about it, written down before we finish",
+  "Your Root Cause Map: your biggest fat-loss blocker, in simple words",
+  "Your report read line by line: TSH, T3, T4, and antibodies if you have them",
+  "What your next 90 days should look like, with real Indian food and no starving",
 ] as const;
 
 const STEPS = [
-  { h: "Answer 12 quick questions", p: "About your report, your diet history and what you have tried." },
+  { h: "Fill your intake form", p: "12 quick taps about your report and what you have tried. I read it before we speak." },
   { h: "Pay ₹299", p: "Refunded if you leave the call without knowing your blocker." },
   { h: "Pick your slot", p: "Sixty minutes, one to one, on a video call." },
 ] as const;
@@ -69,8 +71,8 @@ const STEPS = [
 // recorded calls neither predicted the buyer, and the quiz asks the second one
 // far more softly.
 const FOR_YOU = [
-  "You have been diagnosed hypothyroid and take the tablet, but the weight has not moved in two years or more",
   "Your report says normal and your body says otherwise",
+  "You have been diagnosed hypothyroid and take the tablet, but the weight has not moved in two years or more",
   "You have already paid someone else to fix this at least once",
   "You want the reason, not another diet chart",
   "You are ready to start within the next 30 days",
@@ -97,7 +99,7 @@ function BookButton() {
       style={{ maxWidth: "24rem", textDecoration: "none" }}
     >
       Book my 1-1 Thyroid Consultation
-      <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
+      <span className="cta-sub">₹299 &middot; 60-min Thyroid Root Cause Session</span>
     </a>
   );
 }
@@ -120,22 +122,27 @@ export default function DecodePage() {
       <section className="decode-hero bg-white">
         <div className="container-default mx-auto w-full max-w-[760px] px-4 pb-10 pt-7 text-center md:px-6 md:pb-14 md:pt-14">
           <p className="m-0 text-[length:var(--fs-3xs)] font-medium text-[var(--t2)]">
-            For women 30+ with a slow thyroid
+            For Indian women 28+ with hypothyroidism
           </p>
           <h1
             className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]"
             style={{ fontFamily: "var(--font-body), Inter, system-ui, sans-serif" }}
           >
-            Lose 8–10 Kg In 90 Days, Even With Thyroid.{" "}
+            {/* The video ad's hook, word for word (17-Sep): she should land on the
+                sentence she just heard. */}
+            You&apos;re Not The Problem.{" "}
             <span className="block" style={{ color: "#dc3434" }}>
-              Your Blood Report Shows What&apos;s Actually Blocking It.
+              Your Thyroid Is.
             </span>
           </h1>
 
-          <p className="mx-auto mt-4 max-w-[560px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
-            Eat less for months and a slow thyroid makes your body burn less too
-            &mdash; so the gap closes. On a <strong className="text-[#0b1120]">60-minute 1-1 call</strong> I
-            read your report and tell you exactly what is blocking your weight.
+          <p className="mx-auto mt-3 text-[length:var(--fs-xs)] font-bold text-[#0b1120] md:text-[length:var(--fs-base)]">
+            Lose 8–10 kg in 90 days, even with thyroid.
+          </p>
+
+          <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
+            In a <strong className="text-[#0b1120]">60-minute 1-on-1 Thyroid Root Cause Session</strong> I
+            read your report and show you exactly what is blocking your fat loss.
           </p>
 
           <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-bold leading-[var(--lh-body)] text-[#0b1120]">
@@ -149,8 +156,11 @@ export default function DecodePage() {
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
               Book my 1-1 Thyroid Consultation
-              <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
+              <span className="cta-sub">₹299 &middot; 60-min Thyroid Root Cause Session</span>
             </a>
+            <p className="mx-auto mt-3 max-w-[420px] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+              Every case is personally reviewed before the call. Limited slots each week.
+            </p>
           </div>
 
           {/* The owner's own video, the home page VSL. Only its poster loads
@@ -215,9 +225,9 @@ export default function DecodePage() {
         <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="get-heading">
           <div className="mx-auto w-full max-w-[640px]">
             <header className="text-center">
-              <p className="section-label">On the call</p>
+              <p className="section-label">Your Root Cause Session</p>
               <h2 id="get-heading" className="section-title mx-auto text-balance">
-                What you get in <span className="decode-gold">60 minutes</span>
+                What you leave <span className="decode-gold">with</span>
               </h2>
             </header>
             <ul className="mx-auto mt-7 flex list-none flex-col gap-3 p-0">
@@ -236,8 +246,9 @@ export default function DecodePage() {
               ))}
             </ul>
             <p className="mx-auto mt-4 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              If a full programme suits you, I will show you what it involves and
-              what it costs. No pressure.
+              Even if we never work together, you leave with the answers. If a
+              full programme suits you, I will show you what it involves and what
+              it costs. No pressure.
             </p>
 
             <header className="mt-14 text-center">
@@ -324,7 +335,7 @@ export default function DecodePage() {
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
               Book my 1-1 Thyroid Consultation
-              <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
+              <span className="cta-sub">₹299 &middot; 60-min Thyroid Root Cause Session</span>
             </a>
             <p className="mx-auto mt-4 text-[length:var(--fs-2xs)] text-[var(--t2)]">
               ₹299 &middot; 60 minutes &middot; one to one with Swapnil

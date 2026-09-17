@@ -39,7 +39,7 @@ const STICKY = read("app/decode/DecodeStickyCta.tsx");
 const WALL = read("app/components/TransformationWall.tsx");
 
 const CTA_LABEL = "Book my 1-1 Thyroid Consultation";
-const CTA_SUB = "₹299 &middot; 12 questions, then pick your slot";
+const CTA_SUB = "₹299 &middot; 60-min Thyroid Root Cause Session";
 
 test("every /decode CTA carries the ad's own label", () => {
   const labels = [...PAGE.matchAll(/cta-button[\s\S]{0,400}?>\s*\n\s*([^<\n]+)\n/g)]

@@ -95,7 +95,7 @@ export default function DecodeStickyCta({ fromTop = false }: { fromTop?: boolean
         tabIndex={show ? 0 : -1}
       >
         Book my 1-1 Thyroid Consultation
-        <span className="cta-sub">₹299 &middot; 12 questions, then pick your slot</span>
+        <span className="cta-sub">₹299 &middot; 60-min Thyroid Root Cause Session</span>
       </a>
     </div>
   );
