@@ -6,6 +6,7 @@ import {
   dueReminder,
   parseApprovedTemplates,
   planWebinarReminders,
+  reminderParams,
   type WebinarReminderRow,
 } from "./webinar-reminders.ts";
 
@@ -105,4 +106,16 @@ test("the cohort key never looks like a date to Sheets", () => {
   // A raw ISO in the column (or a Sheets-formatted date) is a different cohort.
   const plan = planWebinarReminders({ rows: [row(2, { webinarDate: START })], nowMs: at(-60), startIso: START, approved: ALL });
   assert.equal(plan.reason === "ok" && plan.candidates.length, 0);
+});
+
+test("each template gets exactly the parameters its approved body declares", () => {
+  const parts = { whenLong: "Thursday 24 September, 8:00 PM IST", time: "8:00 PM IST", replayHours: 48 };
+  // Meta rejects a mismatched parameter count (#132000), so these are pinned.
+  assert.deepEqual(reminderParams("day", parts), ["Thursday 24 September, 8:00 PM IST"]);
+  assert.deepEqual(reminderParams("hour", parts), ["8:00 PM IST"]);
+  assert.deepEqual(reminderParams("live", parts), ["Thursday 24 September, 8:00 PM IST"]);
+  assert.deepEqual(reminderParams("replay", parts), ["Thursday 24 September, 8:00 PM IST", "48"]);
+  for (const kind of ["day", "hour", "live", "replay"] as const) {
+    for (const p of reminderParams(kind, parts)) assert.ok(p.trim().length > 0, kind);
+  }
 });

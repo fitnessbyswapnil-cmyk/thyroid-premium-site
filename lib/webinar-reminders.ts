@@ -59,6 +59,31 @@ export function cohortKey(startIso: string): string {
   return "mc-" + startIso.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
+/**
+ * How many body parameters each approved template takes, and in which order.
+ * Meta rejects a send whose parameter count does not match the approved body
+ * (#132000), so this is a contract, not a preference. It is here, beside the
+ * template names and under test, because the bodies live in WhatsApp Manager
+ * where nothing in this repo can see them drift.
+ *
+ *   webinar_reminder_day  [date and time]
+ *   webinar_reminder_1h   [time]
+ *   webinar_live_now      [date and time]      (added 18-Sep: the classifier
+ *                                              reclassified the date-less body)
+ *   webinar_replay        [date and time, hours the replay stays up]
+ */
+export function reminderParams(
+  kind: ReminderKind,
+  parts: { whenLong: string; time: string; replayHours: number },
+): string[] {
+  switch (kind) {
+    case "day": return [parts.whenLong];
+    case "hour": return [parts.time];
+    case "live": return [parts.whenLong];
+    case "replay": return [parts.whenLong, String(parts.replayHours)];
+  }
+}
+
 export function stampHeader(template: string): string {
   return `Tpl ${template}`;
 }

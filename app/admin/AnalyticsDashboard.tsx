@@ -20,6 +20,8 @@ import CreativeOutcomes from "./CreativeOutcomes";
 import { useMetrics, useRange, RANGE_CHOICES, rangeLabel } from "./useMetrics";
 import { waitLabel, type AgeTone, type ActionItem } from "@/lib/journey";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
+import { WEBINAR_START_ISO, WEBINAR_WHEN_LONG } from "@/lib/webinar";
+import { cohortKey } from "@/lib/webinar-reminders";
 
 type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean;
   // /api/admin/messages has always returned these; the type simply never
@@ -727,6 +729,100 @@ function SequenceButtons({
 
 // ── page ─────────────────────────────────────────────────────────────────────
 
+
+type WebinarReport = {
+  cohort: string;
+  classStart: string;
+  registrations: { total: number; paid: number; nurture: number; share: number; unverified: number };
+  attendance: {
+    attended: number; stayedToPitch: number; showUpPct: number | null; stayedPct: number | null;
+    averageMinutes: number | null; imported: boolean;
+  };
+  byAd: Record<string, number>;
+};
+
+/** One webinar figure, sized so three still fit across a phone. */
+function WebinarStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ background: "#0f1012", border: `1px solid ${GRID}`, borderRadius: 10, padding: "8px 10px" }}>
+      <p style={{ margin: 0, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED }}>{label}</p>
+      <p style={{ margin: "2px 0 0", fontSize: 17, fontWeight: 800, color: INK1, fontVariantNumeric: "tabular-nums" }}>{value}</p>
+    </div>
+  );
+}
+
+/**
+ * One masterclass, end to end. The cohort key is derived from the class date
+ * rather than typed here, so the panel follows the class whenever it moves and
+ * can never sit on a key that no registration carries.
+ */
+function WebinarPanel() {
+  const [report, setReport] = useState<WebinarReport | null>(null);
+  const [error, setError] = useState("");
+  const cohort = cohortKey(WEBINAR_START_ISO);
+  useEffect(() => {
+    const key = readAdminKey();
+    if (!key) return;
+    fetch(`/api/admin/webinar-report?cohort=${encodeURIComponent(cohort)}`, { headers: { "x-admin-key": key } })
+      .then((r) => (r.ok ? (r.json() as Promise<WebinarReport>) : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(setReport)
+      // A sheet that will not read is a bad hour, not a broken tab: this panel
+      // says so and the rest of Analytics carries on.
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "could not load"));
+  }, [cohort]);
+
+  const reg = report?.registrations;
+  const att = report?.attendance;
+  const ads = report ? Object.entries(report.byAd) : [];
+
+  return (
+    <section style={{ marginTop: 28 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 4px" }}>Webinar</h2>
+      <p style={{ fontSize: 13, color: MUTED, margin: "0 0 10px" }}>{WEBINAR_WHEN_LONG} · cohort {cohort}</p>
+      {error ? (
+        <p style={{ fontSize: 12, color: WARN, margin: 0 }}>⚠ Masterclass numbers unavailable — {error}</p>
+      ) : !reg || !att ? (
+        <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>Loading the masterclass numbers…</p>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(104px, 1fr))", gap: 8 }}>
+            <WebinarStat label="Registered" value={String(reg.total)} />
+            {/* Zero attended and "the sheet has no Attended Min column yet" look
+                identical in the numbers, and only one of them means nobody came. */}
+            {att.imported && (
+              <>
+                <WebinarStat label="Attended" value={String(att.attended)} />
+                <WebinarStat label="Stayed to pitch" value={String(att.stayedToPitch)} />
+                <WebinarStat label="Show-up" value={att.showUpPct === null ? "—" : `${att.showUpPct}%`} />
+                <WebinarStat label="Avg minutes" value={att.averageMinutes === null ? "—" : String(att.averageMinutes)} />
+              </>
+            )}
+          </div>
+          {!att.imported && (
+            <p style={{ fontSize: 12, color: MUTED, margin: "8px 0 0" }}>Attendance not imported yet.</p>
+          )}
+          <p style={{ fontSize: 11.5, color: INK2, margin: "8px 0 0" }}>
+            paid {reg.paid} · nurture {reg.nurture} · shared {reg.share} — only <strong style={{ color: INK1 }}>paid</strong> belongs in cost
+            per registration; the nurture and share rows were never bought.
+          </p>
+          {ads.length > 0 && (
+            <div style={{ overflowX: "auto", marginTop: 10 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead><tr>{["Ad (utm_content)", "Registrations"].map((h) => (
+                  <th key={h} style={{ textAlign: h === "Registrations" ? "right" : "left", padding: "6px 8px", borderBottom: `1px solid ${GRID}`, fontWeight: 600, color: INK2 }}>{h}</th>))}</tr></thead>
+                <tbody>{ads.map(([ad, n]) => (
+                  <tr key={ad}>
+                    <td style={{ padding: "6px 8px", borderBottom: `1px solid ${GRID}` }}>{ad}</td>
+                    <td style={{ textAlign: "right", padding: "6px 8px", borderBottom: `1px solid ${GRID}`, fontVariantNumeric: "tabular-nums" }}>{n}</td>
+                  </tr>))}</tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
 
 export default function AnalyticsDashboard() {
   const [key, setKey] = useState<string | null>(null);
@@ -2241,6 +2337,7 @@ export default function AnalyticsDashboard() {
           </>
         )}
       </div>
+      <WebinarPanel />
       <CreativeOutcomes />
     </main>
   );
