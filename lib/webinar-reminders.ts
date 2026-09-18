@@ -42,12 +42,34 @@ const H = 60;
 /** Minutes relative to the class start: [from, to). */
 export const REMINDER_WINDOWS: Record<ReminderKind, [number, number]> = {
   day: [-27 * H, -24 * H],
-  hour: [-75, -45],
-  live: [0, 20],
+  // Wide enough for several 15-minute runs, because each run is capped: at 40
+  // a run, 200 registrants need five. The 1-hour note still reads true across
+  // it — "starts in one hour" sent 95 minutes early is close enough, and a
+  // reminder nobody receives is worth nothing.
+  hour: [-95, -40],
+  // Starts slightly BEFORE the hour: a cron that fires a few seconds early
+  // computed minutes = -0.1, matched no window at all, and silently burned one
+  // of the only runs this window gets.
+  live: [-2, 45],
   replay: [12.5 * H, 16 * H],
 };
 
-export const WEBINAR_REMINDER_CAP = 150;
+/**
+ * Sends per run. A Cloudflare Worker invocation on the FREE plan allows 50
+ * subrequests in total; one send costs 1 (the cron passes logToInbox=false),
+ * and the run also spends a few on reading the sheet and writing stamps. 40
+ * leaves headroom.
+ *
+ * On the paid plan the ceiling is 1,000, so raise it with the Worker variable
+ * WEBINAR_REMINDER_CAP instead of editing this.
+ */
+export const WEBINAR_REMINDER_CAP = 40;
+
+/** The cap, optionally raised by a Worker variable. */
+export function reminderCap(raw: string | undefined): number {
+  const n = Number(String(raw ?? "").trim());
+  return Number.isFinite(n) && n >= 1 && n <= 1000 ? Math.floor(n) : WEBINAR_REMINDER_CAP;
+}
 
 export const WEBINAR_DATE_HEADER = "Webinar Date";
 /** Where a registration came from when it was not an ad: "decode_nurture", "whatsapp_share". */

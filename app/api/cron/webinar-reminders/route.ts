@@ -33,6 +33,7 @@ import {
   WEBINAR_DATE_HEADER,
   parseApprovedTemplates,
   planWebinarReminders,
+  reminderCap,
   reminderParams,
   stampHeader,
   type ReminderKind,
@@ -70,10 +71,16 @@ export async function GET(req: NextRequest) {
   const simulated = isAdmin && dryRun && atParam ? Date.parse(atParam) : NaN;
   const nowMs = Number.isFinite(simulated) ? simulated : Date.now();
   const approved = parseApprovedTemplates(process.env.WEBINAR_REMINDER_TEMPLATES);
+  const limit = reminderCap(process.env.WEBINAR_REMINDER_CAP);
 
   // Cheap exit for the 95 of 96 daily runs with nothing due: no sheet read.
-  const early = planWebinarReminders({ rows: [], nowMs, startIso: WEBINAR_START_ISO, approved });
+  const early = planWebinarReminders({ rows: [], nowMs, startIso: WEBINAR_START_ISO, approved, limit });
   if (early.reason !== "ok") {
+    // A due reminder with no approved template is the silent failure mode:
+    // 200 OK, nothing sent, nothing in the logs. Say it out loud.
+    if (early.reason === "not_approved") {
+      console.warn(`[webinar-reminders] ${early.due} is due but ${early.template} is not in WEBINAR_REMINDER_TEMPLATES — nothing sent`);
+    }
     return NextResponse.json({
       dryRun,
       now: new Date(nowMs).toISOString(),
@@ -112,7 +119,7 @@ export async function GET(req: NextRequest) {
       stamp: cell(r, stampCol),
     }));
 
-    const plan = planWebinarReminders({ rows, nowMs, startIso: WEBINAR_START_ISO, approved });
+    const plan = planWebinarReminders({ rows, nowMs, startIso: WEBINAR_START_ISO, approved, limit });
     if (plan.reason !== "ok") return NextResponse.json({ dryRun, ...plan });
 
     const summary = {
@@ -122,6 +129,7 @@ export async function GET(req: NextRequest) {
       template: plan.template,
       params: paramsFor(plan.due),
       scanned: plan.scanned,
+      cap: limit,
       eligible: plan.candidates.length,
       skipped: plan.skipped,
       whatsappConfigured: isWhatsAppConfigured(),
@@ -150,27 +158,42 @@ export async function GET(req: NextRequest) {
 
     const stampedAt = new Date().toISOString();
     const params = paramsFor(plan.due);
-    const updates: { range: string; values: string[][] }[] = [];
+    let pending: { range: string; values: string[][] }[] = [];
+    let stamped = 0;
     let failed = 0;
-    // Sequential: Meta rate-limits per number.
+
+    // Stamps are flushed DURING the loop, not after it. The sheet is the only
+    // memory this cron has; if the worker dies with the stamps unwritten, every
+    // woman already messaged is messaged again on the next run. Flushing every
+    // 20 caps that at 19 duplicates instead of the whole batch.
+    const flush = async () => {
+      if (!pending.length) return;
+      const data = pending;
+      pending = [];
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: { valueInputOption: "RAW", data },
+      });
+      stamped += data.length;
+    };
+
+    // Sequential: Meta rate-limits per number. logToInbox=false — the inbox
+    // mirror costs three subrequests a message, and a free-plan invocation has
+    // 50 in total. The coach sees these in the reminder log, not the inbox.
     for (const c of plan.candidates) {
-      const r = await sendWhatsAppTemplate(c.phone, plan.template, params);
+      const r = await sendWhatsAppTemplate(c.phone, plan.template, params, undefined, undefined, false);
       if (r.sent) {
-        updates.push({ range: `${SHEET_NAME}!${colLetter(stampCol)}${c.rowNumber}`, values: [[stampedAt]] });
+        pending.push({ range: `${SHEET_NAME}!${colLetter(stampCol)}${c.rowNumber}`, values: [[stampedAt]] });
+        if (pending.length >= 20) await flush();
       } else {
         failed++;
         console.warn(`[webinar-reminders] ${plan.template} row ${c.rowNumber} not sent: ${r.error || r.skipped}`);
       }
     }
-    if (updates.length) {
-      await sheets.spreadsheets.values.batchUpdate({
-        spreadsheetId: sheetId,
-        requestBody: { valueInputOption: "RAW", data: updates },
-      });
-    }
+    await flush();
 
-    console.log(`[webinar-reminders] ${plan.template} sent=${updates.length} failed=${failed} skipped=${JSON.stringify(plan.skipped)}`);
-    return NextResponse.json({ ...summary, sent: updates.length, failed });
+    console.log(`[webinar-reminders] ${plan.template} sent=${stamped} failed=${failed} cap=${limit} skipped=${JSON.stringify(plan.skipped)}`);
+    return NextResponse.json({ ...summary, sent: stamped, failed });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[webinar-reminders] failed:", message);

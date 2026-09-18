@@ -244,9 +244,28 @@ redirect paths.
 
 ## 5. The reminders
 
-`/api/cron/webinar-reminders` runs **every 15 minutes**, beside `meta-retry`
-(`"*/15 * * * *"` in `CRON_ROUTES`, `custom-worker.js`). 95 of its 96 daily runs
-find nothing due and exit before reading the sheet at all.
+`/api/cron/webinar-reminders` runs **every 15 minutes on its own trigger**
+(`"5,20,35,50 * * * *"` in `CRON_ROUTES`, `custom-worker.js`). Almost every run
+finds nothing due and exits before reading the sheet at all.
+
+### The subrequest ceiling — read this before a big class
+
+A Cloudflare Worker invocation on the **free plan** may make **50 subrequests**.
+One WhatsApp send is one subrequest *only because* this cron passes
+`logToInbox=false`; a normal send also mirrors the message into the Messages tab,
+which costs three more. That is why:
+
+- the reminders have their **own** cron trigger — routes sharing one scheduled
+  invocation share its 50;
+- `WEBINAR_REMINDER_CAP` is **40** a run;
+- stamps are flushed **every 20 sends**, not once at the end. The sheet is the
+  only memory this cron has: if the worker dies with stamps unwritten, everyone
+  already messaged is messaged again on the next run.
+
+**At 40 a run, a window of three runs reaches 120 women, not 200.** For a full
+class, upgrade the account to **Workers Paid** (1,000 subrequests an invocation)
+and raise the cap with the Worker variable `WEBINAR_REMINDER_CAP=150`. No code
+change; the variable is read on every run.
 
 ### The windows, and why they are where they are
 
@@ -445,7 +464,24 @@ attendance, nothing downstream.
 
 ---
 
-## 8. Things that will bite
+## 8. Before a class with real numbers
+
+Create these eight columns in the Leads header **by hand**, once, before the ads
+run: `Webinar Date`, `Source Path`, `Bot Check`, `Tpl webinar_reminder_day`,
+`Tpl webinar_reminder_1h`, `Tpl webinar_live_now`, `Tpl webinar_replay`,
+`Attended Min`.
+
+Why: the registration route and the cron each add a missing column by reading
+row 1 and writing at the end of it. Two of them doing that at the same moment —
+a registration during a reminder run — can pick the same index, and the second
+write renames the first one's column. If `Webinar Date` loses that race the cron
+finds no cohort and nobody gets a reminder; if a `Tpl …` column loses it, a
+whole batch is messaged twice. With the columns already there, no code path ever
+writes a header.
+
+---
+
+## 9. Things that will bite
 
 - **Post-response work must use `after()` from `next/server`.** A bare
   un-awaited promise dies when the invocation freezes, and logs nothing. Both

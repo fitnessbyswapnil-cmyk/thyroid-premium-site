@@ -116,7 +116,13 @@ export async function POST(req: NextRequest) {
       spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1`,
     });
     const hdr = ((hdrRes.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? "").trim());
-    const at = (title: string) => hdr.lastIndexOf(title);
+    // The SAME matcher every reader uses (the reminder cron, the report, the
+    // attendance import): trimmed, case-insensitive, FIRST match. With
+    // lastIndexOf here, a duplicated header would have this route writing into
+    // the rightmost column while every reader looked at the leftmost — a
+    // silent total failure that still returns 200.
+    const at = (title: string) =>
+      hdr.findIndex((h) => String(h ?? "").trim().toLowerCase() === title.toLowerCase());
 
     const cells = new Map<number, string>();
     cells.set(0, new Date().toISOString());
@@ -179,7 +185,12 @@ export async function POST(req: NextRequest) {
     const row = Array.from({ length: width }, (_, i) => cells.get(i) ?? "");
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId, range: `${SHEET_NAME}!A1`,
-      valueInputOption: "USER_ENTERED", requestBody: { values: [row] },
+      valueInputOption: "USER_ENTERED",
+      // INSERT_ROWS, like every other writer (lib/lead-sheet.ts): the default
+      // OVERWRITE lets two registrations landing together resolve the same
+      // "first free row", and the second one erases the first.
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values: [row] },
     });
   } catch (err) {
     console.error("[webinar-register] sheet write failed:", err instanceof Error ? err.message : String(err));

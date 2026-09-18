@@ -31,10 +31,11 @@
   // Live from the domain switch on; vercel.json is gone so they never run twice.
   // "*/15 * * * *" resends failed Meta CAPI events from the ledger (/api/cron/meta-retry).
   // "7 * * * *" caches Windsor ad spend in D1 for the admin pages (/api/cron/ads-refresh).
-  // Free plan allows 5 cron triggers; this is the fourth.
+  // Free plan allows 5 cron triggers; the webinar reminders are the fifth, on
+  // their own line so they do not share a subrequest budget with meta-retry.
   // "30 2 * * *" also runs /api/cron/journey (stages + nurture) before the digest.
   "triggers": {
-    "crons": ["30 2 * * *", "50 23 * * *", "*/15 * * * *", "7 * * * *"]
+    "crons": ["30 2 * * *", "50 23 * * *", "*/15 * * * *", "7 * * * *", "5,20,35,50 * * * *"]
   },
   // Payment + Meta event ledger (lib/ledger.ts; schema in migrations/). Only the
   // worker has this binding: on Vercel, in `next dev` and in tests every ledger

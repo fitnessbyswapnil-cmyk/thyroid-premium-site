@@ -58,6 +58,10 @@ const digits = (s: string) => s.replace(/\D/g, "");
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const tenDigit = (s: string) => {
   const d = digits(s);
+  // A long digit run is not a phone number. "09/24/2026 07:58:31 PM" yields
+  // 09242026075831, and a sliding window inside it reads as 9242026075 — a
+  // join timestamp would have matched before the real number was reached.
+  if (d.length > 12) return "";
   // From the END: "+91 98765 43210" must read as 9876543210, not 9198765432.
   for (let i = d.length - 10; i >= 0; i--) {
     const slice = d.slice(i, i + 10);

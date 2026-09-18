@@ -84,3 +84,15 @@ test("the export is read by its own header titles", () => {
   );
   assert.equal(parseCsv('a,"b,c"\n').length, 1);
 });
+
+test("a join timestamp is not mistaken for her phone number", () => {
+  // Zoom writes "09/24/2026 07:58:31 PM"; inside those digits sits 9242026075,
+  // which passes the mobile shape and used to win before the real number.
+  assert.equal(phoneInRow({ name: "Priya", email: "", minutes: 70, extra: ["09/24/2026 07:58:31 PM"] }), "");
+  assert.equal(
+    phoneInRow({ name: "Priya", email: "", minutes: 70, extra: ["09/24/2026 07:58:31 PM", "9876543210"] }),
+    "9876543210",
+  );
+  // 12 digits is still a phone with a country code.
+  assert.equal(phoneInRow({ name: "919876543210", email: "", minutes: 0 }), "9876543210");
+});

@@ -23,9 +23,13 @@ const CRON_ROUTES = {
   // brief counts the pipeline after the day's moves.
   "30 2 * * *": ["/api/cron/journey", "/api/admin/digest"],
   "50 23 * * *": "/api/cron/payment-reminder", // daily safety net; cron-job.org polls every 5 min
-  // Resend failed Meta CAPI events recorded in the D1 ledger, then the
-  // masterclass reminders (which exit before touching the sheet unless one is due).
-  "*/15 * * * *": ["/api/cron/meta-retry", "/api/cron/webinar-reminders"],
+  "*/15 * * * *": "/api/cron/meta-retry", // resend failed Meta CAPI events recorded in the D1 ledger
+  // The masterclass reminders get their OWN trigger, offset by 5 minutes, and
+  // not a second route on the line above: routes sharing one scheduled
+  // invocation share its subrequest budget (50 on the free plan), and a
+  // reminder run spends one per message. It exits immediately unless a
+  // reminder window is open.
+  "5,20,35,50 * * * *": "/api/cron/webinar-reminders",
   "7 * * * *": "/api/cron/ads-refresh", // cache Windsor ad spend in D1 — pages never call Windsor
 };
 

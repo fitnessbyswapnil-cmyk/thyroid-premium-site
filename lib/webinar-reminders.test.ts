@@ -2,7 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   REMINDER_TEMPLATES,
+  REMINDER_WINDOWS,
+  WEBINAR_REMINDER_CAP,
   cohortKey,
+  reminderCap,
   dueReminder,
   parseApprovedTemplates,
   planWebinarReminders,
@@ -29,23 +32,49 @@ test("each reminder lands in its own window, at a decent hour, and nowhere else"
   assert.equal(dueReminder(at(-27 * 60), START), "day"); // 5:00 PM the day before
   assert.equal(dueReminder(at(-24 * 60 - 1), START), "day");
   assert.equal(dueReminder(at(-24 * 60), START), null); // 8 PM the day before: window closed
-  assert.equal(dueReminder(at(-75), START), "hour");
-  assert.equal(dueReminder(at(-46), START), "hour");
-  assert.equal(dueReminder(at(-45), START), null);
-  assert.equal(dueReminder(at(-1), START), null);
+  assert.equal(dueReminder(at(-95), START), "hour");
+  assert.equal(dueReminder(at(-96), START), null);
+  assert.equal(dueReminder(at(-41), START), "hour");
+  assert.equal(dueReminder(at(-40), START), null);
+  // A cron that fires seconds early still counts as live, not as nothing.
+  assert.equal(dueReminder(at(-1), START), "live");
+  assert.equal(dueReminder(at(-2), START), "live");
+  assert.equal(dueReminder(at(-3), START), null);
   assert.equal(dueReminder(at(0), START), "live");
-  assert.equal(dueReminder(at(19), START), "live");
-  assert.equal(dueReminder(at(20), START), null);
+  assert.equal(dueReminder(at(44), START), "live");
+  assert.equal(dueReminder(at(45), START), null);
   assert.equal(dueReminder(at(3 * 60), START), null); // 11 PM: never at night
   assert.equal(dueReminder(at(12.5 * 60), START), "replay"); // 8:30 AM next day
   assert.equal(dueReminder(at(16 * 60), START), null);
   assert.equal(dueReminder(at(0), "not a date"), null);
 });
 
-test("every window is wide enough for at least two 15-minute cron runs", () => {
-  for (const [from, to] of [[-27 * 60, -24 * 60], [-75, -45], [0, 20], [12.5 * 60, 16 * 60]]) {
-    assert.ok(to - from >= 20, `${from}..${to}`);
+test("every window has spare runs, and reaches a full class at the paid cap", () => {
+  // The cron fires every 15 minutes. Three runs a window means one can fail or
+  // be skipped and the class is still reached.
+  const runsIn = (from: number, to: number) => Math.floor((to - from) / 15);
+  // 200 registrants is a full class. WEBINAR_REMINDER_CAP is 40 because a FREE
+  // Cloudflare invocation allows 50 subrequests; on the paid plan the variable
+  // WEBINAR_REMINDER_CAP is raised to 150 and every window then covers 200.
+  const PAID_CAP = 150;
+  for (const kind of ["day", "hour", "live", "replay"] as const) {
+    const [from, to] = REMINDER_WINDOWS[kind];
+    const runs = runsIn(from, to);
+    assert.ok(runs >= 3, `${kind}: only ${runs} runs, no room for a failed one`);
+    assert.ok(runs * PAID_CAP >= 200, `${kind}: ${runs} runs cannot reach a full class`);
   }
+  assert.equal(WEBINAR_REMINDER_CAP, 40);
+  // Windows must never overlap, or one reminder would hide another.
+  const spans = Object.values(REMINDER_WINDOWS).sort((a, b) => a[0] - b[0]);
+  for (let i = 1; i < spans.length; i++) assert.ok(spans[i][0] >= spans[i - 1][1], `overlap at ${i}`);
+});
+
+test("the cap can be raised by a Worker variable, within sane bounds", () => {
+  assert.equal(reminderCap(undefined), WEBINAR_REMINDER_CAP);
+  assert.equal(reminderCap("  150 "), 150);
+  assert.equal(reminderCap("0"), WEBINAR_REMINDER_CAP);
+  assert.equal(reminderCap("99999"), WEBINAR_REMINDER_CAP);
+  assert.equal(reminderCap("abc"), WEBINAR_REMINDER_CAP);
 });
 
 test("only approved templates are sent", () => {

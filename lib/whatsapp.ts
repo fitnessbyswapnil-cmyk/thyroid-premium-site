@@ -187,6 +187,18 @@ export async function sendWhatsAppTemplate(
    * button parameter makes Meta reject the whole send.
    */
   buttonUrlParam?: string,
+  /**
+   * Mirror the send into the Messages tab (the admin inbox). True for every
+   * one-off send: the coach must see what the system said to a woman before
+   * she replies.
+   *
+   * A BULK sender passes false. The mirror costs three more subrequests per
+   * message (a fresh Sheets client, ensureTab, append) and a Cloudflare Worker
+   * invocation on the free plan allows 50 in total — so with the mirror on, a
+   * reminder run dies about eleven women in, and the survivors get the message
+   * again on the next run. See docs/webinar-funnel.md.
+   */
+  logToInbox = true,
 ): Promise<WhatsAppResult> {
   const token = readToken()
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
@@ -268,7 +280,7 @@ export async function sendWhatsAppTemplate(
 
     const messageId = json.messages?.[0]?.id
     console.log(`[whatsapp] sent template=${templateName} to=***${recipient.slice(-4)} id=${messageId ?? '(none)'}`)
-    await logTemplateToInbox(recipient, templateName, bodyParams, messageId)
+    if (logToInbox) await logTemplateToInbox(recipient, templateName, bodyParams, messageId)
     return { sent: true, messageId }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
