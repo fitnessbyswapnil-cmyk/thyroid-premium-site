@@ -26,6 +26,7 @@ import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
 import { PARTNER_ON_CALL_HEADER, normalizePartnerOnCall } from "@/lib/decode-commitment";
 import { GATE_OUTCOME_HEADER, normalizeGateOutcome } from "@/lib/decode-gate";
 import { QUIZ_TIER_HEADER } from "@/lib/lead-scoring";
+import { CURRENCY, LEAD_VALUE } from '@/app/lib/pricing'
 
 export const dynamic = "force-dynamic";
 // after() work runs inside the route's budget, so give the WhatsApp + Make
@@ -459,7 +460,9 @@ export async function POST(req: NextRequest) {
               eventId: `quiz_${leadId}`,
               sourceUrl: "https://www.swapnilumbarkarfitness.in/decode/quiz",
               userData: buildUserData({ phone, firstName: name.split(" ")[0] || "", email: str(payload.email), externalId: at.visitor_id || undefined, fbc, fbp: at.fbp || undefined, clientIp, userAgent, country: "in" }),
-              customData: { score: payload.patternScore, tier: str(payload.leadTier), decides_alone: payload.decidesAlone ? 1 : 0 },
+              // value/currency are here for Meta's data-quality check, not
+              // because a quiz completion earns anything — LEAD_VALUE is 0.
+              customData: { value: LEAD_VALUE, currency: CURRENCY, score: payload.patternScore, tier: str(payload.leadTier), decides_alone: payload.decidesAlone ? 1 : 0 },
             });
             console.log(`[quiz-lead] QuizComplete → Meta leadId=${leadId} score=${payload.patternScore} result=${JSON.stringify(r).slice(0, 160)}`);
           } catch (e) {

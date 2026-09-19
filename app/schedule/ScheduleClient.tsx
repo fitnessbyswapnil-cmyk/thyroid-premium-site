@@ -23,7 +23,7 @@ import { pushDL, trackLead, trackInitiateCheckout } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import { NATIVE_BOOKING_KEY } from "@/app/book/components/BookingFlow";
-import { SESSION_PRICE } from "@/app/lib/pricing";
+import { CURRENCY, LEAD_VALUE, SESSION_PRICE } from "@/app/lib/pricing";
 import { checkoutRedirectTarget } from "@/lib/checkout-target";
 
 const BG = "#ffffff";
@@ -177,6 +177,7 @@ export default function ScheduleClient({
         event_name: "Lead",
         event_id: leadEventId,
         source_url: window.location.href,
+        custom_data: { value: LEAD_VALUE, currency: CURRENCY },
         user_data: {
           first_name: firstName,
           ...(lastName && { last_name: lastName }),

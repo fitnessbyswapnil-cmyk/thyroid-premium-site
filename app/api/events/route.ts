@@ -17,6 +17,7 @@ import {
   getUserAgent,
   getCookieFromReq,
 } from '@/lib/server-tracking'
+import { isTrackingHost, isTrackingUrl, PRODUCTION_HOST } from '@/lib/tracking-host'
 
 // Allowed events from browser.
 // 'Schedule' is deliberately ABSENT: the Cal.com BOOKING_CREATED webhook
@@ -37,6 +38,38 @@ const ALLOWED_EVENTS = new Set([
   'Engagement',
   'ScrollDepth',
 ])
+
+/**
+ * Both ends of the request must be the production host.
+ *
+ * Until 19-Sep-2026 this endpoint validated the event NAME and nothing else.
+ * `source_url` was checked for presence, never parsed, and passed straight to
+ * Meta as `event_source_url`; no Origin, Referer or Host was read; there was no
+ * auth and no rate limit. Any caller anywhere could inject a Lead or an
+ * InitiateCheckout into the live dataset with an arbitrary source URL — and
+ * legitimately, every Vercel preview deployment did exactly that, because
+ * "same-origin" on a preview IS the preview host.
+ *
+ * Checking both matters. The request host stops a preview or workers.dev
+ * deployment relaying its own traffic; the source_url stops an off-host caller
+ * reaching the production endpoint and claiming a production URL.
+ */
+function rejectOffHost(req: NextRequest, sourceUrl: string): string | null {
+  const requestHost = req.headers.get('host')
+  if (!isTrackingHost(requestHost)) {
+    return `request host ${requestHost ?? '(none)'} is not ${PRODUCTION_HOST}`
+  }
+  // Origin is absent on same-origin POSTs in some browsers, so it is only
+  // checked when present — an origin that IS sent and is wrong is a real signal.
+  const origin = req.headers.get('origin')
+  if (origin && !isTrackingUrl(origin)) {
+    return `origin ${origin} is not ${PRODUCTION_HOST}`
+  }
+  if (!isTrackingUrl(sourceUrl)) {
+    return `source_url ${sourceUrl} is not on ${PRODUCTION_HOST}`
+  }
+  return null
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -75,6 +108,12 @@ export async function POST(req: NextRequest) {
     }
     if (!event_id || !source_url) {
       return NextResponse.json({ error: 'Missing event_id or source_url' }, { status: 400 })
+    }
+
+    const offHost = rejectOffHost(req, source_url)
+    if (offHost) {
+      console.warn(`[api/events] 403 — ${offHost} (event=${event_name} id=${event_id})`)
+      return NextResponse.json({ error: 'Forbidden host' }, { status: 403 })
     }
 
     const clientIp = getClientIp(req)

@@ -15,6 +15,7 @@
  *  - server-side rendering can read these cookies for CAPI enrichment.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { isTrackingHost } from '@/lib/tracking-host'
 
 const COOKIE_OPTS_SESSION = {
   path: '/',
@@ -39,6 +40,20 @@ function genId(prefix: string): string {
 
 export function middleware(req: NextRequest) {
   const res = NextResponse.next()
+
+  // Every cookie below is a tracking identifier, and this file used to mint
+  // them on any hostname the app was served from. A Vercel preview therefore
+  // handed out a real first-party _fbp and _visitor_id, which then travelled to
+  // Meta as match keys against the live dataset — part of why three
+  // *.vercel.app domains appeared in Events Manager on 19-Sep-2026.
+  //
+  // Off the production host we set nothing at all. There is no partial mode
+  // here: an identity minted on a preview is not useful to anything, and the
+  // absence of these cookies is exactly what keeps the tracking code inert.
+  if (!isTrackingHost(req.headers.get('host') ?? req.nextUrl.hostname)) {
+    return res
+  }
+
   const { searchParams } = req.nextUrl
 
   // ── 1. fbclid → _fbc (Meta standard: fb.{version}.{ts}.{fbclid})

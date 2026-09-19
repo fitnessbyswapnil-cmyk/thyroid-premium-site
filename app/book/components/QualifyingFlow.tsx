@@ -6,6 +6,8 @@ import Cal, { getCalApi } from "@calcom/embed-react";
 import { pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
+import { CURRENCY, LEAD_VALUE } from "@/app/lib/pricing";
+import { calMetadataConfig } from "@/lib/cal-metadata";
 
 // ── Step model ─────────────────────────────────────────────────────────────────
 // One question per screen. `points` maps an option label → score (silent).
@@ -392,19 +394,22 @@ function CalendarStep({
 
   // Booking metadata → rides into the Cal.com BOOKING_CREATED webhook so the
   // server Schedule CAPI can include the SAME first-party signals as the browser
-  // leg (it has no cookies of its own). Only non-empty values are sent.
-  const calMetadata = useMemo(() => {
-    const m: Record<string, string> = {};
-    if (leadId) m.leadId = leadId;
-    if (city) m.city = city;
-    const visitorId = getVisitorId();
-    const fbc = getFbc();
-    const fbp = getFbp();
-    if (visitorId) m.visitor_id = visitorId;
-    if (fbc) m.fbc = fbc;
-    if (fbp) m.fbp = fbp;
-    return m;
-  }, [leadId, city]);
+  // leg (it has no cookies of its own).
+  //
+  // calMetadataConfig flattens to bracketed keys because Cal.com String()s any
+  // nested config value into its iframe query string — the object form reaches
+  // the webhook as {"a":"[object Object]"}. See lib/cal-metadata.ts.
+  const calMetadata = useMemo(
+    () =>
+      calMetadataConfig({
+        leadId,
+        city,
+        visitor_id: getVisitorId(),
+        fbc: getFbc(),
+        fbp: getFbp(),
+      }),
+    [leadId, city],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -466,7 +471,7 @@ function CalendarStep({
             // Explicit +91 (E.164) so Cal.com's country selector is
             // deterministic instead of guessing from a bare 10-digit number.
             ...(phone ? { attendeePhoneNumber: toIndianE164(phone), smsReminderNumber: toIndianE164(phone) } : {}),
-            ...(Object.keys(calMetadata).length ? { metadata: calMetadata } : {}),
+            ...calMetadata,
           }}
         />
       </div>
@@ -611,6 +616,7 @@ export default function QualifyingFlow() {
         event_name: "Lead",
         event_id: leadEventId,
         source_url: window.location.href,
+        custom_data: { value: LEAD_VALUE, currency: CURRENCY },
         user_data: {
           ...(firstName && { first_name: firstName }),
           ...(lastName && { last_name: lastName }),

@@ -11,6 +11,7 @@ import { persistUserIdentity } from "../components/tracking/UserIdentityTracker"
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
 import { CONSULTATION_FORM_URL } from "../context/ScarcityProvider";
+import { calMetadataConfig } from "@/lib/cal-metadata";
 
 // ── Progress Stepper ──────────────────────────────────────────────────────────
 
@@ -270,20 +271,23 @@ function CalcomStep({
             // Additive metadata only — ties the booking (and the BOOKING_CREATED
             // webhook) back to the lead, the payment and her ad click. Does NOT
             // affect the event_id (still schedule_<uid>) or the
-            // bookingSuccessful handling. Empty values are left out: Cal.com
-            // stores metadata verbatim and a blank key reads as a real one.
-            ...((leadId || orderId || qscore || adSignals.fbc || adSignals.fbp || adSignals.visitor_id)
-              ? {
-                  metadata: {
-                    ...(leadId ? { leadId } : {}),
-                    ...(orderId ? { orderId } : {}),
-                    ...(qscore ? { qscore } : {}),
-                    ...(adSignals.fbc ? { fbc: adSignals.fbc } : {}),
-                    ...(adSignals.fbp ? { fbp: adSignals.fbp } : {}),
-                    ...(adSignals.visitor_id ? { visitor_id: adSignals.visitor_id } : {}),
-                  },
-                }
-              : {}),
+            // bookingSuccessful handling.
+            //
+            // Flattened through calMetadataConfig because Cal.com String()s any
+            // nested config value on its way into the iframe query string. This
+            // block used to pass `metadata: { fbc, ... }`, which reached the
+            // webhook as {"a":"[object Object]"} — every Schedule went to Meta
+            // with no click id while Cal.com showed real bookings. Confirmed
+            // again on 19-Sep: QuizComplete carried fbc, the Schedule 44
+            // seconds later did not. See lib/cal-metadata.ts.
+            ...calMetadataConfig({
+              leadId,
+              orderId,
+              qscore,
+              fbc: adSignals.fbc,
+              fbp: adSignals.fbp,
+              visitor_id: adSignals.visitor_id,
+            }),
           }}
         />
       </div>
@@ -475,7 +479,8 @@ export default function SessionBooked() {
     const value = amount ?? SESSION_PRICE;
 
     // Browser Pixel Purchase — event_id Purchase_<orderId>, real charged amount.
-    const purchaseEventId = trackPurchase(
+    // The returned id is not bound: nothing downstream reads it any more.
+    trackPurchase(
       lead
         ? { first_name: lead.name.split(" ")[0], phone: lead.phone, ...(lead.email && { email: lead.email }) }
         : undefined,
@@ -484,31 +489,12 @@ export default function SessionBooked() {
       value,
     );
 
-    // Server-side CAPI Purchase — runs in parallel, non-blocking.
-    // value/currency MUST live in custom_data: /api/events forwards custom_data
-    // to CAPI and ignores any top-level value/currency. Shares the same event_id
-    // so it dedupes with the webhook + browser Pixel Purchase.
-    fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event_name: "Purchase",
-        event_id: purchaseEventId,
-        source_url: window.location.href,
-        custom_data: {
-          value,
-          currency: "INR",
-          order_id: oid,
-        },
-        user_data: {
-          ...(lead?.phone && { phone: lead.phone }),
-          ...(lead?.name && { first_name: lead.name.split(" ")[0] }),
-          ...(lead?.name && lead.name.split(" ").slice(1).join(" ") && { last_name: lead.name.split(" ").slice(1).join(" ") }),
-          ...(lead?.email && { email: lead.email }),
-        },
-      }),
-      keepalive: true,
-    }).catch(() => {});
+    // There is deliberately NO /api/events leg here. It used to POST
+    // event_name "Purchase", which is not in that endpoint's ALLOWED_EVENTS, so
+    // every call 400'd — it had never sent anything. Nothing is lost by its
+    // removal: the browser Pixel Purchase fires above, and the paid event that
+    // reaches Meta server-side is MicroPurchase from /api/cashfree-webhook,
+    // carrying the real charged amount under the same Purchase_<orderId> id.
   }, [step1Data]);
 
   // On a confirmed Cal.com booking: persist the booking server-side, then
