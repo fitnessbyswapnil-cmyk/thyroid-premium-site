@@ -177,6 +177,14 @@ export default function ConfirmedClient() {
                 <p className={s.lead}>
                   Your joining link, the reminders and the replay are posted there. Only I post, so it stays quiet.
                 </p>
+                {/* Her face-recognition cue. On Thursday a message arrives from a
+                    number she has never saved; the same photo she saw on the ad
+                    and the landing page is what makes her open it. */}
+                <div className={`${s.host} ${s.hostPlain}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/webinar/coach-sm.webp" alt="" width={52} height={52} decoding="async" />
+                  <p>Swapnil Umbarkar. I take the class myself, and I am the one who posts in the group.</p>
+                </div>
                 <div className={s.actions} style={{ gridTemplateColumns: "1fr" }}>
                   <a className={s.button} href="/webinar/group" target="_blank" rel="noreferrer"
                     onClick={() => trackWebinarAction("WebinarGroupJoin")}>

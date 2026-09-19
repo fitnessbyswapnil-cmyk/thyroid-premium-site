@@ -663,6 +663,9 @@
 .steps .rows p:first-child { border-top: 0; padding-top: 0; }
 /* The step already draws the line below it; the last row would double it. */
 .steps .rows p:last-child { border-bottom: 0; padding-bottom: 0; }
+/* The same byline as the landing page, but inside a step: the step already
+   draws the line above it, so this one must not draw its own. */
+.hostPlain { margin-top: 14px; padding-top: 0; border-top: 0; }
 /* The number comes from the list itself. Steps appear and disappear with the
    Worker variables that switch the group and the kit on, so a number written
    into the markup would eventually read "1, 3". */
