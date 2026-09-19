@@ -6,6 +6,7 @@ import Cal, { getCalApi } from "@calcom/embed-react";
 import { pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
+import { CURRENCY, LEAD_VALUE } from "@/app/lib/pricing";
 
 // ── Step model ─────────────────────────────────────────────────────────────────
 // One question per screen. `points` maps an option label → score (silent).
@@ -611,6 +612,7 @@ export default function QualifyingFlow() {
         event_name: "Lead",
         event_id: leadEventId,
         source_url: window.location.href,
+        custom_data: { value: LEAD_VALUE, currency: CURRENCY },
         user_data: {
           ...(firstName && { first_name: firstName }),
           ...(lastName && { last_name: lastName }),

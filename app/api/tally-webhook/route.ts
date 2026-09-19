@@ -42,6 +42,7 @@ import {
   getClientIp,
   getUserAgent,
 } from '@/lib/server-tracking'
+import { CURRENCY, LEAD_VALUE } from '@/app/lib/pricing'
 
 // Optional: verify Tally webhook signature
 const TALLY_SIGNING_SECRET = process.env.TALLY_SIGNING_SECRET
@@ -116,9 +117,14 @@ async function processSubmission(req: NextRequest, body: TallyPayload) {
     country: 'in',
   })
 
+  // value/currency must travel together: Meta warns on every Lead missing the
+  // pair, and a value with no currency is rejected outright. LEAD_VALUE is 0 —
+  // no money has moved when a lead is captured. See app/lib/pricing.ts.
   const customData = {
     content_name: 'thyroid_consultation',
     content_category: 'lead',
+    value: LEAD_VALUE,
+    currency: CURRENCY,
     ...(utmSource ? { utm_source: utmSource } : {}),
   }
 

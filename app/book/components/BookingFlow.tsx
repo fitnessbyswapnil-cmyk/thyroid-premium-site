@@ -9,6 +9,7 @@ import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTrack
 import { CONSULTATION_FORM_URL } from "@/app/context/ScarcityProvider";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import { checkoutRedirectTarget } from "@/lib/checkout-target";
+import { CURRENCY, LEAD_VALUE } from "@/app/lib/pricing";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -214,6 +215,7 @@ export default function BookingFlow({
                             event_name: "Lead",
                             event_id: leadEventId,
                             source_url: window.location.href,
+                            custom_data: { value: LEAD_VALUE, currency: CURRENCY },
                             user_data: {
                                         first_name: firstName,
                                         ...(lastName && { last_name: lastName }),
