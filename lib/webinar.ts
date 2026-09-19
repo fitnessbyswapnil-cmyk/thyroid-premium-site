@@ -169,6 +169,38 @@ export function checkIndianMobile(input: string): PhoneCheck {
   return { ok: true, phone: d };
 }
 
+export type EmailCheck = { ok: true; email: string } | { ok: false; error: string };
+
+/**
+ * An email address, checked only as far as is useful.
+ *
+ * Deliberately loose: the job is to catch a typo she can fix, not to police
+ * addresses. A wrong-but-plausible domain ("gmial.com") cannot be detected
+ * without guessing at her intent, and refusing it would lose a real address.
+ * The placeholder the server uses for missing emails is refused outright — it
+ * must never land in a woman's row and look like hers.
+ */
+export function checkEmail(input: string): EmailCheck {
+  const raw = String(input ?? "").trim().toLowerCase();
+  if (!raw) return { ok: false, error: "Enter your email address" };
+  if (raw.length > 120) return { ok: false, error: "That address is too long" };
+  if (/\s/.test(raw)) return { ok: false, error: "An email address has no spaces" };
+  const parts = raw.split("@");
+  if (parts.length !== 2) return { ok: false, error: "An email address needs one @, like priya@gmail.com" };
+  const [user, domain] = parts;
+  if (!user) return { ok: false, error: "Add the part before the @" };
+  if (!domain.includes(".") || /^[.-]|[.-]$|\.\./.test(domain)) {
+    return { ok: false, error: "Check the part after the @, like gmail.com" };
+  }
+  if (!/^[a-z]{2,}$/.test(domain.split(".").pop() ?? "")) {
+    return { ok: false, error: "Check the ending, like .com or .in" };
+  }
+  if (raw === "noreply@swapnilumbarkarfitness.in") {
+    return { ok: false, error: "Enter your own email address" };
+  }
+  return { ok: true, email: raw };
+}
+
 // ── Countdown ─────────────────────────────────────────────────────────────────
 
 export type Countdown =

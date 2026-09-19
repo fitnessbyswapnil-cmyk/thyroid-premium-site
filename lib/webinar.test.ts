@@ -5,6 +5,7 @@ import {
   WEBINAR_END_ISO,
   WEBINAR_WHEN_LONG,
   WEBINAR_WHEN_SHORT,
+  checkEmail,
   checkIndianMobile,
   countdownTo,
   formatCountdown,
@@ -84,4 +85,20 @@ test("button targets: unset or malformed means no button, a Worker variable wins
   assert.equal(perkLine([]), "");
   const two = readyBonuses("class", BONUSES.map((b) => ({ ...b, ready: b.tier === "class" && b.short.startsWith("the") || b.short === "a live report reading" })));
   assert.equal(perkLine(two), "Free with your seat: the 7-day Thyroid Plate meal guide and a live report reading.");
+});
+
+test("email: the mistakes a woman actually makes on a phone", () => {
+  assert.deepEqual(checkEmail("  Priya@Gmail.com "), { ok: true, email: "priya@gmail.com" });
+  assert.deepEqual(checkEmail("priya@sub.domain.co.in"), { ok: true, email: "priya@sub.domain.co.in" });
+  // A plausible typo we cannot know is wrong: accept it rather than lose her.
+  assert.equal(checkEmail("priya@gmial.com").ok, true);
+
+  for (const bad of ["", "   ", "priya", "priya@", "@gmail.com", "priya@@gmail.com", "priya gupta@gmail.com", "priya@gmail", "priya@.com", "priya@gmail..com", "priya@gmail.c0m"]) {
+    const r = checkEmail(bad);
+    assert.equal(r.ok, false, `should reject: "${bad}"`);
+    assert.ok(!r.ok && r.error.length > 0);
+  }
+  // The server's stand-in address must never be stored as hers.
+  assert.equal(checkEmail("noreply@swapnilumbarkarfitness.in").ok, false);
+  assert.equal(checkEmail("a".repeat(130) + "@gmail.com").ok, false);
 });
