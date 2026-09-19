@@ -22,6 +22,9 @@ import {
   isLedgerable,
   recordMetaSend,
 } from './ledger.ts'
+// Same explicit-extension rule as ledger.ts above: tracking-host.ts imports
+// nothing, so it loads cleanly under the --experimental-strip-types test runner.
+import { isTrackingUrl, PRODUCTION_HOST } from './tracking-host.ts'
 
 // Placeholder email Cashfree requires when the customer gave none. It must
 // NEVER be sent to Meta CAPI — a uniform fake email hash across all buyers
@@ -219,6 +222,23 @@ export async function sendCAPIEvent(
     eventTime?: number
   }
 ): Promise<CAPIResult> {
+  // Last-resort backstop. /api/events rejects off-host callers at the door, but
+  // this function is reachable from every webhook and admin route too, and
+  // before 19-Sep-2026 nothing here asked where the event came from. On Vercel
+  // there is also no D1 binding, so sendWithLedger skips its dedup check and
+  // sends unconditionally — which made a preview deployment the most permissive
+  // sender in the system rather than the least.
+  //
+  // Only sourceUrl is checked. Events with no source URL are the offline ones
+  // (CallHeld, the programme Purchase) and are action_source 'phone_call';
+  // they have no host to verify and must keep working.
+  if (opts.sourceUrl && !isTrackingUrl(opts.sourceUrl)) {
+    console.warn(
+      `[CAPI] refused ${eventName} (${opts.eventId}) — source_url ${opts.sourceUrl} is not on ${PRODUCTION_HOST}`,
+    )
+    return { success: false, error: 'off-host source_url refused' }
+  }
+
   const actionSource = opts.actionSource ?? 'website'
   const event: CAPIEvent = {
     event_name: eventName,
