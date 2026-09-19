@@ -655,7 +655,23 @@
 .confirmedCard { padding: 18px; margin-bottom: 28px; }
 .confirmedCard p:first-child { margin-bottom: 6px; font-weight: 600; }
 .confirmedCard p:last-child { font-size: 14px; line-height: 1.55; color: rgba(246, 240, 230, 0.62); }
-.actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+/* The numbered "what happens next" list on the thank-you page. */
+.steps { counter-reset: step; list-style: none; margin: 32px 0 0; padding: 0; }
+.steps > li { padding: 26px 0; border-top: 1px solid var(--line); }
+.steps > li:last-child { border-bottom: 1px solid var(--line); }
+.steps .lead { margin-top: 6px; }
+.steps .rows p:first-child { border-top: 0; padding-top: 0; }
+/* The step already draws the line below it; the last row would double it. */
+.steps .rows p:last-child { border-bottom: 0; padding-bottom: 0; }
+/* The number comes from the list itself. Steps appear and disappear with the
+   Worker variables that switch the group and the kit on, so a number written
+   into the markup would eventually read "1, 3". */
+.steps > li > .itemHead::before { counter-increment: step; content: counter(step) ". "; }
+
+.actions { display: grid; gap: 10px; margin-top: 16px; }
+@media (min-width: 420px) {
+  .actions { grid-template-columns: 1fr 1fr; }
+}
 .confirmedNote {
   padding-top: 24px;
   border-top: 1px solid var(--line);

@@ -162,46 +162,86 @@ export default function ConfirmedClient() {
             <p>{WEBINAR_WHEN_LONG}</p>
             <p>
               {links.group
-                ? "Reminders and your joining link are posted in the class group."
-                : "Your joining link comes on WhatsApp."}
+                ? "The joining link is posted in the class group one hour before we start."
+                : "Your joining link comes on WhatsApp one hour before we start."}
             </p>
           </div>
 
-          <div className={s.actions}>
-            {!links.group && !links.starterKit && messageButton(false)}
+          {/* Numbered, because she is being asked to do three small things and
+              the order matters: the group carries the link, the calendar keeps
+              Thursday free, the rest is preparation. */}
+          <ol className={s.steps}>
             {links.group && (
-              <a className={s.button} href="/webinar/group" target="_blank" rel="noreferrer"
-                onClick={() => trackWebinarAction("WebinarGroupJoin")}>
-                Join the class group on WhatsApp
-              </a>
+              <li>
+                <h2 className={s.itemHead}>Join the class group</h2>
+                <p className={s.lead}>
+                  Your joining link, the reminders and the replay are posted there. Only I post, so it stays quiet.
+                </p>
+                <div className={s.actions} style={{ gridTemplateColumns: "1fr" }}>
+                  <a className={s.button} href="/webinar/group" target="_blank" rel="noreferrer"
+                    onClick={() => trackWebinarAction("WebinarGroupJoin")}>
+                    Join the class group
+                  </a>
+                </div>
+              </li>
             )}
+
+            <li>
+              <h2 className={s.itemHead}>Block Thursday evening</h2>
+              <p className={s.lead}>Ninety minutes, 8:00 PM. Put it in your calendar before something else takes the slot.</p>
+              <div className={s.actions}>
+                <a className={`${s.button} ${s.secondary}`} href={googleCalendarUrl()} target="_blank" rel="noreferrer"
+                  onClick={() => trackWebinarAction("WebinarCalendarAdd")}>
+                  Google Calendar
+                </a>
+                <a className={`${s.button} ${s.secondary}`} href="/webinar/calendar.ics"
+                  onClick={() => trackWebinarAction("WebinarCalendarAdd")}>
+                  Apple Calendar
+                </a>
+              </div>
+            </li>
+
+            <li>
+              <h2 className={s.itemHead}>Three minutes of preparation</h2>
+              <div className={s.rows} style={{ marginTop: 14 }}>
+                <p>Find your last thyroid report and keep it next to you. No report? Still come.</p>
+                <p>Note today&rsquo;s weight, so you have a starting point.</p>
+                <p>Keep a notebook and pen. You will want to write the plate down.</p>
+                <p>Join from somewhere quiet. I answer questions at the end.</p>
+              </div>
+            </li>
+
             {links.starterKit && (
-              <a className={`${s.button} ${links.group ? s.secondary : ""}`} href="/webinar/starter-kit" target="_blank" rel="noreferrer"
-                onClick={() => trackWebinarAction("WebinarKitDownload")}>
-                Download your Starter Kit
-              </a>
+              <li>
+                <h2 className={s.itemHead}>Your Starter Kit</h2>
+                <p className={s.lead}>Yours now, before the class.</p>
+                <div className={s.actions} style={{ gridTemplateColumns: "1fr" }}>
+                  <a className={`${s.button} ${s.secondary}`} href="/webinar/starter-kit" target="_blank" rel="noreferrer"
+                    onClick={() => trackWebinarAction("WebinarKitDownload")}>
+                    Download the Starter Kit
+                  </a>
+                </div>
+              </li>
             )}
-            <a className={`${s.button} ${s.secondary}`} href={googleCalendarUrl()} target="_blank" rel="noreferrer"
-              onClick={() => trackWebinarAction("WebinarCalendarAdd")}>
-              Add to Google Calendar
-            </a>
-            <a className={`${s.button} ${s.secondary}`} href="/webinar/calendar.ics"
-              onClick={() => trackWebinarAction("WebinarCalendarAdd")}>
-              Add to Apple Calendar
-            </a>
-            {(links.group || links.starterKit) && messageButton(true)}
-            <a className={`${s.button} ${s.secondary}`} href={SHARE_URL} target="_blank" rel="noreferrer"
-              onClick={() => trackWebinarAction("WebinarShare")}>
-              Share with a friend or sister
-            </a>
-          </div>
+          </ol>
 
           {regId && <EmailBlock eventId={regId} />}
 
-          <p className={s.confirmedNote}>
-            If you have a thyroid report, keep it ready and I will show you what to look for on it. No report? Still come.
-          </p>
-          <p className={s.disclaimer} style={{ marginTop: 26 }}>
+          <div style={{ marginTop: 32 }}>
+            <h2 className={s.itemHead}>Know someone who needs this?</h2>
+            <p className={s.lead}>
+              Most women stick to it when someone at home is doing it with them. Sending it costs you one tap.
+            </p>
+            <div className={s.actions} style={{ marginTop: 14 }}>
+              <a className={`${s.button} ${s.secondary}`} href={SHARE_URL} target="_blank" rel="noreferrer"
+                onClick={() => trackWebinarAction("WebinarShare")}>
+                Share with a friend or sister
+              </a>
+              {messageButton(true)}
+            </div>
+          </div>
+
+          <p className={s.disclaimer}>
             Educational content only. Nothing in this class is medical advice, and it does not replace your
             doctor or endocrinologist.
           </p>
