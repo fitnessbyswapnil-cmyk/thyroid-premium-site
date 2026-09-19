@@ -11,6 +11,7 @@ import { persistUserIdentity } from "../components/tracking/UserIdentityTracker"
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
 import { CONSULTATION_FORM_URL } from "../context/ScarcityProvider";
+import { calMetadataConfig } from "@/lib/cal-metadata";
 
 // ── Progress Stepper ──────────────────────────────────────────────────────────
 
@@ -270,20 +271,23 @@ function CalcomStep({
             // Additive metadata only — ties the booking (and the BOOKING_CREATED
             // webhook) back to the lead, the payment and her ad click. Does NOT
             // affect the event_id (still schedule_<uid>) or the
-            // bookingSuccessful handling. Empty values are left out: Cal.com
-            // stores metadata verbatim and a blank key reads as a real one.
-            ...((leadId || orderId || qscore || adSignals.fbc || adSignals.fbp || adSignals.visitor_id)
-              ? {
-                  metadata: {
-                    ...(leadId ? { leadId } : {}),
-                    ...(orderId ? { orderId } : {}),
-                    ...(qscore ? { qscore } : {}),
-                    ...(adSignals.fbc ? { fbc: adSignals.fbc } : {}),
-                    ...(adSignals.fbp ? { fbp: adSignals.fbp } : {}),
-                    ...(adSignals.visitor_id ? { visitor_id: adSignals.visitor_id } : {}),
-                  },
-                }
-              : {}),
+            // bookingSuccessful handling.
+            //
+            // Flattened through calMetadataConfig because Cal.com String()s any
+            // nested config value on its way into the iframe query string. This
+            // block used to pass `metadata: { fbc, ... }`, which reached the
+            // webhook as {"a":"[object Object]"} — every Schedule went to Meta
+            // with no click id while Cal.com showed real bookings. Confirmed
+            // again on 19-Sep: QuizComplete carried fbc, the Schedule 44
+            // seconds later did not. See lib/cal-metadata.ts.
+            ...calMetadataConfig({
+              leadId,
+              orderId,
+              qscore,
+              fbc: adSignals.fbc,
+              fbp: adSignals.fbp,
+              visitor_id: adSignals.visitor_id,
+            }),
           }}
         />
       </div>
