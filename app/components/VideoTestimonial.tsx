@@ -3,12 +3,19 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import Reveal from "./Reveal";
 
-// ── Video source paths (emoji filenames must be percent-encoded in URLs) ──────
+// ── Video sources ───────────────────────────────────────────────────────────
+// Served from the R2 bucket `thyroid-media` (20-Sep-2026), not from /public:
+// these three files were 22 MB of the repo, shipped with every deploy and
+// served by the Worker's asset store. The emoji filenames went with them —
+// the R2 keys are plain ASCII, so no percent-encoding is needed any more.
+// Posters stay local: they are small and must paint before anything streams.
+
+import { MEDIA_BASE } from "./HeroVideo";
 
 const SRCS = {
-  kshama: `/videos/${encodeURIComponent("✨-From-YEARS-of-Struggle-➤-To-Visible-Results-in-Just-2-WEEKS🌸-Meet-Kshama-Handa-Age-55-—-b.mp4")}`,
-  fathima: `/videos/${encodeURIComponent("🌸-Fathimas-2-Week-Thyroid-Fat-Loss-Update.mp4")}`,
-  rashmi: `/videos/${encodeURIComponent("🎥-Rashmis-3-Week-Thyroid-Fat-Loss-Transformation.mp4")}`,
+  kshama: `${MEDIA_BASE}/videos/kshama-handa-2-weeks.mp4`,
+  fathima: `${MEDIA_BASE}/videos/fathima-2-weeks.mp4`,
+  rashmi: `${MEDIA_BASE}/videos/rashmi-3-weeks.mp4`,
 };
 
 // ── Poster images ───────────────────────────────────────────────────────────

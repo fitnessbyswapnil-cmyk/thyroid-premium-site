@@ -3,17 +3,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { trackCtaClick, trackVideoEvent } from "../lib/analytics";
 
-// Hero VSL frame, served from Vercel Blob (single plain MP4 — no HLS, no
+// Hero VSL frame, served from our own Cloudflare R2 bucket `thyroid-media`
+// through media.swapnilumbarkarfitness.in (single plain MP4 — no HLS, no
 // rendition switching; one file for mobile and desktop).
 //
-// Set NEXT_PUBLIC_VSL_URL in Vercel to the Blob object's public URL, i.e.
-//   https://<store-id>.public.blob.vercel-storage.com/vsl-<hash>.mp4
-// Unset, the component renders the graceful "Video coming soon" state.
+// It lived on Vercel Blob until 20-Sep-2026. The two Vercel website projects
+// were deleted that day, which left the top of the ad's landing page as the
+// only thing still depending on that account. R2 egress is free and the file
+// now sits behind our own domain, cached at the edge like every other asset.
+// NEXT_PUBLIC_VSL_URL still wins when set, so a new cut can be pointed at
+// without a deploy; it is no longer required for the video to play.
+//
 // This is a PUBLIC read URL — no token is involved, nothing secret is bundled.
 //
 // The poster ships from /public (small, edge-cached, loads instantly) and is
 // the ONLY video-related byte fetched before the user clicks play.
-const VSL_URL = process.env.NEXT_PUBLIC_VSL_URL || "";
+export const MEDIA_BASE = "https://media.swapnilumbarkarfitness.in";
+const VSL_URL = process.env.NEXT_PUBLIC_VSL_URL || `${MEDIA_BASE}/videos/vsl.mp4`;
 const VSL_POSTER = "/videos/posters/vsl-poster.jpg";
 
 // Progress milestones — each fires exactly once per mount (Set guard), so
