@@ -11,15 +11,20 @@ import { trackCtaClick, trackVideoEvent } from "../lib/analytics";
 // were deleted that day, which left the top of the ad's landing page as the
 // only thing still depending on that account. R2 egress is free and the file
 // now sits behind our own domain, cached at the edge like every other asset.
-// NEXT_PUBLIC_VSL_URL still wins when set, so a new cut can be pointed at
-// without a deploy; it is no longer required for the video to play.
+// NEXT_PUBLIC_VSL_URL is still read so a new cut can be pointed at without a
+// deploy — but a leftover Vercel Blob value is IGNORED. That env var is set in
+// the Workers Builds settings and still held the old Blob URL, which silently
+// beat this constant and kept the hero playing off Vercel after the move.
 //
 // This is a PUBLIC read URL — no token is involved, nothing secret is bundled.
 //
 // The poster ships from /public (small, edge-cached, loads instantly) and is
 // the ONLY video-related byte fetched before the user clicks play.
 export const MEDIA_BASE = "https://media.swapnilumbarkarfitness.in";
-const VSL_URL = process.env.NEXT_PUBLIC_VSL_URL || `${MEDIA_BASE}/videos/vsl.mp4`;
+const VSL_OVERRIDE = (process.env.NEXT_PUBLIC_VSL_URL ?? "").trim();
+const VSL_URL = VSL_OVERRIDE && !VSL_OVERRIDE.includes("blob.vercel-storage.com")
+  ? VSL_OVERRIDE
+  : `${MEDIA_BASE}/videos/vsl.mp4`;
 const VSL_POSTER = "/videos/posters/vsl-poster.jpg";
 
 // Progress milestones — each fires exactly once per mount (Set guard), so
