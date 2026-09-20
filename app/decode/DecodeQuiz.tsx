@@ -28,7 +28,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { pushDL, trackLead } from "@/app/lib/analytics";
+import { generateEventId, pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
 import InAppBrowserNotice from "@/app/components/InAppBrowserNotice";
@@ -367,7 +367,12 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     // Lead waits for the server's verdict below, because a submission the
     // server could not verify must not reach Meta as a Lead.
     const leadUser = { first_name: firstName, phone: phone10, email: "" };
-    if (!bot.enabled) trackLead(leadUser);
+    // Minted HERE, before either leg fires, and handed to both: the pixel below
+    // and the server Lead that /api/quiz-lead sends. Same event_name, same
+    // event_id, so Meta keeps one. Without a shared id the server leg would be
+    // a second Lead rather than a backup for the same one.
+    const leadEventId = generateEventId("lead");
+    if (!bot.enabled) trackLead(leadUser, leadEventId);
     pushDL({ event: "decode_gate_submitted" });
     // The real _fbc / _fbp cookies, not just fbclid. QuizComplete scored 4.8
     // on Event Match Quality against Lead's 9.3 because it was reaching Meta
@@ -379,7 +384,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     try {
       // With the bot check off this is the same single fetch, byte for byte.
       const res = await postWithBotCheck(bot, "/api/quiz-lead", {
-        leadId: id, name: gate.name.trim(), phone: phone10, email: "",
+        leadId: id, name: gate.name.trim(), phone: phone10, email: "", leadEventId,
         city: a.city ?? "", age: a.age ?? "", diagnosis: a.diagnosis ?? "", onMedication: a.diagnosis ?? "",
         struggleDuration: a.stuck ?? "", biggestChallenge: a.pattern ?? "", triedBefore: a.tried ?? "",
         amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
@@ -394,7 +399,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       });
       if (bot.enabled) counted = await leadCounted(res);
     } catch { /* score is shown regardless; the row write is best-effort */ }
-    if (bot.enabled && counted) trackLead(leadUser);
+    if (bot.enabled && counted) trackLead(leadUser, leadEventId);
     setLeadId(id); setGateBusy(false); setI((n) => n + 1);
   }, [a, gate, gateBusy, bot]);
 

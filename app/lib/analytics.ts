@@ -274,8 +274,15 @@ export function trackCtaClick(location: string, buttonLabel?: string) {
   );
 }
 
-export function trackLead(userData?: UserData) {
-  const event_id = generateEventId("lead");
+/**
+ * `eventId` lets the caller MINT the id first and hand the same one to a server
+ * leg, so the two Leads deduplicate into one. /decode's quiz gate does exactly
+ * that: it generates the id, passes it to /api/quiz-lead, and passes it here.
+ * Omit it and the id is generated as before — the browser-only behaviour every
+ * other caller still relies on.
+ */
+export function trackLead(userData?: UserData, eventId?: string) {
+  const event_id = eventId || generateEventId("lead");
   const payload = withUserSignals(
     { event: "lead", event_id, ...PRODUCT },
     userData,

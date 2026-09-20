@@ -318,7 +318,15 @@ export async function POST(req: NextRequest) {
             eventId: `qsched_${uid}`,
             sourceUrl: SOURCE_URL,
             userData,
-            customData: { score: score || qScore },
+            // value/currency match the Schedule sent moments earlier. They are
+            // FREE_CALL_VALUE (0), not SESSION_PRICE: a qualified booking is
+            // still the same free call, and reporting Rs 299 here would teach
+            // Meta that every booking earned money that never moved — the exact
+            // mistake the comment on the Schedule send above records. They are
+            // present at all because Meta's data-quality check flags an event
+            // that omits them, and QualifiedSchedule was the last one still
+            // sending custom_data without a currency.
+            customData: { score: score || qScore, value: FREE_CALL_VALUE, currency: 'INR' },
             ...(testCode ? { testCode } : {}),
           })
           console.log(`[cal-webhook] QualifiedSchedule uid=${uid} source=${source} score=${score || qScore} result=${JSON.stringify(q).slice(0, 160)}`)
