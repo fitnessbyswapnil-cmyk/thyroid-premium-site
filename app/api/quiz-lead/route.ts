@@ -78,6 +78,19 @@ type QuizLeadPayload = {
   leadTier?: string;
   /** Pattern score 0-100 from the /decode quiz. Numeric only — sent to Meta. */
   patternScore?: number;
+  /**
+   * The event_id the browser used for its own Lead, handed over so the server
+   * leg below can be DEDUPLICATED against it rather than counted twice.
+   *
+   * Its presence is also the switch: the server sends Lead only when a caller
+   * explicitly passes an id, which is the one thing that makes double-counting
+   * impossible. /decode's quiz gate passes it because it fires the browser Lead
+   * in the same breath; /api/booking-payment and /schedule do not, because
+   * /schedule already sends its own Lead through /api/events and a second one
+   * from here would be a duplicate with a different id — exactly the failure
+   * this field exists to prevent.
+   */
+  leadEventId?: string;
   markersHit?: number;
   decidesAlone?: boolean;
   /** Cloudflare Turnstile token from the browser. Verified, never stored. */
@@ -467,6 +480,49 @@ export async function POST(req: NextRequest) {
             console.log(`[quiz-lead] QuizComplete → Meta leadId=${leadId} score=${payload.patternScore} result=${JSON.stringify(r).slice(0, 160)}`);
           } catch (e) {
             console.error("[quiz-lead] QuizComplete failed (swallowed):", e instanceof Error ? e.message : String(e));
+          }
+        }
+
+        // Lead → Meta, server-side. The SECOND leg of a pair whose first leg is
+        // the browser pixel; both carry the same event_id, so Meta keeps one.
+        //
+        // Why this exists: until now Lead had no server leg anywhere on the live
+        // funnel. /decode's gate fires trackLead(), which only pushes to the
+        // dataLayer, and /schedule's own /api/events Lead is behind
+        // `if (!existingLeadId)` — always false here, because the quiz created
+        // the lead id first. So every Lead depended on fbq surviving in her
+        // browser. The ledger shows the traffic this matters for: a real quiz
+        // completion on 18-Sep came through the Instagram in-app webview, which
+        // is exactly where an ad blocker, ITP or a locked-down webview drops the
+        // pixel and the conversion is simply never counted.
+        //
+        // Deduplication is the whole risk, so it is made structural rather than
+        // careful: the id is MINTED BY THE BROWSER and passed in. No id, no
+        // send. A caller that never fired a browser Lead cannot accidentally
+        // produce a lone server one, and the browser can never produce an id
+        // this leg does not match.
+        //
+        // The `!unverified` on the enclosing block is what keeps the two legs
+        // agreeing under the bot check: the browser withholds Lead until the
+        // server says the submission was verified, and an unverified submission
+        // never reaches this line either.
+        const leadEventId = str(payload.leadEventId);
+        if (leadEventId) {
+          try {
+            const at = payload.attribution ?? {};
+            const fbc = at.fbc || (at.fbclid ? `fb.1.${Date.now()}.${at.fbclid}` : undefined);
+            const r = await sendCAPIEvent("Lead", {
+              eventId: leadEventId,
+              sourceUrl: "https://www.swapnilumbarkarfitness.in/decode/quiz",
+              userData: buildUserData({ phone, firstName: name.split(" ")[0] || "", email: str(payload.email), externalId: at.visitor_id || undefined, fbc, fbp: at.fbp || undefined, clientIp, userAgent, country: "in" }),
+              // Matches what the browser leg already puts in the dataLayer
+              // (PRODUCT carries FREE_CALL_VALUE and "INR"), so the two halves
+              // of the dedup pair do not disagree about what a Lead is worth.
+              customData: { value: LEAD_VALUE, currency: CURRENCY },
+            });
+            console.log(`[quiz-lead] Lead → Meta event_id=${leadEventId} leadId=${leadId} result=${JSON.stringify(r).slice(0, 160)}`);
+          } catch (e) {
+            console.error("[quiz-lead] Lead failed (swallowed):", e instanceof Error ? e.message : String(e));
           }
         }
 
