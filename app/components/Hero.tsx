@@ -16,6 +16,22 @@ import HeroVideo from "./HeroVideo";
 // master with BURNED-IN subtitles along the bottom edge, so cropping it to
 // portrait would cut the subtitles off and lose half the frame. It renders
 // at its native 16:9 inside the design's rounded frame instead.
+//
+// COMPLIANCE FLOOR (23-Sep, Events Manager gave this domain until ~11 Oct
+// before its data is blocked under Meta's health terms). The same two rules
+// app/decode/page.tsx now carries apply here:
+//   - No sentence may tell the reader she has a thyroid condition or takes
+//     medication. Describe the situation or describe clients, never diagnose
+//     the visitor. That is Meta's personal-attributes standard and it is
+//     enforced on ad copy and landing page alike.
+//   - No kilogram figure and no timeframe in a promise. Meta prohibits
+//     "promises of specific outcomes within a set timeframe without
+//     disclaimers or qualifiers". Client cards may state what a named client
+//     actually did, because TransformationWall carries the results-vary
+//     qualifier.
+// The h1 here was "Lose 10-15 kg in 90 days, even with a thyroid problem."
+// until 23-Sep, which broke both at once. Do not put a kilogram figure or a
+// timeframe back in that slot. Owner may override, but not by accident.
 
 export default function Hero() {
   return (
@@ -39,7 +55,7 @@ export default function Hero() {
             className="m-0 mb-4 text-balance font-extrabold leading-[1.12] tracking-[-0.01em]"
             style={{ fontSize: "clamp(1.875rem, 1.05rem + 2.9vw, 2.875rem)" }}
           >
-            Lose 10&ndash;15 kg in 90 days, even with a thyroid problem.
+            Thyroid fat loss does not work like ordinary fat loss.
           </h1>
 
           <p className="m-0 mb-6 text-[15.5px] leading-[1.5] text-[var(--t2)] md:text-[17px]">
@@ -75,6 +91,14 @@ export default function Hero() {
           <div className="mt-[14px] text-[13px] leading-[1.5] text-[var(--t3)]">
             Leave the call knowing your exact blocker, and it costs you nothing.
           </div>
+
+          {/* Scope qualifier, required by the compliance floor above: it states
+              what this service is and is not, next to the ask. It belongs
+              wherever the primary CTA goes. */}
+          <p className="m-0 mt-2 text-[12px] leading-[1.5] text-[var(--t3)]">
+            Nutrition and lifestyle coaching. Not medical treatment. Continue any
+            medication as advised by your doctor. Results vary.
+          </p>
 
           <BookingActivity className="mt-3" />
         </div>
