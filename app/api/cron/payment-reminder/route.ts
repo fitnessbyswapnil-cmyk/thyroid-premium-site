@@ -31,7 +31,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { googleClientOptions } from "@/lib/google-fetch";
-import { checkAdminKey } from "../../admin/_lib";
+import { checkAdminKey, fetchCalBookingState } from "../../admin/_lib";
 import { colLetter, RESERVED_INDEXES, ensureGridColumns } from "@/lib/lead-sheet";
 import { GATE_OUTCOME_HEADER, isNurtureGated } from "@/lib/decode-gate";
 import {
@@ -219,14 +219,31 @@ export async function GET(req: NextRequest) {
     const header = (all[0] ?? []).map((h) => String(h ?? ""));
     const rows = all.slice(1);
 
+    const byNameOr = (title: string, fallback: number): number => {
+      const i = findCol(header, title);
+      return i >= 0 ? i : fallback;
+    };
+
+    // Cal.com is the booking source of truth, not the sheet: the Make
+    // Cal.com → Sheets scenario drops most write-backs
+    // (whatsapp-automation-session-2026-08.md §2 and §4), so the sheet's
+    // booking columns alone would miss most real bookings. A failure here is
+    // not fatal — planReminders falls back to those columns — but it is
+    // reported in the summary so a dry run shows the gate running degraded
+    // rather than silently weakened.
+    const cal = await fetchCalBookingState().catch(() => null);
+
     const cols: ReminderColumns = {
       timestamp: 0, // pinned column A, written by the quiz on create
       leadId: 1, // pinned column B, written by the quiz on create
       name: 2,
       phone: 3,
+      email: findCol(header, "Email"),
       paid: findCol(header, "Paid"),
       paidAt: findCol(header, "Paid At"),
       reminderSent: findCol(header, SENT_TITLE),
+      bookingStatus: byNameOr("Booking Status", BOOKING_STATUS_FALLBACK),
+      sessionDate: byNameOr("Session Date", SESSION_DATE_FALLBACK),
     };
 
     const paidRows = paidFunnelRowsOnly(
@@ -235,7 +252,8 @@ export async function GET(req: NextRequest) {
       findCol(header, "Bot Check"),
       findCol(header, GATE_OUTCOME_HEADER),
     );
-    const plan = planReminders({ rows: paidRows, cols, now: Date.now(), minAgeMinutes, maxAgeHours, limit });
+    const bookedEmails = cal?.state.active;
+    const plan = planReminders({ rows: paidRows, cols, now: Date.now(), minAgeMinutes, maxAgeHours, limit, bookedEmails });
 
     // Second payment touch, a day later, stamped in its OWN column so it can
     // never be confused with touch one. Everything else — phone dedup, paid
@@ -247,12 +265,9 @@ export async function GET(req: NextRequest) {
       minAgeMinutes: REMINDER2_MIN_AGE_MINUTES,
       maxAgeHours: REMINDER2_MAX_AGE_HOURS,
       limit,
+      bookedEmails,
     });
 
-    const byNameOr = (title: string, fallback: number): number => {
-      const i = findCol(header, title);
-      return i >= 0 ? i : fallback;
-    };
     const nudgeColsBase = {
       name: 2,
       phone: 3,
@@ -316,6 +331,16 @@ export async function GET(req: NextRequest) {
       skipped: plan.skipped,
       bookingNudgeSkipped: nudgePlan.skipped,
       whatsappConfigured: isWhatsAppConfigured(),
+      // The booking gate's health. `source: "none"` or a non-empty error means
+      // Cal.com did not answer and the gate is running on the sheet's booking
+      // columns alone, which §4 of the automation record says miss most real
+      // bookings. Worth seeing before a free-funnel cutover, not after.
+      bookingGate: {
+        calSource: cal?.status.source ?? "unreachable",
+        calKeySet: cal?.status.keySet ?? false,
+        calUpcoming: cal?.state.active.size ?? 0,
+        calError: cal?.status.error ?? "fetchCalBookingState threw",
+      },
       // ?debug=1 with ?dryRun=1 shows why rows fell out. The counts alone
       // cannot distinguish "correctly gated free-funnel lead" from "paid-funnel
       // lead whose phone the reader looked for in the wrong column", and those

@@ -4,6 +4,10 @@ import { planReminders, planCallReminders, parseSheetTime, firstNameOf, phoneKey
 
 const COLS: ReminderColumns = { timestamp: 0, leadId: 1, name: 2, phone: 3, paid: 40, reminderSent: 44 };
 
+/** The booking gate's three columns. Kept separate from COLS so the existing
+ *  tests keep proving the planner works when none of them are wired yet. */
+const BOOKING_COLS: ReminderColumns = { ...COLS, email: 4, bookingStatus: 17, sessionDate: 18 };
+
 const NOW = Date.parse("2026-08-11T12:00:00.000Z");
 const agoMin = (m: number) => new Date(NOW - m * 60000).toISOString();
 
@@ -15,6 +19,9 @@ function row(o: {
   paid?: string;
   reminded?: string;
   leadId?: string;
+  email?: string;
+  bookingStatus?: string;
+  sessionDate?: string;
 }): string[] {
   const r = new Array<string>(50).fill("");
   r[COLS.timestamp] = o.ts ?? agoMin(90);
@@ -23,6 +30,9 @@ function row(o: {
   r[COLS.phone] = o.phone ?? "9876543210";
   r[COLS.paid] = o.paid ?? "";
   r[COLS.reminderSent] = o.reminded ?? "";
+  r[BOOKING_COLS.email!] = o.email ?? "";
+  r[BOOKING_COLS.bookingStatus!] = o.bookingStatus ?? "";
+  r[BOOKING_COLS.sessionDate!] = o.sessionDate ?? "";
   return r;
 }
 
@@ -58,6 +68,136 @@ test("a paying customer is never nudged for money she already sent", () => {
 test("paid wins even when the reminder flag is also unset and the row looks perfect", () => {
   const plan = planReminders({ rows: [row({ paid: "y" })], cols: COLS, now: NOW });
   assert.equal(plan.candidates.length, 0, "case-insensitive");
+});
+
+// ── the booking gate ─────────────────────────────────────────────────────────
+// Today this is a no-op safety net: paying is the only way to reach the
+// calendar, so anyone booked is already paid and excluded a line earlier. It
+// becomes load-bearing the moment the consultation is free, when every free
+// booking is an unpaid row with a fresh timestamp that matches every other rule
+// and would be asked for money she does not owe.
+
+test("a woman with an upcoming Cal.com booking is never asked to pay for a checkout", () => {
+  const plan = planReminders({
+    rows: [row({ email: "priya@example.com" })],
+    cols: BOOKING_COLS,
+    now: NOW,
+    bookedEmails: new Set(["priya@example.com"]),
+  });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.booked, 1);
+});
+
+test("Cal.com matching is case-insensitive, because the sheet's casing is not trustworthy", () => {
+  const plan = planReminders({
+    rows: [row({ email: "Priya@Example.COM" })],
+    cols: BOOKING_COLS,
+    now: NOW,
+    bookedEmails: new Set(["priya@example.com"]),
+  });
+  assert.equal(plan.candidates.length, 0, "matched despite the casing");
+  assert.equal(plan.skipped.booked, 1);
+});
+
+test("a booking on somebody else's email does not gate her", () => {
+  const plan = planReminders({
+    rows: [row({ email: "priya@example.com" })],
+    cols: BOOKING_COLS,
+    now: NOW,
+    bookedEmails: new Set(["someone.else@example.com"]),
+  });
+  assert.equal(plan.candidates.length, 1);
+  assert.equal(plan.skipped.booked, 0);
+});
+
+test("the sheet's Booking Status alone is enough, for when Cal.com is unreachable", () => {
+  const plan = planReminders({ rows: [row({ bookingStatus: "Booked" })], cols: BOOKING_COLS, now: NOW });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.booked, 1);
+});
+
+test("the sheet's Session Date alone is enough too — Make stamps only one of the two", () => {
+  const plan = planReminders({ rows: [row({ sessionDate: "2026-08-14 17:30" })], cols: BOOKING_COLS, now: NOW });
+  assert.equal(plan.candidates.length, 0, "a booked woman with an empty Booking Status still gates");
+  assert.equal(plan.skipped.booked, 1);
+});
+
+test("any Booking Status value gates, not only the literal 'Booked'", () => {
+  const plan = planReminders({ rows: [row({ bookingStatus: "booked " })], cols: BOOKING_COLS, now: NOW });
+  assert.equal(plan.candidates.length, 0, "over-inclusive on purpose: the cheap error is a missed nudge");
+});
+
+test("an unbooked, unpaid woman is still nudged with every booking column wired", () => {
+  const plan = planReminders({ rows: [row({ email: "priya@example.com" })], cols: BOOKING_COLS, now: NOW });
+  assert.equal(plan.candidates.length, 1, "the gate must not swallow the whole job");
+  assert.equal(plan.skipped.booked, 0);
+});
+
+test("an empty Cal.com set does not gate everyone", () => {
+  const plan = planReminders({
+    rows: [row({ email: "priya@example.com" })],
+    cols: BOOKING_COLS,
+    now: NOW,
+    bookedEmails: new Set<string>(),
+  });
+  assert.equal(plan.candidates.length, 1, "a failed Cal fetch must not silence the sequence");
+});
+
+test("a row with no email is judged on its sheet columns, not gated by default", () => {
+  const plan = planReminders({
+    rows: [row({ email: "" })],
+    cols: BOOKING_COLS,
+    now: NOW,
+    bookedEmails: new Set(["priya@example.com"]),
+  });
+  assert.equal(plan.candidates.length, 1, "a blank email must never collide with a booked one");
+});
+
+test("unwired booking columns leave the planner exactly as it was", () => {
+  const plan = planReminders({
+    rows: [row({ bookingStatus: "Booked", sessionDate: "2026-08-14 17:30" })],
+    cols: COLS, // email/bookingStatus/sessionDate all absent
+    now: NOW,
+    bookedEmails: new Set(["priya@example.com"]),
+  });
+  assert.equal(plan.candidates.length, 1, "no columns configured means no evidence to read");
+  assert.equal(plan.skipped.booked, 0);
+});
+
+test("paid is still checked before booked, so the skip counters stay meaningful", () => {
+  const plan = planReminders({
+    rows: [row({ paid: "Y", bookingStatus: "Booked" })],
+    cols: BOOKING_COLS,
+    now: NOW,
+  });
+  assert.equal(plan.skipped.paid, 1);
+  assert.equal(plan.skipped.booked, 0);
+});
+
+test("booking gates her even when she is otherwise the perfect candidate", () => {
+  const plan = planReminders({
+    rows: [row({ ts: agoMin(90), paid: "", reminded: "", sessionDate: "2026-08-14 17:30" })],
+    cols: BOOKING_COLS,
+    now: NOW,
+  });
+  assert.equal(plan.candidates.length, 0);
+});
+
+test("a stale booking on an old row does not silence a genuine new checkout", () => {
+  // Her rows are read independently: the July row carries the booking, the
+  // September row is fresh unpaid intent. Cross-row booking settling would make
+  // her permanently unreachable, which is the bug the paid-settle logic was
+  // rewritten to avoid.
+  const plan = planReminders({
+    rows: [
+      row({ ts: agoMin(60 * 24 * 30), sessionDate: "2026-07-14 17:30", phone: "9876543210" }),
+      row({ ts: agoMin(90), phone: "9876543210" }),
+    ],
+    cols: BOOKING_COLS,
+    now: NOW,
+  });
+  assert.equal(plan.candidates.length, 1, "the fresh row still earns its nudge");
+  assert.equal(plan.candidates[0].ageMinutes, 90);
 });
 
 test("a lead already reminded is not reminded twice", () => {
