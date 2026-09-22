@@ -46,6 +46,8 @@ export type ReminderCandidate = {
 
 export type ReminderSkips = {
   paid: number;
+  /** She is on the calendar. See the booking gate in planReminders. */
+  booked: number;
   alreadyReminded: number;
   tooNew: number;
   tooOld: number;
@@ -75,6 +77,16 @@ export type ReminderColumns = {
    *  paid row's own created time, and an unreadable stamp settles forever,
    *  which is exactly the behaviour this column replaced. */
   paidAt?: number;
+  /** Column E — "Email". Only used to match Cal.com's booking state, which is
+   *  keyed by email and has no phone in it. -1/absent disables that match and
+   *  leaves the sheet columns below as the only evidence. */
+  email?: number;
+  /** Column R — "Booking Status", and column S — "Session Date". Both written
+   *  by the Cal.com → Sheets Make scenario, and EITHER counts: live data has
+   *  booked women with only one of the two stamped (see BookingNudgeColumns,
+   *  which reads them the same way for the same reason). */
+  bookingStatus?: number;
+  sessionDate?: number;
 };
 
 // One minute. Five put the nudge inside the window where Meta caps a second
@@ -132,6 +144,44 @@ export function firstNameOf(fullName: string): string {
 }
 
 /**
+ * Does this row show she is already on the calendar?
+ *
+ * TWO SOURCES, DELIBERATELY, and Cal.com is the one that matters.
+ * `whatsapp-automation-session-2026-08.md` §4 records that bookings are NOT
+ * reliably reaching the Leads sheet — Cal.com produces 3-4 bookings a day and
+ * the sheet showed one, because the Make scenario drops most write-backs. §2
+ * says it plainly: trust Cal.com for booking counts, not the sheet. A gate that
+ * read only the sheet would therefore miss most real bookings, which for this
+ * particular job means asking a woman who is already booked to pay for a
+ * checkout she never abandoned.
+ *
+ * `bookedEmails` is Cal.com's set of people with a booking that is still ahead
+ * of them (CalState.active — the "upcoming" page, and collect() drops anything
+ * already in the past). Scoping it to upcoming bookings is what keeps this from
+ * re-introducing the bug the paid-settle logic was rewritten to fix: a woman who
+ * had a call in July and abandons a fresh checkout in September is reachable
+ * again, because that July booking is no longer upcoming.
+ *
+ * The sheet columns are the fallback for when Cal.com is unreachable or the key
+ * is unset, and they are read PER ROW rather than across her rows, for the same
+ * reason — a stale booking on an old row must not silence a genuine new
+ * checkout forever.
+ */
+function hasBookingEvidence(
+  row: string[],
+  cols: ReminderColumns,
+  bookedEmails?: Set<string>,
+): boolean {
+  if (bookedEmails?.size) {
+    const email = cell(row, cols.email ?? -1).toLowerCase();
+    if (email && bookedEmails.has(email)) return true;
+  }
+  return (
+    !!cell(row, cols.bookingStatus ?? -1) || !!cell(row, cols.sessionDate ?? -1)
+  );
+}
+
+/**
  * Decide who gets a payment_reminder right now.
  *
  * @param rows data rows only, header excluded. rows[0] is sheet row 2.
@@ -143,6 +193,10 @@ export function planReminders(opts: {
   minAgeMinutes?: number;
   maxAgeHours?: number;
   limit?: number;
+  /** Lowercased emails with a booking still ahead of them, from Cal.com. The
+   *  route fetches it; this stays pure. Omitted or empty falls back to the
+   *  sheet columns alone. See hasBookingEvidence. */
+  bookedEmails?: Set<string>;
 }): ReminderPlan {
   const {
     rows,
@@ -151,10 +205,12 @@ export function planReminders(opts: {
     minAgeMinutes = DEFAULT_MIN_AGE_MINUTES,
     maxAgeHours = DEFAULT_MAX_AGE_HOURS,
     limit = DEFAULT_LIMIT,
+    bookedEmails,
   } = opts;
 
   const skipped: ReminderSkips = {
     paid: 0,
+    booked: 0,
     alreadyReminded: 0,
     tooNew: 0,
     tooOld: 0,
@@ -210,6 +266,17 @@ export function planReminders(opts: {
     // be nudged for money she has already sent, whatever else the row says.
     if (cell(row, cols.paid).toUpperCase() === "Y") {
       skipped.paid++;
+      continue;
+    }
+    // Booked wins for the same reason paid does, and it is checked here rather
+    // than later so it cannot be reached by any other rule. Today this is a
+    // no-op safety net, because paying is the only way to reach the calendar,
+    // so anyone booked is already paid. It stops being a no-op the moment the
+    // consultation is free: every free booking is then a row with Paid != Y and
+    // a fresh timestamp, which matches every remaining rule, and the message
+    // this job sends asks her for money she does not owe.
+    if (hasBookingEvidence(row, cols, bookedEmails)) {
+      skipped.booked++;
       continue;
     }
     if (cell(row, cols.reminderSent)) {
