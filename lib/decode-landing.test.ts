@@ -39,7 +39,11 @@ const STICKY = read("app/decode/DecodeStickyCta.tsx");
 const WALL = read("app/components/TransformationWall.tsx");
 
 const CTA_LABEL = "Book my 1-1 Thyroid Consultation";
-const CTA_SUB = "₹299 &middot; 60-min Thyroid Root Cause Session";
+// The consultation went free on 23-Sep-2026 (owner). This was
+// "₹299 &middot; 60-min Thyroid Root Cause Session" until then. The test below
+// still exists for the same reason it always did: every CTA must say the same
+// thing about cost, so one stale button cannot promise a different offer.
+const CTA_SUB = "Free &middot; 60-min Thyroid Root Cause Session";
 
 test("every /decode CTA carries the ad's own label", () => {
   const labels = [...PAGE.matchAll(/cta-button[\s\S]{0,400}?>\s*\n\s*([^<\n]+)\n/g)]
@@ -59,7 +63,7 @@ test("a Book button after the hero, inside the proof, after the steps and at the
   assert.match(PAGE, /<DecodeStickyCta fromTop \/>/, "the sticky bar shows from page load");
 });
 
-test("every /decode CTA shows the price", () => {
+test("every /decode CTA says the same thing about cost", () => {
   const subs = [...`${PAGE}${STICKY}`.matchAll(/<span className="cta-sub">([^<]+)</g)]
     .map((m) => m[1].trim());
   assert.ok(subs.length >= 3, "hero, closing and sticky CTAs all need a sub-line");
@@ -92,9 +96,24 @@ test("the ₹15,000-₹30,000 line stays off until the quiz gates are measured",
   assert.match(PAGE, /const SHOW_PROGRAMME_PRICE = (true|false);/);
 });
 
-test("the refund sentence is on the page, word for word", () => {
-  // Quoted from docs/business-handover.md §1 and never reworded.
-  assert.ok(PAGE.includes("Leave the call without knowing your blocker and the ₹299 is refunded."));
+test("the page makes a risk-reversal promise, and never asks for money", () => {
+  // Until 23-Sep-2026 this pinned the refund sentence from
+  // docs/business-handover.md §1 word for word: "Leave the call without knowing
+  // your blocker and the ₹299 is refunded." The call is free now, so there is
+  // nothing to refund and that sentence would be a lie. What the test protects
+  // is the PROMISE underneath it, which has not changed: she will not leave
+  // empty-handed, and she is not asked to pay.
+  assert.ok(
+    PAGE.includes("leave knowing your blocker"),
+    "the no-empty-handed promise must survive whatever the price is",
+  );
+  // Comments stripped first: the file explains at length why the ₹299 left and
+  // must not come back, and that prose must not itself trip the check.
+  const copy = PAGE.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  assert.ok(
+    !/₹\s*299/.test(copy),
+    "a stray ₹299 in the rendered copy tells her she is about to be charged",
+  );
   // A method name with a pillar breakdown is the programme's sales material.
   assert.ok((PAGE.match(/T\.H\.Y\.R\.O\.I\.D\./g) ?? []).length <= 1);
 });

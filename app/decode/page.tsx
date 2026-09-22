@@ -7,7 +7,12 @@ import DecodeStickyCta from "./DecodeStickyCta";
 import CoachIntro from "./CoachIntro";
 
 /**
- * /decode — the paid (₹299) 1-1 consultation offer. Ad traffic only.
+ * /decode — the FREE 1-1 consultation offer. Ad traffic only.
+ *
+ * The ₹299 came off the cold path on 23-Sep-2026 (owner). It is bypassed, not
+ * deleted: /schedule and /complete-payment still charge, for anyone who
+ * genuinely owes money. See app/decode/DecodeQuiz.tsx for what changed in the
+ * booking flow and why.
  *
  * LOOK (owner's call, 14-Sep-2026): the layout of feeldvibes.in, a thyroid
  * coach the owner reports closing consistently — white hero, near-black
@@ -30,10 +35,10 @@ import CoachIntro from "./CoachIntro";
  *   8 FAQ ............... three one-line answers
  *   9 last button
  *
- * Unchanged, and must stay so: ₹299 (ads run on it — owner, 14-Sep); every
- * button goes to /decode/quiz with the ad's own label and the price; the refund
- * sentence is quoted, not reworded; the proof claim is "100+"; testimonial
- * words are verbatim.
+ * Unchanged, and must stay so: every button goes to /decode/quiz with the ad's
+ * own label; the proof claim is "100+"; testimonial words are verbatim. (The
+ * ₹299 and its refund sentence were in this list until 23-Sep. The call is free
+ * now, so the price is gone and the refund promise is reworded, deliberately.)
  *
  * COMPLIANCE FLOOR (22-Sep, Events Manager gave this domain 20 days before its
  * data is blocked under Meta's health terms). Two rules for this hero now:
@@ -57,7 +62,7 @@ const WhatsappProofSection = dynamic(() => import("@/app/components/WhatsappProo
 export const metadata: Metadata = {
   title: "Book your 1-1 Thyroid Consultation | Swapnil Umbarkar",
   description:
-    "Book a 1-1 Thyroid Fat Loss Consultation for ₹299. Your own blood report read line by line to find the exact reason you are not losing weight even though you eat less.",
+    "Book a free 1-1 Thyroid Fat Loss Consultation. Your own blood report read line by line to find the exact reason you are not losing weight even though you eat less.",
   // Ad traffic only. Indexing it would put it in competition with the main site.
   robots: { index: false, follow: false },
 };
@@ -75,8 +80,8 @@ const GET = [
 
 const STEPS = [
   { h: "Fill your intake form", p: "12 quick taps about your report and what you have tried. I read it before we speak." },
-  { h: "Pay ₹299", p: "Refunded if you leave the call without knowing your blocker." },
-  { h: "Pick your slot", p: "Sixty minutes, one to one, on a video call." },
+  { h: "Pick your slot", p: "No card, no payment. Choose a time that suits you." },
+  { h: "We talk", p: "Sixty minutes, one to one, on a video call." },
 ] as const;
 
 // Self-qualification. TWO LINES ARE DELIBERATELY ABSENT and must not be added:
@@ -92,10 +97,10 @@ const FOR_YOU = [
 ] as const;
 
 const FAQ = [
-  { q: "Is ₹299 the whole cost?", a: "Yes. Nothing extra is added at the end." },
+  { q: "Is it really free?", a: "Yes. No card, nothing to pay on the call, nothing added at the end." },
   {
     q: "No blood report yet?",
-    a: "Answer the questions anyway. I will not take ₹299 to read a report that does not exist — you get a free call on which tests to get.",
+    a: "Answer the questions anyway. On the call I tell you exactly which tests to get and why, and we work from your answers until the results are in.",
   },
   { q: "Who is on the call?", a: "Me. Not an assistant, not a sales team. Sixty minutes, one to one." },
 ] as const;
@@ -112,7 +117,7 @@ function BookButton() {
       style={{ maxWidth: "24rem", textDecoration: "none" }}
     >
       Book my 1-1 Thyroid Consultation
-      <span className="cta-sub">₹299 &middot; 60-min Thyroid Root Cause Session</span>
+      <span className="cta-sub">Free &middot; 60-min Thyroid Root Cause Session</span>
     </a>
   );
 }
@@ -195,14 +200,19 @@ export default function DecodePage() {
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
               Book my 1-1 Thyroid Consultation
-              <span className="cta-sub">₹299 &middot; 60-min Thyroid Root Cause Session</span>
+              <span className="cta-sub">Free &middot; 60-min Thyroid Root Cause Session</span>
             </a>
             <p className="mx-auto mt-3 max-w-[420px] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t2)]">
               Every case is personally reviewed before the call. Limited slots each week.
             </p>
-            {/* Quoted, not reworded (page rule). Relocated only. */}
+            {/* The refund line was this page's strongest risk-reversal sentence
+                and it was quoted, never reworded. With nothing to refund it is
+                meaningless, so it is replaced rather than deleted: the promise
+                it made was "you will not leave empty-handed", and that still
+                stands. Do not reinstate the ₹299 wording while the call is
+                free. */}
             <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-bold leading-[var(--lh-body)] text-[#0b1120]">
-              Leave the call without knowing your blocker and the ₹299 is refunded.
+              No card, nothing to pay. Come with your report and leave knowing your blocker.
             </p>
           </div>
 
@@ -376,14 +386,14 @@ export default function DecodePage() {
               style={{ maxWidth: "24rem", textDecoration: "none" }}
             >
               Book my 1-1 Thyroid Consultation
-              <span className="cta-sub">₹299 &middot; 60-min Thyroid Root Cause Session</span>
+              <span className="cta-sub">Free &middot; 60-min Thyroid Root Cause Session</span>
             </a>
             <p className="mx-auto mt-4 text-[length:var(--fs-2xs)] text-[var(--t2)]">
-              ₹299 &middot; 60 minutes &middot; one to one with Swapnil
+              Free &middot; 60 minutes &middot; one to one with Swapnil
             </p>
             {SHOW_PROGRAMME_PRICE && (
               <p className="mx-auto mt-4 max-w-[var(--measure-caption)] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-                After the ₹299 consultation, if the full 3-month programme is the
+                After the consultation, if the full 3-month programme is the
                 right next step, it is ₹15,000&ndash;₹30,000. Saying so now so
                 nobody&rsquo;s time is wasted.
               </p>

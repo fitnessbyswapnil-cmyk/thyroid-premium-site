@@ -113,7 +113,21 @@ const BOOKING_TEMPLATE_FALLBACK = "booking_confirmation";
 // Free-consultation leads must never be asked for money they do not owe, so
 // rows from any other source have their phone blanked in a mapped COPY before
 // planning (index-preserving, so per-row stamping still lands on the right row).
-const PAID_FUNNEL_ACTIVE = true;
+// 2026-09-23: OFF again. The /decode consultation is free, so nobody arriving
+// through the cold funnel owes anything, and all four payment jobs would be
+// asking for money that is not due.
+//
+// The leadId-prefix filter below does NOT cover this, which is the trap.
+// paidFunnelRowsOnly only lets `sched_` and `dq_` rows through, and those are
+// exactly the prefixes the free path still mints (ScheduleClient and
+// DecodeQuiz). The prefix answers "which funnel did she come from", which
+// stopped being a proxy for "does she owe money" the moment the main funnel
+// went free. So the switch, not the filter, is what protects her.
+//
+// Still gated rather than deleted: the plans compute either way, so a dry run
+// keeps showing what WOULD have matched, and /schedule and /complete-payment
+// still charge anyone who genuinely owes.
+const PAID_FUNNEL_ACTIVE = false;
 const PAID_LEAD_ID_PREFIXES = ["sched_", "dq_"];
 // Turnstile: a quiz lead saved without a bot-check token is stamped
 // "unverified" in the "Bot Check" column. quiz-lead already skips its WhatsApp

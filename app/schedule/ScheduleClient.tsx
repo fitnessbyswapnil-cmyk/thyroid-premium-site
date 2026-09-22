@@ -70,6 +70,15 @@ export type ScheduleClientProps = {
   /** Prefill for a resumed checkout (the WhatsApp link). */
   initial?: { name?: string; phone?: string; email?: string };
   /**
+   * Book without paying. Skips InitiateCheckout, the Cashfree order and the
+   * SDK, and goes straight to /session-booked with her leadId.
+   *
+   * Left OFF by default so /schedule and /complete-payment — the resume link in
+   * the WhatsApp nudge, which exists to collect a payment someone already owes —
+   * keep charging exactly as before. Only the cold /decode path opts in.
+   */
+  free?: boolean;
+  /**
    * Answers already collected upstream (the /decode quiz). Merged into the
    * /api/quiz-lead post so they land in the SAME sheet columns the quiz funnel
    * has always written, rather than needing a second lead record or a schema
@@ -95,6 +104,7 @@ export default function ScheduleClient({
   presetThyroid,
   existingLeadId,
   initial,
+  free = false,
 }: ScheduleClientProps = {}) {
   const Wrapper = wrapper;
   const [f, setF] = useState<Form>({ name: initial?.name ?? "", email: initial?.email ?? "", phone: initial?.phone ?? "", thyroid: presetThyroid ?? "" });
@@ -103,8 +113,11 @@ export default function ScheduleClient({
   const [busy, setBusy] = useState(false);
   const cashfreeRef = useRef<Awaited<ReturnType<typeof import("@cashfreepayments/cashfree-js")["load"]>> | null>(null);
 
-  // Warm the checkout SDK so the tap-to-pay feels instant.
+  // Warm the checkout SDK so the tap-to-pay feels instant. Skipped entirely on
+  // the free path: it downloads a payment SDK for a checkout that never opens,
+  // on a page that is 82% mobile.
   useEffect(() => {
+    if (free) return;
     let cancelled = false;
     (async () => {
       try {
@@ -118,7 +131,7 @@ export default function ScheduleClient({
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [free]);
 
   const set = (k: keyof Form, v: string) => {
     setF((p) => ({ ...p, [k]: v }));
@@ -242,6 +255,24 @@ export default function ScheduleClient({
       }),
     }).catch(() => {});
 
+    // ── free path: straight to the calendar, no checkout ──
+    // The lead is already captured above (Lead event, NATIVE_BOOKING_KEY,
+    // /api/quiz-lead), because none of that ever depended on money. Only the
+    // checkout leg is skipped, so /session-booked receives the same step1,
+    // leadId and qscore it always did and prefills the Cal.com embed from them.
+    //
+    // No orderId is written, and that is load-bearing rather than incidental:
+    // /session-booked mints a Purchase only when it can resolve one ("No order
+    // id → never mint a fake Purchase"), so a free booking reports no revenue.
+    // InitiateCheckout is not fired either — nothing is being checked out.
+    // Schedule and QualifiedSchedule are unaffected; both come from
+    // /api/cal-webhook on the booking itself.
+    if (free) {
+      pushDL({ event: "schedule_free_booking_started" });
+      window.location.href = `/session-booked?leadId=${encodeURIComponent(leadId)}`;
+      return;
+    }
+
     // ── payment: identical to QuizFunnel.payNow ──
     try {
       trackInitiateCheckout();
@@ -304,7 +335,7 @@ export default function ScheduleClient({
       );
       window.location.href = CONSULTATION_FORM_URL;
     }
-  }, [f, busy]);
+  }, [f, busy, free]);
 
   const field: React.CSSProperties = {
     width: "100%", padding: "14px 16px", borderRadius: 10, border: `1px solid ${GRID}`,
@@ -413,7 +444,7 @@ export default function ScheduleClient({
               fontWeight: 700, cursor: busy ? "default" : "pointer",
             }}
           >
-            {busy ? "Opening secure checkout…" : (ctaLabel ?? `Schedule My Session — ₹${SESSION_PRICE}`)}
+            {busy ? (free ? "Opening your calendar…" : "Opening secure checkout…") : (ctaLabel ?? `Schedule My Session — ₹${SESSION_PRICE}`)}
           </button>
 
           {formErr && (
