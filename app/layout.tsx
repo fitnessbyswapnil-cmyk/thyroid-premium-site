@@ -50,12 +50,18 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
     title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
+    // COMPLIANCE FLOOR (23-Sep): these three descriptions are scanned as page
+    // content. None may assert the reader's condition or medication, and none
+    // may pair an outcome with a timeframe. See the same block in
+    // app/components/Hero.tsx and app/decode/page.tsx. The old description
+    // opened "On thyroid medication but the weight won't move?", which asserted
+    // both, and used the banned "isn't X, it's Y" construction.
     description:
-          "On thyroid medication but the weight won't move? Your weight isn't stuck. It's blocked. A private 1-on-1 consultation to find your blocker and get your 90-day plan. Real Indian food, no starving. Works alongside your doctor.",
+          "A private 1-on-1 consultation that reads your blood report and maps a 90-day plan built on real Indian food. Nutrition and lifestyle coaching that works alongside your doctor.",
     openGraph: {
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:
-                  "Finally, a thyroid-specific plan: one private 60-minute consultation call to find your root cause and get your 90-day plan. Limited weekly slots.",
+                  "One private 60-minute consultation. Your blood report read line by line, then a 90-day plan built on real Indian food. Nutrition and lifestyle coaching alongside your doctor. Limited weekly slots.",
           url: "https://swapnilumbarkarfitness.in",
           images: [
             {
@@ -71,7 +77,7 @@ export const metadata: Metadata = {
           card: "summary_large_image",
           title: "Private Thyroid Strategy Session · Swapnil Umbarkar",
           description:
-                  "One private 60-minute consultation call: your root cause found, your 90-day plan mapped. Limited weekly slots.",
+                  "One private 60-minute consultation. Your blood report read line by line, then a 90-day plan on real Indian food. Limited weekly slots.",
           images: ["https://swapnilumbarkarfitness.in/og-image.jpg"],
     },
 };
