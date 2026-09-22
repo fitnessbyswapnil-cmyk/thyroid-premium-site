@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 import { useInView } from "../lib/useInView";
 
@@ -101,6 +102,21 @@ const COUNT_WORD = NUMBER_WORDS[WALL.length] ?? String(WALL.length);
 
 function Card({ entry, index }: { entry: WallEntry; index: number }) {
   const { ref, visible } = useInView(0.08);
+  // Clarity, 14 days to 21-Sep: on /decode mobile both dead-click leaders were
+  // these images (4 taps each, 53% of all dead taps between them) and four of
+  // the top ten taps on the whole page were non-interactive photos. Women expect
+  // a before/after composite to open. It now does.
+  const [zoom, setZoom] = useState(false);
+
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoom(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoom]);
+
   return (
     <figure
       ref={ref}
@@ -138,7 +154,13 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
 
       {/* The composites already carry their own red Before / green After chips
           burned in, so none are drawn over them — two sets would collide. */}
-      <div className="relative mt-5 aspect-[9/16] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setZoom(true)}
+        aria-label={`View the full photo for ${entry.name}`}
+        className="relative mt-5 block aspect-[9/16] w-full overflow-hidden border-0 p-0"
+        style={{ background: "transparent", cursor: "zoom-in" }}
+      >
         <Image
           src={entry.src}
           alt={entry.alt}
@@ -146,7 +168,31 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover"
         />
-      </div>
+      </button>
+
+      {zoom && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${entry.name}: full photo`}
+          onClick={() => setZoom(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.92)" }}
+        >
+          <button
+            type="button"
+            onClick={() => setZoom(false)}
+            aria-label="Close photo"
+            className="absolute right-3 top-3 rounded-full px-4 py-2 text-[length:var(--fs-2xs)] font-bold"
+            style={{ background: "rgba(255,255,255,0.14)", color: "#fff", minHeight: 44, minWidth: 44 }}
+          >
+            Close
+          </button>
+          <span className="relative block h-full w-full" style={{ maxWidth: 520 }}>
+            <Image src={entry.src} alt={entry.alt} fill sizes="100vw" className="object-contain" />
+          </span>
+        </div>
+      )}
     </figure>
   );
 }
@@ -175,6 +221,14 @@ export default function TransformationWall({ compact = false }: { compact?: bool
           >
             {COUNT_WORD} Women. {COUNT_WORD} Reports.
           </h2>
+          {/* Shown in compact mode too, deliberately. Every card headline carries
+              a kilogram figure and a 90-day timeframe, and Meta's Health and
+              Wellness standard allows a specific outcome in a set timeframe only
+              with a disclaimer or qualifier attached. This is that qualifier, and
+              it has to stay wherever these cards render. */}
+          <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
+            Individual results vary. Each card is one client&apos;s own outcome, not a typical or promised result.
+          </p>
           {!compact && (
             <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-center text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t3)]">
               100+ Indian women with hypothyroidism coached, one to one.

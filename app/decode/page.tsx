@@ -20,7 +20,7 @@ import CoachIntro from "./CoachIntro";
  * at /decode-long.
  *
  * Order:
- *   1 hero (white) ...... headline, the why, the refund line, button, video
+ *   1 hero (white) ...... headline, the why, proof strip, button, refund line, video
  *   2 symptoms .......... six lines, tap the true ones
  *   3 proof ............. before/afters · video stories · WhatsApp screenshots
  *   4 meet your coach ... the owner's own words
@@ -34,6 +34,19 @@ import CoachIntro from "./CoachIntro";
  * button goes to /decode/quiz with the ad's own label and the price; the refund
  * sentence is quoted, not reworded; the proof claim is "100+"; testimonial
  * words are verbatim.
+ *
+ * COMPLIANCE FLOOR (22-Sep, Events Manager gave this domain 20 days before its
+ * data is blocked under Meta's health terms). Two rules for this hero now:
+ *   - No sentence may tell the reader she has a thyroid condition. Describe the
+ *     situation or describe clients, never diagnose the visitor. That is Meta's
+ *     personal-attributes standard and it is enforced on ad copy and landing
+ *     page alike.
+ *   - No kilogram figure and no timeframe in a promise. Meta prohibits
+ *     "promises of specific outcomes within a set timeframe without disclaimers
+ *     or qualifiers". Client cards may state what a named client actually did,
+ *     because TransformationWall carries the results-vary qualifier.
+ * Both rules were broken by the 15-17 Sep hero, which is what this revision
+ * undoes. Owner may override, but not by accident.
  */
 
 const SymptomChips = dynamic(() => import("@/app/components/SymptomChips"));
@@ -122,23 +135,37 @@ export default function DecodePage() {
       <section className="decode-hero bg-white">
         <div className="container-default mx-auto w-full max-w-[760px] px-4 pb-10 pt-7 text-center md:px-6 md:pb-14 md:pt-14">
           <p className="m-0 text-[length:var(--fs-3xs)] font-medium text-[var(--t2)]">
-            For Indian women 28+ with hypothyroidism
+            For Indian women 40+ who have been stuck for years
           </p>
           <h1
             className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]"
             style={{ fontFamily: "var(--font-body), Inter, system-ui, sans-serif" }}
           >
-            {/* The video ad's hook, word for word (17-Sep): she should land on the
-                sentence she just heard. */}
-            You&apos;re Not The Problem.{" "}
+            {/* Was "You're Not The Problem. Your Thyroid Is." — the 17-Sep video
+                hook, word for word. Replaced 22-Sep: it tells the reader she has
+                a thyroid condition, which is exactly what Meta's personal
+                attributes standard prohibits, and it is the kind of line feeding
+                the health-classification warning now open on this domain
+                (Events Manager, 20-Sep: data blocked in 20 days). The insight
+                survives without diagnosing her. If the video ad is re-cut, its
+                hook should follow this line rather than the reverse. */}
+            Eating Less Stopped Working.{" "}
             <span className="block" style={{ color: "#dc3434" }}>
-              Your Thyroid Is.
+              Here Is The Part Most Plans Skip.
             </span>
           </h1>
 
           <p className="mx-auto mt-4 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-[#0b1120] md:text-[length:var(--fs-lg)]">
+            {/* Was "Lose 8–10 Kg In 90 Days, Even With Thyroid." (live 15-Sep).
+                Removed 22-Sep. Meta's Health and Wellness standard prohibits
+                "promises of specific outcomes within a set timeframe without
+                disclaimers or qualifiers", and this was the single most exposed
+                sentence on the site. It also flattened the one thing that
+                differentiates this offer into a generic diet-ad promise. Replaced
+                with the owner's own positioning line from his brief. Do not put a
+                kilogram figure or a timeframe back in this slot. */}
             <span className="rounded-md px-2 py-1" style={{ background: "#ffe98a", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
-              Lose 8–10 Kg In 90 Days, Even With Thyroid.
+              A &ldquo;normal&rdquo; report is not the same as a thyroid that is working.
             </span>
           </p>
 
@@ -147,9 +174,19 @@ export default function DecodePage() {
             read your report and show you exactly what is blocking your fat loss.
           </p>
 
-          <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-bold leading-[var(--lh-body)] text-[#0b1120]">
-            Leave the call without knowing your blocker and the ₹299 is refunded.
-          </p>
+          {/* FOLD ORDER, reset 22-Sep from Microsoft Clarity (14 days to 21-Sep).
+              45% of mobile visitors were gone by 10% of scroll depth, and the
+              14-17 Sep redesign made that worse, not better: 37.84% gone before,
+              51.67% after. The fold was seven stacked text blocks before there was
+              anything to look at, on traffic that is 82% mobile and 70% Instagram
+              or Facebook in-app browser.
+
+              So: proof comes before the ask, the refund line moves under the
+              button where it answers an objection instead of adding to the wall of
+              text, and the video stays below the button so it cannot push the CTA
+              down the page. Anything added to this hero in future goes BELOW the
+              button, not above it. */}
+          <HeroProofStrip claimsOnly />
 
           <div className="mt-6 flex flex-col items-center">
             <a
@@ -163,6 +200,10 @@ export default function DecodePage() {
             <p className="mx-auto mt-3 max-w-[420px] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t2)]">
               Every case is personally reviewed before the call. Limited slots each week.
             </p>
+            {/* Quoted, not reworded (page rule). Relocated only. */}
+            <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-bold leading-[var(--lh-body)] text-[#0b1120]">
+              Leave the call without knowing your blocker and the ₹299 is refunded.
+            </p>
           </div>
 
           {/* The owner's own video, the home page VSL. Only its poster loads
@@ -173,8 +214,6 @@ export default function DecodePage() {
             </p>
             <HeroVideo />
           </div>
-
-          <HeroProofStrip claimsOnly />
         </div>
       </section>
 

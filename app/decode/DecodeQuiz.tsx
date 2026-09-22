@@ -653,8 +653,18 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           <span className="text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)] text-[var(--t3)]">
             Step 1 of 2 &middot; about 90 seconds
           </span>
+          {/* Clarity, 14 days to 21-Sep: this progress header absorbed 2 of the
+              6 dead taps on the quiz AND its only rage tap. The Back control was
+              a bare underlined span of text at --fs-3xs, well under the 44px
+              minimum tap target, so taps around it landed on nothing and one
+              woman tapped it repeatedly. Same words, a real target. */}
           {i > 0 && (
-            <button type="button" onClick={() => setI((n) => n - 1)} className="text-[length:var(--fs-3xs)] text-[var(--t3)] underline">
+            <button
+              type="button"
+              onClick={() => setI((n) => n - 1)}
+              className="-mr-2 flex items-center justify-end rounded px-3 text-[length:var(--fs-2xs)] font-bold text-[var(--t2)] underline"
+              style={{ minHeight: 44, minWidth: 64 }}
+            >
               Back
             </button>
           )}
