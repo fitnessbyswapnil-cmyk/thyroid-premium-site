@@ -93,21 +93,57 @@ time; teach `planReminders` to skip it.
   `ensureGridColumns` plumbing and a `RESERVED_INDEXES` update.
 
 **Option B (recommended) — add booking evidence to `ReminderColumns` and skip on
-it, exactly as `planBroadcast` does.**
+it, reading Cal.com first and the sheet only as a fallback.**
 
-- For: booking state is already in the sheet, already written by the Cal.com
-  Make scenario, already trusted by two sibling functions in the same file, and
-  already handles the one-column-stamped case. It protects mid-flight rows
-  retroactively, because it reads the state rather than a marker written at a
-  particular moment. It needs no new column and no new writer. It is a pure
-  change to a pure function with an existing test file.
+- For: it reads state rather than a marker written at one particular moment, so
+  it protects mid-flight rows retroactively. It needs no new column and no new
+  writer. It is a pure change to a pure function with an existing test file.
 - The predicate becomes: skip if paid **or** if there is booking evidence. A
   woman who booked and did not pay is, after the migration, a completed funnel,
   not an abandoned one.
 
+> **Corrected 23-Sep, and this correction matters.** An earlier draft of this
+> section said to copy `planBroadcast` and read the sheet's `Booking Status` /
+> `Session Date` alone. **That would not have worked.**
+> `whatsapp-automation-session-2026-08.md` §4 records that bookings are not
+> reliably reaching the Leads sheet: the Make Cal.com → Sheets scenario drops
+> most write-backs, Cal.com produces 3-4 bookings a day and the sheet showed
+> one. §2 states the rule directly, trust Cal.com for booking counts and not the
+> sheet. A sheet-only gate would therefore have missed most real bookings and
+> leaked the nudge to them, which is the exact failure the gate exists to
+> prevent. `app/api/admin/digest/route.ts:118` already resolves booking state
+> the right way — Cal.com first, sheet as fallback — and the gate follows it.
+>
+> Cal.com's set must be scoped to bookings **still ahead of her**
+> (`CalState.active`), or it re-introduces the bug the paid-settle logic was
+> rewritten to fix: a woman who had a call in July and abandons a fresh checkout
+> in September must stay reachable. The sheet fallback is read per row for the
+> same reason.
+
 **Do both only if the owner wants a free/paid distinction for reporting** — but
 that is a reporting requirement, not a safety requirement, and should not be on
 the critical path of the migration.
+
+### The existing guard does not cover this, and it is easy to assume it does
+
+`app/api/cron/payment-reminder/route.ts` already carries free-funnel machinery
+from an earlier era, which reads at a glance as though the problem were solved:
+
+- `PAID_FUNNEL_ACTIVE` (`:116`), a master switch over all four payment jobs.
+- `paidFunnelRowsOnly()` (`:131-145`), which blanks the phone on any row whose
+  leadId does not start with one of `PAID_LEAD_ID_PREFIXES = ["sched_", "dq_"]`,
+  so free-consultation leads are never asked for money.
+
+**Neither protects a free `/decode` booking.** `DecodeQuiz.tsx:354` mints
+`dq_…` and `ScheduleClient.tsx:190` mints `sched_…` — precisely the two
+prefixes the filter lets through. After the migration those same paths still
+mint those same prefixes, so every free booking passes the filter and lands in
+the candidate set. The prefix filter answers "which funnel did she come from",
+which stops being a proxy for "does she owe money" the moment the main funnel is
+free.
+
+`PAID_FUNNEL_ACTIVE = false` is a real blunt-instrument option at cutover, and
+worth knowing about, but it silences the sequence for genuinely paid leads too.
 
 ### The second, opposite failure in the same file
 
@@ -350,13 +386,18 @@ calls get honoured. Budget for them.
 
 Smallest reviewable step first. Each step is safe to ship and stop.
 
-**PR 1 — Reminder safety, no behaviour change on the live funnel.**
-Add booking evidence to `ReminderColumns`, skip on it in `planReminders`, using
-the either-column test from `planBroadcast`. Add tests for: booked-and-unpaid is
-skipped; unpaid-and-unbooked still nudged; only-`sessionDate`-stamped is skipped;
-only-`bookingStatus`-stamped is skipped. **This is correct today** (a booked
-woman should never get a checkout nudge on any funnel) and it is the single
-change that makes everything after it safe. Ship it first and separately.
+**PR 1 — Reminder safety, no behaviour change on the live funnel. SHIPPED as
+PR #144.**
+Booking evidence added to `ReminderColumns` and skipped on in `planReminders`,
+Cal.com primary with the sheet as fallback. 13 tests, verified both ways: with
+the gate disabled 6 fail and the 7 negative tests still pass, so it can be
+neither silently broken nor silently widened into swallowing the job. **This is
+correct today** (a booked woman should never get a checkout nudge on any funnel)
+and it is the single change that makes everything after it safe.
+
+One thing to check on that PR before the cutover, not after: its dry run reports
+a `bookingGate` block, and `calSource: "none"` there means `CAL_API_KEY` is not
+reachable from the worker and the gate is running on the sheet columns alone.
 
 **PR 2 — Decide and encode the `planBookingNudges` question.**
 Either re-point it at the free population or fence it off explicitly, with a
