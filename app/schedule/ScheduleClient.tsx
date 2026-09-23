@@ -208,6 +208,13 @@ export default function ScheduleClient({
     try {
       const raw = localStorage.getItem(NATIVE_BOOKING_KEY);
       const prev = raw ? JSON.parse(raw) : {};
+      // A FREE booking must not inherit an order id. /session-booked mints
+      // Purchase from whatever order id it can find — the URL first, then this
+      // key — so a woman who once opened the ₹299 checkout on this device and
+      // books free today would have reported a sale that never happened. The
+      // paid path writes orderId itself, a few lines below, so dropping it here
+      // costs that path nothing.
+      if (free) { delete (prev as { orderId?: string }).orderId; delete (prev as { amount?: number }).amount; }
       localStorage.setItem(NATIVE_BOOKING_KEY, JSON.stringify({
         ...prev,
         step1: { name: f.name.trim(), phone: phoneDigits, email },
