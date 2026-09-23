@@ -154,13 +154,21 @@ test("the qualification list keeps the two excluded filters out", () => {
   assert.ok(!/decision|husband|family decide/i.test(list), "the decision-maker question is the quiz's job, softly");
 });
 
-test("the call stays ₹299 and the coach section says only what the owner said", () => {
-  // Owner, 14-Sep-2026: ads run on the ₹299 call; never made free.
-  assert.ok(!/free (60|strategy|consultation) call|no obligation|spots left|limited spots/i.test(rendered("app/decode/page.tsx")));
+test("the coach section says only what the owner said, and the hype stays off", () => {
+  // Was "the call stays ₹299": that rule died on 23-Sep when the owner made the
+  // call free (PR #145). What survives is the ban on the reference page's
+  // borrowed hype — "no obligation", "spots left" — which reads as a funnel
+  // template rather than as him.
+  assert.ok(!/no obligation|spots left|limited spots/i.test(rendered("app/decode/page.tsx")));
   assert.ok(COACH.includes("Scientific Thyroid Lean Method for fat loss"));
   assert.match(COACH, /ACE<\/span> &middot; <span className="decode-gold">INFS<\/span>/);
   assert.match(COACH, /BLS<\/span> certified/);
-  assert.ok(!/50,000|coach(ing)? you free/i.test(COACH + PAGE), "never the reference page's claims");
+  // "50,000+ women trained" and the S.H.A.P.E. framework belong to the page this
+  // one is benchmarked against. They are not his and never go on this page.
+  // The keep-coaching-free guarantee USED to be banned by this same line; the
+  // owner adopted it deliberately on 23-Sep as his own offer, so it is allowed
+  // and the false-scale claims are not.
+  assert.ok(!/50,000|S\.H\.A\.P\.E/i.test(COACH + PAGE), "never the reference page's claims");
 });
 
 test("the page's own words stay under budget", () => {

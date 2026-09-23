@@ -140,7 +140,7 @@ export default function DecodePage() {
       <section className="decode-hero bg-white">
         <div className="container-default mx-auto w-full max-w-[760px] px-4 pb-10 pt-7 text-center md:px-6 md:pb-14 md:pt-14">
           <p className="m-0 text-[length:var(--fs-3xs)] font-medium text-[var(--t2)]">
-            For Indian women 40+ who have been stuck for years
+            For Indian women 28+ who are doing everything right and still feel stuck
           </p>
           <h1
             className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]"
@@ -154,29 +154,29 @@ export default function DecodePage() {
                 (Events Manager, 20-Sep: data blocked in 20 days). The insight
                 survives without diagnosing her. If the video ad is re-cut, its
                 hook should follow this line rather than the reverse. */}
-            Eating Less Stopped Working.{" "}
-            <span className="block" style={{ color: "#dc3434" }}>
-              Here Is The Part Most Plans Skip.
-            </span>
+            {/* PROMISE + GUARANTEE (owner, 23-Sep). Structure borrowed from the
+                page this one is benchmarked against: who it is for, one promise,
+                then the guarantee that removes the risk of believing it.
+
+                What is deliberately NOT here: the word hypothyroidism aimed at
+                the reader, and any kilogram figure. The owner asked for "Lose
+                10+ kg in 90 days" and for "women managing hypothyroidism"; both
+                were the exact sentences that put this domain in front of Meta's
+                health reviewers (Events Manager, 20-Sep). The promise is
+                therefore stated as what coaching can honestly move — metabolism,
+                energy, strength — and the guarantee carries the weight the
+                kilogram figure used to. */}
+            I&rsquo;ll Help You Improve Your Metabolism, Energy And Strength In 90 Days
           </h1>
 
-          <p className="mx-auto mt-4 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-[#0b1120] md:text-[length:var(--fs-lg)]">
-            {/* Was "Lose 8–10 Kg In 90 Days, Even With Thyroid." (live 15-Sep).
-                Removed 22-Sep. Meta's Health and Wellness standard prohibits
-                "promises of specific outcomes within a set timeframe without
-                disclaimers or qualifiers", and this was the single most exposed
-                sentence on the site. It also flattened the one thing that
-                differentiates this offer into a generic diet-ad promise. Replaced
-                with the owner's own positioning line from his brief. Do not put a
-                kilogram figure or a timeframe back in this slot. */}
-            <span className="rounded-md px-2 py-1" style={{ background: "#ffe98a", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
-              A &ldquo;normal&rdquo; report is not the same as a thyroid that is working.
-            </span>
+          <p className="mx-auto mt-4 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] md:text-[length:var(--fs-lg)]" style={{ color: "#dc3434" }}>
+            Or I&rsquo;ll Keep Coaching You Free Until You Get There.
           </p>
 
-          <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
-            In a <strong className="text-[#0b1120]">60-minute 1-on-1 Thyroid Root Cause Session</strong> I
-            read your report and show you exactly what is blocking your fat loss.
+          <p className="mx-auto mt-4 max-w-[600px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
+            My <strong className="text-[#0b1120]">Scientific Thyroid Lean Method</strong> starts with
+            your own blood report, read line by line, then home-cooked Indian food and joint-friendly
+            training that fits a working day. No crash diets, no starving.
           </p>
 
           {/* FOLD ORDER, reset 22-Sep from Microsoft Clarity (14 days to 21-Sep).
@@ -213,6 +213,15 @@ export default function DecodePage() {
                 free. */}
             <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-bold leading-[var(--lh-body)] text-[#0b1120]">
               No card, nothing to pay. Come with your report and leave knowing your blocker.
+            </p>
+            {/* The one line that reframes the whole offer, moved below the button
+                on 23-Sep: the fold rule from Clarity is that nothing new goes
+                above the CTA. It answers "my reports are normal, why would a call
+                help", which is the objection the ad traffic arrives with. */}
+            <p className="mx-auto mt-4 text-[length:var(--fs-xs)] font-bold leading-[var(--lh-tight)] text-[#0b1120] md:text-[length:var(--fs-base)]">
+              <span className="rounded-md px-2 py-1" style={{ background: "#ffe98a", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
+                A &ldquo;normal&rdquo; report is not the same as a thyroid that is working.
+              </span>
             </p>
           </div>
 
