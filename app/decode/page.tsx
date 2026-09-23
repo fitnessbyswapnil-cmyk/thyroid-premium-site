@@ -54,7 +54,6 @@ import CoachIntro from "./CoachIntro";
  * undoes. Owner may override, but not by accident.
  */
 
-const SymptomChips = dynamic(() => import("@/app/components/SymptomChips"));
 const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial"));
 const TransformationWall = dynamic(() => import("@/app/components/TransformationWall"));
 const WhatsappProofSection = dynamic(() => import("@/app/components/WhatsappProofSection"));
@@ -66,9 +65,6 @@ export const metadata: Metadata = {
   // Ad traffic only. Indexing it would put it in competition with the main site.
   robots: { index: false, follow: false },
 };
-
-/** The six most recognisable lines, by index into SymptomChips' own list. */
-const SYMPTOM_PICK = [0, 1, 2, 3, 8, 9] as const;
 
 // Mirrors the video ad (17-Sep): she was promised a Root Cause Map, her
 // report read, and what the next 90 days should look like.
@@ -108,6 +104,155 @@ const FAQ = [
 // Built and deliberately left OFF until 26-Sep-2026 (quiz gates first need two
 // clean weeks). Renders at the last button only.
 const SHOW_PROGRAMME_PRICE = false;
+
+/**
+ * WHY NOTHING HAS WORKED (23-Sep). This slot held SymptomChips: six symptom
+ * lines with tick boxes. It was cut for one reason — by the time she is on this
+ * page the ad has already read her symptoms back to her, and the quiz asks them
+ * again two taps later, where ticking them earns a score. Ticking them here
+ * earned nothing, and the objection that actually stops her booking is not
+ * "is something wrong with me" but "I have tried five things already".
+ *
+ * So the slot answers that instead, and it carries the one line from the video
+ * that was nowhere on the page: thyroid fat loss is not normal fat loss.
+ *
+ * The left column is what she has already been handed, in her words from the
+ * recorded calls. The right column is only what this programme actually does —
+ * every line is a deliverable, not a claim, so nothing here needs a qualifier.
+ * SymptomChips itself stays on the homepage, where she arrives cold.
+ */
+const COMPARE_OLD = [
+  "Eat less, walk 10,000 steps",
+  "The same calorie chart as everyone else",
+  "Your report never opened",
+  "Cut out rice and roti",
+  "Blamed when the scale does not move",
+  "A new diet every time the last one stops",
+] as const;
+
+const COMPARE_NEW = [
+  "Your blood report read line by line, first",
+  "Food built around what your report shows",
+  "Roti, dal, sabzi, curd \u2014 nothing banned",
+  "Joint-friendly training, 30\u201340 minutes",
+  "Weekly check-ins on energy, sleep and bloating, not just the scale",
+  "A repeat blood test at the end, so the markers move too",
+] as const;
+
+function Cross() {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-[2px] flex h-5 w-5 flex-none items-center justify-center rounded-full"
+      style={{ background: "rgba(220,52,52,0.16)" }}
+    >
+      <svg width="10" height="10" viewBox="0 0 12 12">
+        <path d="M2 2l8 8M10 2l-8 8" fill="none" stroke="#ff6b6b" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
+
+function Tick() {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-[2px] flex h-5 w-5 flex-none items-center justify-center rounded-full"
+      style={{ background: "rgba(255,201,30,0.16)" }}
+    >
+      <svg width="11" height="11" viewBox="0 0 12 12">
+        <path d="M2 6.4l2.6 2.6L10 3" fill="none" stroke="#ffc91e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+function CompareColumn({
+  tag, tagColor, tagBg, borderColor, title, lines, good,
+}: {
+  tag: string; tagColor: string; tagBg: string; borderColor: string;
+  title: string; lines: readonly string[]; good: boolean;
+}) {
+  return (
+    <article
+      className="rounded-2xl p-5 md:p-7"
+      style={{
+        border: `1px solid ${borderColor}`,
+        background: good
+          ? "linear-gradient(180deg, rgba(255,201,30,0.05) 0%, rgba(255,255,255,0.02) 45%)"
+          : "rgba(255,255,255,0.02)",
+      }}
+    >
+      <p
+        className="m-0 inline-block rounded-md px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
+        style={{ color: tagColor, background: tagBg }}
+      >
+        {tag}
+      </p>
+      <h3 className="mb-0 mt-3 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-white">
+        {title}
+      </h3>
+      <ul className="mt-5 flex list-none flex-col gap-3.5 p-0">
+        {lines.map((line) => (
+          <li
+            key={line}
+            className="flex gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)]"
+            style={{ color: good ? "var(--t1)" : "var(--t2)" }}
+          >
+            {good ? <Tick /> : <Cross />}
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function CompareSection() {
+  return (
+    <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="compare-why-heading">
+      <div className="mx-auto w-full max-w-[880px]">
+        <header className="text-center">
+          <p className="section-label">Why nothing has worked</p>
+          <h2 id="compare-why-heading" className="section-title mx-auto text-balance">
+            Normal fat loss and <span className="decode-gold">thyroid fat loss</span> are not the same thing
+          </h2>
+        </header>
+
+        <div className="mt-8 grid grid-cols-1 items-stretch gap-4 md:grid-cols-[1fr_auto_1fr] md:gap-5">
+          <CompareColumn
+            tag="EVERY OTHER PLAN"
+            tagColor="#ff8a8a"
+            tagBg="rgba(220,52,52,0.14)"
+            borderColor="rgba(220,52,52,0.35)"
+            title="What you have been handed"
+            lines={COMPARE_OLD}
+            good={false}
+          />
+
+          <div className="flex items-center justify-center md:px-1">
+            <span
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)] text-[var(--t2)]"
+              style={{ border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.03)" }}
+            >
+              VS
+            </span>
+          </div>
+
+          <CompareColumn
+            tag="THE THYROID WAY"
+            tagColor="#ffc91e"
+            tagBg="rgba(255,201,30,0.14)"
+            borderColor="rgba(255,201,30,0.5)"
+            title="What we do instead"
+            lines={COMPARE_NEW}
+            good
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function BookButton() {
   return (
@@ -238,8 +383,8 @@ export default function DecodePage() {
 
       {/* Everything after the hero sits on the near-black band. */}
       <div className="band-deep">
-        {/* ── 2. Symptoms ──────────────────────────────────────────────── */}
-        <SymptomChips hideCta compact pick={SYMPTOM_PICK} />
+        {/* ── 2. Why nothing has worked (was SymptomChips) ─────────────── */}
+        <CompareSection />
 
         {/* ── 3. Proof ─────────────────────────────────────────────────── */}
         <TransformationWall compact />
