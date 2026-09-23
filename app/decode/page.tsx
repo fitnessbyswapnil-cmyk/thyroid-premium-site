@@ -52,6 +52,13 @@ import CoachIntro from "./CoachIntro";
  *     because TransformationWall carries the results-vary qualifier.
  * Both rules were broken by the 15-17 Sep hero, which is what this revision
  * undoes. Owner may override, but not by accident.
+ *
+ * OVERRIDE, 23-Sep-2026: he did, deliberately, twice, after being shown the
+ * Events Manager deadline both times. The headline carries "Lose 10+ kg … In 90
+ * Days" again, and the qualifier directly under it is what keeps the claim
+ * inside Meta's rule — the standard bans the promise "without disclaimers or
+ * qualifiers". The personal-attributes rule above is NOT overridden: no
+ * sentence here tells the reader she has a thyroid condition.
  */
 
 const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial"));
@@ -311,11 +318,22 @@ export default function DecodePage() {
                 therefore stated as what coaching can honestly move — metabolism,
                 energy, strength — and the guarantee carries the weight the
                 kilogram figure used to. */}
-            I&rsquo;ll Help You Improve Your Metabolism, Energy And Strength In 90 Days
+            I&rsquo;ll Help You Lose 10+ kg, Improve Your Metabolism &amp; Energy Levels In 90 Days
           </h1>
 
           <p className="mx-auto mt-4 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] md:text-[length:var(--fs-lg)]" style={{ color: "#dc3434" }}>
             Or I&rsquo;ll Keep Coaching You Free Until You Get There.
+          </p>
+
+          {/* The qualifier is not decoration. Meta's Health and Wellness standard
+              prohibits promises of a specific outcome within a set timeframe
+              "without disclaimers or qualifiers"; the headline above is exactly
+              such a promise, by the owner's decision on 23-Sep, so this line is
+              what keeps it inside the rule. It stays directly under the claim,
+              visible, never in a footer. Remove the kilogram figure or remove
+              nothing. */}
+          <p className="mx-auto mt-2 max-w-[560px] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
+            Individual results vary with your starting point, consistency and medical history.
           </p>
 
           <p className="mx-auto mt-4 max-w-[600px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
