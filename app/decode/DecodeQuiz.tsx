@@ -9,7 +9,7 @@
  *
  *  - The PATTERN score is hers. "6 of 7 markers of a stalled metabolism" is
  *    true from what she just tapped, is defensible from a coach (it is not a
- *    diagnosis and does not sound like one), and is what the Rs 299 attaches
+ *    diagnosis and does not sound like one), and is what the session attaches
  *    to: the session reads her report to find which markers already happened.
  *  - The LEAD score is his. lib/lead-scoring's scoreLead() has fed the CRM for
  *    months and expects its own option labels, so the answers are mapped into
@@ -21,10 +21,24 @@
  * die. The four "what happens" options are the four patterns that appear in
  * the recorded calls, and the first is a booking-form answer verbatim.
  *
- * Pay-then-book, not book-then-pay: ScheduleClient captures the lead, takes the
- * Rs 299, and only then opens the calendar. A free slot that is paid for later
- * fires Schedule before any money moves, fills the calendar with people who
- * never pay, and defeats the only reason the fee exists.
+ * BOOK, NO PAYMENT (owner decision, 23-Sep-2026). This used to read
+ * "pay-then-book, not book-then-pay", and argued that a free slot fires
+ * Schedule before any money moves, fills the calendar with people who never
+ * pay, and defeats the only reason the fee exists. That reasoning is not wrong,
+ * it was outweighed: the Rs 299 was filtering out women who would have come,
+ * and the competitor this page is benchmarked against sells the same call with
+ * no fee at all. So the fee is off the cold path and the filtering falls to the
+ * quiz gate above instead.
+ *
+ * What that means in code: ScheduleClient still captures the lead, still fires
+ * Lead, still writes the sheet row and NATIVE_BOOKING_KEY, and then goes
+ * straight to /session-booked. No InitiateCheckout, no Cashfree order, no
+ * orderId — and because /session-booked only mints a Purchase when it can
+ * resolve an order id, a free booking correctly reports no revenue. Schedule
+ * and QualifiedSchedule are unchanged; both come from /api/cal-webhook.
+ *
+ * The payment path is bypassed, NOT deleted: /complete-payment and /schedule
+ * still charge, for anyone who genuinely owes money.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -323,7 +337,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   const atGate = i === QUESTIONS.length; // answered everything, number not yet given
   const done = i > QUESTIONS.length;      // gate passed, or resumed
   // The only hard gate in the funnel. The two "not now" answers to the timing
-  // question never see the Rs 299 checkout; everything else, including an
+  // question never reach the booking step; everything else, including an
   // unanswered timing question, does.
   // Budget and the decision-maker are deliberately NOT inputs here.
   const gatedOut =
@@ -507,7 +521,8 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
             ) : (
               <>
                 <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-                  We have your ₹299. The only step left is choosing your time &mdash; do not pay again.
+                  Your session is already paid for. The only step left is choosing your time, and
+                  you will not be asked for anything again.
                 </p>
                 <a href="https://cal.com/swapnilumbarkarfitness/60min"
                    className="cta-button mt-5"
@@ -530,8 +545,8 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
               Start with the free masterclass.
             </p>
             <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              You said you are looking to start a little further out, so I am not going to take
-              ₹299 from you today. The paid consultation is built for the woman who is starting
+              You said you are looking to start a little further out, so I am not going to put you
+              into a consultation slot today. That session is built for the woman who is starting
               now. I read her blood report line by line and she leaves with a plan for that week.
             </p>
             <p className="mt-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
@@ -564,10 +579,11 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 wrapper="div"
                 eyebrow={`Your score: ${score100} / 100`}
                 heading="Schedule your 1-1 Thyroid Consultation"
-                subheading="The Premium Thyroid Fat Loss Session — 60 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving. Pay, then pick your slot."
-                ctaLabel={"Pay ₹299 & pick my slot"}
-                rationaleTitle="Why ₹299 and not free"
-                rationaleBody="So the slot is kept by someone who will come, and so I read your report before the call instead of seeing it for the first time in front of you. If you join the programme later, this ₹299 is taken off the fee."
+                subheading="The Premium Thyroid Fat Loss Session. 60 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving. No card, no payment, just pick your time."
+                ctaLabel={"Book my free session"}
+                free
+                rationaleTitle="Why it is free"
+                rationaleBody="It used to be ₹299, to keep the slot honest. I would rather the money was never the reason you did not come. Bring your report and turn up on time, that is the whole price. Only a few slots open each week, and I read every report before the call."
                 presetThyroid={a.diagnosis || "Yes, hypothyroid and on medication"}
                 existingLeadId={leadId || undefined}
                 initial={resumeInit ?? { name: gate.name, phone: gate.phone }}
@@ -602,10 +618,11 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 wrapper="div"
                 eyebrow={`Your score: ${score100} / 100`}
                 heading="Schedule your 1-1 Thyroid Consultation"
-                subheading="The Premium Thyroid Fat Loss Session — 60 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the plan to start on. Pay, then pick your slot."
-                ctaLabel={"Pay ₹299 & pick my slot"}
-                rationaleTitle="Why ₹299 and not free"
-                rationaleBody="So the slot is kept by someone who will come, and so I prepare from your answers before the call. If you join the programme later, this ₹299 is taken off the fee."
+                subheading="The Premium Thyroid Fat Loss Session. 60 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the plan to start on. No card, no payment, just pick your time."
+                ctaLabel={"Book my free session"}
+                free
+                rationaleTitle="Why it is free"
+                rationaleBody="It used to be ₹299, to keep the slot honest. I would rather the money was never the reason you did not come. Turn up on time and come ready to talk, that is the whole price. Only a few slots open each week, and I prepare from your answers before we speak."
                 presetThyroid={a.diagnosis || "Yes, hypothyroid and on medication"}
                 existingLeadId={leadId || undefined}
                 initial={resumeInit ?? { name: gate.name, phone: gate.phone }}
@@ -639,7 +656,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   // WHY THIS QUESTION EXISTS: the point is not the data, it is that reading the
   // question sets the expectation that the decision-maker joins the call. It is
   // asked only of a woman who has just said the money decision is shared, and
-  // every one of its three answers continues to the Rs 299 checkout.
+  // every one of its three answers continues to the booking step.
   const showPartner = q.id === "decision" && needsPartnerQuestion(a.decision);
   return (
     <Shell>

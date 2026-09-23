@@ -10,14 +10,13 @@ import { SESSION_PRICE } from "../lib/pricing";
 import { persistUserIdentity } from "../components/tracking/UserIdentityTracker";
 import { NATIVE_BOOKING_KEY } from "../book/components/BookingFlow";
 import type { Step1Data } from "../book/components/BookingFlow";
-import { CONSULTATION_FORM_URL } from "../context/ScarcityProvider";
 import { calMetadataConfig } from "@/lib/cal-metadata";
 
 // ── Progress Stepper ──────────────────────────────────────────────────────────
 
 const STEPS = [
   { id: 1, label: "Your Profile" },
-  { id: 2, label: "Secure Slot" },
+  { id: 2, label: "Your Details" },
   { id: 3, label: "Pick Time" },
   { id: 4, label: "Confirmed" },
 ];
@@ -601,13 +600,18 @@ export default function SessionBooked() {
             <h2 className="mb-3 text-[length:var(--fs-base)] font-bold" style={{ color: "var(--t1)" }}>
               Your slot isn&apos;t confirmed yet
             </h2>
+            {/* This screen used to say the slot was held only after the ₹299
+                was paid, and sent her to checkout. The consultation is free
+                since 23-Sep, so there is nothing to pay and nothing to refund.
+                It is now only reached when we cannot tell WHO she is (no
+                leadId), so the way forward is the intake form, not a payment. */}
             <p className="mb-6 text-[length:var(--fs-3xs)] leading-[var(--lh-body)]" style={{ color: "#423b33" }}>
-              Consultation times are held only after the ₹299 is paid — it keeps the
-              calendar honest for the women waiting. Fully refundable if you don&apos;t
-              leave the call with clarity, and credited against your plan.
+              We could not match this link to your answers, so there is no slot held
+              against your name yet. Nothing to pay either way. Take the short intake
+              again and your calendar opens at the end.
             </p>
             <a
-              href={CONSULTATION_FORM_URL}
+              href="/decode/quiz"
               className="block rounded-2xl px-5 py-4 text-[length:var(--fs-xs)] font-bold no-underline"
               style={{
                 color: "#ffffff",
@@ -615,11 +619,11 @@ export default function SessionBooked() {
                 boxShadow: "0 12px 36px rgba(163, 114, 32,0.35)",
               }}
             >
-              Pay ₹299 &amp; Pick My Time →
+              Take the intake &amp; pick my time →
             </a>
             <p className="mt-4 text-[length:var(--fs-3xs)]" style={{ color: "#857c6d" }}>
-              Already paid? Open the booking link from your WhatsApp confirmation,
-              or reply there and we&apos;ll sort it out immediately.
+              Already booked? Open the link from your WhatsApp confirmation, or reply
+              there and we&apos;ll sort it out immediately.
             </p>
           </div>
         )}
@@ -648,7 +652,10 @@ export default function SessionBooked() {
                   </svg>
                 </div>
                 <p className="text-[length:var(--fs-3xs)] font-bold" style={{ color: "var(--t1)" }}>
-                  Payment received — your consultation is confirmed{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
+                  {/* Was "Payment received". Nobody pays for this call since
+                      23-Sep, so that line told her a transaction happened that
+                      did not. */}
+                  Your place is held{step1Data?.name ? `, ${step1Data.name.split(" ")[0]}` : ""}.
                 </p>
               </div>
               <p className="text-[length:var(--fs-3xs)]" style={{ color: "#96661a" }}>

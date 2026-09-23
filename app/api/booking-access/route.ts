@@ -34,10 +34,27 @@ const CF_BASE =
   process.env.NODE_ENV === "production" ? "https://api.cashfree.com" : "https://sandbox.cashfree.com";
 const LEADS_SHEET = "Leads";
 
+/**
+ * The /decode consultation is free (owner, 23-Sep-2026), and that removes this
+ * gate's whole premise on the cold path. The header above says it exists
+ * because "the URL alone was a free consultation" — which is now the offer, not
+ * the leak. A woman who finishes the quiz has nothing left to pay, so a
+ * payment check can only strand her on a "pay ₹299" screen at the last step.
+ *
+ * A leadId is still REQUIRED. It is not an entitlement check any more, it is
+ * the thread that ties her booking back to her quiz row, her score and her
+ * attribution. Someone opening /session-booked bare still gets the fallback
+ * rather than a calendar, which also keeps the page honest for the paid links
+ * that still exist.
+ *
+ * Set back to false and the paid checks below are once again the only way in.
+ */
+const FREE_CONSULTATION = true;
+
 type Verdict = {
   allowed: boolean;
   /** How the decision was reached — surfaced for support and log triage. */
-  via: "order_paid" | "lead_paid" | "degraded" | "none";
+  via: "order_paid" | "lead_paid" | "free_consultation" | "degraded" | "none";
   detail?: string;
 };
 
@@ -99,6 +116,13 @@ export async function GET(req: NextRequest) {
   const p = new URL(req.url).searchParams;
   const orderId = (p.get("orderId") || p.get("order_id") || "").trim();
   const leadId = (p.get("leadId") || "").trim();
+
+  // Checked before Cashfree and Sheets are touched: when the call is free there
+  // is nothing to verify, and two network round trips at the final step of the
+  // funnel are pure latency on traffic that is 82% mobile.
+  if (FREE_CONSULTATION && leadId) {
+    return NextResponse.json({ allowed: true, via: "free_consultation" } satisfies Verdict);
+  }
 
   let sawError = false;
 
