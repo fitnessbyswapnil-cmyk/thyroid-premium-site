@@ -37,12 +37,15 @@ test("trackLead accepts a caller-minted id and prefers it", () => {
 });
 
 test("the quiz gate mints ONE id and gives it to both legs", () => {
-  const gate = QUIZ.slice(QUIZ.indexOf("const submitGate"), QUIZ.indexOf("}, [a, gate, gateBusy, bot]);"));
+  const gate = QUIZ.slice(QUIZ.indexOf("const submitGate"), QUIZ.indexOf("}, [a, gate, gateBusy, bot, leadId]);"));
   assert.ok(gate.length > 0, "submitGate not found — this test needs rewriting, not deleting");
 
-  // Minted exactly once.
-  const mints = [...gate.matchAll(/const leadEventId = generateEventId\("lead"\)/g)];
-  assert.equal(mints.length, 1, "leadEventId must be minted exactly once per submission");
+  // Resolved exactly once per submission. Since 23-Sep a resubmit reuses the
+  // id it already minted (see lib/decode-lead-once.test.ts) rather than minting
+  // a second one, so the assertion is on the single assignment, not on a bare
+  // generateEventId call.
+  const mints = [...gate.matchAll(/const leadEventId = .*generateEventId\("lead"\);/g)];
+  assert.equal(mints.length, 1, "leadEventId must be resolved exactly once per submission");
 
   // Every trackLead call in the gate passes it. A bare trackLead(leadUser) here
   // is the regression: it would mint its own id and orphan the server leg.

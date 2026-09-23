@@ -41,7 +41,7 @@
  * still charge, for anyone who genuinely owes money.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { generateEventId, pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
@@ -243,6 +243,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   const [gateErr, setGateErr] = useState("");
   const [gateBusy, setGateBusy] = useState(false);
   const [leadId, setLeadId] = useState("");
+  // The Lead event id minted for THIS lead, kept so a resubmit can reuse it
+  // rather than mint a second Lead for the same woman.
+  const leadEventIdRef = useRef("");
   const [resumeScore, setResumeScore] = useState<number | null>(null);
   const [resumeInit, setResumeInit] = useState<{ name?: string; phone?: string; email?: string } | undefined>(undefined);
   // What the resume link needs to know before it offers to sell her anything
@@ -365,7 +368,14 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     if (!gate.name.trim()) { setGateErr("Please enter your name"); return; }
     if (phone10.length !== 10) { setGateErr("Enter a 10-digit WhatsApp number"); return; }
     setGateErr(""); setGateBusy(true);
-    const id = `dq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    // She can reach this gate twice: the Back button on the score screen
+    // returns here. A second submit must CORRECT the lead she already has,
+    // never mint a second one. Reusing the id makes /api/quiz-lead merge her
+    // existing row, and makes both QuizComplete (quiz_<leadId>) and Lead
+    // reuse event ids the ledger has already marked sent, so the resend is
+    // skipped before any network call and Meta still sees exactly one.
+    const resubmit = !!leadId;
+    const id = leadId || `dq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const firstName = gate.name.trim().split(/\s+/)[0] || "";
     const msNow = markers(a); const hitsNow = msNow.filter((m) => m.hit).length;
     const scoreNow = Math.round((hitsNow / 7) * 100);
@@ -385,8 +395,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     // and the server Lead that /api/quiz-lead sends. Same event_name, same
     // event_id, so Meta keeps one. Without a shared id the server leg would be
     // a second Lead rather than a backup for the same one.
-    const leadEventId = generateEventId("lead");
-    if (!bot.enabled) trackLead(leadUser, leadEventId);
+    const leadEventId = (resubmit && leadEventIdRef.current) || generateEventId("lead");
+    leadEventIdRef.current = leadEventId;
+    if (!bot.enabled && !resubmit) trackLead(leadUser, leadEventId);
     pushDL({ event: "decode_gate_submitted" });
     // The real _fbc / _fbp cookies, not just fbclid. QuizComplete scored 4.8
     // on Event Match Quality against Lead's 9.3 because it was reaching Meta
@@ -413,9 +424,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
       });
       if (bot.enabled) counted = await leadCounted(res);
     } catch { /* score is shown regardless; the row write is best-effort */ }
-    if (bot.enabled && counted) trackLead(leadUser, leadEventId);
+    if (bot.enabled && counted && !resubmit) trackLead(leadUser, leadEventId);
     setLeadId(id); setGateBusy(false); setI((n) => n + 1);
-  }, [a, gate, gateBusy, bot]);
+  }, [a, gate, gateBusy, bot, leadId]);
 
   if (i === -1) {
     return (
