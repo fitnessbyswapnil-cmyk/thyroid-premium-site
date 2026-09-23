@@ -123,7 +123,9 @@ test("the page keeps its order, and the long argument stays off it", () => {
   const ORDER = [
     ["hero", 'className="decode-hero'],
     ["the owner's video", "<HeroVideo />"],
-    ["symptoms", "<SymptomChips hideCta compact"],
+    // Was SymptomChips. Replaced 23-Sep by the comparison that answers "I have
+    // tried five things already" — see the note above CompareSection.
+    ["why nothing has worked", "<CompareSection />"],
     ["proof: transformations", "<TransformationWall compact />"],
     ["proof: videos", "<VideoTestimonial compact />"],
     ["proof: screenshots", "<WhatsappProofSection hideCta limit={3} />"],
@@ -175,6 +177,12 @@ test("the page's own words stay under budget", () => {
   // Text the page itself writes: JSX text and string constants, not the proof
   // components. ~1,850 words became a short page; the coach, method and fit
   // sections added ~200 more. The ceiling leaves room, not a license.
+  //
+  // Raised 560 -> 700 on 23-Sep. Nothing was added to the page: the symptom
+  // section was a component, so its words were never counted here, and the
+  // comparison that replaced it writes its twelve lines inline. Same amount of
+  // reading for her, 123 more words visible to this test. Do not raise it again
+  // to make room for new copy — move copy out or cut it.
   const code = rendered("app/decode/page.tsx")
     .replace(/^import[\s\S]*?;$/gm, "")
     .replace(/export const metadata[\s\S]*?\};/, "")
@@ -182,8 +190,10 @@ test("the page's own words stay under budget", () => {
   const text = [...code.matchAll(/>([^<>{}]+)</g), ...code.matchAll(/"([^"\n]{12,})"/g)].map((m) => m[1]).join(" ");
   const words = text.match(/[A-Za-z₹0-9']+/g) ?? [];
   assert.ok(words.length > 100, `word count looks broken (${words.length})`);
-  assert.ok(words.length <= 560, `the page writes ${words.length} words of its own — keep it minimal`);
-  assert.ok(PAGE.includes("SYMPTOM_PICK") && /SYMPTOM_PICK = \[(\s*\d+,?){6}\s*\]/.test(PAGE), "six symptom lines");
+  assert.ok(words.length <= 700, `the page writes ${words.length} words of its own — keep it minimal`);
+  // Six lines a side, so neither column of the comparison outweighs the other.
+  assert.ok(/const COMPARE_OLD = \[(\s*"[^"]+",){6}\s*\] as const;/.test(PAGE), "six lines on the left");
+  assert.ok(/const COMPARE_NEW = \[(\s*"[^"]+",){6}\s*\] as const;/.test(PAGE), "six lines on the right");
 });
 
 test("proof is capped, and never cut", () => {
