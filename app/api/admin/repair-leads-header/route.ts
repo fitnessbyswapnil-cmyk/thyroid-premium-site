@@ -31,16 +31,16 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
-import { colLetter } from "@/lib/lead-sheet";
+import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
 
 export const dynamic = "force-dynamic";
 
 /** index → the name that belongs there, and the title wrongly written over it. */
 const DAMAGE = [
-  { index: 78, correct: "Quiz Tier", wrong: "Free Nudge Sent", badCell: "Y" as const },
-  { index: 79, correct: "Source Path", wrong: "Free Nudge At", badCell: "iso" as const },
-  { index: 80, correct: "Webinar Date", wrong: "Free Nudge 2 Sent", badCell: "Y" as const },
-  { index: 81, correct: "Amount Agreed", wrong: "Free Nudge 2 At", badCell: "iso" as const },
+  { index: 78, correct: "Quiz Tier", wrong: "Free Nudge Sent", badCell: "Y" as const, moveTo: "Free Booking Nudge Sent" },
+  { index: 79, correct: "Source Path", wrong: "Free Nudge At", badCell: "iso" as const, moveTo: "Free Booking Nudge At" },
+  { index: 80, correct: "Webinar Date", wrong: "Free Nudge 2 Sent", badCell: "Y" as const, moveTo: "Free Booking Nudge 2 Sent" },
+  { index: 81, correct: "Amount Agreed", wrong: "Free Nudge 2 At", badCell: "iso" as const, moveTo: "Free Booking Nudge 2 At" },
 ];
 
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   const rows = all.slice(1);
 
   const headerFixes: { index: number; from: string; to: string }[] = [];
-  const cellFixes: { a1: string; index: number; was: string }[] = [];
+  const cellFixes: { a1: string; index: number; was: string; moveTo: string; sheetRow: number }[] = [];
 
   for (const d of DAMAGE) {
     if (header[d.index] === d.wrong) {
@@ -81,12 +81,38 @@ export async function POST(req: NextRequest) {
       const v = String(rows[i]?.[d.index] ?? "").trim();
       if (!v) continue;
       const isBad = d.badCell === "Y" ? v === "Y" : ISO.test(v);
-      if (isBad) cellFixes.push({ a1: `${colLetter(d.index)}${i + 2}`, index: d.index, was: v });
+      if (isBad) cellFixes.push({ a1: `${colLetter(d.index)}${i + 2}`, index: d.index, was: v, moveTo: d.moveTo, sheetRow: i + 2 });
     }
   }
 
+  // Those stamps are the only record that these women were already messaged.
+  // Blanking them without moving them would make every one of them eligible
+  // again on the very next run, and she would receive the same nudge twice.
+  // So the new columns are created here and the stamps are carried across in
+  // the same write, rather than left to the cron.
+  const newCols = new Map<string, number>();
+  {
+    let width = header.length;
+    for (const d of DAMAGE) {
+      const existing = header.findIndex((h) => h.trim() === d.moveTo);
+      newCols.set(d.moveTo, existing >= 0 ? existing : width++);
+    }
+  }
+  const carried = cellFixes.map((c) => ({
+    a1: `${colLetter(newCols.get(c.moveTo) as number)}${c.sheetRow}`,
+    value: c.was,
+    column: c.moveTo,
+  }));
+
   if (!apply) {
-    return NextResponse.json({ dryRun: true, headerWidth: header.length, headerFixes, cellFixes });
+    return NextResponse.json({
+      dryRun: true,
+      headerWidth: header.length,
+      headerFixes,
+      cellFixes,
+      newColumns: [...newCols].map(([title, index]) => ({ title, index, a1: colLetter(index) })),
+      carried,
+    });
   }
 
   const data: { range: string; values: string[][] }[] = [];
@@ -103,6 +129,19 @@ export async function POST(req: NextRequest) {
     });
   }
   for (const c of cellFixes) data.push({ range: `${SHEET_NAME}!${c.a1}`, values: [[""]] });
+  // Header cells for the new columns, then the stamps themselves.
+  for (const [title, index] of newCols) {
+    if (header[index]?.trim() !== title) {
+      data.push({ range: `${SHEET_NAME}!${colLetter(index)}1`, values: [[title]] });
+    }
+  }
+  for (const c of carried) data.push({ range: `${SHEET_NAME}!${c.a1}`, values: [[c.value]] });
+
+  // The grid is a fixed width; writing past its last column fails outright.
+  const widest = Math.max(header.length - 1, ...[...newCols.values()]);
+  if (widest > header.length - 1) {
+    await ensureGridColumns(sheets, sheetId, SHEET_NAME, widest);
+  }
 
   if (data.length) {
     await sheets.spreadsheets.values.batchUpdate({
@@ -110,6 +149,9 @@ export async function POST(req: NextRequest) {
       requestBody: { valueInputOption: "RAW", data },
     });
   }
-  console.log(`[repair-leads-header] restored ${headerFixes.length} header(s), blanked ${cellFixes.length} cell(s)`);
-  return NextResponse.json({ applied: true, headerFixes, cellFixes });
+  console.log(
+    `[repair-leads-header] restored ${headerFixes.length} header(s), ` +
+      `blanked ${cellFixes.length} cell(s), carried ${carried.length} stamp(s) to the new columns`,
+  );
+  return NextResponse.json({ applied: true, headerFixes, cellFixes, carried });
 }
