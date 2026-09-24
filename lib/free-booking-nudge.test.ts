@@ -14,6 +14,7 @@ import {
   FREE_NUDGE_STAGE1_MAX_DAYS,
   FREE_NUDGE_STAGE2_MIN_HOURS,
   FREE_NUDGE_MAX_AGE_DAYS,
+  isWithinSendingHoursIST,
   type FreeBookingNudgeColumns,
 } from "./reminder-plan.ts";
 
@@ -197,4 +198,14 @@ test("short and ragged rows do not throw", () => {
   const p = plan([[], ["Priya"], ["Priya", "9876543210"]]);
   assert.equal(p.candidates.length, 0);
   assert.equal(p.scanned, 3);
+});
+
+test("nudges are held outside civil hours in India", () => {
+  // 03:00 IST is 21:30 UTC the day before; 10:00 IST is 04:30 UTC.
+  assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-23T21:30:00Z")), false, "3am IST");
+  assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T04:30:00Z")), true, "10am IST");
+  assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T03:29:00Z")), false, "8:59am IST");
+  assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T03:31:00Z")), true, "9:01am IST");
+  assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T15:29:00Z")), true, "8:59pm IST");
+  assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T15:31:00Z")), false, "9:01pm IST");
 });

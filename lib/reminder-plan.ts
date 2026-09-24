@@ -764,6 +764,31 @@ export const FREE_NUDGE_STAGE2_MIN_HOURS = FREE_NUDGE_STAGE1_MAX_DAYS * 24;
 export const FREE_NUDGE_MAX_AGE_DAYS = 10;
 export const FREE_NUDGE_LIMIT = 25;
 
+/**
+ * Is it a civil hour to send a marketing nudge in India?
+ *
+ * Every other job in this cron is anchored to something SHE chose — her
+ * payment, or her session time. The free nudge is anchored to "twenty hours
+ * after her quiz", which lands wherever her quiz landed, and this route is
+ * polled every five minutes. Without this guard a woman who took the quiz at
+ * 7 a.m. is messaged at 3 a.m. the next morning.
+ *
+ * 09:00 to 21:00 IST. Deliberately not applied to the call reminders: a
+ * "starts in one hour" message at 8 a.m. is wanted, because she booked 9 a.m.
+ */
+export const SENDING_HOURS_IST = { from: 9, to: 21 } as const;
+
+export function isWithinSendingHoursIST(now: Date | number = Date.now()): boolean {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      hour12: false,
+    }).format(new Date(now)),
+  );
+  return hour >= SENDING_HOURS_IST.from && hour < SENDING_HOURS_IST.to;
+}
+
 export function planFreeBookingNudges(opts: {
   rows: string[][];
   cols: FreeBookingNudgeColumns;
