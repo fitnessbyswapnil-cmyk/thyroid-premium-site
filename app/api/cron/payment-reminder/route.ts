@@ -546,7 +546,6 @@ export async function GET(req: NextRequest) {
         // nudge goes out twice.
         sheetColumns: {
           headerWidth: header.length,
-          header: header.map((h, i) => `${i}:${h}`),
           freeNudgeSent: findCol(header, FREE_NUDGE_SENT_TITLE),
           freeNudgeAt: findCol(header, FREE_NUDGE_AT_TITLE),
           freeNudge2Sent: findCol(header, FREE_NUDGE2_SENT_TITLE),
@@ -635,13 +634,23 @@ export async function GET(req: NextRequest) {
       if (next.length > header.length) {
         // Widen the fixed-width grid before writing past its last column.
         await ensureGridColumns(sheets, spreadsheetId, LEADS_SHEET, next.length - 1);
+        // ONLY the appended span, never the whole of row 1.
+        //
+        // Rewriting `1:1` wholesale writes back every header cell this job can
+        // see — and on 24-Sep it could see only 78 of 89, because the read was
+        // capped at BZ. The four columns it appended landed on Quiz Tier,
+        // Source Path, Webinar Date and Amount Agreed, and the wholesale write
+        // is what made that a silent overwrite rather than a failure. The read
+        // is A1:DZ now, but an append-only write is the part that cannot go
+        // wrong again if the sheet ever outgrows that too.
+        const firstNew = header.length;
         await sheets.spreadsheets.values.update({
           spreadsheetId,
-          range: `${LEADS_SHEET}!1:1`,
+          range: `${LEADS_SHEET}!${colLetter(firstNew)}1:${colLetter(next.length - 1)}1`,
           valueInputOption: "RAW",
-          requestBody: { values: [next] },
+          requestBody: { values: [next.slice(firstNew)] },
         });
-        console.log(`[payment-reminder] appended ${next.length - header.length} bookkeeping column(s)`);
+        console.log(`[payment-reminder] appended ${next.length - header.length} bookkeeping column(s) at ${colLetter(firstNew)}`);
       }
     }
 
