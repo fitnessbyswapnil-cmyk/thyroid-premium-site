@@ -398,6 +398,10 @@ export async function GET(req: NextRequest) {
       cols: freeNudgeCols,
       now: Date.now(),
       maxAgeDays: FREE_NUDGE_STAGE1_MAX_DAYS,
+      // ?limit=1 is the documented way to watch a single send land before
+      // trusting a job. It has to reach these stages too, or the valve is a
+      // lie for the only jobs in here whose copy has never been sent before.
+      limit,
       bookedEmails,
     });
     const freeNudge2Cols: FreeBookingNudgeColumns = {
@@ -410,6 +414,7 @@ export async function GET(req: NextRequest) {
       now: Date.now(),
       minAgeHours: FREE_NUDGE_STAGE2_MIN_HOURS,
       maxAgeDays: FREE_NUDGE_MAX_AGE_DAYS,
+      limit,
       bookedEmails,
     });
 
