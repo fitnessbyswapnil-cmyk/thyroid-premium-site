@@ -62,6 +62,7 @@ import {
   type CallReminderColumns,
   type FreeBookingNudgeColumns,
   type ReminderCandidate,
+  isWithinSendingHoursIST,
   FREE_NUDGE_STAGE1_MAX_DAYS,
   FREE_NUDGE_STAGE2_MIN_HOURS,
   FREE_NUDGE_MAX_AGE_DAYS,
@@ -522,6 +523,7 @@ export async function GET(req: NextRequest) {
         wouldNudgeFreeBooking: freeNudgePlan.candidates.map(describeFixed(FREE_NUDGE_TEMPLATE)),
         wouldNudgeFreeBookingDay3: freeNudge2Plan.candidates.map(describeFixed(FREE_NUDGE_TEMPLATE2)),
         freeNudgeSkipped: { stage1: freeNudgePlan.skipped, stage2: freeNudge2Plan.skipped },
+        freeNudgeWithinSendingHoursIST: isWithinSendingHoursIST(),
         wouldRemindCall24h: call24Plan.candidates.map((c) => ({
           row: c.rowNumber, name: c.name, phone: `***${c.phone.slice(-4)}`,
           sessionAt: new Date(c.sessionAt).toISOString(),
@@ -792,7 +794,14 @@ export async function GET(req: NextRequest) {
       { job: "free_booking_nudge", template: FREE_NUDGE_TEMPLATE, candidates: freeNudgePlan.candidates, sentCol: freeNudgeSentCol, atCol: freeNudgeAtCol },
       { job: "free_booking_nudge_day3", template: FREE_NUDGE_TEMPLATE2, candidates: freeNudge2Plan.candidates, sentCol: freeNudge2SentCol, atCol: freeNudge2AtCol },
     ];
-    for (const stage of freeStages) {
+    // Outside 09:00-21:00 IST the stages are planned and reported, but nothing
+    // is sent and nothing is stamped, so the same women are picked up by the
+    // first civil-hour run.
+    const civilHour = isWithinSendingHoursIST();
+    if (!civilHour && (freeNudgePlan.candidates.length || freeNudge2Plan.candidates.length)) {
+      console.log(`[payment-reminder] free nudges held: outside 09:00-21:00 IST`);
+    }
+    for (const stage of civilHour ? freeStages : []) {
       for (const c of stage.candidates) {
         const r = await sendTryingLanguages((language) =>
           sendWhatsAppTemplate(c.phone, stage.template, [firstNameOf(c.name)], language, c.leadId || undefined),
