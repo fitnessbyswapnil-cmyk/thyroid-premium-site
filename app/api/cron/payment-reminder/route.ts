@@ -46,6 +46,7 @@ import {
 import {
   planReminders,
   planBookingNudges,
+  planFreeBookingNudges,
   planCallReminders,
   formatSessionTimeIST,
   firstNameOf,
@@ -59,7 +60,11 @@ import {
   type ReminderColumns,
   type BookingNudgeColumns,
   type CallReminderColumns,
+  type FreeBookingNudgeColumns,
   type ReminderCandidate,
+  FREE_NUDGE_STAGE1_MAX_DAYS,
+  FREE_NUDGE_STAGE2_MIN_HOURS,
+  FREE_NUDGE_MAX_AGE_DAYS,
 } from "@/lib/reminder-plan";
 
 export const dynamic = "force-dynamic";
@@ -155,6 +160,54 @@ function paidFunnelRowsOnly(
     const nurtured = gateCol >= 0 && isNurtureGated(r?.[gateCol]);
     if (!unverified && !nurtured && PAID_LEAD_ID_PREFIXES.some((p) => id.startsWith(p))) return r;
     const copy = [...(r ?? [])]; copy[cols.phone] = ""; return copy;
+  });
+}
+
+// ── Free funnel: quiz done, slot never picked ───────────────────────────────
+// The replacement for the four jobs PAID_FUNNEL_ACTIVE switched off. It is the
+// only thing in this cron that speaks to a woman who has not booked, and the
+// only one whose copy is written for a call that costs nothing.
+//
+// These two run whatever PAID_FUNNEL_ACTIVE says, because neither asks for
+// money. Until Meta approves them every send fails with a template error, the
+// row is left UNSTAMPED, and the next run tries again — so approval is the
+// only switch that has to be flipped.
+const FREE_NUDGE_TEMPLATE = "free_booking_nudge_v1";
+const FREE_NUDGE_SENT_TITLE = "Free Nudge Sent";
+const FREE_NUDGE_AT_TITLE = "Free Nudge At";
+const FREE_NUDGE_TEMPLATE2 = "free_booking_nudge_day3_v1";
+const FREE_NUDGE2_SENT_TITLE = "Free Nudge 2 Sent";
+const FREE_NUDGE2_AT_TITLE = "Free Nudge 2 At";
+
+/**
+ * Who this job may never speak to, regardless of booking state.
+ *
+ * Same index-preserving shape as paidFunnelRowsOnly — the phone is blanked in
+ * a mapped COPY so per-row stamping still lands on the right row — but it does
+ * NOT filter by leadId prefix. The prefix answered "which funnel did she come
+ * from", and the free funnel mints the same `dq_` and `sched_` ids, so a
+ * prefix test here would exclude nobody and pretend to be a guard.
+ *
+ * Bot check: a lead saved without a Turnstile token is stamped "unverified".
+ * quiz-lead already withholds her welcome message and her Meta events; a bot
+ * must not cost a nudge either.
+ *
+ * Gate outcome: "nurture_timing" means she said she is months away and was
+ * deliberately routed to the free masterclass instead of a slot. Nudging her
+ * to book contradicts the routing she was given.
+ */
+function nudgeableRowsOnly(
+  rows: string[][],
+  phoneCol: number,
+  botCheckCol = -1,
+  gateCol = -1,
+): string[][] {
+  return rows.map((r) => {
+    const unverified =
+      botCheckCol >= 0 && String(r?.[botCheckCol] ?? "").trim().toLowerCase() === "unverified";
+    const nurtured = gateCol >= 0 && isNurtureGated(r?.[gateCol]);
+    if (!unverified && !nurtured) return r;
+    const copy = [...(r ?? [])]; copy[phoneCol] = ""; return copy;
   });
 }
 
@@ -316,6 +369,49 @@ export async function GET(req: NextRequest) {
       minAgeHours: BOOKING_NUDGE_STAGE2_MIN_HOURS,
     });
 
+    // Free funnel, quiz done and never booked. Cal.com's active set is passed
+    // in because the sheet's booking columns miss most real bookings; a woman
+    // who booked yesterday and whose row was never stamped is exactly who must
+    // not receive "your slot is still open".
+    const freeNudgeColsBase = {
+      name: 2,
+      phone: 3,
+      createdAt: 0, // pinned column A, "Timestamp", written on create
+      paid: findCol(header, "Paid"),
+      bookingStatus: byNameOr("Booking Status", BOOKING_STATUS_FALLBACK),
+      sessionDate: byNameOr("Session Date", SESSION_DATE_FALLBACK),
+      email: findCol(header, "Email"),
+    };
+    const nudgeableRows = nudgeableRowsOnly(
+      rows,
+      3,
+      findCol(header, "Bot Check"),
+      findCol(header, GATE_OUTCOME_HEADER),
+    );
+    const freeNudgeCols: FreeBookingNudgeColumns = {
+      ...freeNudgeColsBase,
+      nudgeSent: findCol(header, FREE_NUDGE_SENT_TITLE),
+    };
+    const freeNudgePlan = planFreeBookingNudges({
+      rows: nudgeableRows,
+      cols: freeNudgeCols,
+      now: Date.now(),
+      maxAgeDays: FREE_NUDGE_STAGE1_MAX_DAYS,
+      bookedEmails,
+    });
+    const freeNudge2Cols: FreeBookingNudgeColumns = {
+      ...freeNudgeColsBase,
+      nudgeSent: findCol(header, FREE_NUDGE2_SENT_TITLE),
+    };
+    const freeNudge2Plan = planFreeBookingNudges({
+      rows: nudgeableRows,
+      cols: freeNudge2Cols,
+      now: Date.now(),
+      minAgeHours: FREE_NUDGE_STAGE2_MIN_HOURS,
+      maxAgeDays: FREE_NUDGE_MAX_AGE_DAYS,
+      bookedEmails,
+    });
+
     // Call reminders. Windows are deliberately disjoint: the 24h stage stops
     // at 2h out, the 1h stage runs from 1h to 0. Neither can ever fire after
     // the call has started.
@@ -337,6 +433,8 @@ export async function GET(req: NextRequest) {
     const summary = {
       dryRun,
       template: TEMPLATE,
+      freeNudgeTemplate: FREE_NUDGE_TEMPLATE,
+      freeNudgeTemplate2: FREE_NUDGE_TEMPLATE2,
       bookingTemplate: BOOKING_TEMPLATE,
       window: { minAgeMinutes, maxAgeHours, limit },
       scanned: plan.scanned,
@@ -421,6 +519,9 @@ export async function GET(req: NextRequest) {
         wouldSendDay2: plan2.candidates.map(describeFixed(TEMPLATE2)),
         wouldNudgeBooking: nudgePlan.candidates.map(describeFixed(BOOKING_TEMPLATE)),
         wouldNudgeBookingDay3: nudge2Plan.candidates.map(describeFixed(BOOKING_TEMPLATE2)),
+        wouldNudgeFreeBooking: freeNudgePlan.candidates.map(describeFixed(FREE_NUDGE_TEMPLATE)),
+        wouldNudgeFreeBookingDay3: freeNudge2Plan.candidates.map(describeFixed(FREE_NUDGE_TEMPLATE2)),
+        freeNudgeSkipped: { stage1: freeNudgePlan.skipped, stage2: freeNudge2Plan.skipped },
         wouldRemindCall24h: call24Plan.candidates.map((c) => ({
           row: c.rowNumber, name: c.name, phone: `***${c.phone.slice(-4)}`,
           sessionAt: new Date(c.sessionAt).toISOString(),
@@ -442,12 +543,16 @@ export async function GET(req: NextRequest) {
       !nudgePlan.candidates.length &&
       !nudge2Plan.candidates.length &&
       !call24Plan.candidates.length &&
-      !call1Plan.candidates.length;
+      !call1Plan.candidates.length &&
+      !freeNudgePlan.candidates.length &&
+      !freeNudge2Plan.candidates.length;
     if (nothingToDo) {
       console.log(
         `[payment-reminder] nothing to send — reminders=${JSON.stringify(plan.skipped)} ` +
           `reminders2=${JSON.stringify(plan2.skipped)} nudges=${JSON.stringify(nudgePlan.skipped)} ` +
-          `nudges2=${JSON.stringify(nudge2Plan.skipped)}`,
+          `nudges2=${JSON.stringify(nudge2Plan.skipped)} ` +
+          `freeNudges=${JSON.stringify(freeNudgePlan.skipped)} ` +
+          `freeNudges2=${JSON.stringify(freeNudge2Plan.skipped)}`,
       );
       return NextResponse.json({ ...summary, sent: 0, failed: 0, results: [] });
     }
@@ -467,6 +572,10 @@ export async function GET(req: NextRequest) {
     let call24AtCol = findCol(header, CALL24_AT_TITLE);
     let call1SentCol = call1Cols.reminderSent;
     let call1AtCol = findCol(header, CALL1_AT_TITLE);
+    let freeNudgeSentCol = freeNudgeCols.nudgeSent;
+    let freeNudgeAtCol = findCol(header, FREE_NUDGE_AT_TITLE);
+    let freeNudge2SentCol = freeNudge2Cols.nudgeSent;
+    let freeNudge2AtCol = findCol(header, FREE_NUDGE2_AT_TITLE);
     {
       const next = [...header];
       const claim = (idx: number, title: string): number => {
@@ -487,6 +596,10 @@ export async function GET(req: NextRequest) {
       call24AtCol = claim(call24AtCol, CALL24_AT_TITLE);
       call1SentCol = claim(call1SentCol, CALL1_SENT_TITLE);
       call1AtCol = claim(call1AtCol, CALL1_AT_TITLE);
+      freeNudgeSentCol = claim(freeNudgeSentCol, FREE_NUDGE_SENT_TITLE);
+      freeNudgeAtCol = claim(freeNudgeAtCol, FREE_NUDGE_AT_TITLE);
+      freeNudge2SentCol = claim(freeNudge2SentCol, FREE_NUDGE2_SENT_TITLE);
+      freeNudge2AtCol = claim(freeNudge2AtCol, FREE_NUDGE2_AT_TITLE);
       if (next.length > header.length) {
         // Widen the fixed-width grid before writing past its last column.
         await ensureGridColumns(sheets, spreadsheetId, LEADS_SHEET, next.length - 1);
@@ -661,6 +774,42 @@ export async function GET(req: NextRequest) {
       if (r.sent) {
         updates.push({ range: `${LEADS_SHEET}!${colLetter(call1SentCol)}${c.rowNumber}`, values: [["Y"]] });
         updates.push({ range: `${LEADS_SHEET}!${colLetter(call1AtCol)}${c.rowNumber}`, values: [[stampedAt]] });
+      }
+    }
+
+    // Free funnel last, deliberately. The call reminders above are the only
+    // time-critical sends in this cron — "starts in one hour" is worthless an
+    // hour late — so they get the subrequest budget first. A nudge that slips
+    // to tomorrow's run costs nothing; its window is days wide.
+    //
+    // A missing template halts its own stage after ONE attempt. Before this,
+    // an unapproved name meant 25 candidates x every language sendTryingLanguages
+    // walks, which is enough failed Graph calls to exhaust the Workers
+    // subrequest budget and take the call reminders down with it.
+    const freeStages: {
+      job: string; template: string; candidates: ReminderCandidate[]; sentCol: number; atCol: number;
+    }[] = [
+      { job: "free_booking_nudge", template: FREE_NUDGE_TEMPLATE, candidates: freeNudgePlan.candidates, sentCol: freeNudgeSentCol, atCol: freeNudgeAtCol },
+      { job: "free_booking_nudge_day3", template: FREE_NUDGE_TEMPLATE2, candidates: freeNudge2Plan.candidates, sentCol: freeNudge2SentCol, atCol: freeNudge2AtCol },
+    ];
+    for (const stage of freeStages) {
+      for (const c of stage.candidates) {
+        const r = await sendTryingLanguages((language) =>
+          sendWhatsAppTemplate(c.phone, stage.template, [firstNameOf(c.name)], language, c.leadId || undefined),
+        );
+        results.push({
+          job: stage.job, row: c.rowNumber, phone: `***${c.phone.slice(-4)}`,
+          sent: r.sent, template: stage.template, detail: r.error || r.skipped,
+        });
+        if (r.sent) {
+          updates.push({ range: `${LEADS_SHEET}!${colLetter(stage.sentCol)}${c.rowNumber}`, values: [["Y"]] });
+          updates.push({ range: `${LEADS_SHEET}!${colLetter(stage.atCol)}${c.rowNumber}`, values: [[stampedAt]] });
+        } else if (isTemplateMissing(r.error) || isTemplateConfigError(r.error)) {
+          // Not yet approved by Meta. Nothing was stamped, so every woman in
+          // this stage is picked up again by the next run.
+          console.warn(`[payment-reminder] ${stage.template} not sendable yet (${r.error}) — stage halted, rows left unstamped`);
+          break;
+        }
       }
     }
 
