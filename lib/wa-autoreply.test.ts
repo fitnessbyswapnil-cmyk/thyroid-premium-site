@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { routeReply, normalise, RULES, FALLBACK_REPLY, QUIZ_URL, CONSULT_PRICE } from "./wa-autoreply.ts";
+import { routeReply, normalise, RULES, FALLBACK_REPLY, QUIZ_URL, CONSULT_PRICE, BOOK_URL } from "./wa-autoreply.ts";
 import { GUIDE_URL } from "./draft-message.ts";
 
 test("normalise lowercases, strips punctuation and collapses whitespace", () => {
@@ -11,11 +11,26 @@ test("normalise strips emoji rather than leaving stray bytes behind", () => {
   assert.equal(normalise("price 💰 please"), "price please");
 });
 
-test("a Hinglish price question gets the price and the refund promise", () => {
+test("a Hinglish price question is told the consultation is free", () => {
   const r = routeReply("kitna charge hai?");
   assert.equal(r.intent, "price");
-  assert.match(r.reply, new RegExp(`Rs ${CONSULT_PRICE}`));
-  assert.match(r.reply, /back/i);
+  assert.match(r.reply, /is free/i);
+  assert.match(r.reply, /no card and no payment/i);
+  assert.ok(r.reply.includes(BOOK_URL), "she is sent somewhere she can actually book");
+});
+
+test("no reply quotes a fee for the consultation", () => {
+  // The call went free on 23-Sep-2026. CONSULT_PRICE survives only because
+  // /schedule and /complete-payment still collect from anyone who owes from
+  // the old paid path; a bot answering a cold question must never repeat it.
+  for (const rule of RULES) {
+    assert.doesNotMatch(
+      rule.reply,
+      new RegExp(`Rs ?${CONSULT_PRICE}|\u20b9 ?${CONSULT_PRICE}`),
+      `the ${rule.intent} reply still quotes a price for a free call`,
+    );
+  }
+  assert.doesNotMatch(FALLBACK_REPLY, /Rs ?\d|\u20b9 ?\d/);
 });
 
 test("English price wording routes to the same intent", () => {
