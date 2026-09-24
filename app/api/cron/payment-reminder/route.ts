@@ -173,12 +173,18 @@ function paidFunnelRowsOnly(
 // money. Until Meta approves them every send fails with a template error, the
 // row is left UNSTAMPED, and the next run tries again — so approval is the
 // only switch that has to be flipped.
+// The titles below are deliberately NOT the ones this job first used. Reading
+// the sheet as A1:BZ hid every column past 78, so its first run appended its
+// four stamp columns straight over Quiz Tier, Source Path, Webinar Date and
+// Amount Agreed — the first two of which the webinar reminder cron runs on.
+// Renaming them makes findCol miss, so fresh columns are claimed at the true
+// end of the now-untruncated header. See /api/admin/repair-leads-header.
 const FREE_NUDGE_TEMPLATE = "free_booking_nudge_v1";
-const FREE_NUDGE_SENT_TITLE = "Free Nudge Sent";
-const FREE_NUDGE_AT_TITLE = "Free Nudge At";
+const FREE_NUDGE_SENT_TITLE = "Free Booking Nudge Sent";
+const FREE_NUDGE_AT_TITLE = "Free Booking Nudge At";
 const FREE_NUDGE_TEMPLATE2 = "free_booking_nudge_day3_v1";
-const FREE_NUDGE2_SENT_TITLE = "Free Nudge 2 Sent";
-const FREE_NUDGE2_AT_TITLE = "Free Nudge 2 At";
+const FREE_NUDGE2_SENT_TITLE = "Free Booking Nudge 2 Sent";
+const FREE_NUDGE2_AT_TITLE = "Free Booking Nudge 2 At";
 
 /**
  * Who this job may never speak to, regardless of booking state.
@@ -541,13 +547,6 @@ export async function GET(req: NextRequest) {
         sheetColumns: {
           headerWidth: header.length,
           header: header.map((h, i) => `${i}:${h}`),
-          // What actually LIVES in the four columns this job claimed, so a
-          // claim that landed on someone else's data is visible rather than
-          // inferred.
-          sample78to81: [78, 79, 80, 81].map((i) => {
-            const vals = rows.map((r) => String(r?.[i] ?? "").trim()).filter(Boolean);
-            return { i, nonEmpty: vals.length, distinct: [...new Set(vals)].slice(0, 6) };
-          }),
           freeNudgeSent: findCol(header, FREE_NUDGE_SENT_TITLE),
           freeNudgeAt: findCol(header, FREE_NUDGE_AT_TITLE),
           freeNudge2Sent: findCol(header, FREE_NUDGE2_SENT_TITLE),
