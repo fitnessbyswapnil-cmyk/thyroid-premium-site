@@ -692,6 +692,208 @@ export function planBookingNudges(opts: {
   return { candidates, skipped, scanned: rows.length };
 }
 
+// ── Free-funnel booking nudges: quiz done, slot never picked ────────────────
+//
+// The consultation went free on 23-Sep-2026, and the four paid jobs above were
+// switched off the same day because every one of them asks for money. Nothing
+// replaced them, which left the funnel's LARGEST group — she answered the
+// quiz, saw her score, and never picked a slot — hearing from us exactly once,
+// ever, in the welcome message.
+//
+// This is that replacement, and it is deliberately a different shape from
+// planBookingNudges: there is no payment to anchor to any more, so the anchor
+// is her quiz Timestamp, and "did she pay" stops being a gate at all.
+//
+// One thing it does NOT do: nudge a woman who has paid. A ₹299 payer from the
+// old funnel who never booked is a real and stranded case, but telling her the
+// call is free reads as an insult to the money she already sent. She is worth
+// a personal message from the CRM, not a broadcast, so Paid = Y is skipped
+// here and surfaced in the dry run instead.
+
+export type FreeBookingNudgeColumns = {
+  name: number;
+  phone: number;
+  /** "Timestamp" — when she finished the quiz. Her age anchor. */
+  createdAt: number;
+  /** Paid women are handled by hand; see the note above. */
+  paid: number;
+  /** Column R — "Booked"/"Cancelled", owned by the Cal.com Make scenario. */
+  bookingStatus: number;
+  /** Column S — "Session Date". Live data shows booked women with an empty
+   *  Booking Status, so EITHER column counts as "she booked". Nudging a woman
+   *  who already has a call in the diary is the worst message this job can
+   *  send, so the test for it is deliberately generous. */
+  sessionDate: number;
+  /** "Email". Blank for most free-funnel leads — the /decode gate asks only
+   *  for name and phone — but present the moment she books, which is exactly
+   *  when it is needed to match her against Cal.com. */
+  email: number;
+  /** Per-stage stamp, so stage 1 and stage 2 can never suppress each other. */
+  nudgeSent: number;
+};
+
+export type FreeBookingNudgeSkips = {
+  alreadyBooked: number;
+  alreadyNudged: number;
+  paid: number;
+  tooNew: number;
+  tooOld: number;
+  noPhone: number;
+  unparseableTime: number;
+  duplicatePhone: number;
+  overCap: number;
+};
+
+export type FreeBookingNudgePlan = {
+  candidates: ReminderCandidate[];
+  skipped: FreeBookingNudgeSkips;
+  scanned: number;
+};
+
+// Stage 1 waits until the next day, NOT an hour. She has just been sent
+// welcome_lead_score with a booking button on it; a second message an hour
+// later is nagging, not helping. Twenty hours puts it in the next morning for
+// a woman who took the quiz in the evening, which is when most of them do.
+export const FREE_NUDGE_STAGE1_MIN_HOURS = 20;
+export const FREE_NUDGE_STAGE1_MAX_DAYS = 3;
+
+// Stage 2 answers the objection rather than repeating the offer, so it is
+// worth sending to someone stage 1 did not move. Its window starts where
+// stage 1's ends, so the two can never both fire on the same day.
+export const FREE_NUDGE_STAGE2_MIN_HOURS = FREE_NUDGE_STAGE1_MAX_DAYS * 24;
+export const FREE_NUDGE_MAX_AGE_DAYS = 10;
+export const FREE_NUDGE_LIMIT = 25;
+
+export function planFreeBookingNudges(opts: {
+  rows: string[][];
+  cols: FreeBookingNudgeColumns;
+  now: number;
+  minAgeHours?: number;
+  maxAgeDays?: number;
+  limit?: number;
+  /** Cal.com's upcoming-booking emails (CalState.active). The Make Cal.com →
+   *  Sheets scenario drops most booking write-backs, so the sheet's own two
+   *  columns miss real bookings; without this, the worst message this job can
+   *  send is also its most likely one. */
+  bookedEmails?: Set<string>;
+}): FreeBookingNudgePlan {
+  const {
+    rows,
+    cols,
+    now,
+    minAgeHours = FREE_NUDGE_STAGE1_MIN_HOURS,
+    maxAgeDays = FREE_NUDGE_STAGE1_MAX_DAYS,
+    limit = FREE_NUDGE_LIMIT,
+    bookedEmails,
+  } = opts;
+
+  const skipped: FreeBookingNudgeSkips = {
+    alreadyBooked: 0,
+    alreadyNudged: 0,
+    paid: 0,
+    tooNew: 0,
+    tooOld: 0,
+    noPhone: 0,
+    unparseableTime: 0,
+    duplicatePhone: 0,
+    overCap: 0,
+  };
+
+  // One woman, many rows: she can retake the quiz, and her booking or an
+  // earlier nudge may land on a different row than the one being scanned. A
+  // phone that is booked, paid or nudged ANYWHERE settles every row it
+  // appears on — the same rule planBookingNudges uses, and the reason a
+  // re-taken quiz cannot produce a second nudge.
+  const bookedEvidence = (r: string[]): boolean => {
+    if (bookedEmails?.size) {
+      const email = cell(r, cols.email).toLowerCase();
+      if (email && bookedEmails.has(email)) return true;
+    }
+    return !!cell(r, cols.bookingStatus) || !!cell(r, cols.sessionDate);
+  };
+
+  const settledPhones = new Set<string>();
+  for (const r of rows) {
+    const row = r ?? [];
+    const p = phoneKey(cell(row, cols.phone));
+    if (!p) continue;
+    if (bookedEvidence(row) || !!cell(row, cols.nudgeSent) || cell(row, cols.paid).toUpperCase() === "Y") {
+      settledPhones.add(p);
+    }
+  }
+
+  const claimedPhones = new Set<string>();
+  const eligible: ReminderCandidate[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] ?? [];
+    const rowNumber = i + 2;
+
+    // Any booking state at all — Booked, Cancelled, a session date,
+    // rescheduled prose — means the booking pipeline owns her already.
+    if (bookedEvidence(row)) {
+      skipped.alreadyBooked++;
+      continue;
+    }
+    if (cell(row, cols.nudgeSent)) {
+      skipped.alreadyNudged++;
+      continue;
+    }
+    if (cell(row, cols.paid).toUpperCase() === "Y") {
+      skipped.paid++;
+      continue;
+    }
+
+    const phone = cell(row, cols.phone).replace(/\.0$/, "").replace(/\D/g, "");
+    if (phone.length < 10) {
+      skipped.noPhone++;
+      continue;
+    }
+    if (settledPhones.has(phoneKey(phone))) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+
+    const createdAt = parseSheetTime(cell(row, cols.createdAt));
+    if (createdAt === null) {
+      skipped.unparseableTime++;
+      continue;
+    }
+
+    const ageMinutes = (now - createdAt) / 60000;
+    if (ageMinutes < minAgeHours * 60) {
+      skipped.tooNew++;
+      continue;
+    }
+    if (ageMinutes > maxAgeDays * 24 * 60) {
+      skipped.tooOld++;
+      continue;
+    }
+
+    eligible.push({ rowNumber, name: cell(row, cols.name), phone, ageMinutes: Math.round(ageMinutes) });
+  }
+
+  // Freshest quiz first. Interest decays fast, and the max-age window already
+  // protects the tail from being forgotten.
+  eligible.sort((a, b) => a.ageMinutes - b.ageMinutes);
+
+  const unique: ReminderCandidate[] = [];
+  for (const c of eligible) {
+    const key = phoneKey(c.phone);
+    if (claimedPhones.has(key)) {
+      skipped.duplicatePhone++;
+      continue;
+    }
+    claimedPhones.add(key);
+    unique.push(c);
+  }
+
+  const candidates = unique.slice(0, limit);
+  skipped.overCap = unique.length - candidates.length;
+
+  return { candidates, skipped, scanned: rows.length };
+}
+
 // ── Call reminders: fire relative to her SESSION time, not elapsed time ──────
 //
 // Every other planner here answers "how long since X happened". These answer
