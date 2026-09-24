@@ -540,6 +540,7 @@ export async function GET(req: NextRequest) {
         // nudge goes out twice.
         sheetColumns: {
           headerWidth: header.length,
+          header: header.map((h, i) => `${i}:${h}`),
           freeNudgeSent: findCol(header, FREE_NUDGE_SENT_TITLE),
           freeNudgeAt: findCol(header, FREE_NUDGE_AT_TITLE),
           freeNudge2Sent: findCol(header, FREE_NUDGE2_SENT_TITLE),
