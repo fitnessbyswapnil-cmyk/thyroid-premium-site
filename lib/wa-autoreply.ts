@@ -28,11 +28,17 @@
  */
 import { GUIDE_URL } from "./draft-message.ts";
 
-/** Kept in sync with app/lib/pricing.ts. Duplicated rather than imported so a
- *  server-only module never pulls in the app/ tree. */
+/** The consultation went FREE on 23-Sep-2026, so the bot must never quote a
+ *  price for it. The constant stays because /schedule and /complete-payment
+ *  still charge anyone who genuinely owes from the old paid path — but no
+ *  reply below may use it, and a test enforces that. Kept in sync with
+ *  app/lib/pricing.ts, duplicated rather than imported so a server-only module
+ *  never pulls in the app/ tree. */
 export const CONSULT_PRICE = 299;
 export const QUIZ_URL = "https://www.swapnilumbarkarfitness.in/assessment";
 export const HOW_IT_WORKS_URL = "https://www.swapnilumbarkarfitness.in/how-it-works";
+/** Where a price question ends: the free consultation, not a checkout. */
+export const BOOK_URL = "https://www.swapnilumbarkarfitness.in/decode";
 
 /** Every intent the bot can answer. `handoff` and `optout` are terminal: the
  *  webhook must stop auto-replying to that person afterwards. */
@@ -87,7 +93,7 @@ export const RULES: Rule[] = [
       "paisa", "rupees", "payment", "expensive", "afford",
     ],
     reply:
-      `The 1-on-1 Thyroid Consultation is Rs ${CONSULT_PRICE}. In 60 minutes I go through your reports, your food and your routine, and tell you the exact blocker keeping your weight stuck - plus your 90-day plan. If you leave without clarity on your blocker, you get the Rs ${CONSULT_PRICE} back.\n\nThe 3-month coaching programme is quoted only on the call, after I have seen your case. No pressure either way.\n\nStart with the free 2-minute quiz: ${QUIZ_URL}`,
+      `The 1-on-1 Thyroid Consultation is free. In 60 minutes I go through your reports, your food and your routine, and tell you the exact blocker keeping your weight stuck - plus your 90-day plan. No card and no payment - just bring your latest blood report.\n\nThe 3-month coaching programme is quoted only on the call, after I have seen your case. No pressure either way.\n\nPick your slot here: ${BOOK_URL}`,
   },
   {
     intent: "booking",

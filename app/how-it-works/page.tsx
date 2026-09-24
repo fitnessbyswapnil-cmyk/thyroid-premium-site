@@ -3,7 +3,8 @@
  *
  * Built to be LINKED FROM WHATSAPP: a stalled lead taps this from a personal
  * follow-up message, sees the call explained step by step with Rashmi's video
- * as proof, and ends at the ₹299 payment button. Lives on our own domain
+ * as proof, and ends at the free booking button. The consultation went free
+ * on 23-Sep-2026, so nothing here may quote a fee. Lives on our own domain
  * (never a third-party link) so the Pixel sees every visitor and the page
  * carries the site's trust, not someone else's branding.
  *
@@ -15,10 +16,13 @@ const VIDEO_URL = "https://youtu.be/Iad2NE9w7eg";
 // YouTube's own thumbnail CDN — hqdefault exists for every video. Loaded by
 // the visitor's browser, so it works regardless of where this page is served.
 const VIDEO_THUMB = "https://i.ytimg.com/vi/Iad2NE9w7eg/hqdefault.jpg";
-const PAY_URL = "https://payments.cashfree.com/forms?code=thyroid-session";
-// Price anchor: the call's actual price vs what she pays today.
+// The Cashfree hosted form is NOT the payment path, and there is no payment
+// to take any more: this page now ends where the ad funnel does, on the free
+// booking page.
+const BOOK_URL = "https://www.swapnilumbarkarfitness.in/decode";
+// Value anchor only. The call is free; nothing is charged and nothing refunded.
 const ACTUAL_PRICE = "₹2,000";
-const OFFER_PRICE = "₹299";
+const OFFER_PRICE = "Free";
 
 export const metadata: Metadata = {
   title: "How Your Thyroid Consultation Works · Swapnil Umbarkar",
@@ -39,18 +43,18 @@ const GOOD = "#047857";
 const STEPS = [
   {
     n: "01",
-    title: "Reserve — ₹2,000, today ₹299",
-    body: "Fully refundable. Credited to your plan.",
+    title: "Book your slot — free",
+    body: "No card, no payment. Takes a minute.",
   },
   {
     n: "02",
-    title: "I study your case first",
-    body: "Your reports reach me before we speak.",
+    title: "Send your report on WhatsApp",
+    body: "TSH, T3, T4 — a photo is enough.",
   },
   {
     n: "03",
-    title: "Pick your time",
-    body: "Booking link on WhatsApp, instantly.",
+    title: "I study your case before we speak",
+    body: "Every report is read before the call.",
   },
   {
     n: "04",
@@ -188,7 +192,7 @@ export default function HowItWorks() {
 
         {/* CTA immediately after the proof */}
         <a
-          href={PAY_URL}
+          href={BOOK_URL}
           style={{
             display: "block",
             textAlign: "center",
@@ -209,14 +213,14 @@ export default function HowItWorks() {
           I&apos;m not selling you a call — I&apos;m finding your blocker.
           <br />
           <span style={{ color: MUTED, fontSize: 11 }}>
-            The {OFFER_PRICE} just keeps my calendar serious. Refunded if you leave without clarity.
+            There is no fee. Bring your latest blood report and turn up on time.
           </span>
         </p>
 
         {/* ── The Three Locks — FOMO diagram ─────────────────────────────────
             Mirrors the deck used on real consultations (Rashmi's video shows
             it live). Deliberately names the locks but NOT how to test or open
-            them — the diagnosis is what the ₹299 buys. Minimal text. */}
+            them — the diagnosis is the whole point of the hour. Minimal text. */}
         <div style={{ marginBottom: 40 }}>
           <p
             style={{
@@ -413,12 +417,12 @@ export default function HowItWorks() {
           }}
         >
           &ldquo;If you finish the call and still don&apos;t know what&apos;s blocking you, tell me
-          and I&apos;ll refund the ₹299 — and you keep the written summary.&rdquo;
+          plainly — and you keep the written summary either way.&rdquo;
         </p>
 
         {/* CTA */}
         <a
-          href={PAY_URL}
+          href={BOOK_URL}
           style={{
             display: "block",
             textAlign: "center",
@@ -436,8 +440,8 @@ export default function HowItWorks() {
           Okay — Schedule My 1-1 Call — <s style={{ opacity: 0.55, fontWeight: 600 }}>{ACTUAL_PRICE}</s> {OFFER_PRICE}
         </a>
         <p style={{ textAlign: "center", fontSize: 11.5, color: MUTED, lineHeight: 1.6 }}>
-          <span style={{ color: GOOD }}>✓</span> GPay · PhonePe · Paytm · Cards &nbsp;·&nbsp;
-          <span style={{ color: GOOD }}>✓</span> Full refund if no clarity &nbsp;·&nbsp;
+          <span style={{ color: GOOD }}>✓</span> No card needed &nbsp;·&nbsp;
+          <span style={{ color: GOOD }}>✓</span> Your report read before the call &nbsp;·&nbsp;
           <span style={{ color: GOOD }}>✓</span> 100+ women guided
         </p>
       </div>

@@ -209,7 +209,7 @@ export function draftMessage(lead: DraftLead): string {
           ? `I read your answers properly — ${detail}.${goalLine}`
           : `I read your answers properly.${goalLine}`,
       hookFor(segmentOf(lead)),
-      `The next step is your 1-1 Thyroid Fat Loss Consultation — 60 minutes, one to one with me. I read your blood report line by line and tell you which of those blockers is actually holding your weight.\n\nIt is Rs 299 to hold the slot, and it comes off the programme fee if you go ahead.\n\nYour checkout is still open here:\n${resume}`,
+      `The next step is your 1-1 Thyroid Fat Loss Consultation — 60 minutes, one to one with me. I read your blood report line by line and tell you which of those blockers is actually holding your weight.\n\nIt is free. No card, no payment \u2014 just bring your latest report and turn up on time.\n\nYour slot is still open here:\n${resume}`,
       `Any question before you book, just reply here.`,
     ].join("\n\n");
   }
