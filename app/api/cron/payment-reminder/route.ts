@@ -281,7 +281,13 @@ export async function GET(req: NextRequest) {
     const { sheets, spreadsheetId } = getSheets();
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${LEADS_SHEET}!A1:BZ`,
+      // A1:DZ, not A1:BZ. This job APPENDS bookkeeping columns, and it decides
+      // where to append from the header it just read. Capped at BZ it cannot
+      // see a column past 78, so it re-appends one every run and can never
+      // read back the stamp it wrote — which means the same woman is messaged
+      // again the next day. DZ leaves room for every stamp column plus the
+      // per-campaign "Tpl <name>" columns the broadcast tool adds.
+      range: `${LEADS_SHEET}!A1:DZ`,
     });
     const all: string[][] = (res.data.values as string[][]) ?? [];
     const header = (all[0] ?? []).map((h) => String(h ?? ""));
@@ -529,6 +535,18 @@ export async function GET(req: NextRequest) {
         wouldNudgeFreeBookingDay3: freeNudge2Plan.candidates.map(describeFixed(FREE_NUDGE_TEMPLATE2)),
         freeNudgeSkipped: { stage1: freeNudgePlan.skipped, stage2: freeNudge2Plan.skipped },
         freeNudgeWithinSendingHoursIST: isWithinSendingHoursIST(),
+        // -1 anywhere here means the stamp cannot be read back, so the job
+        // would repeat itself forever. It is the first thing to check when a
+        // nudge goes out twice.
+        sheetColumns: {
+          headerWidth: header.length,
+          freeNudgeSent: findCol(header, FREE_NUDGE_SENT_TITLE),
+          freeNudgeAt: findCol(header, FREE_NUDGE_AT_TITLE),
+          freeNudge2Sent: findCol(header, FREE_NUDGE2_SENT_TITLE),
+          freeNudge2At: findCol(header, FREE_NUDGE2_AT_TITLE),
+          call24Sent: findCol(header, CALL24_SENT_TITLE),
+          call1Sent: findCol(header, CALL1_SENT_TITLE),
+        },
         wouldRemindCall24h: call24Plan.candidates.map((c) => ({
           row: c.rowNumber, name: c.name, phone: `***${c.phone.slice(-4)}`,
           sessionAt: new Date(c.sessionAt).toISOString(),
