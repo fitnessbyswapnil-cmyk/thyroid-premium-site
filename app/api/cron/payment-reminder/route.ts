@@ -541,6 +541,13 @@ export async function GET(req: NextRequest) {
         sheetColumns: {
           headerWidth: header.length,
           header: header.map((h, i) => `${i}:${h}`),
+          // What actually LIVES in the four columns this job claimed, so a
+          // claim that landed on someone else's data is visible rather than
+          // inferred.
+          sample78to81: [78, 79, 80, 81].map((i) => {
+            const vals = rows.map((r) => String(r?.[i] ?? "").trim()).filter(Boolean);
+            return { i, nonEmpty: vals.length, distinct: [...new Set(vals)].slice(0, 6) };
+          }),
           freeNudgeSent: findCol(header, FREE_NUDGE_SENT_TITLE),
           freeNudgeAt: findCol(header, FREE_NUDGE_AT_TITLE),
           freeNudge2Sent: findCol(header, FREE_NUDGE2_SENT_TITLE),
