@@ -128,6 +128,9 @@ test("the page keeps its order, and the long argument stays off it", () => {
     ["why nothing has worked", "<CompareSection />"],
     ["proof: transformations", "<TransformationWall compact />"],
     ["proof: videos", "<VideoTestimonial compact />"],
+    // Added 25-Sep: prospects ask for Hashimoto's proof by name. Its own
+    // guards live in lib/hashimoto-proof.test.ts.
+    ["proof: Hashimoto's", "<HashimotoProof />"],
     ["proof: screenshots", "<WhatsappProofSection hideCta limit={3} />"],
     ["meet your coach", "<CoachIntro />"],
     ["the method", 'id="method-heading"'],

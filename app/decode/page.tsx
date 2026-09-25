@@ -5,6 +5,7 @@ import HeroVideo from "@/app/components/HeroVideo";
 import { PILLARS } from "@/app/components/PillarsSection";
 import DecodeStickyCta from "./DecodeStickyCta";
 import CoachIntro from "./CoachIntro";
+import HashimotoProof from "@/app/components/HashimotoProof";
 
 /**
  * /decode — the FREE 1-1 consultation offer. Ad traffic only.
@@ -408,6 +409,7 @@ export default function DecodePage() {
         <TransformationWall compact />
         <ButtonRow />
         <VideoTestimonial compact />
+        <HashimotoProof />
       </div>
 
       <div className="band-deep band-deeper">
