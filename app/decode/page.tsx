@@ -410,6 +410,11 @@ export default function DecodePage() {
         <ButtonRow />
         <VideoTestimonial compact />
         <HashimotoProof />
+        {/* The Hashimoto's reader is at her most convinced right here: she came
+            looking for someone who works with her condition and has just been
+            told, plainly, what will and will not change. Without a button she
+            has to scroll past the screenshots to find one. */}
+        <ButtonRow />
       </div>
 
       <div className="band-deep band-deeper">
