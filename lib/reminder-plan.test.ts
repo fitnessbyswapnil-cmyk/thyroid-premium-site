@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planReminders, planCallReminders, parseSheetTime, firstNameOf, phoneKey, type ReminderColumns, type CallReminderColumns } from "./reminder-plan.ts";
+import { planReminders, planCallReminders, parseSheetTime, firstNameOf, phoneKey, type ReminderColumns, type CallReminderColumns,
+  istCalendarDate,
+  istMinutesOfDay,
+} from "./reminder-plan.ts";
 
 const COLS: ReminderColumns = { timestamp: 0, leadId: 1, name: 2, phone: 3, paid: 40, reminderSent: 44 };
 
@@ -593,13 +596,14 @@ test("minAgeHours defaults to 0 so a plain broadcast reaches everyone", () => {
 // firing late: "your call starts in one hour" arriving after the call is worse
 // than never sending it.
 
-const CRCOLS: CallReminderColumns = { name: 2, phone: 3, sessionDate: 18, bookingStatus: 17, reminderSent: 46 };
+const CRCOLS: CallReminderColumns = { name: 2, phone: 3, sessionDate: 18, sessionTime: 19, bookingStatus: 17, reminderSent: 46 };
 
-function callRow(o: { session?: string; phone?: string; status?: string; sent?: string }): string[] {
+function callRow(o: { session?: string; time?: string; phone?: string; status?: string; sent?: string }): string[] {
   const r = new Array<string>(50).fill("");
   r[CRCOLS.name] = "Priya Sharma";
   r[CRCOLS.phone] = o.phone ?? "9876543210";
   r[CRCOLS.sessionDate] = o.session ?? "";
+  r[CRCOLS.sessionTime] = o.time ?? "";
   r[CRCOLS.bookingStatus] = o.status ?? "Booked";
   r[CRCOLS.reminderSent] = o.sent ?? "";
   return r;
@@ -653,4 +657,114 @@ test("each stage stamps its own column, so 24h and 1h never suppress each other"
   const rows = [callRow({ session: inHrs(0.5), sent: "" })];
   const oneHour = planCallReminders({ rows, cols: CRCOLS, now: NOW, withinHours: 1, notWithinHours: 0 });
   assert.equal(oneHour.candidates.length, 1, "the 1h stage still fires for a call 30 min out");
+});
+
+
+// ── the 04:30 bug ────────────────────────────────────────────────────────────
+//
+// Both of the live sheet's Session Date formats were being handed to
+// Date.parse on a UTC runtime. "Saturday, 26 September 2026" became midnight
+// UTC, so "starts in one hour" went out at 05:30 IST; "30 Sep 2026 9:00 PM"
+// became 21:00 UTC, five and a half hours after the real slot. Rows booked on
+// the day of the call fell outside the window and were never reminded at all.
+//
+// Every instant below is built with Date.UTC, so these pass wherever they run.
+
+const IST = (y: number, m: number, d: number, h: number, min = 0) =>
+  Date.UTC(y, m, d, h, min) - ((5 * 60 + 30) * 60000);
+
+test("a date-only row takes its time from the time column, as IST", () => {
+  // 12:00 IST on 26-Sep. At 11:15 IST the 1h stage is due; at 05:30 — where
+  // the old code fired — it is 6h30 away and must not be.
+  const row = [callRow({ session: "Saturday, 26 September 2026", time: "12:00" })];
+  const due = planCallReminders({
+    rows: row, cols: CRCOLS, now: IST(2026, 8, 26, 11, 15), withinHours: 1, notWithinHours: 0,
+  });
+  assert.equal(due.candidates.length, 1, "due 45 minutes before the slot");
+  assert.equal(
+    new Date(due.candidates[0].sessionAt).toISOString(),
+    new Date(IST(2026, 8, 26, 12, 0)).toISOString(),
+    "the instant is 12:00 IST, not midnight",
+  );
+
+  const old = planCallReminders({
+    rows: row, cols: CRCOLS, now: IST(2026, 8, 26, 5, 30), withinHours: 1, notWithinHours: 0,
+  });
+  assert.equal(old.candidates.length, 0, "04:30 to 05:30 IST is not one hour before noon");
+  assert.equal(old.skipped.notYetDue, 1);
+});
+
+test("a date string that already carries a time is still read as IST", () => {
+  // "30 Sep 2026 9:00 PM" parsed as UTC put the reminder after the real call.
+  const row = [callRow({ session: "30 Sep 2026 9:00 PM", time: "21:00" })];
+  const plan = planCallReminders({
+    rows: row, cols: CRCOLS, now: IST(2026, 8, 30, 20, 15), withinHours: 1, notWithinHours: 0,
+  });
+  assert.equal(plan.candidates.length, 1);
+  assert.equal(
+    new Date(plan.candidates[0].sessionAt).toISOString(),
+    new Date(IST(2026, 8, 30, 21, 0)).toISOString(),
+  );
+});
+
+test("the time column wins when the two cells disagree", () => {
+  // The sheet has two writers. The dedicated column is the one Cal.com fills.
+  const plan = planCallReminders({
+    rows: [callRow({ session: "30 Sep 2026 9:00 AM", time: "21:00" })],
+    cols: CRCOLS, now: IST(2026, 8, 30, 20, 15), withinHours: 1, notWithinHours: 0,
+  });
+  assert.equal(plan.candidates.length, 1, "21:00 from the column, not 9 AM from the string");
+});
+
+test("a booking made the same morning still gets its reminders", () => {
+  // The old code measured from midnight, so a call booked at 10 AM for 9 PM
+  // was already 'tooLate' for both stages. Priya and Neha were never reminded.
+  const row = [callRow({ session: "Tuesday, 29 September 2026", time: "21:00" })];
+  const bookedAt = IST(2026, 8, 29, 10, 0);
+  assert.equal(
+    planCallReminders({ rows: row, cols: CRCOLS, now: bookedAt, withinHours: 24, notWithinHours: 2 })
+      .candidates.length, 1, "the 24h stage covers a same-day booking");
+  assert.equal(
+    planCallReminders({ rows: row, cols: CRCOLS, now: IST(2026, 8, 29, 20, 30), withinHours: 1, notWithinHours: 0 })
+      .candidates.length, 1, "and the 1h stage fires half an hour before");
+});
+
+test("a date with no time at all is skipped, and counted apart from a bad date", () => {
+  const noTime = planCallReminders({
+    rows: [callRow({ session: "Saturday, 26 September 2026", time: "" })],
+    cols: CRCOLS, now: IST(2026, 8, 26, 11, 15), withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(noTime.candidates.length, 0, "never guess an hour");
+  assert.equal(noTime.skipped.noTime, 1);
+  assert.equal(noTime.skipped.unparseableTime, 0, "the date was readable; only the time was missing");
+
+  const badDate = planCallReminders({
+    rows: [callRow({ session: "sometime thursday", time: "12:00" })],
+    cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(badDate.skipped.unparseableTime, 1);
+  assert.equal(badDate.skipped.noTime, 0);
+});
+
+test("a value carrying its own zone is passed through untouched", () => {
+  const plan = planCallReminders({
+    rows: [callRow({ session: inHrs(23) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
+  });
+  assert.equal(plan.candidates.length, 1, "an ISO instant needs no time column");
+});
+
+test("istCalendarDate and istMinutesOfDay read every live format", () => {
+  assert.deepEqual(istCalendarDate("Saturday, 26 September 2026"), { y: 2026, m: 8, d: 26 });
+  assert.deepEqual(istCalendarDate("30 Sep 2026 9:00 PM"), { y: 2026, m: 8, d: 30 });
+  assert.deepEqual(istCalendarDate("Monday, 12 October 2026"), { y: 2026, m: 9, d: 12 });
+  assert.deepEqual(istCalendarDate("2026-10-01T15:30:00Z"), { y: 2026, m: 9, d: 1 });
+  assert.equal(istCalendarDate("sometime thursday"), null);
+
+  assert.equal(istMinutesOfDay("21:00"), 21 * 60);
+  assert.equal(istMinutesOfDay("09:00"), 9 * 60);
+  assert.equal(istMinutesOfDay("9:00 PM"), 21 * 60);
+  assert.equal(istMinutesOfDay("12:00 AM"), 0);
+  assert.equal(istMinutesOfDay("12:30 PM"), 12 * 60 + 30);
+  assert.equal(istMinutesOfDay(""), null);
+  assert.equal(istMinutesOfDay("evening"), null);
 });

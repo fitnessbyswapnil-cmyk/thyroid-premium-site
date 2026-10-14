@@ -937,6 +937,10 @@ export type CallReminderColumns = {
   name: number;
   phone: number;
   sessionDate: number;
+  /** The column immediately right of Session Date: the slot as 24h IST
+   *  wall-clock, e.g. "21:00". It has no header on the live sheet, so the
+   *  cron resolves it positionally. */
+  sessionTime: number;
   /** Cancelled bookings must never be reminded. */
   bookingStatus: number;
   /** Per-stage stamp column, so 24h and 1h can never suppress each other. */
@@ -946,6 +950,9 @@ export type CallReminderColumns = {
 export type CallReminderSkips = {
   noSession: number;
   unparseableTime: number;
+  /** A date with no readable slot time. Never guessed at: a reminder sent at
+   *  the wrong hour is worse than one not sent. */
+  noTime: number;
   cancelled: number;
   alreadySent: number;
   /** The call is further away than this stage's window. */
@@ -974,6 +981,100 @@ export type CallReminderPlan = {
 
 export const CALL_REMINDER_LIMIT = 25;
 
+/**
+ * The instant a consultation actually starts, in UTC milliseconds.
+ *
+ * WHY THIS EXISTS. The Leads sheet stores a booking in TWO cells, and neither
+ * one alone can be trusted:
+ *
+ *   "Session Date"  "Saturday, 26 September 2026"   <- no time at all
+ *                   "30 Sep 2026 9:00 PM"           <- time, but no zone
+ *   next column     "21:00"                          <- the slot, 24h IST
+ *
+ * Both of those writers exist on the live sheet today. Handing either string
+ * straight to Date.parse on a UTC runtime is what sent "your call starts in
+ * one hour" at 04:30 in the morning:
+ *
+ *   "Saturday, 26 September 2026"  -> midnight UTC   -> 05:30 IST
+ *   "30 Sep 2026 9:00 PM"          -> 21:00 UTC      -> 02:30 IST, next day
+ *
+ * The first is 5h30 early, the second 5h30 late, and rows booked on the day of
+ * the call fell outside the window entirely and were silently skipped — two
+ * women booked and were never reminded at all.
+ *
+ * So the calendar date is read as a date, never as an instant, and the time
+ * comes from the dedicated column. Both are IST wall-clock, which is what the
+ * woman picked and what the template promises her.
+ *
+ * A value that genuinely carries its own instant — an ISO string with a zone,
+ * or a Sheets serial with a fractional day — is already unambiguous and is
+ * passed through untouched.
+ */
+const IST_OFFSET_MS = (5 * 60 + 30) * 60000;
+
+const MONTHS: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+/** Y/M/D of an IST wall-clock date string, ignoring any time it also carries. */
+export function istCalendarDate(raw: string): { y: number; m: number; d: number } | null {
+  const v = String(raw ?? "").trim();
+  if (!v) return null;
+  // 2026-09-26, with or without a trailing time
+  const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return { y: +iso[1], m: +iso[2] - 1, d: +iso[3] };
+  // 26 September 2026 / 30 Sep 2026 / Saturday, 26 September 2026
+  const dmy = v.match(/(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})/);
+  if (dmy) {
+    const m = MONTHS[dmy[2].slice(0, 3).toLowerCase()];
+    if (m !== undefined) return { y: +dmy[3], m, d: +dmy[1] };
+  }
+  // September 26, 2026
+  const mdy = v.match(/([A-Za-z]{3,})\s+(\d{1,2}),?\s+(\d{4})/);
+  if (mdy) {
+    const m = MONTHS[mdy[1].slice(0, 3).toLowerCase()];
+    if (m !== undefined) return { y: +mdy[3], m, d: +mdy[2] };
+  }
+  return null;
+}
+
+/** Minutes past IST midnight from "21:00", "9:00 PM", "09:00". */
+export function istMinutesOfDay(raw: string): number | null {
+  const v = String(raw ?? "").trim();
+  if (!v) return null;
+  const m = v.match(/^(\d{1,2})[:.](\d{2})\s*(am|pm)?/i);
+  if (!m) return null;
+  let h = +m[1];
+  const min = +m[2];
+  if (h > 23 || min > 59) return null;
+  const mer = (m[3] || "").toLowerCase();
+  if (mer === "pm" && h < 12) h += 12;
+  if (mer === "am" && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+export function sessionInstant(dateCell: string, timeCell: string): number | null {
+  const rawDate = String(dateCell ?? "").trim();
+  if (!rawDate) return null;
+
+  // Already an unambiguous instant: an explicit zone, or a Sheets serial
+  // carrying a fraction of a day. parseSheetTime is correct for both.
+  const hasZone = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(rawDate);
+  const fractionalSerial = /^\d+\.\d+$/.test(rawDate);
+  if (hasZone || fractionalSerial) return parseSheetTime(rawDate);
+
+  const date = istCalendarDate(rawDate);
+  if (date === null) return null;
+
+  // The time column wins. A time embedded in the date string is the fallback,
+  // because only one of the two writers includes one.
+  const minutes = istMinutesOfDay(timeCell) ?? istMinutesOfDay(rawDate.replace(/^.*?\d{4}\s*/, ""));
+  if (minutes === null) return null;
+
+  return Date.UTC(date.y, date.m, date.d, 0, 0, 0, 0) + minutes * 60000 - IST_OFFSET_MS;
+}
+
 export function planCallReminders(opts: {
   rows: string[][];
   cols: CallReminderColumns;
@@ -990,6 +1091,7 @@ export function planCallReminders(opts: {
   const skipped: CallReminderSkips = {
     noSession: 0,
     unparseableTime: 0,
+    noTime: 0,
     cancelled: 0,
     alreadySent: 0,
     notYetDue: 0,
@@ -1023,9 +1125,12 @@ export function planCallReminders(opts: {
       skipped.noSession++;
       continue;
     }
-    const sessionAt = parseSheetTime(raw);
+    const sessionAt = sessionInstant(raw, cell(row, cols.sessionTime));
     if (sessionAt === null) {
-      skipped.unparseableTime++;
+      // Tell the two apart in the dry run: a date we cannot read at all is a
+      // format drift to chase, a readable date with no time is a missing cell.
+      if (istCalendarDate(raw) === null) skipped.unparseableTime++;
+      else skipped.noTime++;
       continue;
     }
 
