@@ -433,10 +433,16 @@ export async function GET(req: NextRequest) {
     // Call reminders. Windows are deliberately disjoint: the 24h stage stops
     // at 2h out, the 1h stage runs from 1h to 0. Neither can ever fire after
     // the call has started.
+    // The slot time lives in the column immediately right of Session Date and
+    // has no header, so it can only be resolved positionally. Session Date is
+    // itself resolved by name with a positional fallback, so this rides on
+    // whatever that lands on and stays correct if the sheet shifts.
+    const sessionDateCol = byNameOr("Session Date", SESSION_DATE_FALLBACK);
     const callColsBase = {
       name: 2,
       phone: 3,
-      sessionDate: byNameOr("Session Date", SESSION_DATE_FALLBACK),
+      sessionDate: sessionDateCol,
+      sessionTime: sessionDateCol + 1,
       bookingStatus: byNameOr("Booking Status", BOOKING_STATUS_FALLBACK),
     };
     const call24Cols: CallReminderColumns = { ...callColsBase, reminderSent: findCol(header, CALL24_SENT_TITLE) };
@@ -550,6 +556,8 @@ export async function GET(req: NextRequest) {
           freeNudgeAt: findCol(header, FREE_NUDGE_AT_TITLE),
           freeNudge2Sent: findCol(header, FREE_NUDGE2_SENT_TITLE),
           freeNudge2At: findCol(header, FREE_NUDGE2_AT_TITLE),
+          sessionDate: sessionDateCol,
+          sessionTime: sessionDateCol + 1,
           call24Sent: findCol(header, CALL24_SENT_TITLE),
           call1Sent: findCol(header, CALL1_SENT_TITLE),
         },
