@@ -46,7 +46,39 @@ export default function DecodeStickyCta({ fromTop = false }: { fromTop?: boolean
     return () => window.removeEventListener("scroll", onScroll);
   }, [fromTop]);
 
-  const show = visible && !retired;
+  // Stand down while a real CTA is on screen.
+  //
+  // The bar and the inline buttons are the same button, in the same red, with
+  // the same words — so whenever an inline one scrolled into view the page
+  // showed her the identical offer twice at once, one of them pinned over the
+  // content she was reading. Two of the same button is not twice the pull; it
+  // reads as a page shouting, and it costs the bar the thing that makes a
+  // sticky CTA work, which is being the ONLY one.
+  //
+  // So the bar yields to the inline buttons and comes back when they leave.
+  // Nothing about the labels changes: lib/decode-landing.test.ts still holds
+  // every CTA to the ad's exact wording, and all of them are still on the page.
+  const [inlineOnScreen, setInlineOnScreen] = useState(false);
+  useEffect(() => {
+    const inline = [...document.querySelectorAll<HTMLElement>(".cta-button")].filter(
+      (el) => !el.classList.contains("cta-sticky"),
+    );
+    if (!inline.length) return;
+    const seen = new Set<Element>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) e.isIntersecting ? seen.add(e.target) : seen.delete(e.target);
+        setInlineOnScreen(seen.size > 0);
+      },
+      // A sliver is not an arrival: require a third of the button, and ignore
+      // the strip the bar itself occupies so the two never fight at the seam.
+      { threshold: 0.34, rootMargin: "0px 0px -140px 0px" },
+    );
+    inline.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  const show = visible && !retired && !inlineOnScreen;
 
   // Reserve exactly the bar's own height at the bottom of the page.
   //
@@ -80,18 +112,36 @@ export default function DecodeStickyCta({ fromTop = false }: { fromTop?: boolean
     <div
       ref={barRef}
       aria-hidden={!show}
-      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pt-2.5 transition-transform duration-300"
+      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-4 pt-6 transition-transform duration-300"
       style={{
         transform: show ? "translateY(0)" : "translateY(110%)",
-        background: "rgba(255,255,255,0.94)",
-        backdropFilter: "blur(8px)",
-        borderTop: "1px solid var(--border-on-wash)",
+        // No bar. The button floats.
+        //
+        // This was an opaque white plank with a hairline top border, which is
+        // fine for the first screen and wrong for every screen after it: most
+        // of /decode is a near-black ground, so the plank cut a bright white
+        // strip across the bottom of the page and announced itself as chrome
+        // bolted on rather than part of the design.
+        //
+        // A scrim instead of a plank, and one that cannot be the wrong colour
+        // on either ground: it fades from nothing to a touch of the page's own
+        // ink, so it only ever darkens whatever is already behind it. The
+        // button carries its own shadow and reads as a button on white and on
+        // black alike.
+        background:
+          "linear-gradient(to top, rgba(10,9,8,0.55) 0%, rgba(10,9,8,0.28) 45%, rgba(10,9,8,0) 100%)",
+        pointerEvents: "none",
       }}
     >
       <a
         href="/decode/quiz"
         className="cta-button cta-sticky mx-auto"
-        style={{ maxWidth: "28rem", textDecoration: "none" }}
+        style={{
+          maxWidth: "28rem",
+          textDecoration: "none",
+          pointerEvents: "auto",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.38), 0 2px 6px rgba(0,0,0,0.22)",
+        }}
         tabIndex={show ? 0 : -1}
       >
         Book my 1-1 Thyroid Consultation

@@ -184,7 +184,7 @@ function FeaturedStoryCard({
 }) {
   return (
     <article
-      className="overflow-hidden rounded-[28px]"
+      className="overflow-hidden rounded-2xl"
       style={{
         border: featured
           ? '1px solid rgba(163, 114, 32,0.4)'
@@ -268,7 +268,7 @@ function ProofCard({
       style={{
         width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
         flexShrink: 0,
-        borderRadius: '28px',
+        borderRadius: 'var(--r-md)',
         border: '1px solid #ede7dd',
         background: 'var(--surface-page)',
         // One shadow, not two stacked 60/120px blurs — blur radius is the
@@ -308,7 +308,7 @@ function ProofCard({
         className="relative overflow-hidden mx-3 mt-5"
         style={{
           aspectRatio: '9 / 15',
-          borderRadius: '18px',
+          borderRadius: 'var(--r-md)',
           background: '#fdf6e4',
           border: '1px solid #ede7dd',
           boxShadow:
