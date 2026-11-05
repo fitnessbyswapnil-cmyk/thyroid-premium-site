@@ -94,7 +94,7 @@ function Column({ tag, tagColor, tagBg, borderColor, title, lines, good }: {
           ? "linear-gradient(180deg, rgba(255,201,30,0.05) 0%, rgba(255,255,255,0.02) 45%)"
           : "rgba(255,255,255,0.02)",
       }}>
-      <p className="m-0 inline-block rounded-md px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
+      <p className="m-0 inline-block rounded-lg px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
         style={{ color: tagColor, background: tagBg }}>{tag}</p>
       <h3 className="mb-0 mt-3 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-white">{title}</h3>
       <ul className="mt-5 flex list-none flex-col gap-3.5 p-0">

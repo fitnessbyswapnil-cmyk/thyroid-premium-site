@@ -192,7 +192,7 @@ function CompareColumn({
       }}
     >
       <p
-        className="m-0 inline-block rounded-md px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
+        className="m-0 inline-block rounded-lg px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
         style={{ color: tagColor, background: tagBg }}
       >
         {tag}
@@ -383,7 +383,7 @@ export default function DecodePage() {
                 above the CTA. It answers "my reports are normal, why would a call
                 help", which is the objection the ad traffic arrives with. */}
             <p className="mx-auto mt-4 text-[length:var(--fs-xs)] font-bold leading-[var(--lh-tight)] text-[#0b1120] md:text-[length:var(--fs-base)]">
-              <span className="rounded-md px-2 py-1" style={{ background: "#ffe98a", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
+              <span className="rounded-lg px-2 py-1" style={{ background: "#ffe98a", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
                 A &ldquo;normal&rdquo; report is not the same as a thyroid that is working.
               </span>
             </p>
@@ -495,7 +495,7 @@ export default function DecodePage() {
                   style={{ borderTop: i ? "1px solid rgba(255,255,255,0.08)" : "none" }}
                 >
                   <span
-                    className="flex h-10 w-10 items-center justify-center rounded-md text-[length:var(--fs-2xs)] font-bold decode-gold"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg text-[length:var(--fs-2xs)] font-bold decode-gold"
                     style={{ border: "1px solid var(--accent-yellow)" }}
                   >
                     0{i + 1}

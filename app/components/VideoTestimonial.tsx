@@ -177,7 +177,7 @@ function VideoCard({
   return (
     <Reveal
       as="article"
-      className="vt-card group relative flex flex-col overflow-hidden rounded-[28px]"
+      className="vt-card group relative flex flex-col overflow-hidden rounded-2xl"
       style={{
         background: "var(--bg-elevated)",
         border: story.featured

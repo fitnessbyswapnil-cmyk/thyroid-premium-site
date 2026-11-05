@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Fragment } from "react";
 
-// Hero social-proof strip: 100+ laurel block + four client claims.
+// Hero social-proof strip: the 100+ claim + four client claims.
 // No headshots exist in the repo (only WhatsApp screenshots and full-body
 // composites), so avatars render INITIALS on a --p-tint fill; the img slot is
 // wired so a real portrait can be dropped in later without touching layout.
@@ -21,25 +21,20 @@ const PROOF: ProofAvatar[] = [
   { initials: "SS", name: "Shariya S.", claim: "More energy, TSH is in range" },
 ];
 
-function Laurel({ flip = false }: { flip?: boolean }) {
+/* The laurel wreath that used to flank this number is gone.
+   It was drawn here, not stock, so it was honest — but the laurel is the
+   award-badge motif every template funnel reaches for, and a motif that
+   appears on ten thousand pages signifies nothing on the eleven-thousandth.
+   What is left is the number itself, set in the display face between two
+   hairlines: the same claim, carrying the page's own typography instead of
+   borrowed iconography. Rules, not leaves. */
+function Rule() {
   return (
-    <svg
-      width="26"
-      height="44"
-      viewBox="0 0 26 44"
-      fill="none"
-      stroke="var(--p500)"
-      strokeWidth="1.6"
-      strokeLinecap="round"
+    <span
       aria-hidden="true"
-      className="opacity-90"
-      style={flip ? { transform: "scaleX(-1)" } : undefined}
-    >
-      <path d="M22 42 C10 38 4 28 5 16 C5.5 10 8 5 12 2" />
-      {[36, 30, 24, 18, 12].map((y, i) => (
-        <path key={y} d={`M${8 - i * 0.6} ${y} q -6 -1 -7 -7 q 7 0 7 7z`} fill="var(--p500)" stroke="none" opacity="0.9" />
-      ))}
-    </svg>
+      className="block h-px w-10 shrink-0 sm:w-12"
+      style={{ background: "linear-gradient(90deg, transparent, var(--p-border), transparent)" }}
+    />
   );
 }
 
@@ -63,11 +58,11 @@ function Avatar({ a }: { a: ProofAvatar }) {
 }
 
 /**
- * `claimsOnly`: /decode renders the 100+ laurel block WITHOUT the four client
+ * `claimsOnly`: /decode renders the 100+ block WITHOUT the four client
  * quotes. Those quotes are four of the twenty-two separate proof units that
  * page was carrying, and they are the weakest four — a name, an initial and a
  * number, above four full transformation composites saying the same thing with
- * faces. The laurel stays: it is the "100+ Indian women coached" claim, which
+ * faces. The number stays: it is the "100+ Indian women coached" claim, which
  * is the one proof statement the hero cannot do without. Default false, so the
  * home page is unchanged.
  */
@@ -77,23 +72,23 @@ export default function HeroProofStrip({
   return (
     // All five items visible on a 390px screen with NO horizontal scrolling —
     // the old row overflowed, cutting quotes mid-word ("Lost 4.5 …") unless
-    // she swiped, and most visitors never swipe. Mobile: laurel block on top,
+    // she swiped, and most visitors never swipe. Mobile: the claim on top,
     // quotes in a compact 2x2 grid (keeps the hero short so the CTA stays
     // reachable). sm+: the original single centred row.
     <div className="container-default mt-[36px] sm:mt-[44px]">
       <div role="list" aria-label="Client results" className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
-        {/* 100+ laurel block */}
-        <div role="listitem" className="flex shrink-0 items-center gap-1.5">
-          <Laurel />
-          <div className="text-center">
-            <div data-tabular className="text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[var(--p300)] sm:text-[length:var(--fs-2xl)]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
+        {/* The 100+ claim */}
+        <div role="listitem" className="flex shrink-0 flex-col items-center">
+          <div className="flex items-center gap-3">
+            <Rule />
+            <div data-tabular className="text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] tracking-[var(--ls-display)] text-[var(--p300)]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
               100+
             </div>
-            <div className="mx-auto mt-1 max-w-[11ch] text-[length:var(--fs-3xs)] leading-[var(--lh-heading)] text-[var(--t2)] sm:text-[length:var(--fs-2xs)]">
-              Indian Women Coached
-            </div>
+            <Rule />
           </div>
-          <Laurel flip />
+          <div className="mt-2 text-[length:var(--fs-3xs)] uppercase leading-[var(--lh-tight)] tracking-[var(--ls-caps)] text-[var(--t2)] sm:text-[length:var(--fs-2xs)]">
+            Indian Women Coached
+          </div>
         </div>
 
         {/* Quotes — 2x2 grid on mobile, inline row from sm up */}

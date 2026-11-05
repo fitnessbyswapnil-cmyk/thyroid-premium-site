@@ -106,7 +106,7 @@
   --surface-wash: #fefefd;
   --surface-wash-strong: #f6f7f6;
   --surface-card: #ffffff;
-  --surface-deep: #0c110c;
+  --surface-deep: #0f0e0c;
 
   /* Yellow — fills and solid shapes ONLY, never text or strokes */
   /* Pure lemon yellow (owner decision). Still surface-only: #ffeb00 is 1.09:1
@@ -123,9 +123,9 @@
   --border-strong: #d2d2ce;
   --focus-ring: #15803d;
 
-  --radius-button: 4px;
-  --radius-card: 16px;
-  --radius-image: 14px;
+  --radius-button: var(--r-sm);
+  --radius-card: var(--r-md);
+  --radius-image: var(--r-md);
   --shadow-card: 0 1px 3px rgba(11,17,32,0.06), 0 8px 28px rgba(11,17,32,0.05);
 
   /* Surface system — warm dark-alpha on light ground */
@@ -172,13 +172,21 @@
   --coral-tint: rgba(233,61,61,0.1);
   --coral-border: rgba(233,61,61,0.3);
 
-  /* Radius */
-  --r-sm: 0.5rem;
-  --r-md: 0.75rem;
+  /* Radius — THREE values, not nine.
+     A census of the rendered /decode page found 6px, 8px, 12px, 16px, 18px,
+     24px, 28px, 999px and a full round all live at once. Nobody chose nine
+     radii; they accumulated one "slightly rounder here" at a time, and the
+     page read as unsystematic for exactly that reason — the same failure the
+     type scale above already fixed for font sizes.
+     8px controls and chips, 16px every card and image, pill for badges.
+     The old names are kept so no call site has to change; they now resolve
+     onto the three. Nothing new may introduce a fourth. */
+  --r-sm: 0.5rem;    /* 8px  — chips, inputs, small controls */
+  --r-md: 1rem;      /* 16px — cards, images, panels */
   --r-lg: 1rem;
-  --r-xl: 1.5rem;
-  --r-2xl: 1.75rem;
-  --r-full: 999px;
+  --r-xl: 1rem;
+  --r-2xl: 1rem;
+  --r-full: 999px;   /* pills and badges */
 
   --ease: cubic-bezier(0.16,1,0.3,1);
   --ease-cta: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -476,7 +484,7 @@ a {
 
   border: 1px solid #ede7dd;
 
-  border-radius: 1.5rem;
+  border-radius: var(--r-md);
 
   box-shadow:
     0 1px 2px rgba(36, 31, 26,0.04),
@@ -760,7 +768,7 @@ a {
 }
 
 /* The proof wall runs on a near-black band, where the accent may be the full
-   yellow as type: #ffc91e on #0c110c is about 11:1. The band hard-codes the
+   yellow as type: #ffc91e on #0f0e0c is about 11:1. The band hard-codes the
    green rather than reading a token, so it is overridden by name. */
 .theme-decode .band-deep {
   --gold-ink: var(--accent-yellow);
@@ -820,9 +828,9 @@ a {
 
 /* The dark card: coach, method, steps, FAQ. */
 .decode-card {
-  background: #151b15;
+  background: #1a1815;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 
 /* A white panel inside the dark band (the symptom checklist) keeps DARK ink.
@@ -1282,7 +1290,7 @@ a {
   pointer-events: none;
   position: absolute;
   inset: -0.65rem;
-  border-radius: 1.75rem;
+  border-radius: var(--r-md);
   background: radial-gradient(
     ellipse at center,
     rgba(163, 114, 32, 0.14) 0%,
@@ -1960,7 +1968,7 @@ a {
 /* ── DEEP BAND ──────────────────────────────────────────────────────────────
    The reference build alternates white sections with near-black ones, and
    turns the accent green loose inside the dark ones where it finally has the
-   contrast to be text (14:1 on #0C110C, against 1.4:1 on white).
+   contrast to be text (14:1 on #0F0E0C, against 1.4:1 on white).
 
    It works by REDEFINING the ink tokens on the wrapper rather than restyling
    anything inside it. Every component already reads var(--t1), var(--t2),
@@ -1969,13 +1977,13 @@ a {
 .band-deep {
   background: var(--surface-deep);
 
-  --bg-page: #0c110c;
-  --bg-section: #0c110c;
-  --bg-elevated: #151b15;
-  --surface-page: #0c110c;
-  --surface-wash: #0c110c;
-  --surface-wash-strong: #151b15;
-  --surface-card: #151b15;
+  --bg-page: #0f0e0c;
+  --bg-section: #0f0e0c;
+  --bg-elevated: #1a1815;
+  --surface-page: #0f0e0c;
+  --surface-wash: #0f0e0c;
+  --surface-wash-strong: #1a1815;
+  --surface-card: #1a1815;
 
   --t1: #e8e6e1;
   --t2: #b7b5ae;
@@ -2021,7 +2029,7 @@ a {
    no duplicated component. */
 .proof-card {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   overflow: hidden;
 
   --t1: #0b1120;
