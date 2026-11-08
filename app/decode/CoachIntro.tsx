@@ -38,12 +38,10 @@ export default function CoachIntro() {
             <span className="decode-gold">BLS</span> certified &middot;{" "}
             <span className="decode-gold">100+</span> thyroid women coached
           </p>
-          <blockquote
-            className="m-0 mt-6 py-1 pl-4 text-[length:var(--fs-lg)] font-bold italic leading-[var(--lh-tight)] text-white"
-            style={{ borderLeft: "4px solid var(--accent-yellow)" }}
-          >
-            Your report will show why.
-          </blockquote>
+          {/* "Your report will show why." was pulled on 08-Nov-2026. Set as a
+              gold-ruled blockquote it read as the section's most important
+              sentence, and its "why" had no referent — nothing above it asks a
+              question. Read cold, it pointed at nothing. */}
         </div>
       </div>
     </section>

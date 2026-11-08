@@ -177,7 +177,7 @@ export default function HashimotoProof() {
         </div>
 
         <p className="mx-auto mt-6 max-w-[620px] text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-          Individual results vary with your starting point, consistency and medical history. Nothing here replaces your doctor&rsquo;s advice or your medication.
+          Individual results vary. Nothing here replaces your doctor&rsquo;s advice or your medication.
         </p>
       </div>
     </section>

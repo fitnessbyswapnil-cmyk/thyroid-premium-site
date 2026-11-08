@@ -36,8 +36,11 @@ const FEATURED = [
   },
 ] as const
 
-const RESULTS_VARY =
-  'Individual results vary with condition, consistency, and starting point.'
+// RESULTS_VARY lived here until 08-Nov-2026. These cards carry no numeric
+// claim of their own, and the transformation wall's qualifier — which sits
+// beside the cards that DO state kilograms — is two sections above. The page
+// had six separate "individual results vary" lines; it now has two, where the
+// claims are.
 
 // ── Card data ─────────────────────────────────────────────────────────────────
 // Trimmed to the strongest 8 for mobile length (proof-fatigue reduction).
@@ -412,9 +415,6 @@ export default function WhatsappProofSection({
           </Reveal>
         </div>
 
-        <p className="container-default mb-10 text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)]" style={{ color: 'var(--t4)' }}>
-          {RESULTS_VARY}
-        </p>
 
         {/* ── ALL BREAKPOINTS: one curated snap gallery ─────────────────────
             Replaces the desktop double-marquee. The marquee animated ~28
