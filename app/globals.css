@@ -554,7 +554,7 @@ a {
 /* CTA colour, tokenised 2026-09-12 so one route can re-skin its buttons
    without forking the component. The defaults below ARE the old hard-coded
    values, so every page except /decode is unchanged; /decode overrides them in
-   .theme-decode (to the creatives' red until 08-Nov-2026, gold since). */
+   .theme-decode to the red of the creatives that send it traffic. */
 :root {
   --cta-bg: var(--yellow-mark);
   --cta-fg: var(--ink-on-yellow);
@@ -635,7 +635,7 @@ a {
   .cta-button:hover { transform: none; }
 }
 
-/* The sticky bar's copy of the CTA. Same words and same gold, tighter box:
+/* The sticky bar's copy of the CTA. Same words and same red, tighter box:
    at 375px the standard 32px side padding leaves 287px of line and the label
    needs ~300px, so it wrapped to two lines and the bar stood 134px tall —
    16% of the viewport, permanently, plus that much bottom padding on the
@@ -687,10 +687,10 @@ a {
 
      The button's colour is NOT borrowed for type. .section-label's rule holds
      and is the reason: the moment the action colour appears as text, every
-     button on the page stops meaning "press me" — which is why .proof-cond is
-     a marker stroke and not a filled block now that the button is gold. The
-     rule outlived the red it was written for. And yellow cannot be type — it
-     is a FILL at any strength: #ffc91e is
+     button on the page stops meaning "press me". Stated as the action colour
+     rather than as "red" on purpose — it was written for red, it caught the
+     gold experiment of 08-Nov-2026 too, and it will catch the next one. And
+     yellow cannot be type at all — #ffc91e is
      1.6:1 on white — so the accent TYPE is simply the secondary ink. A label
      does not need a colour to be a label; uppercase and letter-spacing
      already do that job. */
@@ -783,45 +783,49 @@ a {
 
 /* ── /decode: the reference-page skin (14-Sep-2026) ──────────────────────────
    docs/decode-redesign-feeldvibes-style.md. White hero, near-black everything
-   after it, gold labels, gold buttons.
+   after it, gold labels, red buttons.
 
-   Gold since 08-Nov-2026. It was #dc3434 red, matched to the red in the
-   creatives so the click did not feel like it had landed somewhere else, and
-   that argument was a real one — keep it in mind before changing this again.
-   What the red cost was every screen after the first: from the second screen
-   down /decode is a near-black ground with gold labels and gold headings, and
-   a red button on it is the one element belonging to another palette, so it
-   reads as chrome bolted on rather than as the page's own next step.
+   The red is #dc3434, not the reference page's #e93d3d. They look the same;
+   the difference is legibility. White on #e93d3d is 4.0:1, which fails for
+   the small price line under the label. #dc3434 is 4.6:1, so every word on
+   the button passes at any size. Later in the file than the .theme-decode
+   block above, so these win over its #c8102e.
 
-   #b88c1c is a darker step of --accent-yellow, not a new hue, so the page
-   still runs ONE accent and the ad's yellow and the page's button are now the
-   same family. INK on the gold, not white: #1a1815 on #b88c1c is 5.8:1, where
-   white on it is 3.1:1 and fails. The sub-line is that same ink at full
-   opacity — its hierarchy is size and weight, not a wash, because an opacity
-   is a contrast nobody can check. Worst case is the pressed state, #a27b17,
-   still 4.5:1.
+   GOLD WAS TRIED HERE ON 08-NOV-2026 AND REVERTED THE SAME DAY. Do not spend
+   the week again. The argument for it was sound on paper: below the hero this
+   page is a near-black ground with gold labels and gold headings, so a red
+   button is the one element from another palette. Three things went wrong in
+   practice, and only the first was about taste.
 
-   The gold is this dark deliberately. The first pass used #d0a023, which
-   looks richer and is 2.4:1 against the WHITE hero — under the 3:1 WCAG
-   1.4.11 asks of a control's own edge, so on the top screen the button had no
-   reliable boundary against the page. #b88c1c is 3.1:1 there and 6.3:1 on the
-   near-black ground below, and that is the only pair of numbers that holds on
-   both halves of this page. Do not lighten it back toward the accent.
+   One: the WHITE hero. The first gold, #d0a023, is 2.4:1 against white —
+   under the 3:1 WCAG 1.4.11 asks of a control's own boundary — so it was
+   darkened to #b88c1c for 3.1:1. That was the wrong lever. 1.4.11 wants a
+   legible EDGE, which a border supplies; darkening the FILL bought the edge
+   by spending the colour, and dull was exactly what the owner saw. If gold
+   is ever revisited: border for the edge, never a darker fill.
 
-   Red was still the punchier fill on white, 4.6:1. If hero click-through
-   drops, this is the block that did it, and it is one line back. */
+   Two: the hero's own highlight block, #ffe98a at page.tsx:386, is a solid
+   rounded fill with bold dark type inside it, ~60px under the hero button and
+   on the same screen every time — and it is BRIGHTER than any gold the button
+   can safely wear. On the screen that decides the click, the loudest
+   gold-family object was not the button. Against red it is no contest, which
+   is a reason red works here that has nothing to do with the ads.
+
+   Three: the creatives. They are red/white/yellow and their own button reads
+   "CLICK LEARN MORE", so red is continuity from the click, and the thing this
+   page is for is being pressed. Premium and pressable are not the same job.
+
+   What the gold pass DID earn stayed: three radii instead of nine, the
+   de-greened ground, the sticky bar's scrim, and .proof-cond as a marker
+   stroke instead of a solid block. None of those needed the button. */
 .theme-decode {
-  --cta-bg: #b88c1c;
-  --cta-fg: #1a1815;
-  --cta-sub-fg: #1a1815;
-  --cta-sub-opacity: 1;
-  --cta-bg-hover: #ad8419;
-  --cta-bg-active: #a27b17;
-  --cta-shadow-hover: 0 12px 28px rgba(184, 140, 28, 0.32);
-  /* Red, and the only red left on the page. A focus ring has to be visible
-     AGAINST the button it outlines and gold on gold is not, so this is the one
-     place the ad's red still earns its keep. It costs nothing to look at — it
-     appears on keyboard focus only. */
+  --cta-bg: #dc3434;
+  --cta-fg: #ffffff;
+  --cta-sub-fg: #ffffff;
+  --cta-sub-opacity: 0.92;
+  --cta-bg-hover: #c52b2b;
+  --cta-bg-active: #b82626;
+  --cta-shadow-hover: 0 12px 28px rgba(220, 52, 52, 0.32);
   --focus-ring: #dc3434;
 }
 
@@ -2100,18 +2104,22 @@ a {
 /* The condition phrase at the end of a result headline, marked rather than
    filled.
 
-   It was a solid --accent-yellow block carrying near-black text, which was
-   right while the button was red and wrong the moment the button went gold
-   (08-Nov-2026): a solid warm-yellow rectangle with dark bold type inside it
-   is not a highlight any more, it is the CTA, and on the proof cards the two
-   sat in one screen — the marked word read as the more pressable of the two,
-   because #ffc91e is brighter than the button's #d0a023.
+   It was a solid --accent-yellow block carrying its own near-black text. That
+   became wrong on 08-Nov-2026 when the button briefly went gold: a solid
+   warm-yellow rectangle with dark bold type inside it is not a highlight any
+   more, it is a button, and on the proof cards the two sat in one screen.
 
-   A stroke cannot be mistaken for a control. Buttons are solid rectangles;
-   this covers the bottom 42% of the line like a marker pen dragged across it,
-   so yellow still MARKS and gold alone ACTS. The word keeps the headline's own
-   ink (12.3:1 over the stroke, 18.9:1 over the white above it) instead of a
-   second near-black, so the phrase stays part of its sentence. */
+   The button is red again, so the collision is gone and the solid block would
+   be defensible. The stroke is kept anyway, because it is the better of the
+   two on its own merits: a stroke cannot be mistaken for a control under ANY
+   button colour, and the word keeps the headline's own ink instead of a
+   second near-black, so the phrase stays part of its sentence (12.3:1 over
+   the stroke, 18.9:1 over the white above it). Owner's call if he wants the
+   louder block back — it is one line, and it is the only part of the gold
+   pass still standing on the proof cards.
+
+   Buttons are solid rectangles; this covers the bottom 42% of the line like a
+   marker pen dragged across it, so yellow MARKS and the button alone ACTS. */
 .proof-cond {
   background: linear-gradient(to top, var(--accent-yellow) 0 42%, transparent 42%);
   color: inherit;
