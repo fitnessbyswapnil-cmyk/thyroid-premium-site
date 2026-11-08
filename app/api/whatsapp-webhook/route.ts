@@ -22,6 +22,7 @@ import { sendCAPIEvent, buildUserData } from "@/lib/server-tracking";
 import { appendMessage, readMessages } from "@/lib/wa-messages";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { routeReply } from "@/lib/wa-autoreply";
+import { isCoachingTap } from "@/lib/wa-coaching-tap";
 
 export const dynamic = "force-dynamic";
 
@@ -131,8 +132,8 @@ type WaWebhook = {
           timestamp?: string;
           type?: string;
           text?: { body?: string };
-          button?: { text?: string };
-          interactive?: { button_reply?: { title?: string }; list_reply?: { title?: string } };
+          button?: { payload?: string; text?: string };
+          interactive?: { button_reply?: { id?: string; title?: string }; list_reply?: { title?: string } };
           // Media arrives as an id, never as bytes. Clients send their thyroid
           // reports this way, so the id is what makes them openable later.
           image?: WaMedia;
@@ -239,6 +240,14 @@ export async function POST(req: NextRequest) {
         for (const m of messages) {
           const phone = (m.from ?? "").replace(/\D/g, "");
           if (!phone) continue;
+          // A paying client answering ThyroWell's nightly check-in on this same
+          // number. The coaching app records it; logging it here would put her
+          // in the leads inbox and let auto-reply pitch her the programme she
+          // is already on. See lib/wa-coaching-tap.ts.
+          if (isCoachingTap(m)) {
+            console.log(`[wa-webhook] coaching tap from ***${phone.slice(-4)} — left to ThyroWell`);
+            continue;
+          }
           const ts = m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : new Date().toISOString();
           const text = describe(m);
           const found = mediaOf(m);
