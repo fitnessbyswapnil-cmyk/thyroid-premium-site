@@ -790,25 +790,31 @@ a {
    a red button on it is the one element belonging to another palette, so it
    reads as chrome bolted on rather than as the page's own next step.
 
-   #d0a023 is a darker step of --accent-yellow, not a new hue, so the page
+   #b88c1c is a darker step of --accent-yellow, not a new hue, so the page
    still runs ONE accent and the ad's yellow and the page's button are now the
-   same family. INK on the gold, not white: #1a1815 on #d0a023 is 7.4:1, where
-   white on it is 2.7:1 and fails at any size. The sub-line is the same ink at
-   full opacity — its hierarchy is size and weight, not a wash, because an
-   opacity is a contrast nobody can check. Worst case is the pressed state,
-   #a87f1a, still 4.8:1.
+   same family. INK on the gold, not white: #1a1815 on #b88c1c is 5.8:1, where
+   white on it is 3.1:1 and fails. The sub-line is that same ink at full
+   opacity — its hierarchy is size and weight, not a wash, because an opacity
+   is a contrast nobody can check. Worst case is the pressed state, #a27b17,
+   still 4.5:1.
 
-   The one thing to watch: on the WHITE hero red was the punchier fill (3.8:1
-   against white, where this gold is 2.7:1). If hero click-through drops, this
-   is the block that did it, and it is one line back. */
+   The gold is this dark deliberately. The first pass used #d0a023, which
+   looks richer and is 2.4:1 against the WHITE hero — under the 3:1 WCAG
+   1.4.11 asks of a control's own edge, so on the top screen the button had no
+   reliable boundary against the page. #b88c1c is 3.1:1 there and 6.3:1 on the
+   near-black ground below, and that is the only pair of numbers that holds on
+   both halves of this page. Do not lighten it back toward the accent.
+
+   Red was still the punchier fill on white, 4.6:1. If hero click-through
+   drops, this is the block that did it, and it is one line back. */
 .theme-decode {
-  --cta-bg: #d0a023;
+  --cta-bg: #b88c1c;
   --cta-fg: #1a1815;
   --cta-sub-fg: #1a1815;
   --cta-sub-opacity: 1;
-  --cta-bg-hover: #b88c1c;
-  --cta-bg-active: #a87f1a;
-  --cta-shadow-hover: 0 12px 28px rgba(208, 160, 35, 0.32);
+  --cta-bg-hover: #ad8419;
+  --cta-bg-active: #a27b17;
+  --cta-shadow-hover: 0 12px 28px rgba(184, 140, 28, 0.32);
   /* Red, and the only red left on the page. A focus ring has to be visible
      AGAINST the button it outlines and gold on gold is not, so this is the one
      place the ad's red still earns its keep. It costs nothing to look at — it
