@@ -48,7 +48,7 @@ export default function DecodeStickyCta({ fromTop = false }: { fromTop?: boolean
 
   // Stand down while a real CTA is on screen.
   //
-  // The bar and the inline buttons are the same button, in the same red, with
+  // The bar and the inline buttons are the same button, in the same gold, with
   // the same words — so whenever an inline one scrolled into view the page
   // showed her the identical offer twice at once, one of them pinned over the
   // content she was reading. Two of the same button is not twice the pull; it
