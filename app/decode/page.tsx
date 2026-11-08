@@ -294,10 +294,12 @@ export default function DecodePage() {
           <p className="m-0 text-[length:var(--fs-3xs)] font-medium text-[var(--t2)]">
             For Indian women 28+ who are doing everything right and still feel stuck
           </p>
-          <h1
-            className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]"
-            style={{ fontFamily: "var(--font-body), Inter, system-ui, sans-serif" }}
-          >
+          {/* The family is NOT pinned here any more. It used to be set inline
+              to the body face, which beat every stylesheet rule by
+              specificity, so /decode's headline could not be reskinned without
+              editing this file. The serif now comes from `.theme-decode h1` in
+              globals.css, where the rest of the page's type decisions live. */}
+          <h1 className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]">
             {/* Was "You're Not The Problem. Your Thyroid Is." — the 17-Sep video
                 hook, word for word. Replaced 22-Sep: it tells the reader she has
                 a thyroid condition, which is exactly what Meta's personal
