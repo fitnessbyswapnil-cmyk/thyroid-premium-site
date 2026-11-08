@@ -45,15 +45,28 @@ import { useInView } from "../lib/useInView";
 // until the owner confirms theirs. A missing pill is a gap; an invented one is
 // a lie about a real person, and this page's entire claim is that it is real.
 //
-// `claim` is the front half of the headline, and it exists because the
-// headline used to be built from `kg` alone: "Lost {kg} In 90 Days Despite
-// {condition}". Vaidehi and Surekha both lost 12 kg with the same diagnosis,
-// so their two cards carried the IDENTICAL sentence, side by side, which is
-// the one thing a wall of real results cannot afford to look like. No new
-// number was written to fix it — Vaidehi's card now leads with the range her
-// own composite publishes (72 → 60), which is the same claim stated the way
-// only her card can state it, and her caption drops the repeat. Everyone
-// else leaves `claim` empty and keeps the derived "Lost {kg}".
+// `before` / `after` are CROPS of the composite in `src`, not new photographs.
+// Every composite is the same 1080x1920 template: red/green weight chips at
+// the top, the two photographs clean in the middle, then her name, age and a
+// claim set in a brand name this site no longer uses. The middle band is the
+// only part worth showing, so it is cut out and the card is rebuilt in HTML.
+//
+// That buys four things at once. The white ground stops cutting a bright
+// rectangle into a near-black page, because there is no longer a white ground.
+// The claim becomes live text that can be corrected without a design tool.
+// The old artwork's "T.H.Y.R.O.I.D. Lean Method" stops contradicting the
+// method name used everywhere else on the site. And the proof images go from
+// 5.6 MB to 608 KB, on traffic that is 82% mobile.
+//
+// `src` stays, and is now the ZOOM target: tapping a card opens the original
+// composite, chips, name, age and all. The clean card makes the claim; the
+// untouched original corroborates it.
+//
+// `from` / `to` are read off those same chips and are published facts, not new
+// ones: 72 -> 60, 78 -> 66, 84 -> 68, 82 -> 67. Each one's difference equals
+// the `kg` value that was already here, which is the check that they were read
+// correctly. They also retire the `claim` field: every card now leads with its
+// own two numbers, so no two cards can print the same sentence again.
 //
 // `condition` is the phrase the headline ends on, set on a yellow highlight.
 // Yellow, not the competitor's red: red is this page's button colour, and the
@@ -62,46 +75,54 @@ import { useInView } from "../lib/useInView";
 const WALL = [
   {
     src: "/transformations/Vaidehi 1.png",
+    before: "/transformations/cards/vaidehi-before.jpg",
+    after: "/transformations/cards/vaidehi-after.jpg",
     name: "Vaidehi",
     occupation: "",
     condition: "Hypothyroidism",
-    tag: "72 kg → 60 kg",
+    from: "72 kg",
+    to: "60 kg",
     kg: "12 kg",
-    claim: "72 Kg To 60 Kg",
     story: "Balanced her thyroid naturally.",
     alt: "Vaidehi, before and after, lost 12 kg in 90 days",
   },
   {
     src: "/transformations/Surekha 3.png",
+    before: "/transformations/cards/surekha-before.jpg",
+    after: "/transformations/cards/surekha-after.jpg",
     name: "Surekha",
     occupation: "",
     condition: "Hypothyroidism",
-    tag: "Bloating & fatigue",
+    from: "78 kg",
+    to: "66 kg",
     kg: "12 kg",
-    claim: "",
     story: "Bloating and afternoon fatigue, gone.",
     alt: "Surekha, before and after, lost 12 kg in 90 days",
   },
   {
     src: "/transformations/Namrata 5.png",
+    before: "/transformations/cards/namrata-before.jpg",
+    after: "/transformations/cards/namrata-after.jpg",
     name: "Namrata",
     occupation: "",
     condition: "Hypothyroidism",
-    tag: "Constant tiredness",
+    from: "84 kg",
+    to: "68 kg",
     kg: "16 kg",
-    claim: "",
-    story: "16 kg down, and the all-day tiredness went with it.",
+    story: "The all-day tiredness went with it.",
     alt: "Namrata, before and after, lost 16 kg in 90 days",
   },
   {
     src: "/transformations/Heenal 7.png",
+    before: "/transformations/cards/heenal-before.jpg",
+    after: "/transformations/cards/heenal-after.jpg",
     name: "Heenal",
     occupation: "IT Professional",
     condition: "Hypothyroidism",
-    tag: "IT professional · Bengaluru",
+    from: "82 kg",
+    to: "67 kg",
     kg: "15 kg",
-    claim: "",
-    story: "IT professional, Bengaluru. Her blocker was in Pillar 1. The root, not her diet.",
+    story: "Her blocker was in Pillar 1. The root, not her diet.",
     alt: "Heenal, before and after, lost 15 kg in 90 days",
   },
 ] as const;
@@ -141,50 +162,66 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
         transition: `opacity 0.55s var(--ease) ${index * 60}ms, transform 0.55s var(--ease) ${index * 60}ms`,
       }}
     >
-      <figcaption className="px-5 pb-1 pt-6 text-center sm:px-6">
-        {entry.occupation ? (
-          <span className="proof-tag">{entry.occupation}</span>
-        ) : null}
-
-        {/* The claim, first and biggest. Title Case, because this is the one
-            line a visitor reads on every card and sentence case makes it read
-            as a note rather than a result. */}
-        <h3
-          className={`mx-auto max-w-[var(--measure-caption)] text-[length:var(--fs-lg)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)] ${
-            entry.occupation ? "mt-4" : "mt-0"
-          }`}
-        >
-          {/* `kg` is stored lowercase because it is also read into the alt
-              text, where "12 Kg" would be wrong. Title Case is a property of
-              this headline, not of the data. A card with its own `claim`
-              leads with that instead of the derived total — see the note on
-              the field above for why one of them has to. */}
-          {entry.claim || `Lost ${entry.kg.replace(" kg", " Kg")}`} In 90 Days Despite{" "}
-          <span className="proof-cond">{entry.condition}</span>
-        </h3>
-
-        <p className="mx-auto mb-0 mt-3 max-w-[var(--measure-caption)] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-          {entry.name} &mdash; {entry.story}
-        </p>
-      </figcaption>
-
-      {/* The composites already carry their own red Before / green After chips
-          burned in, so none are drawn over them — two sets would collide. */}
+      {/* PHOTOS FIRST. The claim used to lead and the picture followed, which
+          is the order a document uses, not the order a proof card is read in:
+          the eye goes to the face either way, so putting type above it only
+          delays the thing being looked at. Tapping opens the untouched
+          original composite — Clarity, 14 days to 21-Sep: these images were
+          both dead-click leaders on mobile, 53% of all dead taps between them,
+          because women expect a before/after to open. */}
       <button
         type="button"
         onClick={() => setZoom(true)}
-        aria-label={`View the full photo for ${entry.name}`}
-        className="relative mt-5 block aspect-[9/16] w-full overflow-hidden border-0 p-0"
+        aria-label={`View the original photo for ${entry.name}`}
+        className="block w-full border-0 p-0"
         style={{ background: "transparent", cursor: "zoom-in" }}
       >
-        <Image
-          src={entry.src}
-          alt={entry.alt}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover"
-        />
+        <span className="grid grid-cols-2 gap-px">
+          {([["before", entry.before], ["after", entry.after]] as const).map(([side, img]) => (
+            <span key={side} className="relative block aspect-[501/789] overflow-hidden">
+              <Image
+                src={img}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 17vw"
+                className="object-cover"
+              />
+              {/* The red/green chips were burned into the artwork. In CSS they
+                  can carry the page's own ink instead of a second palette. */}
+              <span className={`wall-chip wall-chip-${side}`}>{side === "before" ? "Before" : "After"}</span>
+            </span>
+          ))}
+        </span>
       </button>
+
+      <figcaption className="px-5 pb-6 pt-5 sm:px-6">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="m-0 text-[length:var(--fs-base)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)]">
+            {entry.name}
+          </h3>
+          {entry.occupation ? <span className="proof-tag">{entry.occupation}</span> : null}
+        </div>
+
+        {/* The two numbers, and they are the card. "Lost 12 Kg" was the same
+            sentence on two cards until one of them was given its range; giving
+            every card its own pair means no two can ever collide again, and a
+            range is the more concrete claim in any case. Both numbers are off
+            the original artwork's own chips. */}
+        <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+          <span className="wall-figure">
+            {entry.from} &rarr; {entry.to}
+          </span>
+          <span className="wall-delta">&minus;{entry.kg}</span>
+        </p>
+
+        <p className="mt-3 text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+          In 90 days, despite <span className="proof-cond">{entry.condition}</span>
+        </p>
+
+        <p className="mt-2 text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+          {entry.story}
+        </p>
+      </figcaption>
 
       {zoom && (
         <div

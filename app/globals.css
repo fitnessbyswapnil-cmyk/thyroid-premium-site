@@ -4,7 +4,7 @@
   --color-background: #ffffff;
   --color-foreground: #241f1a;
   --font-sans: var(--font-body);
-  --font-display: var(--font-display), 'Outfit', system-ui, sans-serif;
+  --font-display: var(--font-display), Georgia, 'Times New Roman', serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -386,7 +386,11 @@ a {
      yellow family at a weight that actually passes on white (5.8:1). */
   color: var(--gold-ink);
   margin-bottom: 14px;
-  font-family: var(--font-display), 'Outfit', system-ui, sans-serif;
+  /* Body face, not the display one. The display face is a serif now, and a
+     serif set in 11px uppercase with caps tracking is a wedding invitation,
+     not a section label. Uppercase and letter-spacing already do the work —
+     the same argument this file makes about colour. */
+  font-family: var(--font-body), system-ui, sans-serif;
   letter-spacing: var(--ls-caps);
 }
 
@@ -2069,6 +2073,78 @@ a {
   --b-soft: #ececea;
   --gold-ink: #15803d;
   --p500: #15803d;
+}
+
+/* /decode takes the serif on its headlines, and nowhere else. `/` runs the
+   free funnel off different creatives and keeps its own voice; this is scoped
+   so a type decision here cannot leak into it.
+
+   600, explicitly, because .section-title sets 700 globally and a browser
+   asked for a 700 of a face that ships only a 600 will synthesise one — a
+   smeared faux-bold that looks like a rendering bug on exactly the largest
+   type on the page. */
+.theme-decode h1,
+.theme-decode .section-title {
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+}
+
+/* The before/after labels, in CSS instead of burned into the artwork.
+   The originals were a red block and a green block, a whole second palette
+   living inside an image where nothing on this page could reach it. Here
+   "Before" is a neutral scrim that works over any photograph and "After"
+   is the page's own accent, so the pair still reads as a progression without
+   borrowing two colours the rest of the page does not use. */
+.wall-chip {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  line-height: var(--lh-tight);
+}
+
+.wall-chip-before {
+  background: rgba(10, 9, 8, 0.74);
+  color: #ffffff;
+}
+
+/* Ink on the accent, 10.3:1 — the one way yellow can carry text. */
+.wall-chip-after {
+  background: var(--accent-yellow);
+  color: #14110f;
+}
+
+/* The pair of weights, and the biggest thing on the card. Display face and
+   tabular figures so the four cards' numbers line up as a column when they
+   sit in a row. */
+.wall-figure {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: var(--ls-heading);
+  line-height: var(--lh-tight);
+  color: var(--t1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Solid accent, where .proof-tag is an outline: solid means the result,
+   outline means context. Two pills on one card have to differ by more than
+   their words. */
+.wall-delta {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  background: var(--accent-yellow);
+  color: #14110f;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
 }
 
 /* The occupation/context pill. Amber on cream, as in the reference. */
