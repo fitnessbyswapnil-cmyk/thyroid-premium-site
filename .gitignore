@@ -45,3 +45,20 @@ dist-dry
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Never ship these from a PUBLIC repo (added 08-Nov-2026)
+#
+# A `git add -A` in this folder used to stage all four, and git's own
+# "nothing added to commit but untracked files present" hint points straight
+# at them. On a public repo each one is a different kind of leak:
+#
+#   add-cal-webhook.sh  carries a live Cal.com apiKey and webhook secret
+#   _client_reports/    body measurements for named, real clients
+#   _media_export/      34 MB of client before/afters, WhatsApp threads, video
+#
+# Site assets are NOT in here on purpose: public/transformations/ is tracked
+# and is where a composite meant to be served belongs.
+add-cal-webhook.sh
+_client_reports/
+_media_export/
+.claude/settings.local.json
