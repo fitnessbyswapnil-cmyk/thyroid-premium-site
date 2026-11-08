@@ -243,7 +243,7 @@ export default function TransformationWall({ compact = false }: { compact?: bool
               with a disclaimer or qualifier attached. This is that qualifier, and
               it has to stay wherever these cards render. */}
           <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-            Individual results vary. Each card is one client&apos;s own outcome, not a typical or promised result.
+            Each card is one client&apos;s own outcome, not a typical result.
           </p>
           {!compact && (
             <p className="mx-auto mt-3 max-w-[var(--measure-caption)] text-center text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t3)]">
@@ -264,9 +264,12 @@ export default function TransformationWall({ compact = false }: { compact?: bool
           ))}
         </div>
 
-        <p className="mt-6 text-center text-[length:var(--fs-3xs)] leading-[var(--lh-tight)] text-[var(--t5)]">
-          Individual results vary. Not a substitute for medical advice.
-        </p>
+        {/* The second disclaimer that used to sit here — "Individual results
+            vary. Not a substitute for medical advice." — went on 08-Nov-2026.
+            It was word-for-word the page's own closing line, two screens
+            apart, and the qualifier above already covers these cards where
+            their claims actually are. Six of these had accumulated across the
+            page; two remain, which is the point. */}
       </div>
     </section>
   );

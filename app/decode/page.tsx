@@ -79,13 +79,13 @@ export const metadata: Metadata = {
 const GET = [
   "Your Root Cause Map: your biggest fat-loss blocker, in simple words",
   "Your report read line by line: TSH, T3, T4, and antibodies if you have them",
-  "What your next 90 days should look like, with real Indian food and no starving",
+  "What your next 90 days should look like.",
 ] as const;
 
 const STEPS = [
   { h: "Fill your intake form", p: "12 quick taps about your report and what you have tried. I read it before we speak." },
-  { h: "Pick your slot", p: "No card, no payment. Choose a time that suits you." },
-  { h: "We talk", p: "Sixty minutes, one to one, on a video call." },
+  { h: "Pick your slot", p: "Choose a time that suits you." },
+  { h: "We talk", p: "On a video call." },
 ] as const;
 
 // Self-qualification. TWO LINES ARE DELIBERATELY ABSENT and must not be added:
@@ -96,7 +96,6 @@ const FOR_YOU = [
   "Your report says normal and your body says otherwise",
   "You have been diagnosed hypothyroid and take the tablet, but the weight has not moved in two years or more",
   "You have already paid someone else to fix this at least once",
-  "You want the reason, not another diet chart",
   "You are ready to start within the next 30 days",
 ] as const;
 
@@ -104,7 +103,7 @@ const FAQ = [
   { q: "Is it really free?", a: "Yes. No card, nothing to pay on the call, nothing added at the end." },
   {
     q: "No blood report yet?",
-    a: "Answer the questions anyway. On the call I tell you exactly which tests to get and why, and we work from your answers until the results are in.",
+    a: "Answer the questions anyway. On the call I tell you which tests to get and why.",
   },
   { q: "Who is on the call?", a: "Me. Not an assistant, not a sales team. Sixty minutes, one to one." },
 ] as const;
@@ -326,22 +325,36 @@ export default function DecodePage() {
             Or I&rsquo;ll Keep Coaching You Free Until You Get There.
           </p>
 
-          {/* The qualifier is not decoration. Meta's Health and Wellness standard
-              prohibits promises of a specific outcome within a set timeframe
-              "without disclaimers or qualifiers"; the headline above is exactly
-              such a promise, by the owner's decision on 23-Sep, so this line is
-              what keeps it inside the rule. It stays directly under the claim,
-              visible, never in a footer. Remove the kilogram figure or remove
-              nothing. */}
-          <p className="mx-auto mt-2 max-w-[560px] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-            Individual results vary with your starting point, consistency and medical history.
-          </p>
+          {/* THE META QUALIFIER WAS REMOVED HERE ON 08-NOV-2026, on the owner's
+              explicit instruction, after he was shown this rule and the risk and
+              chose it anyway. The rule has not changed and is kept here because a
+              reason that leaves with the line it explains is a reason nobody can
+              find later:
 
-          <p className="mx-auto mt-4 max-w-[600px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)] md:text-[length:var(--fs-base)]">
-            My <strong className="text-[#0b1120]">Scientific Thyroid Lean Method</strong> starts with
-            your own blood report, read line by line, then home-cooked Indian food and joint-friendly
-            training that fits a working day. No crash diets, no starving.
-          </p>
+                Meta's Health and Wellness standard prohibits promises of a
+                specific outcome within a set timeframe "without disclaimers or
+                qualifiers". The h1 above is exactly such a promise — "10+ kg
+                … In 90 Days", the owner's decision of 23-Sep. The line that
+                sat here, "Individual results vary with your starting point,
+                consistency and medical history", is what kept it inside the
+                rule. It belonged directly under the claim, visible, never in a
+                footer.
+
+              So: REMOVE THE KILOGRAM FIGURE OR PUT THE LINE BACK. If the ad
+              account is ever restricted under Health and Wellness, this is the
+              first place to look, and restoring it is one paragraph. The footer
+              still carries "Individual results vary. Not a substitute for
+              medical advice." — a footer, which is what the rule says is not
+              enough on its own.
+
+              The 32-word method paragraph that also sat here went at the same
+              time, and for an ordinary reason: every clause of it was already
+              on the page twice. "Read line by line" is COMPARE_NEW[0] and
+              GET[1], "home-cooked Indian food" is Pillar 2 and GET[2],
+              "joint-friendly training" is COMPARE_NEW[3] and Pillar 3, "no
+              starving" is Pillar 2 and GET[2]. It was the third block she read
+              before reaching the button, and it delayed the button to repeat
+              the page. */}
 
           {/* FOLD ORDER, reset 22-Sep from Microsoft Clarity (14 days to 21-Sep).
               45% of mobile visitors were gone by 10% of scroll depth, and the
@@ -367,7 +380,7 @@ export default function DecodePage() {
               <span className="cta-sub">Free &middot; 60-min Thyroid Root Cause Session</span>
             </a>
             <p className="mx-auto mt-3 max-w-[420px] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              Every case is personally reviewed before the call. Limited slots each week.
+              Every case is personally reviewed before the call.
             </p>
             {/* The refund line was this page's strongest risk-reversal sentence
                 and it was quoted, never reworded. With nothing to refund it is
@@ -478,7 +491,7 @@ export default function DecodePage() {
             <p className="mx-auto mt-4 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
               Even if we never work together, you leave with the answers. If a
               full programme suits you, I will show you what it involves and what
-              it costs. No pressure.
+              it costs.
             </p>
 
             <header className="mt-14 text-center">
@@ -567,9 +580,6 @@ export default function DecodePage() {
               Book my 1-1 Thyroid Consultation
               <span className="cta-sub">Free &middot; 60-min Thyroid Root Cause Session</span>
             </a>
-            <p className="mx-auto mt-4 text-[length:var(--fs-2xs)] text-[var(--t2)]">
-              Free &middot; 60 minutes &middot; one to one with Swapnil
-            </p>
             {SHOW_PROGRAMME_PRICE && (
               <p className="mx-auto mt-4 max-w-[var(--measure-caption)] text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
                 After the consultation, if the full 3-month programme is the
