@@ -177,20 +177,40 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
         style={{ background: "transparent", cursor: "zoom-in" }}
       >
         <span className="grid grid-cols-2 gap-px">
-          {([["before", entry.before], ["after", entry.after]] as const).map(([side, img]) => (
-            <span key={side} className="relative block aspect-[501/789] overflow-hidden">
-              <Image
-                src={img}
-                alt=""
-                fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 17vw"
-                className="object-cover"
-              />
-              {/* The red/green chips were burned into the artwork. In CSS they
-                  can carry the page's own ink instead of a second palette. */}
-              <span className={`wall-chip wall-chip-${side}`}>{side === "before" ? "Before" : "After"}</span>
-            </span>
-          ))}
+          {([["before", entry.before, entry.from], ["after", entry.after, entry.to]] as const).map(
+            ([side, img, weight]) => (
+              <span key={side} className="block">
+                {/* FULL-WIDTH BAND, ABOVE THE PHOTO, CARRYING THE WEIGHT — the
+                    shape the burned-in artwork used, rebuilt in CSS. It first
+                    came back as a small chip in the photo's corner saying only
+                    "Before", which lost the two things the original band had:
+                    it was the full width of the photo, so it could not be
+                    missed, and it carried the NUMBER, so the eye found it
+                    where it already was instead of dropping to another line.
+
+                    Red to green is kept. The rule this page runs on is that
+                    the button's colour may not be spent on type, and that
+                    holds — but here red and green are not decoration, they are
+                    the two ends of a scale, and they sit inside a photo frame
+                    with the word "Before" on them. Nothing about that reads as
+                    something to press. The red is #b3261e, deeper than the
+                    button's #dc3434 on purpose, so the two are not the same
+                    red at a glance. */}
+                <span className={`wall-band wall-band-${side}`}>
+                  {side === "before" ? "Before" : "After"}: {weight}
+                </span>
+                <span className="relative block aspect-[501/789] overflow-hidden">
+                  <Image
+                    src={img}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 17vw"
+                    className="object-cover"
+                  />
+                </span>
+              </span>
+            ),
+          )}
         </span>
       </button>
 

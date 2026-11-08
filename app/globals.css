@@ -2089,34 +2089,41 @@ a {
   font-weight: 600;
 }
 
-/* The before/after labels, in CSS instead of burned into the artwork.
-   The originals were a red block and a green block, a whole second palette
-   living inside an image where nothing on this page could reach it. Here
-   "Before" is a neutral scrim that works over any photograph and "After"
-   is the page's own accent, so the pair still reads as a progression without
-   borrowing two colours the rest of the page does not use. */
-.wall-chip {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  padding: 3px 8px;
-  border-radius: var(--r-sm);
-  font-size: var(--fs-3xs);
-  font-weight: 600;
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
+/* The before/after bands, in CSS instead of burned into the artwork.
+
+   Full width, above the photo, carrying the weight — the shape the original
+   1080x1920 composite used, which was right. A first pass replaced them with
+   a small chip in the corner of each photo saying only "Before", and that
+   lost both of the things the band was doing: being impossible to miss, and
+   putting the number where the eye already was.
+
+   Red to green stays. This file's rule is that the BUTTON's colour may not be
+   spent on type, because type in the button's colour stops every button
+   meaning "press me" — and that rule holds. It does not reach here: red and
+   green are not decoration on this card, they are the two ends of one scale,
+   and they sit inside a photo frame with the word "Before" written on them.
+   Nothing about a full-width caption reads as a control.
+
+   #b3261e is deeper than the button's #dc3434 deliberately, so the two reds
+   are not the same red at a glance. White is 6.6:1 on it and 5.0:1 on the
+   green, so both pass at this size. */
+.wall-band {
+  display: block;
+  padding: 7px 8px;
+  text-align: center;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
   line-height: var(--lh-tight);
-}
-
-.wall-chip-before {
-  background: rgba(10, 9, 8, 0.74);
   color: #ffffff;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Ink on the accent, 10.3:1 — the one way yellow can carry text. */
-.wall-chip-after {
-  background: var(--accent-yellow);
-  color: #14110f;
+.wall-band-before {
+  background: #b3261e;
+}
+
+.wall-band-after {
+  background: #15803d;
 }
 
 /* The pair of weights, and the biggest thing on the card. Display face and
