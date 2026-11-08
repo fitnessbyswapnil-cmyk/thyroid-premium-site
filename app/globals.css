@@ -554,7 +554,7 @@ a {
 /* CTA colour, tokenised 2026-09-12 so one route can re-skin its buttons
    without forking the component. The defaults below ARE the old hard-coded
    values, so every page except /decode is unchanged; /decode overrides them in
-   .theme-decode to the red of the creatives that send it traffic. */
+   .theme-decode (to the creatives' red until 08-Nov-2026, gold since). */
 :root {
   --cta-bg: var(--yellow-mark);
   --cta-fg: var(--ink-on-yellow);
@@ -635,7 +635,7 @@ a {
   .cta-button:hover { transform: none; }
 }
 
-/* The sticky bar's copy of the CTA. Same words and same red, tighter box:
+/* The sticky bar's copy of the CTA. Same words and same gold, tighter box:
    at 375px the standard 32px side padding leaves 287px of line and the label
    needs ~300px, so it wrapped to two lines and the bar stood 134px tall —
    16% of the viewport, permanently, plus that much bottom padding on the
@@ -685,9 +685,12 @@ a {
      once — green CTAs, a per-section accent inside each proof block, and a
      third palette in the ads pointing here.
 
-     Red is NOT borrowed for type. .section-label's rule holds and is the
-     reason: the moment red appears as text, every red button on the page
-     stops meaning "press me". And yellow cannot be type at all — #ffc91e is
+     The button's colour is NOT borrowed for type. .section-label's rule holds
+     and is the reason: the moment the action colour appears as text, every
+     button on the page stops meaning "press me" — which is why .proof-cond is
+     a marker stroke and not a filled block now that the button is gold. The
+     rule outlived the red it was written for. And yellow cannot be type — it
+     is a FILL at any strength: #ffc91e is
      1.6:1 on white — so the accent TYPE is simply the secondary ink. A label
      does not need a colour to be a label; uppercase and letter-spacing
      already do that job. */
@@ -2094,10 +2097,25 @@ a {
    page's BUTTON colour and display type in red makes every button on the page
    stop reading as a button. Ink on #ffc91e is 10.3:1, so it is also the one
    way yellow can carry text at all. */
+/* The condition phrase at the end of a result headline, marked rather than
+   filled.
+
+   It was a solid --accent-yellow block carrying near-black text, which was
+   right while the button was red and wrong the moment the button went gold
+   (08-Nov-2026): a solid warm-yellow rectangle with dark bold type inside it
+   is not a highlight any more, it is the CTA, and on the proof cards the two
+   sat in one screen — the marked word read as the more pressable of the two,
+   because #ffc91e is brighter than the button's #d0a023.
+
+   A stroke cannot be mistaken for a control. Buttons are solid rectangles;
+   this covers the bottom 42% of the line like a marker pen dragged across it,
+   so yellow still MARKS and gold alone ACTS. The word keeps the headline's own
+   ink (12.3:1 over the stroke, 18.9:1 over the white above it) instead of a
+   second near-black, so the phrase stays part of its sentence. */
 .proof-cond {
-  background: var(--accent-yellow);
-  color: #14110f;
-  padding: 0.04em 0.18em;
+  background: linear-gradient(to top, var(--accent-yellow) 0 42%, transparent 42%);
+  color: inherit;
+  padding: 0 0.08em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -2137,8 +2155,10 @@ a {
 /* The condition phrase inside a result headline. Red carries "despite" — it
    is the obstacle, not the outcome. */
 /* (The old red .proof-cond lived here. It set the condition phrase in red
-   display type, which is the one thing the button colour cannot survive — see
-   the .proof-cond rule above, which replaced it with ink on yellow.) */
+   display type, which is the one thing the button colour cannot survive. It
+   became ink on a yellow block — and then, when the button itself turned gold,
+   a yellow marker stroke, for the same reason a second time: whatever colour
+   the button is, the page may not spend it on type. See the rule above.) */
 
 /* An accent phrase inside a headline. Resolves green on the deep band and the
    AA-safe dark green on white, because both come from the same token. */

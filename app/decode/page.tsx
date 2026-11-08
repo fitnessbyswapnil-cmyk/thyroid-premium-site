@@ -17,7 +17,7 @@ import HashimotoProof from "@/app/components/HashimotoProof";
  *
  * LOOK (owner's call, 14-Sep-2026): the layout of feeldvibes.in, a thyroid
  * coach the owner reports closing consistently — white hero, near-black
- * everything after it, gold labels, red buttons, a coach section, the method
+ * everything after it, gold labels, gold buttons, a coach section, the method
  * as cards, a checkmark list. Spec and the list of what was deliberately NOT
  * copied (their words, their numbers, their scarcity lines, their free call):
  * docs/decode-redesign-feeldvibes-style.md.
@@ -287,7 +287,7 @@ function ButtonRow() {
 
 export default function DecodePage() {
   return (
-    // theme-decode: red buttons, gold accents (globals.css).
+    // theme-decode: gold buttons, gold accents (globals.css).
     <main className="theme-decode">
       {/* ── 1. Hero (white) ─────────────────────────────────────────────── */}
       <section className="decode-hero bg-white">
