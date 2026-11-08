@@ -666,14 +666,11 @@ a {
    working — it keeps its green. Custom properties inherit down the DOM, so
    the sticky bar (position: fixed, still a child of <main>) picks these up. */
 .theme-decode {
-  --cta-bg: #c8102e;
-  --cta-fg: #ffffff;
-  /* 5.04:1 on #c8102e. Do NOT lighten this toward white-pink — it fails AA. */
-  --cta-sub-fg: #ffe8eb;
-  --cta-sub-opacity: 1;
-  --cta-bg-hover: #a80d26;
-  --cta-bg-active: #8e0b20;
-  --cta-shadow-hover: 0 12px 28px rgba(200, 16, 46, 0.32);
+  /* The button's colours are defined ONCE, in the second .theme-decode block
+     further down (the reference-page skin). They were also set here, in a red
+     this block never got to use because the lower block silently won — two
+     definitions of one button, which is how a colour change gets made twice
+     and lands once. If you are looking for the CTA colour, it is down there. */
 
   /* Accent / highlight from the same creatives. Yellow is a FILL here, never
      text: #ffc91e is 1.6:1 on white. --accent-ink is the legible ink version
@@ -783,28 +780,46 @@ a {
 
 /* ── /decode: the reference-page skin (14-Sep-2026) ──────────────────────────
    docs/decode-redesign-feeldvibes-style.md. White hero, near-black everything
-   after it, gold labels, red buttons.
+   after it, gold labels, gold buttons.
 
-   The red is #dc3434, not the reference page's #e93d3d. They look the same;
-   the difference is legibility. White on #e93d3d is 4.0:1, which fails for
-   the small price line under the label. #dc3434 is 4.6:1, so every word on
-   the button passes at any size. Later in the file than the .theme-decode
-   block above, so these win over its #c8102e. */
+   Gold since 08-Nov-2026. It was #dc3434 red, matched to the red in the
+   creatives so the click did not feel like it had landed somewhere else, and
+   that argument was a real one — keep it in mind before changing this again.
+   What the red cost was every screen after the first: from the second screen
+   down /decode is a near-black ground with gold labels and gold headings, and
+   a red button on it is the one element belonging to another palette, so it
+   reads as chrome bolted on rather than as the page's own next step.
+
+   #d0a023 is a darker step of --accent-yellow, not a new hue, so the page
+   still runs ONE accent and the ad's yellow and the page's button are now the
+   same family. INK on the gold, not white: #1a1815 on #d0a023 is 7.4:1, where
+   white on it is 2.7:1 and fails at any size. The sub-line is the same ink at
+   full opacity — its hierarchy is size and weight, not a wash, because an
+   opacity is a contrast nobody can check. Worst case is the pressed state,
+   #a87f1a, still 4.8:1.
+
+   The one thing to watch: on the WHITE hero red was the punchier fill (3.8:1
+   against white, where this gold is 2.7:1). If hero click-through drops, this
+   is the block that did it, and it is one line back. */
 .theme-decode {
-  --cta-bg: #dc3434;
-  --cta-fg: #ffffff;
-  --cta-sub-fg: #ffffff;
-  --cta-sub-opacity: 0.92;
-  --cta-bg-hover: #c52b2b;
-  --cta-bg-active: #b82626;
-  --cta-shadow-hover: 0 12px 28px rgba(220, 52, 52, 0.32);
+  --cta-bg: #d0a023;
+  --cta-fg: #1a1815;
+  --cta-sub-fg: #1a1815;
+  --cta-sub-opacity: 1;
+  --cta-bg-hover: #b88c1c;
+  --cta-bg-active: #a87f1a;
+  --cta-shadow-hover: 0 12px 28px rgba(208, 160, 35, 0.32);
+  /* Red, and the only red left on the page. A focus ring has to be visible
+     AGAINST the button it outlines and gold on gold is not, so this is the one
+     place the ad's red still earns its keep. It costs nothing to look at — it
+     appears on keyboard focus only. */
   --focus-ring: #dc3434;
 }
 
 /* Sentence case and 8px corners, as on the reference page: a button that
    reads like a sentence, not a shouted label. */
 .theme-decode .cta-button {
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   text-transform: none;
   font-size: var(--fs-base);
   letter-spacing: var(--ls-body);

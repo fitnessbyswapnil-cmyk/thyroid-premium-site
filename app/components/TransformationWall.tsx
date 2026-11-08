@@ -45,6 +45,16 @@ import { useInView } from "../lib/useInView";
 // until the owner confirms theirs. A missing pill is a gap; an invented one is
 // a lie about a real person, and this page's entire claim is that it is real.
 //
+// `claim` is the front half of the headline, and it exists because the
+// headline used to be built from `kg` alone: "Lost {kg} In 90 Days Despite
+// {condition}". Vaidehi and Surekha both lost 12 kg with the same diagnosis,
+// so their two cards carried the IDENTICAL sentence, side by side, which is
+// the one thing a wall of real results cannot afford to look like. No new
+// number was written to fix it — Vaidehi's card now leads with the range her
+// own composite publishes (72 → 60), which is the same claim stated the way
+// only her card can state it, and her caption drops the repeat. Everyone
+// else leaves `claim` empty and keeps the derived "Lost {kg}".
+//
 // `condition` is the phrase the headline ends on, set on a yellow highlight.
 // Yellow, not the competitor's red: red is this page's button colour, and the
 // moment red appears as display type every red button stops reading as a
@@ -57,7 +67,8 @@ const WALL = [
     condition: "Hypothyroidism",
     tag: "72 kg → 60 kg",
     kg: "12 kg",
-    story: "Balanced her thyroid naturally. Down from 72 kg to 60 kg.",
+    claim: "72 Kg To 60 Kg",
+    story: "Balanced her thyroid naturally.",
     alt: "Vaidehi, before and after, lost 12 kg in 90 days",
   },
   {
@@ -67,6 +78,7 @@ const WALL = [
     condition: "Hypothyroidism",
     tag: "Bloating & fatigue",
     kg: "12 kg",
+    claim: "",
     story: "Bloating and afternoon fatigue, gone.",
     alt: "Surekha, before and after, lost 12 kg in 90 days",
   },
@@ -77,6 +89,7 @@ const WALL = [
     condition: "Hypothyroidism",
     tag: "Constant tiredness",
     kg: "16 kg",
+    claim: "",
     story: "16 kg down, and the all-day tiredness went with it.",
     alt: "Namrata, before and after, lost 16 kg in 90 days",
   },
@@ -87,6 +100,7 @@ const WALL = [
     condition: "Hypothyroidism",
     tag: "IT professional · Bengaluru",
     kg: "15 kg",
+    claim: "",
     story: "IT professional, Bengaluru. Her blocker was in Pillar 1. The root, not her diet.",
     alt: "Heenal, before and after, lost 15 kg in 90 days",
   },
@@ -142,8 +156,10 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
         >
           {/* `kg` is stored lowercase because it is also read into the alt
               text, where "12 Kg" would be wrong. Title Case is a property of
-              this headline, not of the data. */}
-          Lost {entry.kg.replace(" kg", " Kg")} In 90 Days Despite{" "}
+              this headline, not of the data. A card with its own `claim`
+              leads with that instead of the derived total — see the note on
+              the field above for why one of them has to. */}
+          {entry.claim || `Lost ${entry.kg.replace(" kg", " Kg")}`} In 90 Days Despite{" "}
           <span className="proof-cond">{entry.condition}</span>
         </h3>
 
