@@ -33,17 +33,63 @@ import { DM_PRESENCE_TARGET_PCT, formatDmPresence, type PresenceRate } from "@/l
 import type { Summary, ChecklistSummary } from "@/lib/metrics";
 import { SCORECARD_KEYS, SCORECARD_LABEL, type ScorecardKey } from "@/lib/scorecard";
 import { useRange, RANGE_CHOICES, rangeLabel, pct } from "./useMetrics";
+import { LIGHT, DARK, type Tokens } from "./tokens";
 
-const N = {
-  bg: "#0B0E14",
-  card: "#141922",
-  line: "#232A36",
-  text: "#E6E9EF",
-  dim: "#8A93A6",
-  accent: "#6E8BFF",
-  good: "#3FBF7F",
-  warn: "#E0A93B",
-  bad: "#E5544B",
+/**
+ * The palette comes from ./tokens now, and follows the theme switch in the
+ * shell — it used to be eleven hex literals defined right here.
+ *
+ * That mattered more than it sounds. tokens.ts is a measured system (warm
+ * paper, ONE teal meaning "progress", clay rationed to "should have happened
+ * and didn't", every ratio checked against the surface it actually sits on)
+ * and Pipeline renders entirely from it. Today ignored all of that and painted
+ * itself a cold navy, so the same screen showed two different products
+ * depending on the tab, and the theme toggle moved one of them.
+ *
+ * `dim` maps to ink2, not ink3: on this screen it carries 12.5px sentences a
+ * man reads between calls, and ink3 is a 3.25:1 label grey. `onAccent` is the
+ * text that sits ON a filled chip — the fills are dark on the light theme and
+ * light on the dark one, so it flips with the theme rather than being the
+ * hardcoded #0B0E14 that white paper used to get.
+ */
+/**
+ * The button on a queue row says what to DO, not where it opens.
+ *
+ * Every row used to carry a chip reading "WhatsApp". Nine different situations,
+ * one word — so the row's reason line was the only thing telling them apart,
+ * and the button, which is the biggest and last thing read before acting,
+ * taught him nothing. A desk that tells you the verb is a desk you work; a
+ * desk that names the app is a list you read.
+ *
+ * Keyed off lib/journey's ActionKind so a kind added there shows up here;
+ * anything unmapped falls back to the old label rather than rendering blank.
+ */
+const ACTION_VERB: Record<string, string> = {
+  rebook_cancelled: "Offer new times",
+  rebook_no_show: "Offer new times",
+  send_price: "Send the price",
+  follow_up: "Ask for her decision",
+  agreed_unpaid: "Send payment link",
+  paid_not_booked: "Send booking link",
+  first_message: "Send first message",
+  hot_abandon: "Nudge her",
+};
+
+const palette = (dark: boolean) => {
+  const t = (dark ? DARK : LIGHT) as unknown as Tokens;
+  return {
+    bg: t.paper,
+    card: t.card,
+    line: t.hairline,
+    text: t.ink1,
+    dim: t.ink2,
+    accent: t.teal,
+    good: t.won,
+    warn: t.amber,
+    bad: t.clay,
+    onAccent: dark ? t.paper : "#FFFFFF",
+    sunk: t.sunk,
+  };
 };
 
 type Data = {
@@ -57,7 +103,7 @@ type Data = {
     spendAsOf?: string | null;
   };
   /** The one needs-action list (lib/journey) — same items and count as Pipeline and Analytics. */
-  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string }[];
+  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string; text: string }[];
   needsAction: { count: number; overdue: number };
   callsToday: { name: string; phone: string; when: string; bookingUid: string; wa: string; badge?: DecisionBadge }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
@@ -84,7 +130,8 @@ function asOfLabel(iso: string): string {
 
 const inr = (n: number | null) => (n === null ? "—" : "₹" + n.toLocaleString("en-IN"));
 
-export default function Today({ adminKey }: { adminKey: string }) {
+export default function Today({ adminKey, dark = false }: { adminKey: string; dark?: boolean }) {
+  const N = palette(dark);
   // Shared with Pipeline and Analytics: one range, the same numbers everywhere.
   const [days, setDays] = useRange();
   const [d, setD] = useState<Data | null>(null);
@@ -146,6 +193,80 @@ export default function Today({ adminKey }: { adminKey: string }) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setSaving(null); }
   }, [adminKey, load]);
+
+  // Send her the drafted message from the BUSINESS number, in one tap.
+  //
+  // The wa.me link opens whichever WhatsApp is on the phone — a personal
+  // number, not the one she has seen on every automated message since she
+  // filled the quiz. Replying from a stranger's number after a week of messages
+  // from the business one is a small betrayal of the thread.
+  //
+  // This posts the same drafted words to /api/admin/messages, which sends
+  // inside her open 24-hour window: free, no template, no Meta approval. When
+  // that window has shut the send fails and says so, and the wa.me link is
+  // sitting right next to the button as the fallback — so the failure costs a
+  // tap, not the message.
+  const [sendBusy, setSendBusy] = useState<string | null>(null);
+  const [sendDone, setSendDone] = useState<Record<string, boolean>>({});
+  const [sendErr, setSendErr] = useState<Record<string, string>>({});
+  const sendNow = useCallback(async (key: string, phone: string, text: string) => {
+    if (!text) return;
+    setSendErr((p) => ({ ...p, [key]: "" }));
+    setSendBusy(key);
+    try {
+      const r = await fetch("/api/admin/messages", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ phone, text }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { error?: string; hint?: string };
+      if (!r.ok) throw new Error(j.hint || j.error || `HTTP ${r.status}`);
+      setSendDone((p) => ({ ...p, [key]: true }));
+    } catch (e) {
+      const m = e instanceof Error ? e.message : String(e);
+      setSendErr((p) => ({
+        ...p,
+        // The one failure worth naming, because it has a different fix.
+        [key]: /window|24|re-?engag/i.test(m) ? "Her 24-hour window has shut — use WhatsApp" : m,
+      }));
+    } finally {
+      setSendBusy(null);
+    }
+  }, [adminKey]);
+
+  // His call notes, as a Doc, opened from the row the call is on.
+  //
+  // The tab is opened SYNCHRONOUSLY, before the fetch, and pointed at the doc
+  // when the id comes back: a window.open() inside an await is a popup the
+  // browser blocks, and the failure is silent — he taps, nothing happens, and
+  // the button looks broken. On failure the blank tab is closed again so he is
+  // not left staring at one.
+  const [notesBusy, setNotesBusy] = useState<string | null>(null);
+  const [notesErr, setNotesErr] = useState<Record<string, string>>({});
+  const openNotes = useCallback(
+    async (c: { bookingUid: string; name: string; phone: string; when: string }) => {
+      setNotesErr((p) => ({ ...p, [c.bookingUid]: "" }));
+      setNotesBusy(c.bookingUid);
+      const tab = window.open("", "_blank");
+      try {
+        const r = await fetch("/api/admin/call-notes", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-admin-key": adminKey },
+          body: JSON.stringify({ name: c.name, phone: c.phone, when: c.when }),
+        });
+        const j = (await r.json()) as { url?: string; hint?: string; error?: string };
+        if (!r.ok || !j.url) throw new Error(j.hint || j.error || `HTTP ${r.status}`);
+        if (tab) tab.location.href = j.url;
+        else window.location.href = j.url;
+      } catch (e) {
+        tab?.close();
+        setNotesErr((p) => ({ ...p, [c.bookingUid]: e instanceof Error ? e.message : String(e) }));
+      } finally {
+        setNotesBusy(null);
+      }
+    },
+    [adminKey],
+  );
 
   // The second write this screen makes, and the cheapest. One tap, straight
   // after the call, while he still remembers who was on it. Held optimistically
@@ -230,7 +351,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
     <div style={wrap}>
       <div style={inner}>
         {d?.testMode ? (
-          <div style={{ background: "#7f1d1d", color: "#fff", borderRadius: 10, padding: "12px 14px", margin: "14px 0 0", fontWeight: 700, letterSpacing: 0.2 }}>
+          <div style={{ background: N.bad, color: N.onAccent, borderRadius: 10, padding: "12px 14px", margin: "14px 0 0", fontWeight: 700, letterSpacing: 0.2 }}>
             TEST MODE IS ON — Cashfree is charging ₹1, not ₹299. Every page still shows ₹299. Turn it off before any ad runs.
           </div>
         ) : null}
@@ -276,7 +397,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
           <div style={{ display: "flex", gap: 4 }}>
             {RANGE_CHOICES.map((w) => (
               <button key={w} onClick={() => setDays(w)}
-                style={{ background: days === w ? N.accent : "transparent", color: days === w ? "#0B0E14" : N.dim,
+                style={{ background: days === w ? N.accent : "transparent", color: days === w ? N.onAccent : N.dim,
                   border: `1px solid ${days === w ? N.accent : N.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12, cursor: "pointer" }}>
                 {rangeLabel(w)}
               </button>
@@ -384,7 +505,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
                           })}
                         </div>
                         <button disabled={markBusy === c.bookingUid} onClick={() => void saveOutcome(c, true)}
-                          style={{ marginTop: 12, background: N.good, color: "#06210f", border: 0, borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                          style={{ marginTop: 12, background: N.good, color: N.onAccent, border: 0, borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                           {markBusy === c.bookingUid ? "Saving…" : "Save call"}
                         </button>
                         <div style={{ fontSize: 11.5, color: N.dim, marginTop: 8 }}>
@@ -503,13 +624,32 @@ export default function Today({ adminKey }: { adminKey: string }) {
                           </span>
                         )}
                       </div>
-                      {c.wa && (
-                        <a href={c.wa} target="_blank" rel="noreferrer"
-                          style={{ flex: "none", background: N.accent, color: "#0B0E14", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
-                          WhatsApp
-                        </a>
-                      )}
+                      <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
+                        {/* Opened during the call, not after it. The doc is made
+                            by the server so nothing later has to guess which
+                            notes belong to which call — see lib/drive. */}
+                        <button
+                          type="button"
+                          onClick={() => openNotes(c)}
+                          disabled={notesBusy === c.bookingUid}
+                          style={{ background: "transparent", border: `1px solid ${N.line}`, color: N.text,
+                            borderRadius: 999, padding: "6px 13px", fontSize: 12.5, fontWeight: 700,
+                            cursor: notesBusy === c.bookingUid ? "wait" : "pointer", whiteSpace: "nowrap" }}>
+                          {notesBusy === c.bookingUid ? "Opening…" : "Notes"}
+                        </button>
+                        {c.wa && (
+                          <a href={c.wa} target="_blank" rel="noreferrer"
+                            style={{ background: N.accent, color: N.onAccent, borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
                     </div>
+                    {notesErr[c.bookingUid] && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>
+                        {notesErr[c.bookingUid]}
+                      </div>
+                    )}
                     {/* Before the call, not after it: the three checks missed most often. */}
                     {(d.checklist.checks.length ?? 0) > 0 && (
                       <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5 }}>
@@ -544,6 +684,9 @@ export default function Today({ adminKey }: { adminKey: string }) {
             // Colour is age, the same rule on every tab: under 1 hr neutral,
             // 1-6 hr amber, over 6 hr red.
             const accent = q.tone === "red" ? N.bad : q.tone === "amber" ? N.warn : N.dim;
+            // Same identity the row is keyed by, so "Sent ✓" stays on the row
+            // it belongs to across a refresh rather than following a position.
+            const rowKey = `${q.phone}-${q.kind}-${q.since}`;
             const wait = q.waitMin >= 120 ? `${Math.round(q.waitMin / 60)} hr` : `${Math.round(q.waitMin)} min`;
             return (
               <div key={`${q.phone}-${q.kind}-${q.since}`} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
@@ -560,13 +703,37 @@ export default function Today({ adminKey }: { adminKey: string }) {
                   {q.kind === "mark_call" ? (
                     <span style={{ flex: "none", color: N.warn, fontSize: 12.5, fontWeight: 700 }}>Mark above ↑</span>
                   ) : q.wa ? (
-                    <a href={q.wa} target="_blank" rel="noreferrer"
-                      style={{ flex: "none", background: accent === N.dim ? N.accent : accent, color: "#0B0E14", borderRadius: 999,
-                        padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
-                      WhatsApp
-                    </a>
+                    <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
+                      {/* One tap does the thing, from the number she knows. The
+                          wa.me link stays beside it as the fallback for a shut
+                          24-hour window — the failure costs a tap, not the
+                          message. */}
+                      {q.text && (
+                        <button
+                          type="button"
+                          onClick={() => sendNow(rowKey, q.phone, q.text)}
+                          disabled={sendBusy === rowKey || sendDone[rowKey]}
+                          style={{ background: sendDone[rowKey] ? "transparent" : accent === N.dim ? N.accent : accent,
+                            color: sendDone[rowKey] ? N.good : N.onAccent,
+                            border: sendDone[rowKey] ? `1px solid ${N.good}` : 0,
+                            borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+                            cursor: sendBusy === rowKey ? "wait" : sendDone[rowKey] ? "default" : "pointer",
+                            whiteSpace: "nowrap" }}>
+                          {sendDone[rowKey] ? "Sent ✓" : sendBusy === rowKey ? "Sending…" : (ACTION_VERB[q.kind] ?? "Send")}
+                        </button>
+                      )}
+                      <a href={q.wa} target="_blank" rel="noreferrer"
+                        title="Open in WhatsApp instead"
+                        style={{ border: `1px solid ${N.line}`, color: N.dim, borderRadius: 999,
+                          padding: "6px 12px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                        {q.text ? "WA" : (ACTION_VERB[q.kind] ?? "WhatsApp")}
+                      </a>
+                    </div>
                   ) : null}
                 </div>
+                {sendErr[rowKey] && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>{sendErr[rowKey]}</div>
+                )}
               </div>
             );
           })}
@@ -642,7 +809,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
                       {amounts.map((amt) => (
                         <button key={amt} disabled={saving === p.row}
                           onClick={() => void markClosed(p.row, amt, payDate)}
-                          style={{ background: N.good, color: "#06210f", border: 0, borderRadius: 999,
+                          style={{ background: N.good, color: N.onAccent, border: 0, borderRadius: 999,
                             padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                           Paid {inr(amt)}
                         </button>
