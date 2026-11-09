@@ -76,25 +76,27 @@ export default function AdminShell() {
     });
   };
 
-  // The analytics tab is its own dark instrument panel and always sits on its
-  // own ground, so the page surface follows the pipeline's theme only.
+  // Analytics is still its own dark instrument panel with a palette of its
+  // own, so it keeps its ground. Today no longer is: it renders from ./tokens
+  // like Pipeline, so it follows the theme switch with everything else. The
+  // chrome below keys off `onLight`, not the tab — a screen that is on the
+  // system gets the system's header, and the one that isn't keeps the dark one.
   const onPipeline = tab === "pipeline";
-  // Today carries its own Nocturne ground, like analytics.
-  const onLight = onPipeline;
+  const onLight = onPipeline || tab === "today";
 
   return (
-    <main style={{ background: onLight ? t.paper : tab === "today" ? "#0B0E14" : "#0e0e11", minHeight: "100vh", color: t.ink1 }}>
+    <main style={{ background: onLight ? t.paper : "#0e0e11", minHeight: "100vh", color: t.ink1 }}>
       <header
         style={{
           position: "sticky",
           top: 0,
           zIndex: 20,
-          background: onPipeline ? t.card : "#17181c",
-          borderBottom: `1px solid ${onPipeline ? t.hairline : "#26242c"}`,
+          background: onLight ? t.card : "#17181c",
+          borderBottom: `1px solid ${onLight ? t.hairline : "#26242c"}`,
         }}
       >
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "12px 18px", display: "flex", alignItems: "baseline", gap: 20, flexWrap: "wrap" }}>
-          <strong style={{ fontFamily: FONT.serif, fontWeight: 500, fontSize: 21, letterSpacing: "-.01em", color: onPipeline ? t.ink1 : "#f4f2f7" }}>
+          <strong style={{ fontFamily: FONT.serif, fontWeight: 500, fontSize: 21, letterSpacing: "-.01em", color: onLight ? t.ink1 : "#f4f2f7" }}>
             Practice
           </strong>
 
@@ -117,8 +119,8 @@ export default function AdminShell() {
                     fontFamily: FONT.sans,
                     fontSize: 13.5,
                     fontWeight: on ? 600 : 400,
-                    color: on ? (onPipeline ? t.ink1 : "#f4f2f7") : onPipeline ? t.ink3 : "#8a8494",
-                    borderBottom: on ? `2px solid ${onPipeline ? t.teal : "#c793ff"}` : "2px solid transparent",
+                    color: on ? (onLight ? t.ink1 : "#f4f2f7") : onLight ? t.ink3 : "#8a8494",
+                    borderBottom: on ? `2px solid ${onLight ? t.teal : "#c793ff"}` : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -129,17 +131,17 @@ export default function AdminShell() {
           </nav>
 
           <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: onPipeline ? t.ink3 : "#8a8494" }}>
+            <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: onLight ? t.ink3 : "#8a8494" }}>
               {new Date().toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
             </span>
             <button
               onClick={toggleTheme}
               aria-label={dark ? "Switch to light" : "Switch to dark"}
-              style={{ background: "transparent", border: `1px solid ${onPipeline ? t.hairline : "#26242c"}`, color: onPipeline ? t.ink2 : "#b9b3c4", padding: "4px 11px", borderRadius: RADIUS.chip, fontSize: 11.5, fontFamily: FONT.sans, cursor: "pointer" }}
+              style={{ background: "transparent", border: `1px solid ${onLight ? t.hairline : "#26242c"}`, color: onLight ? t.ink2 : "#b9b3c4", padding: "4px 11px", borderRadius: RADIUS.chip, fontSize: 11.5, fontFamily: FONT.sans, cursor: "pointer" }}
             >
               {dark ? "Light" : "Dark"}
             </button>
-            <a href="/inbox" style={{ fontFamily: FONT.sans, fontSize: 12.5, color: onPipeline ? t.teal : "#8a8494", textDecoration: "none" }}>
+            <a href="/inbox" style={{ fontFamily: FONT.sans, fontSize: 12.5, color: onLight ? t.teal : "#8a8494", textDecoration: "none" }}>
               Inbox
             </a>
             {/* This device stays signed in until this is pressed — the key now
@@ -151,7 +153,7 @@ export default function AdminShell() {
                   clearAdminKey();
                   window.location.reload();
                 }}
-                style={{ background: "transparent", border: 0, color: onPipeline ? t.ink3 : "#8a8494", padding: 0, fontSize: 12.5, fontFamily: FONT.sans, cursor: "pointer" }}
+                style={{ background: "transparent", border: 0, color: onLight ? t.ink3 : "#8a8494", padding: 0, fontSize: 12.5, fontFamily: FONT.sans, cursor: "pointer" }}
               >
                 Log out
               </button>
@@ -168,7 +170,7 @@ export default function AdminShell() {
               tab once to enter your admin key", which made the screen he opens
               most a dead end from a bookmark or a home-screen shortcut — and a
               blank Today is a big part of why outcomes never got marked. */}
-          {adminKey ? <Today adminKey={adminKey} /> : <KeyGate />}
+          {adminKey ? <Today adminKey={adminKey} dark={dark} /> : <KeyGate t={t} />}
         </div>
         <div style={{ display: onPipeline ? "block" : "none" }}>
           <Pipeline dark={dark} />
@@ -182,7 +184,15 @@ export default function AdminShell() {
 }
 
 /** The key prompt, for whichever tab is opened first. Saving unlocks all tabs. */
-function KeyGate() {
+/**
+ * The first thing he sees every morning, so it is the first thing that has to
+ * belong to the system. It used to carry six colours of its own — a lavender
+ * button and a near-black field — under a warm-paper header, which meant the
+ * dashboard introduced itself as two different products before he had typed
+ * anything. Now it takes the same tokens as every other surface and follows
+ * the theme switch with them.
+ */
+function KeyGate({ t }: { t: Tokens }) {
   const [entry, setEntry] = useState("");
   return (
     <form
@@ -193,7 +203,7 @@ function KeyGate() {
       }}
       style={{ display: "grid", gap: 12, width: "min(340px,100%)", margin: "48px auto" }}
     >
-      <label htmlFor="today-key" style={{ color: "#C9CED9", fontFamily: FONT.sans, fontSize: 15 }}>
+      <label htmlFor="today-key" style={{ color: t.ink2, fontFamily: FONT.sans, fontSize: 15 }}>
         Admin key
       </label>
       <input
@@ -202,15 +212,15 @@ function KeyGate() {
         autoComplete="current-password"
         value={entry}
         onChange={(e) => setEntry(e.target.value)}
-        style={{ padding: "12px 14px", borderRadius: RADIUS.chip, border: "1px solid #2A3040", background: "#12161F", color: "#F4F2F7", fontSize: 16 }}
+        style={{ padding: "12px 14px", borderRadius: RADIUS.chip, border: `1px solid ${t.hairline}`, background: t.card, color: t.ink1, fontSize: 16, fontFamily: FONT.sans }}
       />
       <button
         type="submit"
-        style={{ padding: "12px 14px", borderRadius: RADIUS.chip, border: 0, background: "#C793FF", color: "#0B0E14", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+        style={{ padding: "12px 14px", borderRadius: RADIUS.chip, border: 0, background: t.teal, color: t.paper, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: FONT.sans }}
       >
         Open Today
       </button>
-      <p style={{ margin: 0, color: "#8A93A6", fontFamily: FONT.sans, fontSize: 13 }}>
+      <p style={{ margin: 0, color: t.ink3, fontFamily: FONT.sans, fontSize: 13 }}>
         This device remembers it until you log out. It unlocks every tab.
       </p>
     </form>

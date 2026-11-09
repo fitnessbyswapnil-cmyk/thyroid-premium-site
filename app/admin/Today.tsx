@@ -33,17 +33,63 @@ import { DM_PRESENCE_TARGET_PCT, formatDmPresence, type PresenceRate } from "@/l
 import type { Summary, ChecklistSummary } from "@/lib/metrics";
 import { SCORECARD_KEYS, SCORECARD_LABEL, type ScorecardKey } from "@/lib/scorecard";
 import { useRange, RANGE_CHOICES, rangeLabel, pct } from "./useMetrics";
+import { LIGHT, DARK, type Tokens } from "./tokens";
 
-const N = {
-  bg: "#0B0E14",
-  card: "#141922",
-  line: "#232A36",
-  text: "#E6E9EF",
-  dim: "#8A93A6",
-  accent: "#6E8BFF",
-  good: "#3FBF7F",
-  warn: "#E0A93B",
-  bad: "#E5544B",
+/**
+ * The palette comes from ./tokens now, and follows the theme switch in the
+ * shell — it used to be eleven hex literals defined right here.
+ *
+ * That mattered more than it sounds. tokens.ts is a measured system (warm
+ * paper, ONE teal meaning "progress", clay rationed to "should have happened
+ * and didn't", every ratio checked against the surface it actually sits on)
+ * and Pipeline renders entirely from it. Today ignored all of that and painted
+ * itself a cold navy, so the same screen showed two different products
+ * depending on the tab, and the theme toggle moved one of them.
+ *
+ * `dim` maps to ink2, not ink3: on this screen it carries 12.5px sentences a
+ * man reads between calls, and ink3 is a 3.25:1 label grey. `onAccent` is the
+ * text that sits ON a filled chip — the fills are dark on the light theme and
+ * light on the dark one, so it flips with the theme rather than being the
+ * hardcoded #0B0E14 that white paper used to get.
+ */
+/**
+ * The button on a queue row says what to DO, not where it opens.
+ *
+ * Every row used to carry a chip reading "WhatsApp". Nine different situations,
+ * one word — so the row's reason line was the only thing telling them apart,
+ * and the button, which is the biggest and last thing read before acting,
+ * taught him nothing. A desk that tells you the verb is a desk you work; a
+ * desk that names the app is a list you read.
+ *
+ * Keyed off lib/journey's ActionKind so a kind added there shows up here;
+ * anything unmapped falls back to the old label rather than rendering blank.
+ */
+const ACTION_VERB: Record<string, string> = {
+  rebook_cancelled: "Offer new times",
+  rebook_no_show: "Offer new times",
+  send_price: "Send the price",
+  follow_up: "Ask for her decision",
+  agreed_unpaid: "Send payment link",
+  paid_not_booked: "Send booking link",
+  first_message: "Send first message",
+  hot_abandon: "Nudge her",
+};
+
+const palette = (dark: boolean) => {
+  const t = (dark ? DARK : LIGHT) as unknown as Tokens;
+  return {
+    bg: t.paper,
+    card: t.card,
+    line: t.hairline,
+    text: t.ink1,
+    dim: t.ink2,
+    accent: t.teal,
+    good: t.won,
+    warn: t.amber,
+    bad: t.clay,
+    onAccent: dark ? t.paper : "#FFFFFF",
+    sunk: t.sunk,
+  };
 };
 
 type Data = {
@@ -84,7 +130,8 @@ function asOfLabel(iso: string): string {
 
 const inr = (n: number | null) => (n === null ? "—" : "₹" + n.toLocaleString("en-IN"));
 
-export default function Today({ adminKey }: { adminKey: string }) {
+export default function Today({ adminKey, dark = false }: { adminKey: string; dark?: boolean }) {
+  const N = palette(dark);
   // Shared with Pipeline and Analytics: one range, the same numbers everywhere.
   const [days, setDays] = useRange();
   const [d, setD] = useState<Data | null>(null);
@@ -230,7 +277,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
     <div style={wrap}>
       <div style={inner}>
         {d?.testMode ? (
-          <div style={{ background: "#7f1d1d", color: "#fff", borderRadius: 10, padding: "12px 14px", margin: "14px 0 0", fontWeight: 700, letterSpacing: 0.2 }}>
+          <div style={{ background: N.bad, color: N.onAccent, borderRadius: 10, padding: "12px 14px", margin: "14px 0 0", fontWeight: 700, letterSpacing: 0.2 }}>
             TEST MODE IS ON — Cashfree is charging ₹1, not ₹299. Every page still shows ₹299. Turn it off before any ad runs.
           </div>
         ) : null}
@@ -276,7 +323,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
           <div style={{ display: "flex", gap: 4 }}>
             {RANGE_CHOICES.map((w) => (
               <button key={w} onClick={() => setDays(w)}
-                style={{ background: days === w ? N.accent : "transparent", color: days === w ? "#0B0E14" : N.dim,
+                style={{ background: days === w ? N.accent : "transparent", color: days === w ? N.onAccent : N.dim,
                   border: `1px solid ${days === w ? N.accent : N.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12, cursor: "pointer" }}>
                 {rangeLabel(w)}
               </button>
@@ -384,7 +431,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
                           })}
                         </div>
                         <button disabled={markBusy === c.bookingUid} onClick={() => void saveOutcome(c, true)}
-                          style={{ marginTop: 12, background: N.good, color: "#06210f", border: 0, borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                          style={{ marginTop: 12, background: N.good, color: N.onAccent, border: 0, borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                           {markBusy === c.bookingUid ? "Saving…" : "Save call"}
                         </button>
                         <div style={{ fontSize: 11.5, color: N.dim, marginTop: 8 }}>
@@ -505,7 +552,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
                       </div>
                       {c.wa && (
                         <a href={c.wa} target="_blank" rel="noreferrer"
-                          style={{ flex: "none", background: N.accent, color: "#0B0E14", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+                          style={{ flex: "none", background: N.accent, color: N.onAccent, borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
                           WhatsApp
                         </a>
                       )}
@@ -561,9 +608,9 @@ export default function Today({ adminKey }: { adminKey: string }) {
                     <span style={{ flex: "none", color: N.warn, fontSize: 12.5, fontWeight: 700 }}>Mark above ↑</span>
                   ) : q.wa ? (
                     <a href={q.wa} target="_blank" rel="noreferrer"
-                      style={{ flex: "none", background: accent === N.dim ? N.accent : accent, color: "#0B0E14", borderRadius: 999,
-                        padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
-                      WhatsApp
+                      style={{ flex: "none", background: accent === N.dim ? N.accent : accent, color: N.onAccent, borderRadius: 999,
+                        padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                      {ACTION_VERB[q.kind] ?? "WhatsApp"}
                     </a>
                   ) : null}
                 </div>
@@ -642,7 +689,7 @@ export default function Today({ adminKey }: { adminKey: string }) {
                       {amounts.map((amt) => (
                         <button key={amt} disabled={saving === p.row}
                           onClick={() => void markClosed(p.row, amt, payDate)}
-                          style={{ background: N.good, color: "#06210f", border: 0, borderRadius: 999,
+                          style={{ background: N.good, color: N.onAccent, border: 0, borderRadius: 999,
                             padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                           Paid {inr(amt)}
                         </button>
