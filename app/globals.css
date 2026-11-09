@@ -2130,9 +2130,12 @@ a {
    tabular figures so the four cards' numbers line up as a column when they
    sit in a row. */
 .wall-figure {
-  font-family: var(--font-display);
+  /* 600, not 700: Newsreader is loaded at a single weight (layout.tsx) and a
+     700 here renders identically to a 600 — measured, same 175.85px. Fallback
+     spelled out so a failed webfont lands on a serif, not the UA default. */
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
   font-size: var(--fs-xl);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: var(--ls-heading);
   line-height: var(--lh-tight);
   color: var(--t1);

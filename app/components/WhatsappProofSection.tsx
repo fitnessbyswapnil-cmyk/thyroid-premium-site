@@ -265,9 +265,18 @@ function ProofCard({
 }) {
 
   return (
+    /* NO `proof-card` CLASS HERE. That class (globals.css) redefines --t1/--t2
+       for a card painted WHITE. This article paints itself with
+       `--surface-page`, which inside `.band-deep` resolves to #0f0e0c — so the
+       class was handing a near-black card the text colours of a white one.
+       The headline below rendered #0b1120 on #0f0e0c: a contrast ratio of
+       1.02:1, i.e. invisible, on every one of these cards, live, for weeks.
+       Without the class the band's own dark-surface tokens apply and --t1 is
+       #e8e6e1. If this card is ever given a light background again, add the
+       class back in the same commit that does it — not before. */
     <article
       aria-hidden={ariaHidden || undefined}
-      className="group flex flex-col overflow-hidden proof-card"
+      className="group flex flex-col overflow-hidden"
       style={{
         width: isMobile ? 'clamp(300px, 90vw, 420px)' : '350px',
         flexShrink: 0,
@@ -336,7 +345,7 @@ function ProofCard({
           whose whole claim is that this is real, a fake avatar is an odd thing
           to put next to a real name. */}
       <div className="px-5 pb-5 pt-4 mt-auto">
-        <p className="m-0 text-[length:var(--fs-3xs)] leading-[var(--lh-tight)] pt-3" style={{ borderTop: '1px solid #efe8db', color: '#57514b' }}>
+        <p className="m-0 text-[length:var(--fs-3xs)] leading-[var(--lh-tight)] pt-3" style={{ borderTop: '1px solid #efe8db', color: 'var(--t2)' }}>
           {card.client}
         </p>
       </div>

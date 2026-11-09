@@ -282,7 +282,7 @@ export default function HeroVideo() {
                   type="button"
                   onClick={toggle}
                   aria-label={playing ? "Pause video" : "Play video"}
-                  className="shrink-0 text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
+                  className="shrink-0 relative after:absolute after:left-1/2 after:top-1/2 after:h-11 after:w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
                 >
                   {playing ? (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
@@ -313,7 +313,7 @@ export default function HeroVideo() {
                   type="button"
                   onClick={() => setMuted((m) => !m)}
                   aria-label={muted ? "Unmute video" : "Mute video"}
-                  className="shrink-0 text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
+                  className="shrink-0 relative after:absolute after:left-1/2 after:top-1/2 after:h-11 after:w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
                 >
                   {muted ? (
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5zM22 9l-6 6M16 9l6 6" /></svg>
@@ -326,7 +326,7 @@ export default function HeroVideo() {
                   type="button"
                   onClick={() => videoRef.current?.requestFullscreen?.()}
                   aria-label="Enter fullscreen"
-                  className="shrink-0 text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
+                  className="shrink-0 relative after:absolute after:left-1/2 after:top-1/2 after:h-11 after:w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--p500)]"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" /></svg>
                 </button>
