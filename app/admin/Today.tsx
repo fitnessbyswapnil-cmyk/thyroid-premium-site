@@ -244,15 +244,15 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
   const [notesBusy, setNotesBusy] = useState<string | null>(null);
   const [notesErr, setNotesErr] = useState<Record<string, string>>({});
   const openNotes = useCallback(
-    async (c: { bookingUid: string; name: string; phone: string; when: string }) => {
-      setNotesErr((p) => ({ ...p, [c.bookingUid]: "" }));
-      setNotesBusy(c.bookingUid);
+    async (c: { key: string; name: string; phone: string; when?: string }) => {
+      setNotesErr((p) => ({ ...p, [c.key]: "" }));
+      setNotesBusy(c.key);
       const tab = window.open("", "_blank");
       try {
         const r = await fetch("/api/admin/call-notes", {
           method: "POST",
           headers: { "content-type": "application/json", "x-admin-key": adminKey },
-          body: JSON.stringify({ name: c.name, phone: c.phone, when: c.when }),
+          body: JSON.stringify({ name: c.name, phone: c.phone, when: c.when ?? "" }),
         });
         const j = (await r.json()) as { url?: string; hint?: string; error?: string };
         if (!r.ok || !j.url) throw new Error(j.hint || j.error || `HTTP ${r.status}`);
@@ -260,7 +260,7 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
         else window.location.href = j.url;
       } catch (e) {
         tab?.close();
-        setNotesErr((p) => ({ ...p, [c.bookingUid]: e instanceof Error ? e.message : String(e) }));
+        setNotesErr((p) => ({ ...p, [c.key]: e instanceof Error ? e.message : String(e) }));
       } finally {
         setNotesBusy(null);
       }
@@ -630,7 +630,7 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                             notes belong to which call — see lib/drive. */}
                         <button
                           type="button"
-                          onClick={() => openNotes(c)}
+                          onClick={() => openNotes({ key: c.bookingUid, name: c.name, phone: c.phone, when: c.when })}
                           disabled={notesBusy === c.bookingUid}
                           style={{ background: "transparent", border: `1px solid ${N.line}`, color: N.text,
                             borderRadius: 999, padding: "6px 13px", fontSize: 12.5, fontWeight: 700,
@@ -700,10 +700,25 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                       {" · "}{q.reason}
                     </div>
                   </div>
+                  <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
+                    {/* Reachable from any row she appears on. The calls section
+                        renders only when something is booked in the next 24
+                        hours, so on every other day the notes button went with
+                        it — and he typed the notes into an untitled doc instead. */}
+                    <button
+                      type="button"
+                      onClick={() => openNotes({ key: rowKey, name: q.name, phone: q.phone })}
+                      disabled={notesBusy === rowKey}
+                      title="Open her call-notes Doc"
+                      style={{ background: "transparent", border: `1px solid ${N.line}`, color: N.dim,
+                        borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 700,
+                        cursor: notesBusy === rowKey ? "wait" : "pointer", whiteSpace: "nowrap" }}>
+                      {notesBusy === rowKey ? "…" : "Notes"}
+                    </button>
                   {q.kind === "mark_call" ? (
                     <span style={{ flex: "none", color: N.warn, fontSize: 12.5, fontWeight: 700 }}>Mark above ↑</span>
                   ) : q.wa ? (
-                    <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
+                    <>
                       {/* One tap does the thing, from the number she knows. The
                           wa.me link stays beside it as the fallback for a shut
                           24-hour window — the failure costs a tap, not the
@@ -728,11 +743,12 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                           padding: "6px 12px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
                         {q.text ? "WA" : (ACTION_VERB[q.kind] ?? "WhatsApp")}
                       </a>
-                    </div>
+                    </>
                   ) : null}
+                  </div>
                 </div>
-                {sendErr[rowKey] && (
-                  <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>{sendErr[rowKey]}</div>
+                {(sendErr[rowKey] || notesErr[rowKey]) && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>{sendErr[rowKey] || notesErr[rowKey]}</div>
                 )}
               </div>
             );
