@@ -103,7 +103,7 @@ type Data = {
     spendAsOf?: string | null;
   };
   /** The one needs-action list (lib/journey) — same items and count as Pipeline and Analytics. */
-  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string }[];
+  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string; text: string }[];
   needsAction: { count: number; overdue: number };
   callsToday: { name: string; phone: string; when: string; bookingUid: string; wa: string; badge?: DecisionBadge }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
@@ -193,6 +193,46 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setSaving(null); }
   }, [adminKey, load]);
+
+  // Send her the drafted message from the BUSINESS number, in one tap.
+  //
+  // The wa.me link opens whichever WhatsApp is on the phone — a personal
+  // number, not the one she has seen on every automated message since she
+  // filled the quiz. Replying from a stranger's number after a week of messages
+  // from the business one is a small betrayal of the thread.
+  //
+  // This posts the same drafted words to /api/admin/messages, which sends
+  // inside her open 24-hour window: free, no template, no Meta approval. When
+  // that window has shut the send fails and says so, and the wa.me link is
+  // sitting right next to the button as the fallback — so the failure costs a
+  // tap, not the message.
+  const [sendBusy, setSendBusy] = useState<string | null>(null);
+  const [sendDone, setSendDone] = useState<Record<string, boolean>>({});
+  const [sendErr, setSendErr] = useState<Record<string, string>>({});
+  const sendNow = useCallback(async (key: string, phone: string, text: string) => {
+    if (!text) return;
+    setSendErr((p) => ({ ...p, [key]: "" }));
+    setSendBusy(key);
+    try {
+      const r = await fetch("/api/admin/messages", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ phone, text }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { error?: string; hint?: string };
+      if (!r.ok) throw new Error(j.hint || j.error || `HTTP ${r.status}`);
+      setSendDone((p) => ({ ...p, [key]: true }));
+    } catch (e) {
+      const m = e instanceof Error ? e.message : String(e);
+      setSendErr((p) => ({
+        ...p,
+        // The one failure worth naming, because it has a different fix.
+        [key]: /window|24|re-?engag/i.test(m) ? "Her 24-hour window has shut — use WhatsApp" : m,
+      }));
+    } finally {
+      setSendBusy(null);
+    }
+  }, [adminKey]);
 
   // His call notes, as a Doc, opened from the row the call is on.
   //
@@ -644,6 +684,9 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
             // Colour is age, the same rule on every tab: under 1 hr neutral,
             // 1-6 hr amber, over 6 hr red.
             const accent = q.tone === "red" ? N.bad : q.tone === "amber" ? N.warn : N.dim;
+            // Same identity the row is keyed by, so "Sent ✓" stays on the row
+            // it belongs to across a refresh rather than following a position.
+            const rowKey = `${q.phone}-${q.kind}-${q.since}`;
             const wait = q.waitMin >= 120 ? `${Math.round(q.waitMin / 60)} hr` : `${Math.round(q.waitMin)} min`;
             return (
               <div key={`${q.phone}-${q.kind}-${q.since}`} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
@@ -660,13 +703,37 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                   {q.kind === "mark_call" ? (
                     <span style={{ flex: "none", color: N.warn, fontSize: 12.5, fontWeight: 700 }}>Mark above ↑</span>
                   ) : q.wa ? (
-                    <a href={q.wa} target="_blank" rel="noreferrer"
-                      style={{ flex: "none", background: accent === N.dim ? N.accent : accent, color: N.onAccent, borderRadius: 999,
-                        padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
-                      {ACTION_VERB[q.kind] ?? "WhatsApp"}
-                    </a>
+                    <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
+                      {/* One tap does the thing, from the number she knows. The
+                          wa.me link stays beside it as the fallback for a shut
+                          24-hour window — the failure costs a tap, not the
+                          message. */}
+                      {q.text && (
+                        <button
+                          type="button"
+                          onClick={() => sendNow(rowKey, q.phone, q.text)}
+                          disabled={sendBusy === rowKey || sendDone[rowKey]}
+                          style={{ background: sendDone[rowKey] ? "transparent" : accent === N.dim ? N.accent : accent,
+                            color: sendDone[rowKey] ? N.good : N.onAccent,
+                            border: sendDone[rowKey] ? `1px solid ${N.good}` : 0,
+                            borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+                            cursor: sendBusy === rowKey ? "wait" : sendDone[rowKey] ? "default" : "pointer",
+                            whiteSpace: "nowrap" }}>
+                          {sendDone[rowKey] ? "Sent ✓" : sendBusy === rowKey ? "Sending…" : (ACTION_VERB[q.kind] ?? "Send")}
+                        </button>
+                      )}
+                      <a href={q.wa} target="_blank" rel="noreferrer"
+                        title="Open in WhatsApp instead"
+                        style={{ border: `1px solid ${N.line}`, color: N.dim, borderRadius: 999,
+                          padding: "6px 12px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                        {q.text ? "WA" : (ACTION_VERB[q.kind] ?? "WhatsApp")}
+                      </a>
+                    </div>
                   ) : null}
                 </div>
+                {sendErr[rowKey] && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>{sendErr[rowKey]}</div>
+                )}
               </div>
             );
           })}

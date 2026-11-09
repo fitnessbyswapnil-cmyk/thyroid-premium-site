@@ -170,11 +170,15 @@ export async function GET(req: NextRequest) {
   // so the three tabs gave three different counts. Here it only adds the
   // WhatsApp draft, written from her own answers.
   const rowAt = (sheetRow: number | null) => (sheetRow !== null && sheetRow >= 2 ? rows[sheetRow - 2] : undefined);
-  const waFor = (sheetRow: number | null, phoneRaw: string) => {
+  // The draft itself, split out from the link: the dashboard can now SEND it
+  // from the business number instead of only opening wa.me, and both paths read
+  // this one function — a link and a send that said different things would be
+  // worse than having only the link.
+  const draftFor = (sheetRow: number | null, phoneRaw: string): string => {
     const phone = digits10(phoneRaw);
     const r = rowAt(sheetRow);
-    if (!r || phone.length !== 10) return phone.length === 10 ? `https://wa.me/91${phone}` : "";
-    return draftWaLink(phone, draftMessage({
+    if (!r || phone.length !== 10) return "";
+    return draftMessage({
       name: cell(r, C.name), leadId: cell(r, C.leadId),
       score: (Number(cell(r, C.thyroidScore)) || null)
         ?? (Number(cell(r, C.struggles).match(/Pattern score:\s*(\d{1,3})/i)?.[1]) || null),
@@ -186,7 +190,13 @@ export async function GET(req: NextRequest) {
       medication: cell(r, C.medication),
       duration: cell(r, C.duration),
       tried: cell(r, C.tried),
-    })) || `https://wa.me/91${phone}`;
+    });
+  };
+  const waFor = (sheetRow: number | null, phoneRaw: string) => {
+    const phone = digits10(phoneRaw);
+    if (phone.length !== 10) return "";
+    const text = draftFor(sheetRow, phoneRaw);
+    return (text ? draftWaLink(phone, text) : "") || `https://wa.me/91${phone}`;
   };
   const queue = J.needsAction.items.map((item) => ({
     name: item.name,
@@ -200,6 +210,9 @@ export async function GET(req: NextRequest) {
     bookingUid: item.bookingUid,
     leadId: cell(rowAt(item.leadRow) ?? [], C.leadId),
     wa: item.kind === "mark_call" ? "" : waFor(item.leadRow, item.phone),
+    // Same words the wa.me link carries, in plain text, so one tap can send
+    // them from the business number she already knows.
+    text: item.kind === "mark_call" ? "" : draftFor(item.leadRow, item.phone),
   }));
 
   // ── Calls in the next 24 hours ────────────────────────────────────────────
