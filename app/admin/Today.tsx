@@ -194,6 +194,40 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
     } finally { setSaving(null); }
   }, [adminKey, load]);
 
+  // His call notes, as a Doc, opened from the row the call is on.
+  //
+  // The tab is opened SYNCHRONOUSLY, before the fetch, and pointed at the doc
+  // when the id comes back: a window.open() inside an await is a popup the
+  // browser blocks, and the failure is silent — he taps, nothing happens, and
+  // the button looks broken. On failure the blank tab is closed again so he is
+  // not left staring at one.
+  const [notesBusy, setNotesBusy] = useState<string | null>(null);
+  const [notesErr, setNotesErr] = useState<Record<string, string>>({});
+  const openNotes = useCallback(
+    async (c: { bookingUid: string; name: string; phone: string; when: string }) => {
+      setNotesErr((p) => ({ ...p, [c.bookingUid]: "" }));
+      setNotesBusy(c.bookingUid);
+      const tab = window.open("", "_blank");
+      try {
+        const r = await fetch("/api/admin/call-notes", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-admin-key": adminKey },
+          body: JSON.stringify({ name: c.name, phone: c.phone, when: c.when }),
+        });
+        const j = (await r.json()) as { url?: string; hint?: string; error?: string };
+        if (!r.ok || !j.url) throw new Error(j.hint || j.error || `HTTP ${r.status}`);
+        if (tab) tab.location.href = j.url;
+        else window.location.href = j.url;
+      } catch (e) {
+        tab?.close();
+        setNotesErr((p) => ({ ...p, [c.bookingUid]: e instanceof Error ? e.message : String(e) }));
+      } finally {
+        setNotesBusy(null);
+      }
+    },
+    [adminKey],
+  );
+
   // The second write this screen makes, and the cheapest. One tap, straight
   // after the call, while he still remembers who was on it. Held optimistically
   // so the pill flips under his thumb instead of waiting on a sheet round-trip
@@ -550,13 +584,32 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                           </span>
                         )}
                       </div>
-                      {c.wa && (
-                        <a href={c.wa} target="_blank" rel="noreferrer"
-                          style={{ flex: "none", background: N.accent, color: N.onAccent, borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
-                          WhatsApp
-                        </a>
-                      )}
+                      <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
+                        {/* Opened during the call, not after it. The doc is made
+                            by the server so nothing later has to guess which
+                            notes belong to which call — see lib/drive. */}
+                        <button
+                          type="button"
+                          onClick={() => openNotes(c)}
+                          disabled={notesBusy === c.bookingUid}
+                          style={{ background: "transparent", border: `1px solid ${N.line}`, color: N.text,
+                            borderRadius: 999, padding: "6px 13px", fontSize: 12.5, fontWeight: 700,
+                            cursor: notesBusy === c.bookingUid ? "wait" : "pointer", whiteSpace: "nowrap" }}>
+                          {notesBusy === c.bookingUid ? "Opening…" : "Notes"}
+                        </button>
+                        {c.wa && (
+                          <a href={c.wa} target="_blank" rel="noreferrer"
+                            style={{ background: N.accent, color: N.onAccent, borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
                     </div>
+                    {notesErr[c.bookingUid] && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>
+                        {notesErr[c.bookingUid]}
+                      </div>
+                    )}
                     {/* Before the call, not after it: the three checks missed most often. */}
                     {(d.checklist.checks.length ?? 0) > 0 && (
                       <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5 }}>
