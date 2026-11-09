@@ -242,6 +242,15 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   const [gate, setGate] = useState<{ name: string; phone: string }>({ name: "", phone: "" });
   const [gateErr, setGateErr] = useState("");
   const [gateBusy, setGateBusy] = useState(false);
+  // The privacy policy opens INSIDE the quiz, never as a navigation. Her
+  // answers live only in this component's state until the gate is submitted,
+  // and the in-app browsers Meta traffic arrives in (Instagram, Facebook) have
+  // no second tab: a new-tab link there can replace this page, and every answer
+  // goes with it. The iframe mounts only while the dialog is open, so /privacy,
+  // and the PageView its layout fires, loads on a tap and never on every gate
+  // view. lib/decode-privacy.test.ts holds both of those in place.
+  const privacyRef = useRef<HTMLDialogElement>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const [leadId, setLeadId] = useState("");
   // The Lead event id minted for THIS lead, kept so a resubmit can reuse it
   // rather than mint a second Lead for the same woman.
@@ -473,6 +482,45 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
             {gateBusy ? "One moment…" : "Show my score"}
             <span className="cta-sub">I&rsquo;ll WhatsApp your score. No spam &mdash; reply stop any time.</span>
           </button>
+          <p className="mt-3 text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+            How I use your answers and your number:{" "}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener"
+              onClick={(e) => {
+                const d = privacyRef.current;
+                // No <dialog> support: let the link open the policy in a new tab.
+                if (!d || typeof d.showModal !== "function") return;
+                e.preventDefault();
+                setPrivacyOpen(true);
+                d.showModal();
+              }}
+              /* Colour and underline in style: globals.css resets every link
+                 with an unlayered rule that beats any Tailwind utility, which
+                 left this link looking exactly like the sentence around it. */
+              className="py-2 font-medium"
+              style={{ color: "var(--t1)", textDecoration: "underline", textUnderlineOffset: "2px" }}
+            >
+              Privacy policy
+            </a>
+          </p>
+          <dialog
+            ref={privacyRef}
+            aria-label="Privacy policy"
+            onClose={() => setPrivacyOpen(false)}
+            onClick={(e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }}
+            /* m-auto is what centres a modal <dialog>. Tailwind's preflight
+               zeroes every margin, which pins it to the top-left corner. */
+            className="m-auto w-[min(40rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-white p-0 backdrop:bg-black/60"
+          >
+            {privacyOpen && <iframe src="/privacy" title="Privacy policy" className="block h-[70vh] w-full border-0" />}
+            <form method="dialog" className="p-3">
+              <button type="submit" className="w-full rounded-lg bg-white py-3 text-[length:var(--fs-xs)] font-bold text-[var(--t1)]" style={{ border: "1.5px solid var(--border-strong)" }}>
+                Close
+              </button>
+            </form>
+          </dialog>
         </div>
       </Shell>
     );

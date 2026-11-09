@@ -572,7 +572,7 @@ export default function DecodePage() {
         </section>
 
         {/* ── 9. Last button ───────────────────────────────────────────── */}
-        <section className="px-4 pb-14 pt-4 text-center md:px-6">
+        <section className="px-4 pt-4 text-center md:px-6">
           <div className="mx-auto w-full max-w-[760px]">
             <a
               href="/decode/quiz"
@@ -589,11 +589,35 @@ export default function DecodePage() {
                 nobody&rsquo;s time is wasted.
               </p>
             )}
-            <p className="mx-auto mt-8 text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-              Individual results vary. Not a substitute for medical advice.
-            </p>
           </div>
         </section>
+
+        {/* THE PAGE'S ONE EXIT. Every other link here goes to the quiz, and the
+            page test enforces it; /privacy is the exception she is owed,
+            because the next screen asks for her WhatsApp number and her
+            answers about her thyroid. The footer stays inside <main> and inside
+            this dark band on purpose: moved out of the band it would lose the
+            band's ground and the ink written for it, the same shape as the
+            08-Nov proof-card bug. */}
+        <footer className="px-4 pb-14 pt-8 text-center md:px-6">
+          <div className="mx-auto w-full max-w-[760px]">
+            <p className="mx-auto text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
+              Individual results vary. Not a substitute for medical advice.
+            </p>
+            {/* Colour and underline go in style, not className: globals.css
+                resets every link with an unlayered rule (color: inherit,
+                text-decoration: none), and unlayered CSS beats any Tailwind
+                utility. As utilities they rendered navy on this dark band, at
+                about 1.1:1, with no underline. */}
+            <a
+              href="/privacy"
+              className="mt-1 inline-block py-2 text-[length:var(--fs-3xs)] leading-[var(--lh-body)]"
+              style={{ color: "var(--t2)", textDecoration: "underline", textUnderlineOffset: "2px" }}
+            >
+              Privacy policy
+            </a>
+          </div>
+        </footer>
       </div>
 
       <DecodeStickyCta fromTop />
