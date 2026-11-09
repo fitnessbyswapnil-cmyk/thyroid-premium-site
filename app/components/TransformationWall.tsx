@@ -172,7 +172,9 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
       <button
         type="button"
         onClick={() => setZoom(true)}
-        aria-label={`View the original photo for ${entry.name}`}
+        /* The label replaces the button's contents for a screen reader, so the
+           weights in the bands are spoken only if the label carries them. */
+        aria-label={`View the original photo for ${entry.name}: before ${entry.from}, after ${entry.to}`}
         className="block w-full border-0 p-0"
         style={{ background: "transparent", cursor: "zoom-in" }}
       >

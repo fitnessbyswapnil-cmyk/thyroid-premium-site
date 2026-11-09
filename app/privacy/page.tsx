@@ -22,12 +22,12 @@ export default function PrivacyPolicyPage() {
     <main className="min-h-screen bg-[#ffffff] py-16 text-[#423b33]">
       <div className={SECTION}>
         <h1 className="mb-2 text-3xl font-bold text-[#241f1a]">Privacy Policy</h1>
-        <p className="mb-8 text-sm text-[#857c6d]">Last updated: 12 August 2026</p>
+        <p className="mb-8 text-sm text-[#857c6d]">Last updated: 9 November 2026</p>
 
         <p className={P}>
           This website (swapnilumbarkarfitness.in) is operated by Swapnil
           Umbarkar (&ldquo;we&rdquo;, &ldquo;us&rdquo;). It offers a thyroid
-          health assessment, a paid consultation booking, and a coaching
+          health assessment, a consultation booking, and a coaching
           programme. This policy explains what information we collect, why,
           who processes it, and how you can have it deleted.
         </p>

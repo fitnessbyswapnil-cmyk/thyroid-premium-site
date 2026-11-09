@@ -59,8 +59,21 @@ test("a Book button after the hero, inside the proof, after the steps and at the
   const reused = (PAGE.match(/<BookButton \/>/g) ?? []).length - 1; // minus ButtonRow's own use
   const total = inline + rows + reused;
   assert.ok(total >= 5, `expected at least 5 Book buttons, found ${total}`);
-  for (const href of PAGE.matchAll(/href="([^"]+)"/g)) assert.equal(href[1], "/decode/quiz");
   assert.match(PAGE, /<DecodeStickyCta fromTop \/>/, "the sticky bar shows from page load");
+});
+
+test("every link goes to the quiz, except one privacy link in the footer", () => {
+  // The page has one job, so it has no menu and no exits. The one exception is
+  // /privacy: the next screen asks for her WhatsApp number and her answers
+  // about her thyroid, and a page that collects that owes her the policy.
+  // Exactly one, so it can neither grow into a menu nor quietly disappear. A
+  // link written as an expression would slip past the string match below, so
+  // expressions are refused outright.
+  assert.doesNotMatch(PAGE, /href=\{/, "write hrefs as plain strings so this test can see them");
+  const hrefs = [...PAGE.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(hrefs.filter((h) => h === "/privacy").length, 1, "exactly one /privacy link");
+  assert.match(PAGE, /<footer[\s\S]*href="\/privacy"[\s\S]*<\/footer>/, "the privacy link lives in the footer");
+  for (const h of hrefs) if (h !== "/privacy") assert.equal(h, "/decode/quiz");
 });
 
 test("every /decode CTA says the same thing about cost", () => {

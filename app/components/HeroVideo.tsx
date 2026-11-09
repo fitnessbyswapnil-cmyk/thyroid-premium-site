@@ -200,6 +200,7 @@ export default function HeroVideo() {
                 ref={videoRef}
                 src={src ?? undefined}
                 poster={VSL_POSTER}
+                aria-label="Video: Why your thyroid blocks fat loss"
                 playsInline
                 preload="metadata"
                 muted={muted}
