@@ -47,6 +47,12 @@ Two things from it that bite hardest:
 - Every googleapis client must pass `clientOptions: googleClientOptions`
   (`lib/google-fetch.ts`). Without it Google's responses arrive still gzipped on
   Workers and every Sheets call fails.
+- **The service account cannot CREATE files in his Drive** — Google refuses
+  with "Service Accounts do not have storage quota", and the fixes it offers
+  (shared drives, delegation) need paid Workspace; this is a consumer Gmail.
+  Every file the system makes in his Drive (call notes, blood reports, summary
+  PDFs) goes through the Apps Script bridge `scripts/drive-bridge.gs`, which
+  runs as him. Reading a shared folder with the service account still works.
 - Before changing any Meta tracking, read `docs/tracking-cutover-plan.md`.
   `NEXT_PUBLIC_DIRECT_PIXEL` must stay off until the GTM change in its §4-B is
   made in the same window, or every PageView is counted twice.
