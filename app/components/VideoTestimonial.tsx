@@ -348,7 +348,7 @@ function VideoCard({
           One line. Was a three-cell stats bar plus an initial-in-a-circle
           standing in for a photograph we do not have. */}
       <div className="px-5 pb-5 pt-4">
-        <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-tight)]" style={{ color: "#57514b" }}>
+        <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-tight)]" style={{ color: "var(--t2)" }}>
           {story.caption}
         </p>
       </div>
