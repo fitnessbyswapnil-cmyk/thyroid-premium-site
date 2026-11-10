@@ -319,8 +319,8 @@ test("savedReportsFor and savedReportsForPhones: saved files only, by media id a
   const byPhone = await savedReportsForPhones(["+91 98765 43210", "919876543210", "09876543210", "9123456789", "7000000000", "123"], { db });
   assert.deepEqual([...byPhone.keys()].sort(), ["9123456789", "9876543210"]);
   // Three formats of one number are one woman; the chip opens her newest report.
-  assert.deepEqual(byPhone.get("9876543210"), { url: "https://d/2", savedAt: NOW - DAY, count: 3 });
-  assert.deepEqual(byPhone.get("9123456789"), { url: "https://d/5", savedAt: NOW - DAY, count: 1 });
+  assert.deepEqual(byPhone.get("9876543210"), { url: "https://d/2", savedAt: NOW - DAY, count: 3, mediaId: "100000000002" }, "the newest report, its count, and the media id Claude reads");
+  assert.deepEqual(byPhone.get("9123456789"), { url: "https://d/5", savedAt: NOW - DAY, count: 1, mediaId: "100000000005" });
 
   const byMedia = await savedReportsFor(["100000000001", "100000000004", "999999999999", ""], { db });
   assert.deepEqual([...byMedia.entries()], [["100000000001", { url: "https://d/1", savedAt: NOW - 3 * DAY }]]);

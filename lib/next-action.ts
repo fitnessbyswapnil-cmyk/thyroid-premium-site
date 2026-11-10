@@ -150,7 +150,7 @@ export type CardFacts = {
   } | null;
   won: boolean;
   agreedButUnpaid: boolean;
-  report: { url: string; count: number; savedAt: number } | null;
+  report: { url: string; count: number; savedAt: number; mediaId?: string } | null;
   marks: Marks;
   inbox: InboxStats;
   /** Her item on lib/journey's needs-action list, and its place on it. */
@@ -168,7 +168,7 @@ export type CardFacts = {
 export type CardContext = {
   now: number;
   marks?: Map<string, Marks>;
-  reports?: Map<string, { url: string; count: number; savedAt: number }>;
+  reports?: Map<string, { url: string; count: number; savedAt: number; mediaId?: string }>;
   inbox?: Map<string, InboxStats>;
   queue?: Map<string, { item: ActionItem; index: number }>;
   drafts?: Map<string, { text: string; wa: string }>;
@@ -241,7 +241,7 @@ export type ClientCard = {
   bookingUid: string;
   /** The 30-minute target for her summary, from the END of her call. */
   summaryDue: { at: string; overdue: boolean } | null;
-  report: { url: string; count: number } | null;
+  report: { url: string; count: number; mediaId?: string } | null;
   /** wa.me for the quiet WhatsApp link. */
   wa: string;
   /** The drop-off funnel (Today): the furthest of Lead … Paid she reached. */
@@ -384,7 +384,7 @@ export function factsOf(j: Journey, ctx: CardContext): CardFacts {
     call,
     won: j.won,
     agreedButUnpaid: j.agreedButUnpaid,
-    report: report ? { url: report.url, count: report.count, savedAt: report.savedAt } : null,
+    report: report ? { url: report.url, count: report.count, savedAt: report.savedAt, mediaId: report.mediaId } : null,
     marks: (phone && ctx.marks?.get(phone)) || {},
     inbox: (phone && ctx.inbox?.get(phone)) || EMPTY_INBOX,
     action: q?.item ?? null,
@@ -1166,7 +1166,7 @@ export function buildCard(f: CardFacts, now: number): ClientCard {
     callAt: finite(start) && (f.booking || f.call) ? new Date(start).toISOString() : "",
     bookingUid: f.booking?.uid ?? "",
     summaryDue: r ? { at: new Date(r.due).toISOString(), overdue: r.overdue } : null,
-    report: f.report ? { url: f.report.url, count: f.report.count } : null,
+    report: f.report ? { url: f.report.url, count: f.report.count, mediaId: f.report.mediaId } : null,
     wa: f.draft?.wa || waPlain(f.phone),
     drop: dropStepOf(f),
     reached: reachedList(f.reached),

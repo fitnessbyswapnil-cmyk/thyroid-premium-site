@@ -34,6 +34,8 @@ import { Button } from "./ui/Button";
 import { StatusPill } from "./ui/StatusPill";
 import { pendingTab } from "./RowTools";
 import { readAdminKey } from "./adminKey";
+import { ReadReportWithClaude } from "./ReadReportWithClaude";
+import type { MarkerValue } from "@/lib/ai-jobs";
 import { istClock } from "@/lib/admin-actions";
 import { draftWaLink } from "@/lib/draft-message";
 import {
@@ -66,22 +68,34 @@ export type ReportReaderProps = {
 
 /**
  * ── SLOT: <ReadReportWithClaude t phone mediaId onMarkers /> ──────────────
- * Claude reads her report through a Claude Code routine that another session
- * is building; it ships this component from its own PR. It is not on main
- * yet, so it is NOT imported here, and until it lands this slot renders
- * nothing: the card works on manual entry alone.
- *
- * When it lands: import it, and render
- *   <ReadReportWithClaude t={p.t} phone={p.phone} mediaId={p.mediaId} onMarkers={p.onMarkers} />
- * in place of `null` below (or mount it directly where <ReportReaderSlot> is
- * mounted, beside the manual rows). Nothing else changes: its rows arrive
+ * Claude reads her report through a Claude Code routine on the owner's own
+ * plan (#189, no API key). With no saved report the slot renders nothing and
+ * the card works on manual entry alone. Its rows arrive
  * through onMarkers, which is the card's own setRows path (mergeReadRows), so
  * they only pre-fill the boxes, never overwrite a value he typed, and reach a
  * PDF only after he has checked them and pressed Generate.
  */
-function ReportReaderSlot(p: ReportReaderProps): JSX.Element | null {
-  void p;
-  return null;
+function ReportReaderSlot(p: ReportReaderProps & { apiKey?: string }): JSX.Element | null {
+  // Nothing to read without her report, and no way to ask without the key.
+  if (!p.mediaId || !p.apiKey) return null;
+  return (
+    <ReadReportWithClaude
+      t={p.t}
+      apiKey={p.apiKey}
+      mediaId={p.mediaId}
+      onMarkers={(found) => p.onMarkers(found.map(markerRowOf))}
+    />
+  );
+}
+
+/** Claude's reading, in the card's own row shape: the unit rides with the value, the flag is the report's word. */
+function markerRowOf(m: MarkerValue): MarkerRow {
+  return {
+    marker: m.name,
+    value: [m.value, m.unit].filter(Boolean).join(" "),
+    range: m.refRange || undefined,
+    flag: m.flag || undefined,
+  };
 }
 
 export function PrecallTools({ t, name, phone, when, apiKey, mediaId }: {
@@ -273,7 +287,7 @@ export function PrecallTools({ t, name, phone, when, apiKey, mediaId }: {
               Her report markers
             </div>
             {/* SLOT, beside the manual rows: <ReadReportWithClaude> mounts here (see ReportReaderSlot above). */}
-            <ReportReaderSlot t={t} phone={phone} mediaId={mediaId} onMarkers={prefillFromReport} />
+            <ReportReaderSlot t={t} phone={phone} mediaId={mediaId} apiKey={apiKey || readAdminKey()} onMarkers={prefillFromReport} />
           </div>
           {prefilled && (
             <div style={line(t.ink2)}>Pre-filled from her report. Check every value against the report before you generate.</div>

@@ -431,8 +431,8 @@ export async function savedReportsFor(
 export async function savedReportsForPhones(
   phones: string[],
   deps: DbDeps = {},
-): Promise<Map<string, { url: string; savedAt: number; count: number }>> {
-  const out = new Map<string, { url: string; savedAt: number; count: number }>();
+): Promise<Map<string, { url: string; savedAt: number; count: number; mediaId: string }>> {
+  const out = new Map<string, { url: string; savedAt: number; count: number; mediaId: string }>();
   const unique = [...new Set(phones.map(digits10).filter((p) => p.length === 10))];
   if (!unique.length) return out;
   try {
@@ -443,17 +443,18 @@ export async function savedReportsForPhones(
     await ensureTable(db);
     for (const part of chunks([...byKey.keys()], IN_CHUNK)) {
       const res = await db
-        .prepare(`SELECT phone_key, url, saved_at FROM drive_files WHERE url <> '' AND phone_key IN (${params(part.length)})`)
+        .prepare(`SELECT phone_key, media_id, url, saved_at FROM drive_files WHERE url <> '' AND phone_key IN (${params(part.length)})`)
         .bind(...part)
-        .all<{ phone_key: string; url: string; saved_at: number }>();
+        .all<{ phone_key: string; media_id: string; url: string; saved_at: number }>();
       for (const r of res.results) {
         const phone = byKey.get(r.phone_key);
         if (!phone) continue;
         const savedAt = Number(r.saved_at);
         const prev = out.get(phone);
-        // The chip opens her newest report and says how many there are.
-        if (!prev) out.set(phone, { url: r.url, savedAt, count: 1 });
-        else out.set(phone, savedAt >= prev.savedAt ? { url: r.url, savedAt, count: prev.count + 1 } : { ...prev, count: prev.count + 1 });
+        // The chip opens her newest report and says how many there are; the
+        // newest one's media id is what "Read with Claude" reads.
+        if (!prev) out.set(phone, { url: r.url, savedAt, count: 1, mediaId: r.media_id });
+        else out.set(phone, savedAt >= prev.savedAt ? { url: r.url, savedAt, count: prev.count + 1, mediaId: r.media_id } : { ...prev, count: prev.count + 1 });
       }
     }
   } catch (err) {

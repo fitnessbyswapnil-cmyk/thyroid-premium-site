@@ -498,7 +498,7 @@ function ActionView({ t, card, action, hooks, tools, nowMs, role }: {
     case "summary":
       return <SummaryAction t={t} action={action} tools={tools} full={full} />;
     case "precall":
-      return <PrecallTools t={t} name={card.name} phone={card.phone} when={card.callAt} apiKey={hooks.adminKey} />;
+      return <PrecallTools t={t} name={card.name} phone={card.phone} when={card.callAt} apiKey={hooks.adminKey} mediaId={card.report?.mediaId} />;
     case "thanks":
       return <ThanksAction t={t} card={card} action={action} hooks={hooks} variant={variant} full={full} />;
     case "onboard":
@@ -615,7 +615,7 @@ export default function JourneyCard({ t, ink, card, hooks, nowMs, missedMost, ch
           when it is the next thing to do it already sits in the primary slot. */}
       {beforeCall && p?.kind !== "precall" && card.phone ? (
         <div style={{ marginTop: 10 }}>
-          <PrecallTools t={t} name={card.name} phone={card.phone} when={card.callAt} apiKey={hooks.adminKey} />
+          <PrecallTools t={t} name={card.name} phone={card.phone} when={card.callAt} apiKey={hooks.adminKey} mediaId={card.report?.mediaId} />
         </div>
       ) : null}
 
