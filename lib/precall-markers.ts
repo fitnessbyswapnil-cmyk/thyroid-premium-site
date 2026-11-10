@@ -19,7 +19,7 @@
  * MATCHING IS ON THE NAME AS PRINTED
  * Labs print the same test a dozen ways ("TSH", "TSH 3rd Generation",
  * "Thyroid Stimulating Hormone", "S. TSH"), and the names arrive from his
- * typing, his notes Doc or the AI reader exactly as the report printed them.
+ * typing, his notes Doc or a reading of her report, exactly as printed.
  * The name is lower-cased, every run of punctuation becomes one space, and
  * each entry decides on that. The exclusions matter as much as the matches:
  * "Total Iron Binding Capacity" is not iron stores, "VLDL" and the ratios are

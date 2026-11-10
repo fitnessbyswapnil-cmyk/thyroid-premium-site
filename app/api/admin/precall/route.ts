@@ -17,11 +17,11 @@
  *   502 bridge, renderer and WhatsApp failures, each with its own error and hint
  *
  * WHERE THE MARKERS COME FROM (lib/precall pickMarkers)
- * Rows he typed on her card, which may have been pre-filled by "Read her
- * report" (POST /api/admin/precall/extract) and then checked by him. When he
- * typed nothing at all, the Marker / Her value (range) / Flag columns of her
+ * Rows on her card, typed by him or pre-filled by Claude reading her report
+ * (the report-reader slot in app/admin/PrecallTools) and then checked by him.
+ * When the form is empty, the Marker / Her value (range) / Flag columns of her
  * notes Doc. Nothing else: no value reaches the PDF that is not in one of the
- * two. An AI reading never comes straight here; it only fills his form.
+ * two. A reading of her report never comes straight here; it only fills his form.
  *
  * THE ORDER IS THE SUMMARY'S, FOR THE SAME REASON
  * Read everything at once (her quiz answers from the Leads sheet, her notes
