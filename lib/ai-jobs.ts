@@ -48,7 +48,7 @@ export type JobStatus = "queued" | "running" | "done" | "failed";
  * The routine's id is not a secret (its token is). CLAUDE_ROUTINE_ID, when
  * set on the worker, wins over this constant.
  */
-export const DEFAULT_ROUTINE_ID = "";
+export const DEFAULT_ROUTINE_ID = "trig_01XusVCZ1Gnt2qMZgYt15XBv"; // "Thyroid AI desk: read blood report"
 
 export function routineConfig(env: Record<string, string | undefined>): { id: string; token: string } | null {
   const id = (env.CLAUDE_ROUTINE_ID || DEFAULT_ROUTINE_ID).trim();

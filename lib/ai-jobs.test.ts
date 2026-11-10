@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  JOB_TTL_S, activeJobForMedia, createJob, fireRoutine, fireText, fireUrl, mintJobToken,
+  DEFAULT_ROUTINE_ID, JOB_TTL_S, activeJobForMedia, createJob, fireRoutine, fireText, fireUrl, mintJobToken,
   parseMarkersResult, publicJob, routineConfig, signJobToken, verifyJobToken, type JobRow,
 } from "./ai-jobs.ts";
 
@@ -75,7 +75,8 @@ test("a refused or failed fire is reported, never thrown", async () => {
 test("the routine is only configured with both its id and its token", () => {
   assert.equal(routineConfig({}), null);
   assert.equal(routineConfig({ CLAUDE_ROUTINE_ID: "trig_abc" }), null);
-  assert.equal(routineConfig({ CLAUDE_ROUTINE_TOKEN: "sk-ant-oat01-x" }), null, "no id unless DEFAULT_ROUTINE_ID is set");
+  assert.deepEqual(routineConfig({ CLAUDE_ROUTINE_TOKEN: "sk-ant-oat01-x" }), { id: DEFAULT_ROUTINE_ID, token: "sk-ant-oat01-x" }, "the token alone is enough: the routine id is in code");
+  assert.match(DEFAULT_ROUTINE_ID, /^trig_[A-Za-z0-9]+$/);
   assert.deepEqual(routineConfig({ CLAUDE_ROUTINE_ID: "trig_abc", CLAUDE_ROUTINE_TOKEN: "sk-ant-oat01-x" }), { id: "trig_abc", token: "sk-ant-oat01-x" });
 });
 
