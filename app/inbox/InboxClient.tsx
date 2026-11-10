@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readAdminKey, saveAdminKey, clearAdminKey } from "../admin/adminKey";
 import { LIGHT, DARK, FONT, RADIUS, type Tokens } from "../admin/tokens";
+import { mediaSrc, useMediaPass, type MediaPass } from "@/app/admin/useMediaPass";
 import { canSaveToDrive } from "@/lib/admin-actions";
 
 /**
@@ -113,9 +114,15 @@ const clock = (iso: string) => {
     : d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 };
 
-/** Renders an attachment inline; the key rides in the URL because <img> cannot send headers. */
-function Media({ m, apiKey, phone, clientName, t }: { m: WaMessage; apiKey: string; phone: string; clientName: string; t: Tokens }) {
-  const src = `/api/admin/media?id=${encodeURIComponent(m.mediaId)}&k=${encodeURIComponent(apiKey)}`;
+/**
+ * Renders an attachment inline. <img> cannot send headers, so the URL carries a
+ * short-lived pass (lib/media-pass.ts), never the admin key itself.
+ */
+function Media({ m, apiKey, pass, passFailed, phone, clientName, t }: {
+  m: WaMessage; apiKey: string; pass: MediaPass | null; passFailed: boolean;
+  phone: string; clientName: string; t: Tokens;
+}) {
+  const src = pass ? mediaSrc(m.mediaId, pass) : "";
   const [failed, setFailed] = useState(false);
 
   let media: React.ReactNode;
@@ -123,6 +130,12 @@ function Media({ m, apiKey, phone, clientName, t }: { m: WaMessage; apiKey: stri
     media = (
       <div style={{ fontSize: 12, color: t.amber, padding: "6px 0" }}>
         Attachment unavailable — WhatsApp deletes media after about 30 days.
+      </div>
+    );
+  } else if (!src) {
+    media = (
+      <div style={{ fontSize: 12, color: passFailed ? t.clay : t.ink2, padding: "6px 0" }}>
+        {passFailed ? "Attachments can't load right now. Retrying every minute." : "Loading attachment…"}
       </div>
     );
   } else if (m.mediaType === "image" || m.mediaType === "sticker") {
@@ -258,6 +271,7 @@ function Ground({ t }: { t: Tokens }) {
 
 export default function InboxClient() {
   const [apiKey, setApiKey] = useState<string>("");
+  const { pass: mediaPass, failed: mediaPassFailed } = useMediaPass(apiKey);
   const [keyInput, setKeyInput] = useState("");
   const [threads, setThreads] = useState<Thread[]>([]);
   const [suggested, setSuggested] = useState<string[]>([]);
@@ -541,7 +555,7 @@ export default function InboxClient() {
                     borderBottomLeftRadius: mine ? 14 : 4,
                   }}
                 >
-                  {m.mediaId && <Media m={m} apiKey={apiKey} phone={open.phone} clientName={open.name} t={t} />}
+                  {m.mediaId && <Media m={m} apiKey={apiKey} phone={open.phone} clientName={open.name} t={t} pass={mediaPass} passFailed={mediaPassFailed} />}
                   {m.text && <div style={{ fontSize: 14.5, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.text}</div>}
                   <div style={{ fontFamily: FONT.mono, fontVariantNumeric: "tabular-nums", fontSize: 10, color: mine ? t.ink1 : t.ink2, textAlign: "right", marginTop: 3 }}>{clock(m.ts)}</div>
                 </div>

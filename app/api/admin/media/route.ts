@@ -1,9 +1,10 @@
 /**
  * GET /api/admin/media?id=<whatsapp-media-id>
  *
- * Streams a WhatsApp attachment back to the inbox. Auth: x-admin-key, or the
- * same key as `?k=` — an <img src> cannot send headers, so the query form
- * exists for image tags and new-tab links.
+ * Streams a WhatsApp attachment back to the inbox. Auth: x-admin-key, or a
+ * short-lived pass (`?exp=&sig=`, lib/media-pass.ts) for image tags and
+ * new-tab links, which cannot send headers. The pass replaced `?k=<admin key>`,
+ * which wrote the master key into every request log.
  *
  * Cloud API never delivers bytes in the webhook, only a media id. Fetching one
  * is two hops (lib/wa-media): exchange the id for a short-lived URL, then
@@ -18,16 +19,18 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey } from "../_lib";
+import { verifyMediaPass } from "@/lib/media-pass";
 import { fetchMediaFile, isMediaId, lookupMedia, whatsappToken } from "@/lib/wa-media";
 
 export const dynamic = "force-dynamic";
 
-/** Query-key fallback for <img> and target=_blank, which cannot set headers. */
+/** Header first; then a pass, for <img> and target=_blank, which cannot set headers. */
 function authorized(req: NextRequest): boolean {
   if (checkAdminKey(req)) return true;
-  const expected = process.env.ADMIN_DASH_KEY;
-  const given = req.nextUrl.searchParams.get("k");
-  return !!expected && !!given && given === expected;
+  const q = req.nextUrl.searchParams;
+  // `?k=<admin key>` is gone for good: both inboxes use passes, and
+  // lib/media-pass.test.ts fails if this route ever reads `k` again.
+  return verifyMediaPass(process.env.MEDIA_URL_SECRET, q.get("exp"), q.get("sig"));
 }
 
 export async function GET(req: NextRequest) {
