@@ -4,7 +4,9 @@
  *   GET  → one record per WOMAN (lib/journey), however many rows and bookings
  *          she has: where she is now (state), how far she got (furthest stage,
  *          with inferred steps flagged), her next action, and — if she needs
- *          the coach — the same action item every tab shows.
+ *          the coach — the same action item every tab shows. Each record also
+ *          carries `card`, her journey card (lib/next-action): the steps strip
+ *          and the ONE button the Pipeline tab renders.
  *   POST → writes a Calls row. { bookingUid, fields, mode }.
  *          mode "correction" (default) = the coach fixing the extraction; stamps
  *          Reviewed=Y and is protected from every later automated write.
@@ -32,6 +34,11 @@ import { milestonesFor, missingCount, withinDays, type Milestone, type MsEvent }
 import { coverageOf } from "@/lib/metrics";
 import { loadJourneys } from "@/lib/journey-source";
 import type { ActionItem, FunnelStage, Reached } from "@/lib/journey";
+import { readMarks } from "@/lib/journey-marks";
+import { savedReportsForPhones } from "@/lib/report-save";
+import { buildCard, factsOf, inboxStats, type CardContext, type ClientCard } from "@/lib/next-action";
+import { readFlags } from "@/lib/automation-flags";
+import { payLinkFor, readPaymentLinks } from "@/lib/payment-links";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +80,8 @@ export type CrmRecord = {
   agreedButUnpaid: boolean;
   /** What has and has not happened to her — three-state, see lib/crm-milestones. */
   milestones: Milestone[];
+  /** Her journey card: the steps, and the one button for what to do next (lib/next-action). */
+  card: ClientCard;
   /** How many milestones genuinely need action. */
   missing: number;
   /** Whether she falls inside the 3-day board window. */
@@ -159,6 +168,29 @@ export async function GET(req: NextRequest) {
   }
   const actionByPerson = new Map(needsAction.items.map((i) => [i.personId, i]));
 
+  // Her journey card needs what only this system knows about her: the steps
+  // his clicks recorded, her saved report, her thread. ONE batched read of
+  // each for every woman, never one per record (Workers Free: 50 subrequests,
+  // 10 ms CPU). Each failure costs the steps it feeds, not the feed.
+  const phones = [...new Set(journeys.map((j) => j.phone.replace(/\D/g, "").slice(-10)).filter((p) => p.length === 10))];
+  const [marks, reports, flags, links] = await Promise.all([
+    readMarks(phones),
+    savedReportsForPhones(phones).catch(() => new Map<string, { url: string; savedAt: number; count: number }>()),
+    readFlags().catch(() => null),
+    readPaymentLinks().catch(() => ({})),
+  ]);
+  const cardCtx: CardContext = {
+    now: nowMs,
+    marks,
+    reports,
+    // The dataset's thread has no words, so Pipeline cannot see a failed
+    // delivery or a reminder template; Today, which reads the texts, can.
+    inbox: inboxStats((data.messages ?? []).map((m) => ({ phone: m.phone, at: m.at, dir: m.dir, manual: m.manual }))),
+    queue: new Map(needsAction.items.map((item, index) => [item.personId, { item, index }])),
+    payLink: (amount) => payLinkFor(amount, links),
+    templates: { followups: !!flags?.followup_templates_approved, reminder: !!flags?.confirm_reminder_template_approved },
+  };
+
   const records: CrmRecord[] = journeys.map((j) => {
     const b = j.booking;
     const c = j.call?.detail ?? null;
@@ -221,6 +253,7 @@ export async function GET(req: NextRequest) {
       action: actionByPerson.get(j.id) ?? null,
       agreedButUnpaid: j.agreedButUnpaid,
       milestones: ms,
+      card: buildCard(factsOf(j, cardCtx), nowMs),
       missing: missingCount(ms),
       recent: withinDays({ sessionStart: b?.startAt || null, events, now }, 3),
       call: c

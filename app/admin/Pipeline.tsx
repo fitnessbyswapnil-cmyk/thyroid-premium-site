@@ -16,15 +16,27 @@
  *  - Clay red means exactly one thing: should have happened, didn't. Rationing
  *    it to that is what keeps the board readable.
  *
+ * Every woman is her journey card (./JourneyCard, lib/next-action): the steps
+ * strip and ONE button for what to do next, the same card Today shows her
+ * with. Her details (the ten checks, her whole story) open under it. The
+ * funnel at the top is lib/journey's, for the shared range, and a bar filters
+ * the cards to exactly the women it counts.
+ *
  * Rendered by app/admin/page.tsx and by /crm — one implementation, so the phone
  * and the desk can never drift.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LIGHT, DARK, FONT, RADIUS, ELEV, stageRamp, type Tokens } from "./tokens";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 import { useMetrics, useRange, RANGE_CHOICES, rangeLabel, pct, rupees } from "./useMetrics";
 import { SCORECARD_LABEL } from "@/lib/scorecard";
+import { windowFor } from "@/lib/metrics";
+import { inJourneyBar, type ClientCard } from "@/lib/next-action";
+import JourneyCard, { type CardHooks } from "./JourneyCard";
+import { inkOf } from "./RowTools";
+import { Button } from "./ui/Button";
+import { StageFunnel } from "./charts/StageFunnel";
 
 export type Stage = "new" | "booked" | "unknown" | "attended" | "pitched" | "won" | "no_show" | "cancelled" | "lost" | "nurture";
 type FunnelStage = "new" | "booked" | "attended" | "pitched" | "won";
@@ -87,6 +99,8 @@ export type Rec = {
   action: ActionItem | null;
   agreedButUnpaid: boolean;
   milestones: Milestone[];
+  /** Her journey card (lib/next-action), from /api/admin/crm. */
+  card: ClientCard;
   missing: number;
   recent: boolean;
   call: {
@@ -111,15 +125,7 @@ export type Rec = {
 type Ev = { at: string; kind: string; title: string; body?: string; meta?: Record<string, string> };
 
 const rupee = (n: number | null) => (n == null ? "—" : `₹${n.toLocaleString("en-IN")}`);
-const initials = (n: string) =>
-  (n || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
 
-const fmt = (iso: string) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime())
-    ? ""
-    : d.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true });
-};
 const dayOnly = (iso: string) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
@@ -179,7 +185,7 @@ function StageFlow({
   const ramp = stageRamp(t);
   return (
     <div style={{ display: "flex", gap: 28, flexWrap: "wrap", alignItems: "flex-start" }}>
-      <div style={{ flex: "1 1 420px", minWidth: 300 }}>
+      <div style={{ flex: "1 1 420px", minWidth: 240 }}>
         <div style={{ display: "flex" }}>
           {SEQUENCE.map((s, i) => {
             const on = active === s.id;
@@ -308,34 +314,6 @@ function MilestoneCell({ t, m }: { t: Tokens; m: Milestone }) {
   );
 }
 
-/** Nine marks, left to right, same order as the board. */
-function MilestoneStrip({ t, ms }: { t: Tokens; ms: Milestone[] }) {
-  return (
-    <div style={{ display: "flex", gap: 3 }}>
-      {ms.map((m) => (
-        <span
-          key={m.id}
-          title={`${m.label}: ${m.state === "done" ? m.value || "done" : m.state === "missing" ? "MISSING" : "nothing owed"}${m.note ? ` — ${m.note}` : ""}`}
-          style={{
-            width: 17,
-            height: 14,
-            borderRadius: 2,
-            display: "grid",
-            placeItems: "center",
-            fontSize: 9,
-            fontFamily: FONT.mono,
-            background: m.state === "done" ? t.ink1 : m.state === "missing" ? t.clayTint : "transparent",
-            border: m.state === "missing" ? `1px solid ${t.clay}` : m.state === "not_applicable" ? `1px solid ${t.hairline}` : "none",
-            color: m.state === "missing" ? t.clay : t.ink3,
-          }}
-        >
-          {m.state === "missing" ? "!" : m.state === "not_applicable" ? "–" : ""}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function MilestoneBoard({ t, rows }: { t: Tokens; rows: Rec[] }) {
   if (!rows.length) return <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3, margin: 0 }}>Nobody has moved in the last 3 days.</p>;
   const cols = rows[0].milestones;
@@ -404,52 +382,6 @@ function MilestoneBoard({ t, rows }: { t: Tokens; rows: Rec[] }) {
 }
 
 // ── charts ──────────────────────────────────────────────────────────────────
-
-function Funnel({ t, steps, cohortLabel }: { t: Tokens; steps: { label: string; n: number; inferred?: number }[]; cohortLabel?: string }) {
-  const inferredTotal = steps.reduce((n, s) => n + (s.inferred ?? 0), 0);
-  const max = Math.max(1, steps[0]?.n ?? 1);
-  let worst = { label: "", drop: 0, from: 0 };
-  steps.forEach((s, i) => {
-    if (i === 0) return;
-    const prev = steps[i - 1];
-    const drop = prev.n - s.n;
-    if (drop > worst.drop) worst = { label: s.label, drop, from: prev.n };
-  });
-
-  return (
-    <>
-      <div style={{ display: "grid", gap: 8 }}>
-        {steps.map((s, i) => {
-          const prev = i > 0 ? steps[i - 1] : null;
-          const conv = prev && prev.n > 0 ? Math.round((100 * s.n) / prev.n) : null;
-          return (
-            <div key={s.label} style={{ display: "grid", gridTemplateColumns: "76px 1fr 34px 42px", gap: 10, alignItems: "center" }}>
-              <span style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>{s.label}</span>
-              <div style={{ background: t.sunk, height: 14, borderRadius: 2 }}>
-                <div style={{ width: `${Math.max((100 * s.n) / max, s.n > 0 ? 2 : 0)}%`, height: "100%", background: t.teal, borderRadius: 2, transition: "width .5s cubic-bezier(.16,1,.3,1)" }} />
-              </div>
-              <span style={{ ...mono(t), fontSize: 12.5, textAlign: "right" }} title={s.inferred ? `${s.inferred} inferred from a later step` : undefined}>
-                {s.n}
-                {s.inferred ? <sup style={{ color: t.ink3, fontSize: 9 }}>*</sup> : null}
-              </span>
-              <span style={{ ...mono(t), fontSize: 11, color: t.ink3, textAlign: "right" }}>{conv != null ? `${conv}%` : ""}</span>
-            </div>
-          );
-        })}
-      </div>
-      <Conclusion t={t}>
-        {cohortLabel ? `${cohortLabel}, counted by the furthest step each reached. ` : ""}
-        Percentages are of the step directly above.
-        {inferredTotal > 0 ? ` * includes steps inferred from a later one — a sale proves the call and the price.` : ""}
-        {worst.drop > 0 ? (
-          <>
-            {" "}Biggest single loss: <strong style={{ color: t.ink1 }}>{worst.drop} of {worst.from}</strong> never reached {worst.label.toLowerCase()}.
-          </>
-        ) : null}
-      </Conclusion>
-    </>
-  );
-}
 
 function Scorecard({ t, rows }: { t: Tokens; rows: { k: string; failed: number; total: number; pct: number }[] }) {
   if (!rows.length)
@@ -591,6 +523,16 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
   const metrics = useMetrics(key, days);
   const m = metrics.data?.summary;
   const cl = metrics.data?.checklist;
+  // A funnel bar narrows the cards to the women it counts (lib/next-action inJourneyBar).
+  const [bar, setBar] = useState<FunnelStage | null>(null);
+  const [notice, setNotice] = useState("");
+  const ink = inkOf(dark);
+  // The clock the cards count down against, ticked by state, never read in render.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const sync = () => setKey(readAdminKey() || null);
@@ -622,6 +564,21 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (key) void load(key);
   }, [key, load]);
+
+  // A press that changed her card reloads the feed, once, a moment later.
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (reloadTimer.current) clearTimeout(reloadTimer.current); }, []);
+  const hooks: CardHooks = useMemo(
+    () => ({
+      adminKey: key ?? "",
+      onChanged: () => {
+        if (reloadTimer.current) clearTimeout(reloadTimer.current);
+        reloadTimer.current = setTimeout(() => { if (key) void load(key); }, 2500);
+      },
+      onNotice: setNotice,
+    }),
+    [key, load],
+  );
 
   const openLead = useCallback(
     async (r: Rec) => {
@@ -655,10 +612,19 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
 
   // The funnel counts each woman once, by the furthest step she ever reached —
   // never by where she sits now — so Attended can never be below Won.
-  const funnel = useMemo(
-    () => (metrics.data?.journey.funnel ?? []).map((s) => ({ label: s.label, n: s.n, inferred: s.inferred })),
-    [metrics.data],
-  );
+  const funnel = useMemo(() => metrics.data?.journey.funnel ?? [], [metrics.data]);
+  // The window the server counted with, so a bar's filter shows exactly its women.
+  const funnelWindow = useMemo(() => windowFor(days, Date.parse(metrics.data?.generatedAt ?? "") || nowMs), [days, metrics.data, nowMs]);
+  const funnelInferred = funnel.reduce((n, s) => n + (s.inferred ?? 0), 0);
+  const funnelWorst = useMemo(() => {
+    let w = { label: "", drop: 0, from: 0 };
+    funnel.forEach((s, i) => {
+      if (i === 0) return;
+      const drop = funnel[i - 1].n - s.n;
+      if (drop > w.drop) w = { label: s.label, drop, from: funnel[i - 1].n };
+    });
+    return w;
+  }, [funnel]);
 
   const weakest = useMemo(
     () => (cl?.checks ?? []).map((c) => ({ k: c.key, failed: c.missed, total: c.total, pct: Math.round((100 * c.missed) / c.total) })),
@@ -671,15 +637,15 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
   );
 
   const shown = useMemo(() => {
-    const all = records ?? [];
+    const all = (records ?? []).filter((r) => !bar || (r.card && inJourneyBar(r.card, bar, funnelWindow)));
     const list = stageFilter ? all.filter((r) => r.stage === stageFilter) : all;
     // "Needs you first" is exactly the action list: oldest wait first.
-    if (!stageFilter && view === "urgent") {
+    if (!stageFilter && !bar && view === "urgent") {
       return list.filter((r) => r.action).sort((a, b) => b.action!.waitMin - a.action!.waitMin);
     }
     const rank = (r: Rec) => (r.action ? 0 : r.nextAction.urgency === "now" ? 1 : r.nextAction.urgency === "today" ? 2 : 3);
     return [...list].sort((a, b) => rank(a) - rank(b) || (b.action?.waitMin ?? 0) - (a.action?.waitMin ?? 0) || (b.score ?? -1) - (a.score ?? -1));
-  }, [records, stageFilter, view]);
+  }, [records, stageFilter, view, bar, funnelWindow]);
 
   if (!key) {
     return (
@@ -712,12 +678,19 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
   }
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 14 }}>
       {warnings.length ? (
         <div style={{ background: t.amberTint, border: `1px solid ${t.amber}55`, borderRadius: RADIUS.card, padding: "10px 13px", fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>
           {warnings.map((w) => (
             <div key={w}>{w}</div>
           ))}
+        </div>
+      ) : null}
+
+      {notice ? (
+        <div style={{ background: t.amberTint, border: `1px solid ${t.amber}55`, borderRadius: RADIUS.card, padding: "10px 13px", fontFamily: FONT.sans, fontSize: 12.5, color: t.ink1, display: "flex", gap: 10, alignItems: "center" }}>
+          <span style={{ flex: 1 }}>{notice}</span>
+          <Button t={t} variant="quiet" size="sm" onClick={() => setNotice("")}>Close</Button>
         </div>
       ) : null}
 
@@ -744,6 +717,25 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
         ))}
         {metrics.error ? <span style={{ fontFamily: FONT.sans, fontSize: 12, color: t.clay }}>numbers unavailable: {metrics.error}</span> : null}
       </div>
+
+      <Card t={t}>
+        <SectionTitle t={t} aside={`${rangeLabel(days)} · tap a bar to see who`}>Where they fall out</SectionTitle>
+        <StageFunnel
+          t={t}
+          stages={funnel.map((s) => ({ key: s.stage, label: s.label, count: s.n }))}
+          ariaLabel="Where they fall out"
+          onSelect={(k) => setBar((b) => (b === k ? null : (k as FunnelStage)))}
+        />
+        <Conclusion t={t}>
+          {days === 0 ? "Every woman who came in" : `Women who came in over the last ${days} days`}, counted by the furthest step each reached.
+          {funnelInferred > 0 ? " Some steps are inferred from a later one: a sale proves the call and the price." : ""}
+          {funnelWorst.drop > 0 ? (
+            <>
+              {" "}Biggest single loss: <strong style={{ color: t.ink1 }}>{funnelWorst.drop} of {funnelWorst.from}</strong> never reached {funnelWorst.label.toLowerCase()}.
+            </>
+          ) : null}
+        </Conclusion>
+      </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(158px,1fr))", gap: 10 }}>
         <Tile t={t} label="Needs you now" value={na ? String(na.count) : "…"} tone={na?.count ? t.clay : t.ink1} bad={!!na?.overdue}
@@ -779,19 +771,20 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
         <MilestoneBoard t={t} rows={recent} />
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 12 }}>
-        <Card t={t}>
-          <SectionTitle t={t} aside={rangeLabel(days)}>Where they fall out</SectionTitle>
-          <Funnel t={t} steps={funnel} cohortLabel={days === 0 ? "Every woman who came in" : `Women who came in over the last ${days} days`} />
-        </Card>
-        <Card t={t}>
-          <SectionTitle t={t}>What you fail most on calls</SectionTitle>
-          <Scorecard t={t} rows={weakest} />
-        </Card>
-      </div>
+      <Card t={t}>
+        <SectionTitle t={t}>What you fail most on calls</SectionTitle>
+        <Scorecard t={t} rows={weakest} />
+      </Card>
 
       <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap", marginTop: 4 }}>
-        <span style={{ ...micro(t), fontSize: 10 }}>Your people · {shown.length} shown</span>
+        <span style={{ ...micro(t), fontSize: 10 }}>
+          Your people · {shown.length} shown{bar ? ` · in ${funnel.find((s) => s.stage === bar)?.label ?? bar}` : ""}
+        </span>
+        {bar ? (
+          <Button t={t} variant="quiet" size="sm" onClick={() => setBar(null)}>
+            Show all
+          </Button>
+        ) : null}
         <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           {(["urgent", "all"] as const).map((v) => (
             <button
@@ -825,202 +818,126 @@ export default function Pipeline({ dark = false }: { dark?: boolean }) {
       ) : shown.length === 0 ? (
         <p style={{ fontFamily: FONT.sans, color: t.ink3 }}>Nothing here — try “Everyone”.</p>
       ) : (
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
           {shown.map((r) => {
             const isOpen = open === r.key;
-            const severe = r.agreedButUnpaid;
-            const urg = r.nextAction.urgency;
             const tl = timeline[r.key];
             const drop =
               r.call?.pricePitched && r.call?.lowestPriceSaid && r.call.lowestPriceSaid < r.call.pricePitched
                 ? Math.round((100 * (r.call.pricePitched - r.call.lowestPriceSaid)) / r.call.pricePitched)
                 : null;
+            const facts = (
+              <>
+                <div style={{ marginTop: 8, fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2, display: "flex", gap: "4px 14px", flexWrap: "wrap" }}>
+                  {r.city ? <span>{r.city}</span> : null}
+                  {r.score != null ? <span style={mono(t)}>score {r.score}</span> : null}
+                  {r.call?.pricePitched != null ? (
+                    <span style={mono(t)}>
+                      pitched {rupee(r.call.pricePitched)}
+                      {drop != null ? <span style={{ color: t.clay }}> ↓ {rupee(r.call.lowestPriceSaid)} (you dropped {drop}%)</span> : null}
+                    </span>
+                  ) : null}
+                  {r.budget ? <span>she said {r.budget}</span> : null}
+                  {r.paid ? <span style={{ color: t.won, fontWeight: 600 }}>paid {rupee(r.paidAmount)}</span> : null}
+                  {r.call?.scorecardFailed != null ? (
+                    <span style={{ color: r.call.scorecardFailed >= 5 ? t.clay : t.ink2 }}>{r.call.scorecardFailed}/10 checks missed</span>
+                  ) : null}
+                  {r.furthest !== r.stage && r.furthest !== "new" ? (
+                    <span title={r.inferredStages.length ? `Inferred: ${r.inferredStages.join(", ")}` : undefined}>
+                      got as far as {r.furthest}
+                      {r.inferredStages.length ? " *" : ""}
+                    </span>
+                  ) : null}
+                </div>
+                {r.call?.objection ? (
+                  <div style={{ marginTop: 6, fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>
+                    <span style={{ ...micro(t), fontSize: 9.5, marginRight: 7 }}>Blocker</span>
+                    {r.call.objection}
+                  </div>
+                ) : null}
+              </>
+            );
 
+            const details = isOpen ? (
+              <div style={{ marginTop: 10, borderTop: `1px solid ${t.hairline}` }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "12px 0", borderBottom: `1px solid ${t.hairline}` }}>
+                  {r.call?.fathomUrl ? (
+                    <a href={r.call.fathomUrl} target="_blank" rel="noreferrer" style={ghost(t)}>
+                      Open recording
+                    </a>
+                  ) : null}
+                  {r.email ? (
+                    <a href={`mailto:${r.email}`} style={ghost(t)}>
+                      Email
+                    </a>
+                  ) : null}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
+                  <div style={{ padding: "16px 4px" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+                      <h4 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 19, color: t.ink1 }}>The ten checks</h4>
+                      {r.call?.scorecardFailed != null ? (
+                        <span style={{ fontFamily: FONT.sans, fontSize: 12, color: t.ink3 }}>
+                          {r.call.scorecardFailed} missed · {10 - r.call.scorecardFailed} held
+                        </span>
+                      ) : null}
+                    </div>
+                    {r.call?.scorecard ? (
+                      <div style={{ display: "grid", gap: 0 }}>
+                        {Object.entries(r.call.scorecard)
+                          .sort((a, b) => Number(a[1].passed) - Number(b[1].passed))
+                          .map(([k, v]) => (
+                            <div key={k} style={{ display: "grid", gridTemplateColumns: "56px 1fr", gap: 10, padding: "9px 0", borderBottom: `1px solid ${t.hairline}` }}>
+                              <span style={{ ...micro(t), fontSize: 9.5, color: v.passed ? t.ink3 : t.clay, paddingTop: 2 }}>{v.passed ? "Held" : "Missed"}</span>
+                              <div>
+                                <div style={{ fontFamily: FONT.sans, fontSize: 13, color: v.passed ? t.ink2 : t.ink1, lineHeight: 1.4 }}>{SCORE_LABELS[k] ?? k}</div>
+                                {v.evidence ? (
+                                  <div style={{ marginTop: 3, fontFamily: FONT.serif, fontStyle: "italic", fontSize: 12.5, color: t.ink2, lineHeight: 1.45 }}>{v.evidence}</div>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>No recorded call ingested for her yet.</p>
+                    )}
+                  </div>
+
+                  <div style={{ padding: "16px 4px" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+                      <h4 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 19, color: t.ink1 }}>Her whole story</h4>
+                      <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink3 }}>booking · intake · WhatsApp · call · payment</span>
+                    </div>
+                    {tl === "loading" ? (
+                      <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>Loading…</p>
+                    ) : (
+                      <Timeline t={t} events={(tl as Ev[]) ?? []} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null;
+
+            // A record from a feed that predates her card still renders, as before, minus the buttons.
+            if (!r.card) {
+              return (
+                <Card key={r.key} t={t} style={{ padding: "14px 16px" }}>
+                  <strong style={{ fontFamily: FONT.sans, fontSize: 15.5, color: t.ink1 }}>{r.name || r.email || "Unknown"}</strong>
+                  {facts}
+                </Card>
+              );
+            }
             return (
-              <article
-                key={r.key}
-                style={{
-                  background: severe ? t.clayTint : t.card,
-                  border: `1px solid ${severe ? t.clay + "77" : t.hairline}`,
-                  borderRadius: RADIUS.card,
-                  boxShadow: ELEV.e1,
-                  overflow: "hidden",
-                }}
-              >
-                {severe ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 16px", borderBottom: `1px solid ${t.clay}33`, flexWrap: "wrap" }}>
-                    <span style={{ background: t.clay, color: t.card, fontFamily: FONT.sans, fontSize: 9.5, fontWeight: 600, letterSpacing: ".1em", padding: "2px 7px", borderRadius: 2 }}>NOW</span>
-                    <span style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.clay, fontWeight: 600 }}>Agreed · never charged</span>
-                    <span style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>— she said yes on the call and no payment ever arrived.</span>
-                  </div>
-                ) : null}
-
-                <button onClick={() => void openLead(r)} style={{ width: "100%", textAlign: "left", background: "transparent", border: 0, padding: "14px 16px", cursor: "pointer", display: "grid", gap: 9 }}>
-                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
-                    <div style={{ flex: "1 1 380px", minWidth: 260, display: "grid", gap: 7 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                        {!severe && r.action ? (
-                          // On the action list: its wait, coloured by age — the
-                          // same rule and the same number Analytics and Today show.
-                          <span
-                            style={{
-                              fontFamily: FONT.mono,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              padding: "2px 7px",
-                              borderRadius: 2,
-                              color: r.action.tone === "red" ? t.clay : r.action.tone === "amber" ? t.amber : t.ink3,
-                              border: `1px solid ${r.action.tone === "red" ? t.clay : r.action.tone === "amber" ? t.amber : t.hairline}`,
-                            }}
-                          >
-                            {r.action.overdue ? "OVERDUE · " : ""}
-                            {r.action.waitMin >= 120 ? `${Math.round(r.action.waitMin / 60)} HR` : `${Math.round(r.action.waitMin)} MIN`}
-                          </span>
-                        ) : !severe ? (
-                          <span
-                            style={{
-                              fontFamily: FONT.sans,
-                              fontSize: 9.5,
-                              fontWeight: 600,
-                              letterSpacing: ".1em",
-                              padding: "2px 7px",
-                              borderRadius: 2,
-                              color: urg === "today" ? t.amber : t.ink3,
-                              border: `1px solid ${urg === "today" ? t.amber : t.hairline}`,
-                            }}
-                          >
-                            {urg === "now" ? "NOW" : urg === "today" ? "TODAY" : "SOON"}
-                          </span>
-                        ) : null}
-                        <span style={{ width: 30, height: 30, borderRadius: 99, background: t.sunk, border: `1px solid ${t.hairline}`, color: t.ink2, display: "grid", placeItems: "center", fontSize: 11, fontFamily: FONT.sans, fontWeight: 600 }}>
-                          {initials(r.name)}
-                        </span>
-                        <strong style={{ fontFamily: FONT.serif, fontWeight: 600, fontSize: 19, color: t.ink1, letterSpacing: "-.01em" }}>{r.name || r.email || "Unknown"}</strong>
-                        <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink2, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.chip, padding: "2px 9px" }}>
-                          {[...SEQUENCE, ...OUTCOMES].find((s) => s.id === r.stage)?.label ?? r.stage}
-                        </span>
-                        {r.score != null ? <span style={{ ...mono(t), fontSize: 11, color: t.ink3 }}>score {r.score}</span> : null}
-                        {r.furthest !== r.stage && r.furthest !== "new" ? (
-                          <span style={{ fontFamily: FONT.sans, fontSize: 11, color: t.ink3 }} title={r.inferredStages.length ? `Inferred: ${r.inferredStages.join(", ")}` : undefined}>
-                            got as far as {r.furthest}
-                            {r.inferredStages.length ? " *" : ""}
-                          </span>
-                        ) : null}
-                      </div>
-                      {r.action ? (
-                        <div style={{ fontFamily: FONT.sans, fontSize: 12.5, color: r.action.overdue ? t.clay : t.ink1, fontWeight: 600 }}>{r.action.label}</div>
-                      ) : null}
-
-                      <div style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2, display: "flex", gap: 14, flexWrap: "wrap" }}>
-                        {r.city ? <span>{r.city}</span> : null}
-                        {r.sessionStart ? <span>called {fmt(r.sessionStart)}</span> : null}
-                        {r.call?.pricePitched != null ? (
-                          <span style={mono(t)}>
-                            pitched {rupee(r.call.pricePitched)}
-                            {drop != null ? (
-                              <span style={{ color: t.clay }}> ↓ {rupee(r.call.lowestPriceSaid)} (you dropped {drop}%)</span>
-                            ) : null}
-                          </span>
-                        ) : null}
-                        {r.budget ? <span>she said {r.budget}</span> : null}
-                        {r.paid ? <span style={{ color: t.won, fontWeight: 600 }}>paid {rupee(r.paidAmount)}</span> : null}
-                        {r.call?.scorecardFailed != null ? (
-                          <span style={{ color: r.call.scorecardFailed >= 5 ? t.clay : t.ink2 }}>{r.call.scorecardFailed}/10 checks missed</span>
-                        ) : null}
-                      </div>
-
-                      {r.call?.objection ? (
-                        <div style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.ink2 }}>
-                          <span style={{ ...micro(t), fontSize: 9.5, marginRight: 7 }}>Blocker</span>
-                          {r.call.objection}
-                        </div>
-                      ) : null}
-
-                      <div style={{ fontFamily: FONT.serif, fontSize: 17, color: t.ink1, marginTop: 2 }}>{r.nextAction.label}</div>
-                    </div>
-
-                    <div style={{ flex: "0 1 250px", display: "grid", gap: 6, justifyItems: "start" }}>
-                      <span style={{ ...micro(t), fontSize: 9.5 }}>
-                        Milestones {r.missing > 0 ? `· ${r.missing} missing` : "· nothing owed yet"}
-                      </span>
-                      <MilestoneStrip t={t} ms={r.milestones} />
-                      {r.missing > 0 ? (
-                        <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink2 }}>
-                          Missing:{" "}
-                          <span style={{ color: t.clay }}>{r.milestones.filter((m) => m.state === "missing").map((m) => m.label.toLowerCase()).join(", ")}</span>
-                        </span>
-                      ) : null}
-                      <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.teal }}>{isOpen ? "Collapse ▴" : "Expand ▾"}</span>
-                    </div>
-                  </div>
-                </button>
-
-                {isOpen ? (
-                  <div style={{ borderTop: `1px solid ${t.hairline}`, background: t.card }}>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "12px 16px", borderBottom: `1px solid ${t.hairline}` }}>
-                      {r.phone ? (
-                        <a href={`https://wa.me/${r.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" style={{ background: t.ink1, color: t.card, border: 0, padding: "7px 15px", borderRadius: RADIUS.card, fontSize: 12.5, fontFamily: FONT.sans, textDecoration: "none", fontWeight: 500 }}>
-                          WhatsApp
-                        </a>
-                      ) : null}
-                      {r.call?.fathomUrl ? (
-                        <a href={r.call.fathomUrl} target="_blank" rel="noreferrer" style={ghost(t)}>
-                          Open recording
-                        </a>
-                      ) : null}
-                      {r.email ? (
-                        <a href={`mailto:${r.email}`} style={ghost(t)}>
-                          Email
-                        </a>
-                      ) : null}
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(330px,1fr))" }}>
-                      <div style={{ padding: "16px 18px", borderRight: `1px solid ${t.hairline}` }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
-                          <h4 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 19, color: t.ink1 }}>The ten checks</h4>
-                          {r.call?.scorecardFailed != null ? (
-                            <span style={{ fontFamily: FONT.sans, fontSize: 12, color: t.ink3 }}>
-                              {r.call.scorecardFailed} missed · {10 - r.call.scorecardFailed} held
-                            </span>
-                          ) : null}
-                        </div>
-                        {r.call?.scorecard ? (
-                          <div style={{ display: "grid", gap: 0 }}>
-                            {Object.entries(r.call.scorecard)
-                              .sort((a, b) => Number(a[1].passed) - Number(b[1].passed))
-                              .map(([k, v]) => (
-                                <div key={k} style={{ display: "grid", gridTemplateColumns: "56px 1fr", gap: 10, padding: "9px 0", borderBottom: `1px solid ${t.hairline}` }}>
-                                  <span style={{ ...micro(t), fontSize: 9.5, color: v.passed ? t.ink3 : t.clay, paddingTop: 2 }}>{v.passed ? "Held" : "Missed"}</span>
-                                  <div>
-                                    <div style={{ fontFamily: FONT.sans, fontSize: 13, color: v.passed ? t.ink2 : t.ink1, lineHeight: 1.4 }}>{SCORE_LABELS[k] ?? k}</div>
-                                    {v.evidence ? (
-                                      <div style={{ marginTop: 3, fontFamily: FONT.serif, fontStyle: "italic", fontSize: 12.5, color: t.ink2, lineHeight: 1.45 }}>{v.evidence}</div>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        ) : (
-                          <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>No recorded call ingested for her yet.</p>
-                        )}
-                      </div>
-
-                      <div style={{ padding: "16px 18px" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-                          <h4 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 19, color: t.ink1 }}>Her whole story</h4>
-                          <span style={{ fontFamily: FONT.sans, fontSize: 11.5, color: t.ink3 }}>booking · intake · WhatsApp · call · payment</span>
-                        </div>
-                        {tl === "loading" ? (
-                          <p style={{ fontFamily: FONT.sans, fontSize: 13, color: t.ink3 }}>Loading…</p>
-                        ) : (
-                          <Timeline t={t} events={(tl as Ev[]) ?? []} />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </article>
+              <JourneyCard key={r.key} t={t} ink={ink} card={r.card} hooks={hooks} nowMs={nowMs}>
+                {facts}
+                <div style={{ marginTop: 6, marginLeft: -6 }}>
+                  <Button t={t} variant="quiet" size="sm" onClick={() => void openLead(r)}>
+                    {isOpen ? "Hide her details" : "Her details"}
+                  </Button>
+                </div>
+                {details}
+              </JourneyCard>
             );
           })}
         </div>
