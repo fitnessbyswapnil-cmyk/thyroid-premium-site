@@ -20,6 +20,14 @@
     {
       "binding": "WORKER_SELF_REFERENCE",
       "service": "thyroid-funnel"
+    },
+    // The consultation-summary PDF printer (workers/pdf): a separate worker
+    // because @cloudflare/puppeteer would not fit this one's 3 MB ceiling.
+    // DEPLOY thyroid-pdf FIRST. A service binding to a worker that does not
+    // exist yet fails this worker's deploy.
+    {
+      "binding": "PDF_RENDERER",
+      "service": "thyroid-pdf"
     }
   ],
   // next/image resizing. Free plan: 5,000 unique transformations a month;

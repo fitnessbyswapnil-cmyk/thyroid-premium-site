@@ -1,0 +1,19 @@
+{
+  "name": "thyroid-pdf",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prints the consultation summary HTML to an A4 PDF with Browser Run. Reached only through the PDF_RENDERER service binding on thyroid-funnel.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --remote",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cloudflare/puppeteer": "1.4.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "wrangler": "4.131.0"
+  }
+}
