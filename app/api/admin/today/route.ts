@@ -6,6 +6,11 @@
  *   2. queue        — one merged action list, sorted by money at risk
  *   3. health       — did every automated message actually get DELIVERED
  *   4. capacity     — closes this month against the 7-client ceiling
+ *   5. cards        — one journey card per woman on the screen (lib/next-action):
+ *                     her steps and the ONE button for the next thing to do,
+ *                     the tiles that are counts of those cards, and this
+ *                     week's drop-off funnel. Every list above still goes out
+ *                     unchanged; its rows also carry her card.
  *
  * WHY THE SECOND COST NUMBER EXISTS
  * The Rs299 is a qualifier, not the product. Optimising it alone rewards cheap
@@ -25,7 +30,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getSheetsClient, SHEET_NAME } from "../_lib";
 import { readMessages } from "@/lib/wa-messages";
-import { summarize, windowFor, checklistSummary, coverageOf, attendanceOf, isTestIdentity, personKey } from "@/lib/metrics";
+import { summarize, windowFor, checklistSummary, coverageOf, attendanceOf, isTestIdentity, personKey, identityKeys } from "@/lib/metrics";
 import { loadJourneys } from "@/lib/journey-source";
 import { readCalls } from "@/lib/crm-calls";
 import { fetchBookings } from "@/lib/cal-bookings";
@@ -35,6 +40,14 @@ import { dmPresenceRate, type PresenceRecord } from "@/lib/dm-presence";
 import { IS_TEST_MODE } from "../../create-cashfree-order/route";
 import { cachedSpend } from "@/lib/ads-cache";
 import { savedReportsForPhones } from "@/lib/report-save";
+import { readMarks } from "@/lib/journey-marks";
+import {
+  buildCard, cardCounts, dropOffFunnel, dropStepOf, factsOf, inboxStats, inDropBar, sameIstDay, sortCards,
+  type Badge, type ClientCard, type InboxEvent, type PaidAsk,
+} from "@/lib/next-action";
+import type { Journey } from "@/lib/journey";
+import { readFlags } from "@/lib/automation-flags";
+import { payLinkFor, readPaymentLinks } from "@/lib/payment-links";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -60,6 +73,15 @@ export async function GET(req: NextRequest) {
   const days = rawDays === 0 ? 0 : Math.min(3650, Math.max(1, Number.isFinite(rawDays) ? rawDays : 14));
   const now = Date.now();
   const since = days === 0 ? 0 : now - days * 86400000;
+
+  // Her thread with its words: the health block counts template sends and
+  // failures from it, and the journey cards read who last wrote, and whether
+  // the last message to her failed. One read for both, started first so it
+  // runs while the sheet loads.
+  const messagesP = readMessages().catch((e) => {
+    console.error("[today] messages read failed (swallowed):", e instanceof Error ? e.message : String(e));
+    return null;
+  });
 
   const { sheets, sheetId } = await getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
@@ -228,6 +250,7 @@ export async function GET(req: NextRequest) {
       const r = rowAt(j.leadRow);
       const badge = r ? decisionBadge(cell(r, C.decisionMaker), cell(r, C.partnerOnCall)) : null;
       return {
+        personId: j.id,
         name: j.name,
         phone: digits10(j.phone),
         when: j.booking!.startAt,
@@ -236,18 +259,6 @@ export async function GET(req: NextRequest) {
         ...(badge ? { badge } : {}),
       };
     });
-
-  // ── Her report, if one is in her Drive folder ─────────────────────────────
-  // ONE lookup for every woman on this screen, never one per row: forty rows
-  // would be forty database round trips before the page could answer. Started
-  // here and awaited at the end, so it runs while the Sheets reads below do.
-  // A failure costs the chips, not the page.
-  const reportsLookup = savedReportsForPhones(
-    [...new Set([...queue, ...callsToday].map((x) => x.phone).filter((p) => p.length === 10))],
-  ).catch((e) => {
-    console.error("[today] saved reports lookup failed (swallowed):", e instanceof Error ? e.message : String(e));
-    return new Map<string, { url: string; savedAt: number; count: number }>();
-  });
 
   // ── Decision-maker presence ───────────────────────────────────────────────
   // The scoreboard for the badges above. Of the consultations actually held in
@@ -269,7 +280,7 @@ export async function GET(req: NextRequest) {
   let sent24 = 0, failed24 = 0;
   const byTemplate = new Map<string, { sent: number; failed: number; last: string }>();
   try {
-    const msgs = await readMessages();
+    const msgs = (await messagesP) ?? [];
     for (const m of msgs) {
       if (m.direction !== "out" || m.ts < dayAgo) continue;
       const failed = /^\[delivery failed\]/i.test(m.text);
@@ -364,11 +375,125 @@ export async function GET(req: NextRequest) {
     console.error("[today] decide list failed (swallowed):", dbg.error);
   }
 
+  // ── Journey cards ─────────────────────────────────────────────────────────
+  // One card per woman on this screen (lib/next-action): where she is in the
+  // journey, and the ONE button for the next thing to do. The lists above stay
+  // in the reply, unchanged; each of their rows now also carries her card, and
+  // the screen renders the cards instead of four lists she could sit on at once.
+  //
+  // Who gets a card: everyone on the one action list, every call in the next
+  // 24 hours or on today's date, every call still to mark or to settle; and,
+  // only when a step of theirs is due, women whose call was in the last
+  // fortnight (summary, thank-you, follow-ups), the newly won (onboarding) and
+  // the booked (pre-call PDF, reminder).
+  const DAY_MS = 86_400_000;
+  const byId = new Map(J.journeys.map((j) => [j.id, j]));
+  const byKey = new Map<string, Journey>();
+  const byUid = new Map<string, Journey>();
+  for (const j of J.journeys) {
+    for (const k of j.keys) byKey.set(k, j);
+    for (const b of j.person.bookings) byUid.set(b.uid, j);
+  }
+  const shown = new Set<string>();
+  const maybe = new Set<string>();
+  const queueAt = new Map(J.needsAction.items.map((item, index) => [item.personId, { item, index }]));
+  for (const id of queueAt.keys()) shown.add(id);
+  for (const c of callsToday) shown.add(c.personId);
+  for (const t of toMark) {
+    const j = byUid.get(t.bookingUid);
+    if (j) shown.add(j.id);
+  }
+  const paidAsk = new Map<string, PaidAsk>();
+  const decideKey = new Map<number, string>();
+  for (const p of decide) {
+    const j = identityKeys({ phone: p.phone, email: p.email }).map((k) => byKey.get(k)).find(Boolean);
+    if (!j) continue;
+    shown.add(j.id);
+    decideKey.set(p.row, j.id);
+    if (!paidAsk.has(j.id)) paidAsk.set(j.id, { row: p.row, pitched: p.pitched, objection: p.objection, daysSince: p.daysSince, dmPresent: p.dmPresent });
+  }
+  for (const j of J.journeys) {
+    const start = Date.parse(j.booking?.startAt ?? "");
+    const wonAt = Date.parse(j.reached.won?.at ?? "");
+    if (!Number.isFinite(start)) {
+      if (j.won && Number.isFinite(wonAt) && now - wonAt <= 14 * DAY_MS) maybe.add(j.id);
+      continue;
+    }
+    if (!j.booking!.cancelled && sameIstDay(start, now)) shown.add(j.id);
+    else if (j.call?.attended === true && now - start <= 14 * DAY_MS) maybe.add(j.id);
+    else if (j.state === "booked" && start > now && start - now <= 7 * DAY_MS) maybe.add(j.id);
+    else if (j.won && Number.isFinite(wonAt) && now - wonAt <= 14 * DAY_MS) maybe.add(j.id);
+  }
+  // "This week: where clients drop off": lib/journey's cohort, first sheet row in the last 7 days.
+  const week = windowFor(7, now);
+  const cohort = J.journeys.filter((j) => inDropBar({ drop: "lead", firstLeadAt: j.firstLeadAt }, "lead", week));
+
+  // ONE marks read and ONE saved-reports read for every woman on this screen,
+  // never one per row. A failure costs the steps they feed, not the page.
+  const cardIds = new Set([...shown, ...maybe]);
+  const phones = [
+    ...new Set([...cardIds, ...cohort.map((j) => j.id)].map((id) => digits10(byId.get(id)?.phone ?? "")).filter((p) => p.length === 10)),
+  ];
+  const [marks, reports, flags, links] = await Promise.all([
+    readMarks(phones),
+    savedReportsForPhones(phones).catch((e) => {
+      console.error("[today] saved reports lookup failed (swallowed):", e instanceof Error ? e.message : String(e));
+      return new Map<string, { url: string; savedAt: number; count: number }>();
+    }),
+    // Every way of not knowing a flag reads as off: the one-click send then
+    // falls back to "Send from your phone", never to an unapproved template.
+    readFlags().catch(() => null),
+    readPaymentLinks().catch(() => ({})),
+  ]);
+  const msgRows = await messagesP;
+  const inbox = inboxStats(
+    msgRows
+      ? msgRows.map((m): InboxEvent => ({
+          phone: m.phone,
+          at: m.ts,
+          dir: m.direction,
+          manual: m.direction === "out" && !/^\[/.test(m.text ?? ""),
+          failed: /^\[delivery failed\]/i.test(m.text ?? ""),
+          template: (m.text ?? "").match(/^\[([a-z0-9_]+)\]/i)?.[1],
+        }))
+      : (metricsData.messages ?? []).map((m): InboxEvent => ({ phone: m.phone, at: m.at, dir: m.dir, manual: m.manual })),
+  );
+  const drafts = new Map<string, { text: string; wa: string }>();
+  J.needsAction.items.forEach((item, i) => {
+    const q = queue[i];
+    if (q && (q.text || q.wa)) drafts.set(item.personId, { text: q.text, wa: q.wa });
+  });
+  const badges = new Map<string, Badge>();
+  for (const c of callsToday) if (c.badge) badges.set(c.personId, c.badge);
+  const ctx = {
+    now,
+    marks,
+    reports,
+    inbox,
+    queue: queueAt,
+    drafts,
+    paidAsk,
+    badges,
+    payLink: (amount: number) => payLinkFor(amount, links),
+    templates: { followups: !!flags?.followup_templates_approved, reminder: !!flags?.confirm_reminder_template_approved },
+  };
+  const built: ClientCard[] = [];
+  for (const id of cardIds) {
+    const j = byId.get(id);
+    if (!j) continue;
+    const card = buildCard(factsOf(j, ctx), now);
+    if (shown.has(id) || card.primary || card.secondary.length) built.push(card);
+  }
+  const cards = sortCards(built);
+  const cardOf = new Map(cards.map((c) => [c.key, c]));
+  const dropBars = dropOffFunnel(cohort.map((j) => ({ drop: dropStepOf(factsOf(j, ctx)), firstLeadAt: j.firstLeadAt })), week);
+  // Paid this week: lib/metrics' wins over the same seven days.
+  const weekSummary = summarize(metricsData, week, now);
+
   const health = [...byTemplate.entries()]
     .map(([name, v]) => ({ name, sent: v.sent, last: v.last }))
     .sort((a, b) => (a.last < b.last ? 1 : -1));
 
-  const reports = await reportsLookup;
   const reportOf = (phone: string) => {
     const r = reports.get(phone);
     return r ? { url: r.url, count: r.count } : null;
@@ -381,7 +506,7 @@ export async function GET(req: NextRequest) {
     // objects /api/admin/metrics returns to the other tabs.
     metrics: m,
     checklist,
-    toMark,
+    toMark: toMark.map((t) => ({ ...t, cardKey: byUid.get(t.bookingUid)?.id ?? "" })),
     acquisition: {
       spend, consultPayers, programmeCloses, contracted, collected,
       costPerConsultPayer: cpp, costPerProgrammeClient: cppc,
@@ -389,18 +514,25 @@ export async function GET(req: NextRequest) {
       spendAsOf,
     },
     // The shared action list, whole — its count is the count on every tab.
-    queue: queue.map((q) => ({ ...q, report: reportOf(q.phone) })),
+    queue: queue.map((q, i) => ({ ...q, report: reportOf(q.phone), card: cardOf.get(J.needsAction.items[i]?.personId ?? "") ?? null })),
     needsAction: { count: J.needsAction.count, overdue: J.needsAction.overdue },
-    callsToday: callsToday.map((c) => ({ ...c, report: reportOf(c.phone) })),
+    callsToday: callsToday.map((c) => ({ ...c, report: reportOf(c.phone), card: cardOf.get(c.personId) ?? null })),
     dmPresence: presence,
     // True means Cashfree is charging Rs 1 while every page still reads Rs 299.
     // Left on by accident it costs roughly Rs 900/day and fills the calendar
     // with people who paid nothing — so the dashboard says so in red.
     testMode: IS_TEST_MODE,
-    decide: decide.slice(0, 20),
+    decide: decide.slice(0, 20).map((p) => ({ ...p, cardKey: decideKey.get(p.row) ?? "" })),
     decideDebug: dbg,
     health: { sent24, failed24, byTemplate: health },
     capacity: { closed: monthCloses, ceiling: CEILING },
+    // The journey view (lib/next-action): one card per woman, sorted by
+    // urgency, the tiles that are counts of those cards, the drop-off funnel
+    // for the last seven days, and lib/metrics' wins over the same days.
+    cards,
+    cardCounts: cardCounts(cards, now),
+    dropFunnel: { days: 7, bars: dropBars },
+    week: { won: weekSummary.won, revenue: weekSummary.revenue },
     caveats: [
       spend === null ? "No ad spend cached yet (the hourly refresh fills it), so no cost-per figures." : null,
       heuristicUsed

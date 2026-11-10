@@ -1,13 +1,19 @@
 "use client";
 
 /**
- * The Drive strip under a Today row: Notes, Summary, Drive, and her report.
+ * Her Drive tools: Notes, Summary, Drive, and her report.
  *
- * One button per job, the same place on every row, so his thumb learns it
- * once. Each button does the whole job in one tap: Notes opens the Doc he
- * types into on the call, Summary turns that Doc into her PDF and opens it,
+ * One button per job, each doing the whole job in one tap: Notes opens the Doc
+ * he types into on the call, Summary turns that Doc into her PDF and opens it,
  * Drive opens her folder. Which row gets which button is decided in
- * lib/admin-actions (rowTools), not here, so the rule is tested.
+ * lib/admin-actions (rowTools) or by her journey card (lib/next-action), not
+ * here, so the rule is tested.
+ *
+ * The jobs live in a hook, useDriveTools, so her journey card can put any one
+ * of them on its ONE primary button ("Open notes" around her call, "Review and
+ * send summary" after it) and keep the rest as quiet links, without a second
+ * copy of the tab handling below. RowTools, the strip, is the same hook drawn
+ * as three quiet buttons.
  *
  * Every state a tap can end in is said on the row itself, in words: what is
  * missing from her notes, that her WhatsApp window has shut, the hint the
@@ -18,12 +24,29 @@ import {
   afterSend, istClock, reportChip, summaryFromReply, summaryWaLink,
   type RowToolSet, type SavedReport, type SummaryView,
 } from "@/lib/admin-actions";
+import { DARK, LIGHT, type Tokens } from "./tokens";
+import { Button } from "./ui/Button";
 
 /** The slice of Today's palette this strip paints with — all from ./tokens. */
 export type Ink = {
   bg: string; card: string; line: string; text: string; dim: string;
   accent: string; good: string; warn: string; bad: string; onAccent: string; sunk: string;
 };
+
+/**
+ * The tokens as Ink, for either theme. `dim` maps to ink2, not ink3: these
+ * strips carry 12.5px sentences a man reads between calls, and ink3 is a
+ * 3.25:1 label grey. `onAccent` is the text ON a filled chip, which flips with
+ * the theme because the fills do.
+ */
+export function inkOf(dark: boolean): Ink {
+  const t = (dark ? DARK : LIGHT) as unknown as Tokens;
+  return {
+    bg: t.paper, card: t.card, line: t.hairline, text: t.ink1, dim: t.ink2,
+    accent: t.teal, good: t.won, warn: t.amber, bad: t.clay,
+    onAccent: dark ? t.paper : "#FFFFFF", sunk: t.sunk,
+  };
+}
 
 /**
  * A tab opened NOW, inside the tap, and pointed at the file once the server
@@ -61,11 +84,15 @@ function land(tab: Window | null, url: string) {
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /**
- * One tap, one request. `disabled` only lands after React re-renders, and a
- * quick double tap gets in before that, which here means two tabs and two
- * PDFs. A second tap while the first is running is dropped, not queued.
+ * One tap, one request. `disabled` (and the kit Button's `busy`) only lands
+ * after React re-renders, and a quick double tap gets in before that, which
+ * here means two tabs and two PDFs, or two WhatsApps to her. A second tap
+ * while the first is running is dropped, not queued.
+ *
+ * `run` starts inside the tap, so anything it opens before its first await is
+ * still a click the browser lets open a tab.
  */
-function useOnce() {
+export function useOnce() {
   const running = useRef(new Set<string>());
   return useCallback(async (key: string, run: () => Promise<void>) => {
     if (running.current.has(key)) return;
@@ -103,26 +130,38 @@ export function ReportChip({ report, ink, mode }: { report: SavedReport; ink: In
   );
 }
 
-type Props = {
+export type DriveToolsOptions = {
   adminKey: string;
   ink: Ink;
   name: string;
   phone: string;
-  /** The booking's time on a call row. A queue row has none, and Notes files it under today. */
+  /** Her call's time: dates the Doc. Without one, the route files it under today. */
   notesWhen?: string;
   /** The date her summary is filed under: the call's. */
   summaryWhen: string;
-  tools: RowToolSet;
   /** "" after a Drive call that worked; the route's error code after one that did not. */
   onBridgeResult?: (code: string) => void;
 };
 
-export default function RowTools({ adminKey, ink, name, phone, notesWhen, summaryWhen, tools, onBridgeResult }: Props) {
+export type DriveTools = {
+  busy: Record<"notes" | "summary" | "send" | "drive", boolean>;
+  summary: SummaryView | null;
+  notesErr: string;
+  folderErr: string;
+  openNotes: () => Promise<void>;
+  makeSummary: () => Promise<void>;
+  /** Open a PDF made earlier (her journey card knows its link) and ready the send. */
+  reviewSummary: (pdfUrl: string, windowOpen: boolean) => void;
+  sendSummary: () => Promise<void>;
+  /** Her window is shut: open WhatsApp on his phone, and record that he sent it. */
+  sendSummaryFromPhone: () => Promise<void>;
+  openFolder: () => Promise<void>;
+};
+
+export function useDriveTools({ adminKey, ink, name, phone, notesWhen, summaryWhen, onBridgeResult }: DriveToolsOptions): DriveTools {
   const once = useOnce();
-  const [busy, setBusy] = useState<Record<"notes" | "summary" | "send" | "drive", boolean>>(
-    { notes: false, summary: false, send: false, drive: false },
-  );
-  const mark = (k: keyof typeof busy, v: boolean) => setBusy((b) => ({ ...b, [k]: v }));
+  const [busy, setBusy] = useState<DriveTools["busy"]>({ notes: false, summary: false, send: false, drive: false });
+  const mark = (k: keyof DriveTools["busy"], v: boolean) => setBusy((b) => ({ ...b, [k]: v }));
   const [notesErr, setNotesErr] = useState("");
   const [folderErr, setFolderErr] = useState("");
   const [summary, setSummary] = useState<SummaryView | null>(null);
@@ -159,8 +198,9 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
     });
 
   // His notes Doc, read back and laid out as her two-page PDF in her folder.
-  // When it is ready the tab lands on it; when it is not, the row says what
-  // to fill in, and the tab closes rather than showing him an error page.
+  // When it is ready the tab lands on it, which is the review; when it is
+  // not, the row says what to fill in, and the tab closes rather than showing
+  // him an error page.
   const makeSummary = () =>
     once("summary", async () => {
       mark("summary", true);
@@ -181,6 +221,13 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
       }
     });
 
+  // A PDF made earlier, after a reload: the card holds its link (the
+  // summary_made mark). Opening it is the review; the send comes next.
+  const reviewSummary = (pdfUrl: string, windowOpen: boolean) => {
+    window.open(pdfUrl, "_blank", "noopener");
+    setSummary({ phase: "ready", pdfUrl, notesUrl: "", warnings: [], windowOpen, sentAt: "", waText: "", sendError: "" });
+  };
+
   // The same PDF, sent to her on WhatsApp from the business number. Only
   // offered while her 24-hour window is open; when the server finds it shut
   // after all, the row swaps to the phone fallback instead of failing. Same
@@ -198,6 +245,19 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
       } finally {
         mark("send", false);
       }
+    });
+
+  // Her window is shut, so he sends it himself. Opened inside the tap (before
+  // any await), and the click is the record (lib/journey-marks): the card must
+  // not ask for the same summary again on the next load.
+  const sendSummaryFromPhone = () =>
+    once("summary", async () => {
+      if (summary?.phase !== "ready") return;
+      const wa = summaryWaLink(phone, name, summary.waText);
+      if (!wa) return;
+      window.open(wa, "_blank", "noopener");
+      setSummary({ ...summary, sentAt: new Date().toISOString(), sendError: "" });
+      await post("/api/admin/journey-mark", { phone, kind: "summary_sent", url: summary.pdfUrl }).catch(() => undefined);
     });
 
   // Her folder: every Doc, report and PDF about her, in one place.
@@ -224,11 +284,18 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
       }
     });
 
-  const tool = (on: boolean): React.CSSProperties => ({
-    background: "transparent", border: `1px solid ${ink.line}`, color: ink.text,
-    borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 600, lineHeight: 1.2,
-    cursor: on ? "wait" : "pointer", whiteSpace: "nowrap", opacity: on ? 0.75 : 1,
-  });
+  return { busy, summary, notesErr, folderErr, openNotes, makeSummary, reviewSummary, sendSummary, sendSummaryFromPhone, openFolder };
+}
+
+/**
+ * What the last tap ended in, in words, under the buttons. `inlineSend` draws
+ * the summary's own Send controls; a journey card leaves them to its primary
+ * button, so the same send is never offered twice on one card.
+ */
+export function DriveStatus({ tools, t, ink, name, phone, inlineSend = true }: {
+  tools: DriveTools; t: Tokens; ink: Ink; name: string; phone: string; inlineSend?: boolean;
+}) {
+  const { summary, busy } = tools;
   const line = (color: string): React.CSSProperties => ({ marginTop: 8, fontSize: 12, lineHeight: 1.45, color });
   const link: React.CSSProperties = { color: ink.accent, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 2 };
   const dot = <span aria-hidden style={{ color: ink.dim }}>·</span>;
@@ -236,7 +303,6 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
   const after = (item: React.ReactNode) => (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{dot}{item}</span>
   );
-  // Summary and its send share the PDF: neither runs while the other is in flight.
   const summaryBusy = busy.summary || busy.send;
 
   let status: React.ReactNode = null;
@@ -249,13 +315,11 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
           {after(<a href={summary.pdfUrl} target="_blank" rel="noopener noreferrer" style={link}>Open</a>)}
           {summary.sentAt
             ? after(<span style={{ color: ink.good, fontWeight: 700 }}>Sent {istClock(summary.sentAt)}</span>)
-            : summary.windowOpen
+            : summary.windowOpen && inlineSend
               ? after(
-                <button type="button" onClick={sendSummary} disabled={summaryBusy} aria-busy={busy.send}
-                  style={{ background: ink.accent, color: ink.onAccent, border: 0, borderRadius: 999, padding: "5px 13px",
-                    fontSize: 12.5, fontWeight: 700, cursor: busy.send ? "wait" : "pointer", whiteSpace: "nowrap" }}>
+                <Button t={t} variant="primary" size="sm" busy={busy.send} disabled={summaryBusy && !busy.send} onClick={() => void tools.sendSummary()}>
                   {busy.send ? "Sending…" : "Send to her"}
-                </button>,
+                </Button>,
               )
               : null}
         </div>
@@ -264,11 +328,11 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
         {!summary.sentAt && !summary.windowOpen && (
           wa ? (
             <div style={{ marginTop: 9 }}>
-              <a href={wa} target="_blank" rel="noopener noreferrer"
-                style={{ display: "inline-block", border: `1px solid ${ink.accent}`, color: ink.accent, borderRadius: 999,
-                  padding: "6px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
-                Send from your phone
-              </a>
+              {inlineSend ? (
+                <Button t={t} variant="secondary" size="sm" onClick={() => void tools.sendSummaryFromPhone()}>
+                  Send from your phone
+                </Button>
+              ) : null}
               {/* Names the shut window only when that is the reason; a send
                   that failed for another one says so in its own line below. */}
               <div style={line(ink.dim)}>
@@ -310,30 +374,41 @@ export default function RowTools({ adminKey, ink, name, phone, notesWhen, summar
   }
 
   return (
+    <>
+      {tools.notesErr && <div style={line(ink.bad)}>{tools.notesErr}</div>}
+      {tools.folderErr && <div style={line(ink.bad)}>{tools.folderErr}</div>}
+      {status}
+    </>
+  );
+}
+
+type Props = DriveToolsOptions & { t: Tokens; tools: RowToolSet };
+
+/** The strip: the same three jobs as quiet buttons, on any row that is not a journey card. */
+export default function RowTools({ t, tools, ...opts }: Props) {
+  const d = useDriveTools(opts);
+  const summaryBusy = d.busy.summary || d.busy.send;
+  return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
         {tools.notes && (
-          <button type="button" onClick={openNotes} disabled={busy.notes} aria-busy={busy.notes}
-            title="Open her call-notes Doc" style={tool(busy.notes)}>
-            {busy.notes ? "Opening…" : "Notes"}
-          </button>
+          <Button t={t} variant="quiet" size="sm" busy={d.busy.notes} title="Open her call-notes Doc" onClick={() => void d.openNotes()}>
+            {d.busy.notes ? "Opening…" : "Notes"}
+          </Button>
         )}
         {tools.summary && (
-          <button type="button" onClick={makeSummary} disabled={summaryBusy} aria-busy={busy.summary}
-            title="Turn her notes into the consultation summary PDF" style={tool(busy.summary)}>
-            {busy.summary ? "Making…" : "Summary"}
-          </button>
+          <Button t={t} variant="quiet" size="sm" busy={d.busy.summary} disabled={summaryBusy && !d.busy.summary}
+            title="Turn her notes into the consultation summary PDF" onClick={() => void d.makeSummary()}>
+            {d.busy.summary ? "Making…" : "Summary"}
+          </Button>
         )}
         {tools.drive && (
-          <button type="button" onClick={openFolder} disabled={busy.drive} aria-busy={busy.drive}
-            title="Open her folder in Google Drive" style={tool(busy.drive)}>
-            {busy.drive ? "Opening…" : "Drive"}
-          </button>
+          <Button t={t} variant="quiet" size="sm" busy={d.busy.drive} title="Open her folder in Google Drive" onClick={() => void d.openFolder()}>
+            {d.busy.drive ? "Opening…" : "Drive"}
+          </Button>
         )}
       </div>
-      {notesErr && <div style={line(ink.bad)}>{notesErr}</div>}
-      {folderErr && <div style={line(ink.bad)}>{folderErr}</div>}
-      {status}
+      <DriveStatus tools={d} t={t} ink={opts.ink} name={opts.name} phone={opts.phone} />
     </div>
   );
 }

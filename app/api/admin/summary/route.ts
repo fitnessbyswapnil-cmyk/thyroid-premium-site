@@ -48,6 +48,7 @@ import { PdfRenderError, pdfHint, renderPdf } from "@/lib/pdf-render";
 import { appendMessage, markThreadRead, readMessages } from "@/lib/wa-messages";
 import { sendWhatsAppDocument, toWhatsAppNumber } from "@/lib/whatsapp";
 import { fetchBookings } from "@/lib/cal-bookings";
+import { recordMark } from "@/lib/journey-marks";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -175,6 +176,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return bridgeFailure(err);
   }
+  // The journey card's "summary made" (lib/journey-marks), with the PDF's link
+  // so the card can open it for review. After the reply: the PDF is saved
+  // whatever happens to this bookkeeping.
+  after(() => recordMark(phone, "summary_made", saved.url));
 
   const thread = await threadP;
   const windowKnown = !("unknown" in thread);
@@ -215,6 +220,9 @@ export async function POST(req: NextRequest) {
       fileId: saved.id,
     });
   }
+
+  // Sent: her card's Summary step is done and the follow-ups start from here.
+  after(() => recordMark(phone, "summary_sent", saved.url));
 
   // Our side of the conversation, so her thread shows what she was sent. After
   // the response: the send already happened, and logging it must not slow or

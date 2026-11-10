@@ -431,8 +431,8 @@ export async function savedReportsFor(
 export async function savedReportsForPhones(
   phones: string[],
   deps: DbDeps = {},
-): Promise<Map<string, { url: string; savedAt: number; count: number }>> {
-  const out = new Map<string, { url: string; savedAt: number; count: number }>();
+): Promise<Map<string, { url: string; savedAt: number; count: number; mediaId: string }>> {
+  const out = new Map<string, { url: string; savedAt: number; count: number; mediaId: string }>();
   const unique = [...new Set(phones.map(digits10).filter((p) => p.length === 10))];
   if (!unique.length) return out;
   try {
@@ -443,23 +443,51 @@ export async function savedReportsForPhones(
     await ensureTable(db);
     for (const part of chunks([...byKey.keys()], IN_CHUNK)) {
       const res = await db
-        .prepare(`SELECT phone_key, url, saved_at FROM drive_files WHERE url <> '' AND phone_key IN (${params(part.length)})`)
+        .prepare(`SELECT phone_key, media_id, url, saved_at FROM drive_files WHERE url <> '' AND phone_key IN (${params(part.length)})`)
         .bind(...part)
-        .all<{ phone_key: string; url: string; saved_at: number }>();
+        .all<{ phone_key: string; media_id: string; url: string; saved_at: number }>();
       for (const r of res.results) {
         const phone = byKey.get(r.phone_key);
         if (!phone) continue;
         const savedAt = Number(r.saved_at);
         const prev = out.get(phone);
-        // The chip opens her newest report and says how many there are.
-        if (!prev) out.set(phone, { url: r.url, savedAt, count: 1 });
-        else out.set(phone, savedAt >= prev.savedAt ? { url: r.url, savedAt, count: prev.count + 1 } : { ...prev, count: prev.count + 1 });
+        // The chip opens her newest report and says how many there are; the
+        // newest one's media id is what "Read with Claude" reads.
+        if (!prev) out.set(phone, { url: r.url, savedAt, count: 1, mediaId: r.media_id });
+        else out.set(phone, savedAt >= prev.savedAt ? { url: r.url, savedAt, count: prev.count + 1, mediaId: r.media_id } : { ...prev, count: prev.count + 1 });
       }
     }
   } catch (err) {
     logged("D1 read")(err);
   }
   return out;
+}
+
+/** Her newest saved report and the WhatsApp media id it was copied from. */
+export type NewestReport = { mediaId: string; url: string; savedAt: number; count: number };
+
+/**
+ * Her newest saved report, by the time it was saved, with the media id it came
+ * from: the pre-call card hands that id to the report reader
+ * (<ReadReportWithClaude mediaId>, app/admin/PrecallTools), since the bridge
+ * only ever writes to his Drive and the media id is how the file is fetched.
+ * `count` is how many she has saved, so the card can say this was the newest.
+ * Null when she has none, or off Cloudflare. A D1 failure THROWS, unlike the
+ * chip readers above: "she sent no report" and "the lookup broke" must not
+ * read the same to him.
+ */
+export async function newestReportFor(phone: string, deps: DbDeps = {}): Promise<NewestReport | null> {
+  const p = digits10(phone);
+  if (p.length !== 10) return null;
+  const db = await (deps.db ?? getLedgerDb)();
+  if (!db) return null;
+  await ensureTable(db);
+  const res = await db
+    .prepare("SELECT media_id, url, saved_at FROM drive_files WHERE url <> '' AND phone_key = ?1 ORDER BY saved_at DESC, media_id DESC")
+    .bind(await hashKey(`p:${p}`))
+    .all<{ media_id: string; url: string; saved_at: number }>();
+  const top = res.results[0];
+  return top ? { mediaId: top.media_id, url: top.url, savedAt: Number(top.saved_at), count: res.results.length } : null;
 }
 
 // ── Backfill ────────────────────────────────────────────────────────────────

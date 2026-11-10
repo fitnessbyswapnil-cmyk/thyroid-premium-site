@@ -23,10 +23,11 @@
  *
  * Auth: x-admin-key, like the rest of /api/admin/*.
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { checkAdminKey } from "../_lib";
-import { ensureNotesDoc, bridgeHint, BridgeError } from "@/lib/drive";
+import { ensureNotesDoc, bridgeHint, BridgeError, digits10 } from "@/lib/drive";
 import { liveBridgeConfig } from "@/lib/bridge-settings";
+import { recordMark } from "@/lib/journey-marks";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,10 @@ export async function POST(req: NextRequest) {
       { name, phone, when: String(body.when ?? "").trim() || new Date().toISOString() },
       cfg,
     );
+    // The journey card's "notes made" (lib/journey-marks): it is what turns
+    // her card's button into "Review and send summary". After the reply, so
+    // a D1 hiccup can never turn a Doc that opened into an error.
+    if (digits10(phone).length === 10) after(() => recordMark(phone, "notes_made", doc.url));
     return NextResponse.json({ url: doc.url, title: doc.title, created: doc.created });
   } catch (err) {
     const e = err instanceof BridgeError ? err : new BridgeError("failed", err instanceof Error ? err.message : String(err));
