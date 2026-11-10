@@ -5,9 +5,9 @@
  * answers and your report show". The journey card mounts it before her call.
  *
  * One button opens a small form: her report's markers, one row each (marker,
- * value, range, flag), typed by him or pre-filled by "Read her report", which
- * asks the AI to copy the values off her newest saved report. Either way he
- * checks the rows; the PDF is built only from what is in the form when he
+ * value, range, flag), typed by him, or pre-filled by Claude reading her
+ * report through the report-reader slot (ReportReaderSlot, below). Either way
+ * he checks the rows; the PDF is built only from what is in the form when he
  * presses Generate, or, when he leaves every row empty, from the marker table
  * in her notes Doc. Generate opens the PDF in a tab made inside the tap, as
  * Notes and Summary do (./RowTools pendingTab), so no popup blocker eats it.
@@ -38,12 +38,11 @@ import { istClock } from "@/lib/admin-actions";
 import { draftWaLink } from "@/lib/draft-message";
 import {
   afterPrecallSend,
-  extractFromReply,
+  cleanMarkerRows,
   mergeReadRows,
   precallCaption,
   precallFromReply,
   sameRows,
-  type ExtractView,
   type MarkerRow,
   type PrecallView,
 } from "@/lib/precall";
@@ -55,13 +54,52 @@ const plain = (rows: Row[]): MarkerRow[] => rows.map(({ marker, value, range, fl
 const filled = (r: Row) => Boolean(r.marker.trim() || r.value.trim() || r.range.trim() || r.flag.trim());
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name: string; phone: string; when: string; apiKey?: string }): JSX.Element {
+/** Exactly what <ReadReportWithClaude> takes, so mounting it in the slot is a one-line swap. */
+export type ReportReaderProps = {
+  t: Tokens;
+  phone: string;
+  /** Her newest saved report's WhatsApp media id (lib/report-save newestReportFor); absent when she has none. */
+  mediaId?: string;
+  /** Pre-fills the form's rows, through the same setter as his typing. */
+  onMarkers: (rows: MarkerRow[]) => void;
+};
+
+/**
+ * ── SLOT: <ReadReportWithClaude t phone mediaId onMarkers /> ──────────────
+ * Claude reads her report through a Claude Code routine that another session
+ * is building; it ships this component from its own PR. It is not on main
+ * yet, so it is NOT imported here, and until it lands this slot renders
+ * nothing: the card works on manual entry alone.
+ *
+ * When it lands: import it, and render
+ *   <ReadReportWithClaude t={p.t} phone={p.phone} mediaId={p.mediaId} onMarkers={p.onMarkers} />
+ * in place of `null` below (or mount it directly where <ReportReaderSlot> is
+ * mounted, beside the manual rows). Nothing else changes: its rows arrive
+ * through onMarkers, which is the card's own setRows path (mergeReadRows), so
+ * they only pre-fill the boxes, never overwrite a value he typed, and reach a
+ * PDF only after he has checked them and pressed Generate.
+ */
+function ReportReaderSlot(p: ReportReaderProps): JSX.Element | null {
+  void p;
+  return null;
+}
+
+export function PrecallTools({ t, name, phone, when, apiKey, mediaId }: {
+  t: Tokens;
+  name: string;
+  phone: string;
+  when: string;
+  apiKey?: string;
+  /** Her newest saved report's WhatsApp media id, handed to the report-reader slot. */
+  mediaId?: string;
+}): JSX.Element {
   const flagList = useId();
   const nextId = useRef(1);
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>([{ id: 0, marker: "", value: "", range: "", flag: "" }]);
-  const [busy, setBusy] = useState({ read: false, make: false, send: false });
-  const [reading, setReading] = useState<ExtractView | null>(null);
+  const [busy, setBusy] = useState({ make: false, send: false });
+  // Set when the report reader has pre-filled rows, so the card asks him to check them.
+  const [prefilled, setPrefilled] = useState(false);
   const [view, setView] = useState<PrecallView | null>(null);
   // The rows the open PDF was made from: Send posts these, never the live form.
   const [madeFrom, setMadeFrom] = useState<MarkerRow[] | null>(null);
@@ -100,29 +138,19 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
   const removeRow = (id: number) =>
     setRows((rs) => (rs.length > 1 ? rs.filter((r) => r.id !== id) : [newRow()]));
 
-  // The AI copies the values off her newest saved report into the form. Rows
-  // he already typed stay as they are; only markers he has not typed are added.
-  const readReport = () =>
-    once("read", async () => {
-      mark("read", true);
-      try {
-        const r = await post("/api/admin/precall/extract", { name, phone });
-        const v = extractFromReply(r.status, await r.json().catch(() => null));
-        setReading(v);
-        if (v.phase === "read" && v.rows.length) {
-          setRows((cur) => {
-            const kept = cur.filter(filled);
-            const added = mergeReadRows(plain(kept), v.rows).slice(kept.length).map(newRow);
-            const next = [...kept, ...added];
-            return next.length ? next : [newRow()];
-          });
-        }
-      } catch (e) {
-        setReading({ phase: "error", code: "network", hint: message(e), reportUrl: "" });
-      } finally {
-        mark("read", false);
-      }
+  // The report reader's way into the form (the slot's onMarkers): the same
+  // setRows his typing goes through. Rows he already typed stay as they are;
+  // only markers he has not typed are added, cleaned like typed rows.
+  const prefillFromReport = (incoming: MarkerRow[]) => {
+    if (!cleanMarkerRows(incoming).rows.length) return;
+    setRows((cur) => {
+      const kept = cur.filter(filled);
+      const added = mergeReadRows(plain(kept), incoming).slice(kept.length).map(newRow);
+      const next = [...kept, ...added];
+      return next.length ? next : [newRow()];
     });
+    setPrefilled(true);
+  };
 
   // The PDF, saved in her folder and opened in a tab made inside the tap.
   // Same lock as Send: a send racing a regenerate would report on the wrong PDF.
@@ -178,42 +206,11 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
     background: t.card, color: t.ink1, padding: "8px 9px", fontSize: 16, lineHeight: 1.3, fontFamily: FONT.sans,
   };
   const line = (color: string): CSSProperties => ({ marginTop: 8, fontSize: 12, lineHeight: 1.45, color });
-  // Inline colour and underline: globals.css resets every link to inherit.
-  const link: CSSProperties = { color: t.teal, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 2 };
   const bar: CSSProperties = { marginTop: 10, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 };
 
   const ready = view?.phase === "ready" ? view : null;
   const changed = Boolean(ready && madeFrom && !sameRows(plain(rows), madeFrom));
   const noPhone = phone.replace(/\D/g, "").length < 10;
-
-  const reportLink = (url: string) =>
-    url ? (
-      <>
-        {" "}
-        <a href={url} target="_blank" rel="noopener noreferrer" style={link}>Open her report</a>
-      </>
-    ) : null;
-
-  let readLine: React.ReactNode = null;
-  if (reading?.phase === "read") {
-    readLine = (
-      <>
-        <div style={line(reading.rows.length ? t.ink2 : t.amber)}>
-          {reading.rows.length ? `Filled ${reading.rows.length} ${reading.rows.length === 1 ? "row" : "rows"} from her report. ` : ""}
-          {reading.note}
-          {reportLink(reading.reportUrl)}
-        </div>
-        {reading.warnings.map((w) => <div key={w} style={line(t.ink2)}>{w}</div>)}
-      </>
-    );
-  } else if (reading?.phase === "error") {
-    readLine = (
-      <div style={line(reading.code === "no_ai_key" ? t.amber : t.clay)}>
-        {reading.hint}
-        {reportLink(reading.reportUrl)}
-      </div>
-    );
-  }
 
   let status: React.ReactNode = null;
   if (ready) {
@@ -275,12 +272,12 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
             <div style={{ fontSize: 11, letterSpacing: ".07em", textTransform: "uppercase", color: t.ink2, fontWeight: 700 }}>
               Her report markers
             </div>
-            <Button t={t} variant="secondary" size="sm" onClick={readReport} busy={busy.read} disabled={noPhone}
-              title="Copy the values off her newest saved report into the rows below">
-              Read her report
-            </Button>
+            {/* SLOT, beside the manual rows: <ReadReportWithClaude> mounts here (see ReportReaderSlot above). */}
+            <ReportReaderSlot t={t} phone={phone} mediaId={mediaId} onMarkers={prefillFromReport} />
           </div>
-          {readLine}
+          {prefilled && (
+            <div style={line(t.ink2)}>Pre-filled from her report. Check every value against the report before you generate.</div>
+          )}
 
           {rows.map((r, i) => (
             <div key={r.id} style={{ marginTop: 10, paddingTop: i ? 10 : 0, borderTop: i ? `1px solid ${t.hairline}` : "none" }}>

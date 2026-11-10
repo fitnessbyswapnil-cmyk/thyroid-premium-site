@@ -467,9 +467,10 @@ export type NewestReport = { mediaId: string; url: string; savedAt: number; coun
 
 /**
  * Her newest saved report, by the time it was saved, with the media id it came
- * from: the pre-call reader (lib/precall-extract) fetches the bytes from
- * WhatsApp with it, since the bridge only ever writes to his Drive. `count`
- * is how many she has saved, so the card can say this was only the newest.
+ * from: the pre-call card hands that id to the report reader
+ * (<ReadReportWithClaude mediaId>, app/admin/PrecallTools), since the bridge
+ * only ever writes to his Drive and the media id is how the file is fetched.
+ * `count` is how many she has saved, so the card can say this was the newest.
  * Null when she has none, or off Cloudflare. A D1 failure THROWS, unlike the
  * chip readers above: "she sent no report" and "the lookup broke" must not
  * read the same to him.

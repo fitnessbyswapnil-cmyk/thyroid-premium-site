@@ -15,7 +15,6 @@ import {
   andList,
   buildPrecall,
   cleanMarkerRows,
-  extractFromReply,
   factRows,
   markerRowsFromNotes,
   mergeReadRows,
@@ -377,35 +376,30 @@ test("afterPrecallSend: the file is never lost; a shut window swaps to the phone
   assert.deepEqual(failed, { ...READY, sendError: "WhatsApp did not take the PDF." });
 });
 
-test("extractFromReply: a reading can only ever fill the boxes; a missing key says what to add", () => {
-  const read = extractFromReply(200, {
-    markers: [{ marker: "TSH", value: "5.8", range: "0.4-4.0", flag: "H" }, { marker: "Vitamin D", value: "" }, "junk"],
-    reportUrl: "https://drive.google.com/file/d/R/view",
-    hint: "Check every value against her report before you generate.",
-    warnings: ["She has 2 reports saved; this read only the newest. Check the others in her folder."],
-  });
-  assert.deepEqual(read, {
-    phase: "read",
-    rows: [{ marker: "TSH", value: "5.8", range: "0.4–4.0", flag: "high" }],
-    reportUrl: "https://drive.google.com/file/d/R/view",
-    note: "Check every value against her report before you generate.",
-    warnings: ["She has 2 reports saved; this read only the newest. Check the others in her folder."],
-  });
-  const noKey = extractFromReply(412, { error: "no_ai_key", hint: "Add the AI key" });
-  assert.equal(noKey.phase, "error");
-  assert.match((noKey as { hint: string }).hint, /^Add the AI key \(ANTHROPIC_API_KEY on the worker\)/);
-  assert.equal((extractFromReply(404, { error: "no_report", hint: "No report from her is saved yet.", reportUrl: "" }) as { hint: string }).hint, "No report from her is saved yet.");
-  assert.equal(extractFromReply(200, { markers: [] }).phase, "read");
-});
-
 test("mergeReadRows: a reading never overwrites what he typed, and fills an untouched form as it is", () => {
   const read: MarkerRow[] = [{ marker: "TSH", value: "5.8" }, { marker: "Vitamin D", value: "14" }];
-  assert.deepEqual(mergeReadRows([{ marker: "", value: "" }], read), read);
+  const asCleaned = [{ marker: "TSH", value: "5.8", range: "", flag: "" }, { marker: "Vitamin D", value: "14", range: "", flag: "" }];
+  assert.deepEqual(mergeReadRows([{ marker: "", value: "" }], read), asCleaned);
   assert.deepEqual(
     mergeReadRows([{ marker: "tsh", value: "6.1" }, { marker: "", value: "" }], read),
-    [{ marker: "tsh", value: "6.1" }, { marker: "Vitamin D", value: "14" }],
+    [{ marker: "tsh", value: "6.1" }, asCleaned[1]],
     "his TSH stays; only the marker he had not typed is added",
   );
+});
+
+test("mergeReadRows: a reading is cleaned like typing, so it can only ever fill the boxes with whole rows", () => {
+  const merged = mergeReadRows([], [
+    { marker: "TSH", value: "5.8 (0.4-4.0)", flag: "H" },
+    { marker: "Vitamin D", value: "" },
+    { marker: "", value: "14" },
+    "junk" as unknown as MarkerRow,
+    { marker: "Free T3 — total", value: "2.1", range: "2.0—4.4" },
+  ]);
+  assert.deepEqual(merged, [
+    { marker: "TSH", value: "5.8", range: "0.4–4.0", flag: "high" },
+    { marker: "Free T3, total", value: "2.1", range: "2.0–4.4", flag: "" },
+  ]);
+  assert.deepEqual(mergeReadRows([{ marker: "LDL", value: "142" }], []), [{ marker: "LDL", value: "142" }], "an empty reading changes nothing");
 });
 
 test("sameRows: Send goes out only for the PDF he reviewed", () => {

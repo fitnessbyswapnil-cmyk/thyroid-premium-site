@@ -7,8 +7,8 @@
  *
  * THE ONE RULE: NOTHING IS INVENTED (as in lib/summary.ts)
  *  - A marker value reaches the PDF from one of two places only: a MarkerRow he
- *    typed (or confirmed, after the AI reader pre-filled it) on the dashboard,
- *    or the Marker / Her value (range) / Flag columns of the table in her notes
+ *    typed (or confirmed, after a reading of her report pre-filled it) on the
+ *    card, or the Marker / Her value (range) / Flag columns of the table in her notes
  *    Doc. A row with no value prints nothing; a marker she has no row for is
  *    never mentioned as hers.
  *  - Her answers are printed as she gave them, under the question's gist. An
@@ -19,12 +19,15 @@
  *    never what she has. The "on our call" list names the markers each point
  *    rests on, so the reader can see what it is built from.
  *
- * WHERE THE MARKERS COME FROM IS STILL OPEN, SO THIS FILE DOES NOT CARE
- * The composer takes MarkerRow[] from anywhere. Today: typed rows first, her
- * notes Doc otherwise (pickMarkers). The AI reader (lib/precall-extract.ts)
- * plugs in BEFORE this file, not inside it: it pre-fills the editable rows on
- * the dashboard, he checks them against the report, and they arrive here as
- * typed rows. So an AI value never reaches a PDF he did not look at.
+ * WHERE THE MARKERS COME FROM, THIS FILE DOES NOT CARE
+ * The composer takes MarkerRow[] from anywhere: typed rows first, her notes
+ * Doc otherwise (pickMarkers). Claude reading her report (a Claude Code
+ * routine, whose <ReadReportWithClaude> component mounts in the slot on the
+ * card, app/admin/PrecallTools) plugs in BEFORE this file, not inside it: it
+ * pre-fills the editable rows through mergeReadRows, he checks them against
+ * the report, and they arrive here as typed rows. So a value read off the
+ * report never reaches a PDF he did not look at, and nothing it reads ever
+ * writes a sentence: every sentence is the library's.
  *
  * ONE PAGE PREFERRED, TWO AT MOST
  * The page is sized in millimetres, as the summary is, and splitRows decides
@@ -39,10 +42,10 @@ import { citeName, libraryEntry, libraryRank, normalizeMarkerName, type MarkerGr
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-/** One marker as he typed it, as her notes Doc holds it, or as the AI reader pre-filled it. */
+/** One marker as he typed it, as her notes Doc holds it, or as a reading of her report pre-filled it. */
 export type MarkerRow = { marker: string; value: string; range?: string; flag?: string };
 
-/** Where the rows on a PDF came from: typed (or AI pre-filled, then confirmed) on the dashboard, or her notes Doc. */
+/** Where the rows on a PDF came from: the card's form (typed, or pre-filled and then checked), or her notes Doc. */
 export type MarkerSource = "typed" | "notes";
 
 /** Her answers, as the Leads sheet holds them: one string per column, "" when unanswered. */
@@ -638,49 +641,15 @@ export function afterPrecallSend(prev: PrecallReady, status: number, body: Preca
   return { ...prev, sendError: next.hint };
 }
 
-/** Whatever /api/admin/precall/extract answered. */
-export type ExtractReply = {
-  markers?: unknown;
-  reportUrl?: unknown;
-  hint?: unknown;
-  warnings?: unknown;
-  error?: unknown;
-};
-
-export type ExtractView =
-  | { phase: "read"; rows: MarkerRow[]; reportUrl: string; note: string; warnings: string[] }
-  | { phase: "error"; code: string; hint: string; reportUrl: string };
-
 /**
- * What "Read her report" hands the form. The rows go through the same cleaner
- * as typed ones, so a reply can only ever fill the boxes he then checks.
+ * The form after a reading of her report pre-fills it (the report-reader slot
+ * on the card). The incoming rows are cleaned exactly like typed ones. An
+ * untouched form takes the reading as it is; rows he already typed stay, first
+ * and unchanged, and only markers he has not typed are added: a reading never
+ * overwrites a value he entered.
  */
-export function extractFromReply(status: number, body: ExtractReply | null | undefined): ExtractView {
-  const b = body ?? {};
-  const reportUrl = str(b.reportUrl);
-  if (status >= 200 && status < 300) {
-    const rows = cleanMarkerRows(b.markers).rows;
-    return {
-      phase: "read",
-      rows,
-      reportUrl,
-      note: str(b.hint) || (rows.length ? "Check every value against her report before you generate." : "No values were read from her report. Type them instead."),
-      warnings: strs(b.warnings),
-    };
-  }
-  const code = str(b.error) || `http_${status}`;
-  const hint =
-    code === "no_ai_key" ? "Add the AI key (ANTHROPIC_API_KEY on the worker) to read reports here. Typing the values still works."
-    : str(b.hint) || `Reading her report failed (HTTP ${status}). Type the values instead.`;
-  return { phase: "error", code, hint, reportUrl };
-}
-
-/**
- * The form after "Read her report". An untouched form takes the reading as it
- * is. Rows he already typed stay, first and unchanged, and only markers he has
- * not typed are added: a reading never overwrites a value he entered.
- */
-export function mergeReadRows(current: MarkerRow[], read: MarkerRow[]): MarkerRow[] {
+export function mergeReadRows(current: MarkerRow[], incoming: MarkerRow[]): MarkerRow[] {
+  const read = cleanMarkerRows(incoming).rows;
   const typed = current.filter((r) => [r.marker, r.value, r.range, r.flag].some((v) => String(v ?? "").trim()));
   const have = new Set(typed.map((r) => normalizeMarkerName(r.marker)).filter(Boolean));
   return [...typed, ...read.filter((r) => !have.has(normalizeMarkerName(r.marker)))];
