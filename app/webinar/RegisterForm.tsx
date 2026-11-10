@@ -8,7 +8,7 @@
  * on blur once she has typed something, and again on submit.
  */
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTurnstile, TurnstileBox, postWithBotCheck } from "@/app/components/TurnstileWidget";
 import { checkIndianMobile } from "@/lib/webinar";
@@ -76,6 +76,13 @@ export default function RegisterForm({
   const [submitErr, setSubmitErr] = useState("");
   const [busy, setBusy] = useState(false);
   const bot = useTurnstile("webinar_register");
+  // The privacy policy opens OVER the form, never as a navigation: in the
+  // Instagram and Facebook in-app browsers a new tab replaces the page, and the
+  // number she just typed goes with it. Same pattern as the /decode quiz gate.
+  // The iframe mounts only while the dialog is open, so the page does not fetch
+  // /privacy for every visitor. lib/webinar-privacy.test.ts holds this in place.
+  const privacyRef = useRef<HTMLDialogElement>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   useEffect(() => { rememberAttribution(); }, []);
 
@@ -199,8 +206,41 @@ export default function RegisterForm({
         {perk && <p className={s.perk}>{perk}</p>}
       </div>
 
-      <p className={s.note}>Your joining link comes on WhatsApp. No spam, reply stop any time.</p>
+      <p className={s.note}>
+        Your joining link comes on WhatsApp. No spam, reply stop any time.{" "}
+        <a
+          href="/privacy"
+          target="_blank"
+          rel="noopener"
+          className={s.privacyLink}
+          onClick={(e) => {
+            const d = privacyRef.current;
+            // No <dialog> support: let the link open the policy in a new tab.
+            if (!d || typeof d.showModal !== "function") return;
+            e.preventDefault();
+            setPrivacyOpen(true);
+            d.showModal();
+          }}
+        >
+          Privacy policy
+        </a>
+      </p>
     </form>
+    {/* Outside the <form>: a dialog's own controls must not submit it. */}
+    <dialog
+      ref={privacyRef}
+      aria-label="Privacy policy"
+      className={s.privacyDialog}
+      onClose={() => setPrivacyOpen(false)}
+      onClick={(e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }}
+    >
+      {privacyOpen && <iframe src="/privacy" title="Privacy policy" className={s.privacyFrame} />}
+      <div className={s.privacyFoot}>
+        <button type="button" className={s.privacyClose} onClick={() => privacyRef.current?.close()}>
+          Close
+        </button>
+      </div>
+    </dialog>
     {/* Outside the form's gap stack: the widget is invisible for most visitors. */}
     <TurnstileBox bot={bot} hint="One quick check. Tap the box and your seat is saved." />
     </>

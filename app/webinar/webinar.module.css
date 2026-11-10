@@ -681,3 +681,39 @@
   line-height: 1.7;
   color: rgba(246, 240, 230, 0.78);
 }
+
+/* Privacy policy link and dialog (RegisterForm). Plain class rules, so they
+   beat the unlayered `a { color: inherit; text-decoration: none }` reset in
+   globals.css, which silently wins over Tailwind's layered utilities.
+   margin: auto centres the modal: Tailwind's preflight zeroes every margin,
+   and a modal <dialog> relies on its own to sit in the middle. */
+.privacyLink {
+  color: var(--ink-82);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.privacyDialog {
+  margin: auto;
+  width: min(40rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  color: #111;
+}
+.privacyDialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.privacyFrame { display: block; width: 100%; height: 70vh; border: 0; }
+.privacyFoot { padding: 12px; }
+.privacyClose {
+  width: 100%;
+  height: 48px;
+  border: 1.5px solid #c9c2b6;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
