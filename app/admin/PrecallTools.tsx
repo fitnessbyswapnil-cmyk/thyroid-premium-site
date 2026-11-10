@@ -18,12 +18,20 @@
  * always the PDF he looked at. Outside her 24-hour window the business number
  * cannot send a file, and the button becomes "Send from your phone".
  *
+ * Buttons and pills are the admin kit's (./ui), one primary per card:
+ * Generate until there is a PDF, then the send. The kit's `busy` only blocks a
+ * press after a re-render, so every request here also goes through `once`,
+ * which drops a second tap while the first is in flight: she must never get
+ * the WhatsApp twice.
+ *
  * The decisions behind every state (what a reply means, how a reading merges
  * into rows he already typed, when two sets of rows are the same PDF) live in
  * lib/precall.ts, pure and tested; this file only renders them.
  */
 import { useCallback, useId, useRef, useState, type CSSProperties, type JSX } from "react";
-import type { Tokens } from "./tokens";
+import { FONT, RADIUS, type Tokens } from "./tokens";
+import { Button } from "./ui/Button";
+import { StatusPill } from "./ui/StatusPill";
 import { pendingTab } from "./RowTools";
 import { readAdminKey } from "./adminKey";
 import { istClock } from "@/lib/admin-actions";
@@ -47,14 +55,6 @@ const plain = (rows: Row[]): MarkerRow[] => rows.map(({ marker, value, range, fl
 const filled = (r: Row) => Boolean(r.marker.trim() || r.value.trim() || r.range.trim() || r.flag.trim());
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/** Text on a filled teal button: white on the light theme, the paper colour on the dark one, where teal is light. */
-function onAccent(t: Tokens): string {
-  const hex = t.paper.replace("#", "");
-  const n = parseInt(hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex, 16);
-  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
-  return lum < 0.5 ? t.paper : "#FFFFFF";
-}
-
 export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name: string; phone: string; when: string; apiKey?: string }): JSX.Element {
   const flagList = useId();
   const nextId = useRef(1);
@@ -68,7 +68,7 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
   const mark = (k: keyof typeof busy, v: boolean) => setBusy((b) => ({ ...b, [k]: v }));
 
   // One tap, one request: a second tap while the first is running is dropped,
-  // not queued (a double tap is two tabs and two PDFs otherwise).
+  // not queued (a double tap is two tabs and two PDFs, or two WhatsApps).
   const running = useRef(new Set<string>());
   const once = useCallback(async (key: string, run: () => Promise<void>) => {
     if (running.current.has(key)) return;
@@ -172,31 +172,27 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
   };
 
   // ── look ─────────────────────────────────────────────────────────────────
-  const ink = onAccent(t);
-  const pill = (on: boolean): CSSProperties => ({
-    background: "transparent", border: `1px solid ${t.hairline}`, color: t.ink1,
-    borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 600, lineHeight: 1.2,
-    cursor: on ? "wait" : "pointer", whiteSpace: "nowrap", opacity: on ? 0.75 : 1,
-  });
-  const primary = (on: boolean, off = false): CSSProperties => ({
-    background: t.teal, color: ink, border: 0, borderRadius: 999, padding: "9px 16px",
-    fontSize: 13, fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap",
-    cursor: on ? "wait" : off ? "not-allowed" : "pointer", opacity: on ? 0.8 : off ? 0.45 : 1,
-  });
   // 16px: anything smaller and iOS zooms the page when a box takes focus.
   const box: CSSProperties = {
-    width: "100%", minWidth: 0, boxSizing: "border-box", border: `1px solid ${t.hairline}`, borderRadius: 6,
-    background: t.card, color: t.ink1, padding: "8px 10px", fontSize: 16, lineHeight: 1.3, fontFamily: "inherit",
+    width: "100%", minWidth: 0, boxSizing: "border-box", border: `1px solid ${t.hairline}`, borderRadius: RADIUS.cell,
+    background: t.card, color: t.ink1, padding: "8px 9px", fontSize: 16, lineHeight: 1.3, fontFamily: FONT.sans,
   };
   const line = (color: string): CSSProperties => ({ marginTop: 8, fontSize: 12, lineHeight: 1.45, color });
   // Inline colour and underline: globals.css resets every link to inherit.
   const link: CSSProperties = { color: t.teal, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 2 };
-  const dot = <span aria-hidden style={{ color: t.ink2 }}>·</span>;
+  const bar: CSSProperties = { marginTop: 10, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 };
 
-  const makeBusy = busy.make || busy.send;
   const ready = view?.phase === "ready" ? view : null;
   const changed = Boolean(ready && madeFrom && !sameRows(plain(rows), madeFrom));
   const noPhone = phone.replace(/\D/g, "").length < 10;
+
+  const reportLink = (url: string) =>
+    url ? (
+      <>
+        {" "}
+        <a href={url} target="_blank" rel="noopener noreferrer" style={link}>Open her report</a>
+      </>
+    ) : null;
 
   let readLine: React.ReactNode = null;
   if (reading?.phase === "read") {
@@ -205,12 +201,7 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
         <div style={line(reading.rows.length ? t.ink2 : t.amber)}>
           {reading.rows.length ? `Filled ${reading.rows.length} ${reading.rows.length === 1 ? "row" : "rows"} from her report. ` : ""}
           {reading.note}
-          {reading.reportUrl ? (
-            <>
-              {" "}
-              <a href={reading.reportUrl} target="_blank" rel="noopener noreferrer" style={link}>Open her report</a>
-            </>
-          ) : null}
+          {reportLink(reading.reportUrl)}
         </div>
         {reading.warnings.map((w) => <div key={w} style={line(t.ink2)}>{w}</div>)}
       </>
@@ -218,14 +209,8 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
   } else if (reading?.phase === "error") {
     readLine = (
       <div style={line(reading.code === "no_ai_key" ? t.amber : t.clay)}>
-        {reading.code === "no_ai_key" ? <strong style={{ fontWeight: 700 }}>Add the AI key. </strong> : null}
         {reading.hint}
-        {reading.reportUrl ? (
-          <>
-            {" "}
-            <a href={reading.reportUrl} target="_blank" rel="noopener noreferrer" style={link}>Open her report</a>
-          </>
-        ) : null}
+        {reportLink(reading.reportUrl)}
       </div>
     );
   }
@@ -235,24 +220,19 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
     const wa = ready.sentAt || ready.windowOpen ? "" : draftWaLink(phone, ready.waText || precallCaption(name));
     status = (
       <>
-        <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 8px", fontSize: 12.5, lineHeight: 1.4 }}>
-          <span style={{ color: t.teal, fontWeight: 700 }}>PDF ready</span>
-          {dot}
-          <a href={ready.pdfUrl} target="_blank" rel="noopener noreferrer" style={link}>Open</a>
-          {ready.sentAt ? (
-            <>
-              {dot}
-              <span style={{ color: t.won, fontWeight: 700 }}>Sent {istClock(ready.sentAt)}</span>
-            </>
-          ) : ready.windowOpen ? (
-            <>
-              {dot}
-              <button type="button" onClick={sendNow} disabled={makeBusy || changed} aria-busy={busy.send}
-                title={changed ? "Generate again first: the markers changed" : "Send this PDF to her on WhatsApp"}
-                style={{ ...primary(busy.send, changed), padding: "5px 13px", fontSize: 12.5 }}>
-                {busy.send ? "Sending…" : "Send to her"}
-              </button>
-            </>
+        <div style={bar}>
+          {ready.sentAt
+            ? <StatusPill t={t} tone="ok">Sent {istClock(ready.sentAt)}</StatusPill>
+            : <StatusPill t={t} tone="progress">PDF ready</StatusPill>}
+          <Button t={t} variant="quiet" size="sm" href={ready.pdfUrl} target="_blank" title="Open the PDF in her Drive folder">
+            Open
+          </Button>
+          {!ready.sentAt && ready.windowOpen ? (
+            <Button t={t} variant="primary" size="sm" onClick={sendNow} busy={busy.send} disabled={changed || busy.make}
+              status={ready.sendError ? "failed" : undefined}
+              title={changed ? "Generate again first: the markers changed" : "Send this PDF to her on WhatsApp"}>
+              Send to her
+            </Button>
           ) : null}
         </div>
         {changed && !ready.sentAt && (
@@ -261,12 +241,11 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
         {/* The phone fallback is a different act (he attaches the file himself), so it gets its own line. */}
         {!ready.sentAt && !ready.windowOpen && (
           wa ? (
-            <div style={{ marginTop: 9 }}>
-              <a href={wa} target="_blank" rel="noopener noreferrer" onClick={() => sentFromPhone(ready.pdfUrl)}
-                style={{ display: "inline-block", border: `1px solid ${t.teal}`, color: t.teal, borderRadius: 999,
-                  padding: "6px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+            <div style={{ marginTop: 10 }}>
+              <Button t={t} variant="primary" size="sm" href={wa} target="_blank" onClick={() => sentFromPhone(ready.pdfUrl)}
+                title="Open WhatsApp on your phone with the message ready">
                 Send from your phone
-              </a>
+              </Button>
               <div style={line(t.ink2)}>
                 {ready.sendError ? "This opens WhatsApp on your phone." : "Her 24-hour window has shut, so this opens WhatsApp on your phone."}
                 {" "}Attach the PDF there.
@@ -286,20 +265,20 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
 
   return (
     <div style={{ marginTop: 10 }}>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
-        title="Her pre-call PDF: her answers and her report, before the call" style={pill(false)}>
-        Pre-call PDF
-      </button>
+      <Button t={t} variant="secondary" size="sm" onClick={() => setOpen((o) => !o)}
+        title="Her pre-call PDF: her answers and her report, before the call">
+        {open ? "Close pre-call PDF" : "Pre-call PDF"}
+      </Button>
       {open && (
-        <div style={{ marginTop: 10, border: `1px solid ${t.hairline}`, borderRadius: 6, background: t.card, padding: 12 }}>
+        <div style={{ marginTop: 10, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.card, background: t.card, padding: 12 }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div style={{ fontSize: 11, letterSpacing: ".07em", textTransform: "uppercase", color: t.ink2, fontWeight: 700 }}>
               Her report markers
             </div>
-            <button type="button" onClick={readReport} disabled={busy.read || noPhone} aria-busy={busy.read}
-              title="Copy the values off her newest saved report into the rows below" style={pill(busy.read)}>
-              {busy.read ? "Reading…" : "Read her report"}
-            </button>
+            <Button t={t} variant="secondary" size="sm" onClick={readReport} busy={busy.read} disabled={noPhone}
+              title="Copy the values off her newest saved report into the rows below">
+              Read her report
+            </Button>
           </div>
           {readLine}
 
@@ -308,12 +287,13 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <input aria-label={`Marker ${i + 1}`} placeholder="Marker, like TSH" value={r.marker}
                   onChange={(e) => update(r.id, "marker", e.target.value)} style={{ ...box, flex: 1 }} />
-                <button type="button" onClick={() => removeRow(r.id)} aria-label={`Remove marker ${i + 1}`} title="Remove this row"
-                  style={{ ...pill(false), padding: 0, width: 36, height: 36, flex: "0 0 36px", fontSize: 18, lineHeight: 1, color: t.ink2 }}>
+                <Button t={t} variant="secondary" size="sm" onClick={() => removeRow(r.id)}
+                  ariaLabel={`Remove marker ${i + 1}`} title="Remove this row">
                   ×
-                </button>
+                </Button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6, marginTop: 6 }}>
+              {/* A value carries its unit ("5.8 µIU/mL"), so it gets the widest box. */}
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 4fr) minmax(0, 3fr) minmax(0, 3fr)", gap: 6, marginTop: 6 }}>
                 <input aria-label={`Value ${i + 1}`} placeholder="Value" value={r.value}
                   onChange={(e) => update(r.id, "value", e.target.value)} style={box} />
                 <input aria-label={`Range ${i + 1}`} placeholder="Range" value={r.range}
@@ -329,17 +309,16 @@ export function PrecallTools({ t, name, phone, when, apiKey }: { t: Tokens; name
             <option value="borderline" />
           </datalist>
 
-          <button type="button" onClick={addRow}
-            style={{ marginTop: 10, background: "transparent", border: 0, padding: "4px 0", color: t.teal, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            + Add marker
-          </button>
+          <div style={{ marginTop: 8 }}>
+            <Button t={t} variant="quiet" size="sm" onClick={addRow}>+ Add marker</Button>
+          </div>
           <div style={line(t.ink2)}>Leave every row empty to use the marker table in her notes Doc.</div>
 
-          <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-            <button type="button" onClick={generate} disabled={makeBusy || noPhone} aria-busy={busy.make}
-              title="Make her pre-call PDF, save it in her folder and open it" style={primary(busy.make, noPhone)}>
-              {busy.make ? "Making…" : ready ? "Generate again" : "Generate PDF"}
-            </button>
+          <div style={bar}>
+            <Button t={t} variant={ready ? "secondary" : "primary"} onClick={generate} busy={busy.make} disabled={noPhone || busy.send}
+              title="Make her pre-call PDF, save it in her folder and open it">
+              {ready ? "Generate again" : "Generate PDF"}
+            </Button>
           </div>
           {noPhone && <div style={line(t.ink2)}>No phone number on this card, so there is no folder to save it in.</div>}
           {status}
