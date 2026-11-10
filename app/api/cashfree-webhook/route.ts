@@ -32,6 +32,7 @@ import {
 import crypto from 'crypto'
 import { normalize, parseLeadId, type Json } from '@/lib/cashfree-payload'
 import { sendBookingConfirmation } from '@/lib/whatsapp'
+import { isConsultFee } from '@/lib/fee-flow'
 import {
   colLetter,
   findLeadRowNumber,
@@ -380,6 +381,18 @@ export async function POST(req: NextRequest) {
     if (sheetResult === 'already_paid') {
       console.log(`[cashfree-webhook] ${source} ${payment.refId} — lead already marked paid, skipping MicroPurchase CAPI`)
       return NextResponse.json({ ok: true, duplicate: true, source, leadId })
+    }
+
+    // Only the ₹299 consultation fee (₹1 in test mode) takes the fee flow below.
+    // A programme payment from his Cashfree payment links (₹15,000+) or an
+    // instalment is already recorded above — sheet and ledger, which is how
+    // lib/metrics counts it — and stops here: no MicroPurchase (that event IS
+    // the fee; the programme sale reaches Meta as Purchase when he marks it in
+    // Today) and no payment_receipt_v2 (the ₹299 "book your slot" receipt).
+    // See lib/fee-flow.ts.
+    if (!isConsultFee(payment.amount)) {
+      console.log(`[cashfree-webhook] ${source} ${payment.refId} amount=${payment.amount} is not the consultation fee: recorded only, no MicroPurchase, no fee receipt`)
+      return NextResponse.json({ received: true, source, leadId, sheet: sheetResult, feeFlow: false })
     }
 
     // MicroPurchase, not Purchase: since 12-Sep-2026 'Purchase' means the real
