@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  saveReportFromWhatsApp, savedReportsFor, savedReportsForPhones, reportFileName, leadsFromColumns,
+  saveReportFromWhatsApp, savedReportsFor, savedReportsForPhones, newestReportFor, reportFileName, leadsFromColumns,
   planBackfill, backfillReports, BACKFILL_BATCH, BACKFILL_BUDGET_MS,
   type ReportSaveDeps, type BackfillMessage,
 } from "./report-save.ts";
@@ -447,4 +447,24 @@ test("the backfill needs a connected Drive and the D1 ledger, and reads nothing 
   const noLedger = await backfillReports({ ...deps({ db: async () => null }), messages });
   assert.equal(noLedger.error, "no_ledger");
   assert.equal(read, false);
+});
+
+test("newestReportFor: her newest saved report and its media id, for the pre-call reader; skips and other women never count", async (t) => {
+  const o = await openDb();
+  if (!o) return t.skip("node:sqlite unavailable");
+  const meera = await hashKey("p:9876543210");
+  const asha = await hashKey("p:9123456789");
+  insert(o.sqlite, { mediaId: "100000000001", phoneKey: meera, url: "https://d/1", at: NOW - 3 * DAY });
+  insert(o.sqlite, { mediaId: "100000000002", phoneKey: meera, url: "https://d/2", at: NOW - 1 * DAY, kind: "document" });
+  insert(o.sqlite, { mediaId: "100000000003", phoneKey: meera, url: "", at: NOW, kind: "skip:media_expired" });
+  insert(o.sqlite, { mediaId: "100000000005", phoneKey: asha, url: "https://d/5", at: NOW });
+  const db = async () => o.db;
+
+  assert.deepEqual(await newestReportFor("+91 98765 43210", { db }), { mediaId: "100000000002", url: "https://d/2", savedAt: NOW - DAY, count: 2 });
+  assert.equal(await newestReportFor("9000000000", { db }), null, "none saved");
+  assert.equal(await newestReportFor("123", { db }), null, "not a number");
+  assert.equal(await newestReportFor("9876543210", { db: async () => null }), null, "off Cloudflare");
+  // A broken lookup is not "she sent none": it throws for the caller to say so.
+  const broken = { prepare() { throw new Error("D1 down"); }, batch: async () => { throw new Error("D1 down"); } } as unknown as D1Database;
+  await assert.rejects(newestReportFor("9876543210", { db: async () => broken }));
 });

@@ -462,6 +462,32 @@ export async function savedReportsForPhones(
   return out;
 }
 
+/** Her newest saved report and the WhatsApp media id it was copied from. */
+export type NewestReport = { mediaId: string; url: string; savedAt: number; count: number };
+
+/**
+ * Her newest saved report, by the time it was saved, with the media id it came
+ * from: the pre-call reader (lib/precall-extract) fetches the bytes from
+ * WhatsApp with it, since the bridge only ever writes to his Drive. `count`
+ * is how many she has saved, so the card can say this was only the newest.
+ * Null when she has none, or off Cloudflare. A D1 failure THROWS, unlike the
+ * chip readers above: "she sent no report" and "the lookup broke" must not
+ * read the same to him.
+ */
+export async function newestReportFor(phone: string, deps: DbDeps = {}): Promise<NewestReport | null> {
+  const p = digits10(phone);
+  if (p.length !== 10) return null;
+  const db = await (deps.db ?? getLedgerDb)();
+  if (!db) return null;
+  await ensureTable(db);
+  const res = await db
+    .prepare("SELECT media_id, url, saved_at FROM drive_files WHERE url <> '' AND phone_key = ?1 ORDER BY saved_at DESC, media_id DESC")
+    .bind(await hashKey(`p:${p}`))
+    .all<{ media_id: string; url: string; saved_at: number }>();
+  const top = res.results[0];
+  return top ? { mediaId: top.media_id, url: top.url, savedAt: Number(top.saved_at), count: res.results.length } : null;
+}
+
 // ── Backfill ────────────────────────────────────────────────────────────────
 
 /** Media ids expire after about 30 days; older than this there is nothing left to fetch. */
