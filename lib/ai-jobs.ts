@@ -143,7 +143,9 @@ const Marker = z.object({
   value: z.string().trim().min(1).max(40),
   unit: z.string().trim().max(24).default(""),
   refRange: z.string().trim().max(60).default(""),
-  flag: z.enum(["low", "normal", "high", ""]).default(""),
+  // The report's OWN word (H, L, High, Borderline, Low-normal…), lower-cased.
+  // Never inferred from the range: lib/precall.ts relies on that.
+  flag: z.string().trim().max(24).default("").transform((f) => f.toLowerCase()),
 });
 export const MarkersResultSchema = z.object({
   markers: z.array(Marker).max(60),
@@ -153,6 +155,19 @@ export const MarkersResultSchema = z.object({
 });
 export type MarkerValue = z.infer<typeof Marker>;
 export type MarkersResult = z.infer<typeof MarkersResultSchema>;
+
+/** The pre-call screen's row shape, verbatim from lib/precall.ts (MarkerRow). */
+export type MarkerRow = { marker: string; value: string; range?: string; flag?: string };
+
+/** Units ride inside the value ("5.8 µIU/mL"); empty range and flag are left out. */
+export function toMarkerRows(result: MarkersResult): MarkerRow[] {
+  return result.markers.map((m) => ({
+    marker: m.name,
+    value: m.unit ? `${m.value} ${m.unit}` : m.value,
+    ...(m.refRange ? { range: m.refRange } : {}),
+    ...(m.flag ? { flag: m.flag } : {}),
+  }));
+}
 
 export function parseMarkersResult(input: unknown): { ok: true; value: MarkersResult } | { ok: false; error: string } {
   const r = MarkersResultSchema.safeParse(input);

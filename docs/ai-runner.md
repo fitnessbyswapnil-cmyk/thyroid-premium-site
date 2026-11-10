@@ -38,9 +38,9 @@ them is missing, stop and reply `no job`. Do nothing else.
    - Copy each `value` exactly as printed, for example `6.8`, `<0.1` or `120`.
      Do not convert units.
    - `unit`: as printed. `refRange`: the reference range as printed.
-   - `flag`: `high` or `low` only when the report marks it, or when the value
-     is plainly outside the printed range. `normal` when inside. `""` when you
-     can't tell.
+   - `flag`: the report's OWN flag word for that line, copied as printed (for
+     example `H`, `L`, `High`, `Borderline`, `Low-normal`). If the report
+     prints no flag, use `""`. Never work a flag out from the range yourself.
    - Never invent a test that is not printed.
    - List in this order: thyroid (TSH, T3, T4, FT3, FT4, anti-TPO, anti-TG),
      then vitamin D, B12, ferritin, haemoglobin, HbA1c, fasting glucose,

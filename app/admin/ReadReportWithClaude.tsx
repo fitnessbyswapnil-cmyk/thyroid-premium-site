@@ -12,7 +12,7 @@
  * shows them for the owner to confirm before any PDF is made.
  */
 import { useEffect, useRef } from "react";
-import type { MarkerValue } from "@/lib/ai-jobs";
+import { toMarkerRows, type MarkerRow } from "@/lib/ai-jobs";
 import type { Tokens } from "./tokens";
 import { Button, type ButtonVariant } from "./ui/Button";
 import { StatusPill } from "./ui/StatusPill";
@@ -35,7 +35,8 @@ export function ReadReportWithClaude({
   apiKey: string;
   mediaId: string;
   mime?: string;
-  onMarkers?: (markers: MarkerValue[]) => void;
+  /** Rows in lib/precall.ts's MarkerRow shape, for him to confirm. */
+  onMarkers?: (rows: MarkerRow[]) => void;
   variant?: ButtonVariant;
 }) {
   const { job, start, starting, startError } = useAiJob(apiKey, mediaId);
@@ -44,7 +45,7 @@ export function ReadReportWithClaude({
   useEffect(() => {
     if (job?.status === "done" && job.result && delivered.current !== job.id) {
       delivered.current = job.id;
-      onMarkers?.(job.result.markers);
+      onMarkers?.(toMarkerRows(job.result));
     }
   }, [job, onMarkers]);
 

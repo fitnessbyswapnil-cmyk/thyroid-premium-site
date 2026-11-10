@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  DEFAULT_ROUTINE_ID, JOB_TTL_S, activeJobForMedia, createJob, fireRoutine, fireText, fireUrl, mintJobToken,
+  DEFAULT_ROUTINE_ID, JOB_TTL_S, toMarkerRows, activeJobForMedia, createJob, fireRoutine, fireText, fireUrl, mintJobToken,
   parseMarkersResult, publicJob, routineConfig, signJobToken, verifyJobToken, type JobRow,
 } from "./ai-jobs.ts";
 
@@ -80,6 +80,26 @@ test("the routine is only configured with both its id and its token", () => {
   assert.deepEqual(routineConfig({ CLAUDE_ROUTINE_ID: "trig_abc", CLAUDE_ROUTINE_TOKEN: "sk-ant-oat01-x" }), { id: "trig_abc", token: "sk-ant-oat01-x" });
 });
 
+test("values reach the pre-call screen in its own MarkerRow shape", () => {
+  const parsed = parseMarkersResult({ markers: [
+    { name: "TSH", value: "5.8", unit: "µIU/mL", refRange: "0.4-4.0", flag: "H" },
+    { name: "Anti-TPO", value: "<0.1" },
+    { name: "Vitamin D", value: "18", unit: "ng/mL", refRange: "30-100", flag: "Low-normal" },
+  ] });
+  assert.ok(parsed.ok);
+  if (!parsed.ok) return;
+  assert.deepEqual(toMarkerRows(parsed.value), [
+    { marker: "TSH", value: "5.8 µIU/mL", range: "0.4-4.0", flag: "h" },
+    { marker: "Anti-TPO", value: "<0.1" },
+    { marker: "Vitamin D", value: "18 ng/mL", range: "30-100", flag: "low-normal" },
+  ]);
+});
+
+test("a flag is only ever the report's own word, never one worked out from the range", () => {
+  assert.match(read("docs/ai-runner.md"), /Never work a flag out from the range yourself/);
+  assert.doesNotMatch(read("docs/ai-runner.md"), /plainly outside the printed range/);
+});
+
 test("only a well-formed list of values is accepted back", () => {
   const good = parseMarkersResult({ markers: [{ name: "TSH", value: "6.8", unit: "µIU/mL", refRange: "0.4-4.0", flag: "high" }, { name: "FT4", value: "1.1" }], reportDate: "28 Oct 2026", extra: "dropped" });
   assert.ok(good.ok);
@@ -90,7 +110,7 @@ test("only a well-formed list of values is accepted back", () => {
   }
   assert.equal(parseMarkersResult(null).ok, false);
   assert.equal(parseMarkersResult({ markers: "TSH 6.8" }).ok, false);
-  assert.equal(parseMarkersResult({ markers: [{ name: "TSH", value: "6.8", flag: "dangerous" }] }).ok, false);
+  assert.equal(parseMarkersResult({ markers: [{ name: "TSH", value: "6.8", flag: "x".repeat(25) }] }).ok, false);
   assert.equal(parseMarkersResult({ markers: [{ name: "x".repeat(61), value: "1" }] }).ok, false);
   assert.equal(parseMarkersResult({ markers: Array.from({ length: 61 }, (_, i) => ({ name: `T${i}`, value: "1" })) }).ok, false);
 });
