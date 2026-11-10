@@ -12,7 +12,7 @@
  * shows them for the owner to confirm before any PDF is made.
  */
 import { useEffect, useRef } from "react";
-import { toMarkerRows, type MarkerRow } from "@/lib/ai-jobs";
+import { toMarkerRows, type MarkerRow } from "@/lib/marker-rows";
 import type { Tokens } from "./tokens";
 import { Button, type ButtonVariant } from "./ui/Button";
 import { StatusPill } from "./ui/StatusPill";
