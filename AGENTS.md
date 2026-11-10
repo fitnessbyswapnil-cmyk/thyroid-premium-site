@@ -52,7 +52,17 @@ Two things from it that bite hardest:
   (shared drives, delegation) need paid Workspace; this is a consumer Gmail.
   Every file the system makes in his Drive (call notes, blood reports, summary
   PDFs) goes through the Apps Script bridge `scripts/drive-bridge.gs`, which
-  runs as him. Reading a shared folder with the service account still works.
+  runs as him — never through the service account. Each client has one folder
+  inside "Client Notes" (`GOOGLE_DRIVE_NOTES_FOLDER_ID`), named
+  "Name · 10 digits" and found by her phone digits, never by her name. The
+  worker reaches the script through the pairing "Connect Google Drive" stores
+  in D1 (trust on first use: the script adopts the first secret it is sent and
+  refuses any other), or through `DRIVE_BRIDGE_URL` / `DRIVE_BRIDGE_SECRET`,
+  which win when set. After editing the `.gs`, run `npm run sync:bridge` (the
+  dashboard hands out `lib/drive-bridge-source.ts`, and a test fails until the
+  two match), and the owner must redeploy it in Apps Script as a New version
+  (Manage deployments → Edit → New version), which keeps the same URL. Reading
+  a shared folder with the service account still works.
 - Before changing any Meta tracking, read `docs/tracking-cutover-plan.md`.
   `NEXT_PUBLIC_DIRECT_PIXEL` must stay off until the GTM change in its §4-B is
   made in the same window, or every PageView is counted twice.
