@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
     <main className="min-h-screen bg-[#ffffff] py-16 text-[#423b33]">
       <div className={SECTION}>
         <h1 className="mb-2 text-3xl font-bold text-[#241f1a]">Privacy Policy</h1>
-        <p className="mb-8 text-sm text-[#857c6d]">Last updated: 9 November 2026</p>
+        <p className="mb-8 text-sm text-[#857c6d]">Last updated: 10 November 2026</p>
 
         <p className={P}>
           This website (swapnilumbarkarfitness.in) is operated by Swapnil
@@ -43,6 +43,11 @@ export default function PrivacyPolicyPage() {
             <strong className="text-[#241f1a]">Assessment answers</strong>:
             your responses about thyroid diagnosis, medication, symptoms and
             related lifestyle questions, and the score computed from them.
+          </li>
+          <li className={LI}>
+            <strong className="text-[#241f1a]">Reports you send us</strong> on
+            WhatsApp, such as blood test results: we save a copy in our
+            private Google Drive to prepare for your consultation.
           </li>
           <li className={LI}>
             <strong className="text-[#241f1a]">Payment confirmation</strong>:

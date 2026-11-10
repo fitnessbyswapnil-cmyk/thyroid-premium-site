@@ -22,6 +22,7 @@ import { sendCAPIEvent, buildUserData } from "@/lib/server-tracking";
 import { appendMessage, readMessages } from "@/lib/wa-messages";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { routeReply } from "@/lib/wa-autoreply";
+import { saveReportFromWhatsApp } from "@/lib/report-save";
 
 export const dynamic = "force-dynamic";
 
@@ -266,6 +267,22 @@ export async function POST(req: NextRequest) {
                 console.log(`[wa-webhook] ReportReceived → Meta ***${phone.slice(-4)} result=${JSON.stringify(r).slice(0, 160)}`);
               } catch (e) {
                 console.error("[wa-webhook] ReportReceived failed (swallowed):", e instanceof Error ? e.message : String(e));
+              }
+            });
+            // Her report into her Drive folder while Meta still has it (the id
+            // stops resolving after ~30 days). Funnel leads only. Its own
+            // after(), so a slow Drive never holds up the Meta event, and the
+            // message is already stored above whatever happens here.
+            after(async () => {
+              try {
+                const r = await saveReportFromWhatsApp({
+                  mediaId: found.media.id ?? "", phone, name, messageId: m.id ?? "",
+                  mime: found.media.mime_type ?? "", filename: found.media.filename ?? "",
+                  kind: found.kind, ts, requireLead: true,
+                });
+                console.log(`[wa-webhook] report → Drive ***${phone.slice(-4)}: ${r.saved ? (r.created ? "saved" : "already there") : r.reason}`);
+              } catch (e) {
+                console.error("[wa-webhook] report save threw (swallowed):", e instanceof Error ? e.message : String(e));
               }
             });
           }
