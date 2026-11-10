@@ -198,8 +198,16 @@ function ensureDoc_(body, root) {
     if (same) return { ok: true, id: same.getId(), url: same.getUrl(), title: same.getName(), created: false };
 
     var doc = DocumentApp.create(title);
-    renderNotes_(doc.getBody(), body, title);
-    doc.saveAndClose();
+    try {
+      renderNotes_(doc.getBody(), body, title);
+      doc.saveAndClose();
+    } catch (err) {
+      // A Doc that failed half-way is still a file in My Drive's root, outside
+      // her folder, where the next press would never find it. Bin it, so a
+      // failure leaves nothing behind but the error.
+      try { DriveApp.getFileById(doc.getId()).setTrashed(true); } catch (ignored) {}
+      throw err;
+    }
 
     // DocumentApp always creates in My Drive; move it where it belongs.
     var file = DriveApp.getFileById(doc.getId());
@@ -223,7 +231,12 @@ function renderNotes_(body, req, title) {
   // A new Doc starts with one empty paragraph: use it for the heading rather
   // than leaving a blank line above it. Every appended paragraph sets its
   // heading, because an appended paragraph can take the previous one's.
-  body.getParagraphs()[0].setText(String(req.heading || title)).setHeading(H1);
+  // Two statements, never a chain: Paragraph.setText returns nothing (null in
+  // V8), so \`.setText(x).setHeading(H1)\` threw "Cannot read properties of null
+  // (reading 'setHeading')" on the first live press, 10-Nov-2026.
+  var first = body.getParagraphs()[0];
+  first.setText(String(req.heading || title));
+  first.setHeading(H1);
   if (req.preface) body.appendParagraph(String(req.preface)).setHeading(P);
 
   var sections = Array.isArray(req.sections) ? req.sections : [];
