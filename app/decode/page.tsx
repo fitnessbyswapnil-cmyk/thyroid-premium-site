@@ -404,13 +404,15 @@ export default function DecodePage() {
             </p>
           </div>
 
-          {/* The owner's own video, the home page VSL. Only its poster loads
-              until she taps play, so it costs the page almost nothing. */}
+          {/* The owner's own video: the 10-Nov-2026 cut that ends on the free
+              session (the homepage keeps the original; see CUTS in
+              HeroVideo). Only its poster loads until she taps play, so it
+              costs the page almost nothing. */}
           <div className="mx-auto mt-8 w-full max-w-[560px]">
             <p className="mb-3 text-[length:var(--fs-xs)] font-bold text-[#0b1120]">
               Why thyroid fat loss is not the same
             </p>
-            <HeroVideo />
+            <HeroVideo cut="decode" />
           </div>
         </div>
       </section>
