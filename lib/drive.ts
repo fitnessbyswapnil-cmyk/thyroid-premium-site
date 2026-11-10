@@ -114,9 +114,14 @@ export async function resolveBridgeConfig(
 
 export const digits10 = (s: string) => String(s ?? "").replace(/\D/g, "").slice(-10);
 
-/** Her name as it goes into titles: no path characters, no line breaks, at most 40 characters. */
+/**
+ * Her name as it goes into titles: no path characters, no line breaks, at most
+ * 40 characters. Trimmed after the cut too, so it never ends on a space, and
+ * running it twice changes nothing — the script runs it again on what the
+ * worker sends (scripts/drive-bridge.gs client_), and the two must agree.
+ */
 export function clientName(name: string): string {
-  return (name || "").trim().replace(/[\\/\r\n]+/g, " ").replace(/\s+/g, " ").slice(0, 40) || "Unnamed";
+  return (name || "").replace(/[\\/\r\n]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 40).trim() || "Unnamed";
 }
 
 /** IST, the coach's clock — the date he will look for when scanning the folder. */
@@ -244,6 +249,7 @@ export async function callBridge<T extends Record<string, unknown> = Record<stri
   if (missing.length) throw new BridgeError("not_configured", missing.join(", "));
   const fetchImpl = opts.fetchImpl ?? fetch;
   let res: Response;
+  let raw: string;
   try {
     res = await fetchImpl(cfg.url, {
       method: "POST",
@@ -255,13 +261,15 @@ export async function callBridge<T extends Record<string, unknown> = Record<stri
       // A cold script takes a few seconds; one that takes 25 has hung.
       signal: AbortSignal.timeout(opts.timeoutMs ?? 25_000),
     });
+    // Read inside the same try: the timeout still runs while the body
+    // arrives, and a stall there is the same hung script, not a crash.
+    raw = await res.text();
   } catch (err) {
     const name = err instanceof Error ? err.name : "";
     if (name === "TimeoutError" || name === "AbortError") throw new BridgeError("timeout");
     throw new BridgeError("unreachable", err instanceof Error ? err.message : String(err));
   }
 
-  const raw = await res.text();
   let j: BridgeReply;
   try {
     j = JSON.parse(raw) as BridgeReply;
@@ -270,7 +278,17 @@ export async function callBridge<T extends Record<string, unknown> = Record<stri
     // a web app anyone can call.
     throw new BridgeError("not_json", `HTTP ${res.status} ${raw.replace(/\s+/g, " ").slice(0, 120)}`);
   }
-  if (!j || !j.ok) throw new BridgeError((j && j.error) || `http_${res.status}`, j && j.detail != null ? String(j.detail) : "");
+  if (!j || !j.ok) {
+    const code = (j && j.error) || `http_${res.status}`;
+    let detail = j && j.detail != null ? String(j.detail) : "";
+    // Which half needs fixing depends on where the secret came from. Sent
+    // from the worker's env var, "use Connect Google Drive" would be a loop:
+    // the env var wins over any pairing, so the refusal would just repeat.
+    if (!detail && (cfg as Partial<ResolvedBridgeConfig>).source === "env" && (code === "unauthorized" || code === "script_not_configured")) {
+      detail = BRIDGE_SECRET_ENV;
+    }
+    throw new BridgeError(code, detail);
+  }
   return j as T;
 }
 
@@ -324,7 +342,8 @@ const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toLowerC
  * Headings are matched case- and space-insensitively. The hint line is
  * dropped. A table's first row is dropped when it is the header; rows with
  * every cell empty are dropped. A list section he typed as plain lines
- * instead of list items still yields items, one per non-empty line.
+ * instead of list items still yields items, one per non-empty line — and
+ * those lines are then its items, not also its text.
  */
 export function parseNotes(raw: RawNotesSection[], template: NotesTemplate): Partial<Record<NotesKey, NotesPart>> {
   const out: Partial<Record<NotesKey, NotesPart>> = {};
@@ -334,18 +353,31 @@ export function parseNotes(raw: RawNotesSection[], template: NotesTemplate): Par
     const hint = norm(sec.hint);
     const lines = (found.paragraphs ?? []).map((p) => String(p ?? "").trim()).filter((p) => p && norm(p) !== hint);
     let items = (found.listItems ?? []).map((x) => String(x ?? "").trim()).filter(Boolean);
-    if (sec.kind === "list" && !items.length) items = lines.slice();
+    // Decided on the filled items, not the raw ones: six numbered slots he
+    // left empty, with the blockers typed underneath, must not yield the
+    // blockers twice (as items and again as text).
+    const promoted = sec.kind === "list" && !items.length;
+    if (promoted) items = lines.slice();
     let rows: string[][] = [];
     const table = (found.tables ?? [])[0];
     if (table && table.length) {
-      const header = (sec.columns ?? []).map(norm).join("|");
-      const first = (table[0] ?? []).map(norm).join("|");
-      const body = header && first === header ? table.slice(1) : table;
+      // The script writes the header as the first row, and he may retitle a
+      // column ("Money (₹)" to "Money"). Read as data, that row would land on
+      // her PDF as a symptom called "What she feels". So one cell still
+      // matching its column is enough to know the header.
+      const columns = (sec.columns ?? []).map(norm);
+      const first = (table[0] ?? []).map(norm);
+      const isHeader = first.some((c, i) => c !== "" && c === columns[i]);
+      const body = isHeader ? table.slice(1) : table;
       rows = body
         .map((r) => (r ?? []).map((c) => String(c ?? "").trim()))
         .filter((r) => r.some(Boolean));
     }
-    out[sec.key] = { text: sec.kind === "list" && !found.listItems?.length ? "" : lines.join("\n"), items, rows };
+    let text = promoted ? "" : lines.join("\n");
+    // Docs turns a line typed as "- ..." or "1. ..." into a list item on its
+    // own, so a text section can hold nothing but items: its text is those.
+    if (!text && !promoted && sec.kind === "text") text = items.join("\n");
+    out[sec.key] = { text, items, rows };
   }
   return out;
 }
@@ -447,10 +479,19 @@ export function bridgeHint(err: BridgeError): string {
       return err.detail.includes(BRIDGE_URL_ENV) || err.detail.includes(BRIDGE_SECRET_ENV)
         ? "Google Drive is not connected yet. Use “Connect Google Drive” at the top of Today."
         : `Not set on the worker: ${err.detail}`;
+    // detail is BRIDGE_SECRET_ENV when the secret came from the worker's env
+    // (callBridge): the env var wins over any pairing, so the fix is there.
     case "unauthorized":
-      return "The script's key does not match this site. Use “Connect Google Drive” again with the current Web app URL.";
+      return err.detail === BRIDGE_SECRET_ENV
+        ? `${BRIDGE_SECRET_ENV} on the worker does not match SHARED_SECRET in the script's Script Properties. Make them the same, or delete ${BRIDGE_URL_ENV} and ${BRIDGE_SECRET_ENV} from the worker and use “Connect Google Drive”.`
+        : "The script's key does not match this site. Use “Connect Google Drive” again with the current Web app URL.";
     case "script_not_configured":
-      return "The script is deployed but not paired yet. Use “Connect Google Drive” and paste its Web app URL.";
+      return err.detail === BRIDGE_SECRET_ENV
+        ? `The script has no SHARED_SECRET. In the Apps Script open Project Settings → Script Properties and add SHARED_SECRET with the value of ${BRIDGE_SECRET_ENV}.`
+        : "The script is deployed but not paired yet. Use “Connect Google Drive” and paste its Web app URL.";
+    case "unknown_action":
+      // A worker newer than the deployed script: v1 knew only ensureDoc.
+      return "The deployed script is older than this site. Copy the script from “Connect Google Drive”, paste it over Code.gs, then Deploy → Manage deployments → Edit → Version: New version.";
     case "already_paired":
       return "That script is already paired with another key. In the Apps Script open Project Settings → Script Properties, delete SHARED_SECRET, then connect again.";
     case "folder_not_found":
