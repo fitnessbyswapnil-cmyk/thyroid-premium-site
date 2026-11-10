@@ -3,97 +3,48 @@
 /**
  * /admin → Today. The only screen worth opening between calls.
  *
- * Ordered by how fast they change a decision (CRM brief, 14-Sep):
- *   0. What you miss most on calls — the only thing that says what to do
- *      differently tomorrow, so it sits above everything, and the three
- *      most-missed checks are repeated on every call happening today.
- *   0b. The headline numbers — from lib/metrics, the same figures Pipeline and
- *      Analytics show for the same shared range. This screen computes none.
- *   0c. Mark your calls — the post-call checklist, which records the outcome.
- *   1. What acquisition costs — both numbers, because the Rs299 is a qualifier
- *      and the programme is the product. When they diverge, the screen says so.
- *   2. Who needs me now — ONE merged queue sorted by money at risk, not four
- *      lists sorted by time. Every row is a name, a reason and a WhatsApp link.
- *   3. Whether the automation actually delivered — sends are not arrivals.
- *   4. Capacity against the seven-client ceiling, because a solo coach can be
- *      sold out, and that changes whether more spend is even useful.
+ * The owner, 10-Nov-2026: "from client coming to consultation call I want
+ * everything one click button to automate, keep flow clean easy to
+ * understand, better colour, buttons, graph/chart for representation". He
+ * approved this order, top to bottom:
  *
- * Anything that cannot be acted on within the hour is deliberately NOT here.
- * Funnel, creatives and cohort work live on their own screens; mixing decision
- * cadences is what teaches you to stop reading a dashboard.
+ *   0. Anything overdue that is his to do: a summary past its 30 minutes. It
+ *      sits above everything, in clay, because it is the one thing on this
+ *      screen with a clock that has already run out.
+ *   1. Four tiles: calls today, summaries to send, follow-ups due, paid this
+ *      week. The first three are counts of the cards below; the fourth is
+ *      lib/metrics' wins. This screen computes no business number itself.
+ *   2. This week: where clients drop off. Lead → Confirmed → Report → Call →
+ *      Summary → Paid, from the today feed. A bar filters the cards to it.
+ *   3. Do now: one card per woman (lib/next-action, ./JourneyCard), with ONE
+ *      button for the next thing to do. The four lists this screen used to
+ *      be (Mark your calls, Calls in the next 24 hours, Needs me now, Did she
+ *      pay?) are her card's inline controls now, so a woman can no longer sit
+ *      in three of them at once with three sets of buttons.
+ *   4. What has not changed: what he misses most on calls, the headline
+ *      numbers for the shared range, the decision-maker rate, what
+ *      acquisition costs, whether the automation delivered, capacity against
+ *      the seven-client ceiling, and the switches (automation, payment links).
  *
- * Phone-first: designed at 560px and allowed to breathe wider, not a desktop
+ * Phone-first: designed at 375px and allowed to breathe wider, not a desktop
  * grid crushed down.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { paymentDateStatus, toDateInputValue, META_ATTRIBUTION_WINDOW_DAYS } from "@/lib/payment-date";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DecisionBadge } from "@/lib/decision-maker";
 import { DM_PRESENCE_TARGET_PCT, formatDmPresence, type PresenceRate } from "@/lib/dm-presence";
 import type { Summary, ChecklistSummary } from "@/lib/metrics";
-import { SCORECARD_KEYS, SCORECARD_LABEL, type ScorecardKey } from "@/lib/scorecard";
-import { reportChip, rowTools, showConnectCard, type DriveStatus, type SavedReport } from "@/lib/admin-actions";
+import { showConnectCard, type DriveStatus, type SavedReport } from "@/lib/admin-actions";
+import { inDropBar, type ClientCard, type DropKey, type FunnelBar } from "@/lib/next-action";
 import { useRange, RANGE_CHOICES, rangeLabel, pct } from "./useMetrics";
-import { LIGHT, DARK, type Tokens } from "./tokens";
-import RowTools, { ReportChip } from "./RowTools";
+import { LIGHT, DARK, FONT, RADIUS, type Tokens } from "./tokens";
+import { inkOf } from "./RowTools";
 import ConnectDrive from "./ConnectDrive";
-
-/**
- * The palette comes from ./tokens now, and follows the theme switch in the
- * shell — it used to be eleven hex literals defined right here.
- *
- * That mattered more than it sounds. tokens.ts is a measured system (warm
- * paper, ONE teal meaning "progress", clay rationed to "should have happened
- * and didn't", every ratio checked against the surface it actually sits on)
- * and Pipeline renders entirely from it. Today ignored all of that and painted
- * itself a cold navy, so the same screen showed two different products
- * depending on the tab, and the theme toggle moved one of them.
- *
- * `dim` maps to ink2, not ink3: on this screen it carries 12.5px sentences a
- * man reads between calls, and ink3 is a 3.25:1 label grey. `onAccent` is the
- * text that sits ON a filled chip — the fills are dark on the light theme and
- * light on the dark one, so it flips with the theme rather than being the
- * hardcoded #0B0E14 that white paper used to get.
- */
-/**
- * The button on a queue row says what to DO, not where it opens.
- *
- * Every row used to carry a chip reading "WhatsApp". Nine different situations,
- * one word — so the row's reason line was the only thing telling them apart,
- * and the button, which is the biggest and last thing read before acting,
- * taught him nothing. A desk that tells you the verb is a desk you work; a
- * desk that names the app is a list you read.
- *
- * Keyed off lib/journey's ActionKind so a kind added there shows up here;
- * anything unmapped falls back to the old label rather than rendering blank.
- */
-const ACTION_VERB: Record<string, string> = {
-  rebook_cancelled: "Offer new times",
-  rebook_no_show: "Offer new times",
-  send_price: "Send the price",
-  follow_up: "Ask for her decision",
-  agreed_unpaid: "Send payment link",
-  paid_not_booked: "Send booking link",
-  first_message: "Send first message",
-  hot_abandon: "Nudge her",
-};
-
-const palette = (dark: boolean) => {
-  const t = (dark ? DARK : LIGHT) as unknown as Tokens;
-  return {
-    bg: t.paper,
-    card: t.card,
-    line: t.hairline,
-    text: t.ink1,
-    dim: t.ink2,
-    accent: t.teal,
-    good: t.won,
-    warn: t.amber,
-    bad: t.clay,
-    onAccent: dark ? t.paper : "#FFFFFF",
-    sunk: t.sunk,
-  };
-};
+import JourneyCard, { type CardHooks } from "./JourneyCard";
+import { Button } from "./ui/Button";
+import { StageFunnel } from "./charts/StageFunnel";
+import { AutomationToggles } from "./AutomationToggles";
+import { PaymentLinksCard } from "./PaymentLinksCard";
 
 type Data = {
   generatedAt: string;
@@ -105,12 +56,10 @@ type Data = {
     /** When the cached ad spend was fetched (hourly refresh). */
     spendAsOf?: string | null;
   };
-  /** The one needs-action list (lib/journey) — same items and count as Pipeline and Analytics. */
-  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string; text: string; report?: SavedReport }[];
+  /** The one needs-action list (lib/journey): each item carries her card. */
+  queue: { name: string; phone: string; kind: string; waitMin: number; overdue: boolean; report?: SavedReport; card?: ClientCard | null }[];
   needsAction: { count: number; overdue: number };
-  /** `report`: the newest report she sent that is saved in her Drive folder, or null. */
-  callsToday: { name: string; phone: string; when: string; bookingUid: string; wa: string; badge?: DecisionBadge; report?: SavedReport }[];
-  decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
+  callsToday: { name: string; phone: string; when: string; bookingUid: string; badge?: DecisionBadge; report?: SavedReport; card?: ClientCard | null }[];
   dmPresence?: PresenceRate;
   testMode?: boolean;
   health: { sent24: number; failed24: number; byTemplate: { name: string; sent: number; last: string }[] };
@@ -118,7 +67,11 @@ type Data = {
   caveats: string[];
   metrics: Summary;
   checklist: ChecklistSummary;
-  toMark: { bookingUid: string; name: string; phone: string; email: string; startAt: string; leadRow: number | null }[];
+  /** One card per woman on this screen, sorted by urgency (lib/next-action). */
+  cards?: ClientCard[];
+  cardCounts?: { callsToday: number; summariesToSend: number; followUpsDue: number };
+  dropFunnel?: { days: number; bars: FunnelBar[] };
+  week?: { won: number; revenue: number };
 };
 
 /** "14:07" today, "13 Sep 14:07" otherwise — IST, the coach's clock. */
@@ -148,13 +101,25 @@ async function readDriveStatus(adminKey: string): Promise<DriveStatus | null> {
   }
 }
 
+/** The biggest single drop between two bars, for the sentence under the chart. */
+function worstDrop(bars: FunnelBar[]): { label: string; lost: number; from: number } | null {
+  let worst: { label: string; lost: number; from: number } | null = null;
+  for (let i = 1; i < bars.length; i++) {
+    const lost = bars[i - 1].count - bars[i].count;
+    if (lost > 0 && (!worst || lost > worst.lost)) worst = { label: bars[i].label, lost, from: bars[i - 1].count };
+  }
+  return worst;
+}
+
 export default function Today({ adminKey, dark = false }: { adminKey: string; dark?: boolean }) {
-  const N = palette(dark);
+  const t = (dark ? DARK : LIGHT) as unknown as Tokens;
+  const N = inkOf(dark);
   // Shared with Pipeline and Analytics: one range, the same numbers everywhere.
   const [days, setDays] = useRange();
   const [d, setD] = useState<Data | null>(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(true);
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     setBusy(true); setErr("");
@@ -172,96 +137,26 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
 
-  // The only write this screen makes. field "closed" stamps the programme
-  // columns and fires the Purchase to Meta, so one tap both records the money
-  // and teaches the algorithm what a real buyer looks like.
-  //
-  // The date travels with it. Marking is a between-calls job that often happens
-  // days after the money landed, and the send used to timestamp the sale at the
-  // moment of the tap — so the one number Meta optimises on was attributed to
-  // the wrong day. Today stays the default, so the fast path is still one tap.
-  const [saving, setSaving] = useState<number | null>(null);
-  const [notice, setNotice] = useState("");
-  const markClosed = useCallback(async (row: number, amount: number, payDate: string, collected?: number) => {
-    const when = paymentDateStatus(payDate, Date.now());
-    if (!when.valid || when.ms === null) {
-      setErr(when.future ? "That payment date is in the future." : "That payment date is not a real date.");
-      return;
-    }
-    setSaving(row); setNotice("");
-    try {
-      const r = await fetch("/api/admin/mark", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({
-          row, field: "closed", value: String(amount),
-          paidAt: new Date(when.ms).toISOString(),
-          ...(collected ? { collected } : {}),
-        }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      // The server says what Meta actually did with the timestamp. Saying
-      // nothing would let a clamped, badly-attributed event read as a clean one.
-      const body = (await r.json()) as { meta?: { status?: string; tooOld?: boolean } };
-      const m = body.meta;
-      if (m?.tooOld) {
-        setNotice(`Saved. Meta had to move the event time forward — this sale is older than ${META_ATTRIBUTION_WINDOW_DAYS} days, so its attribution is unreliable.`);
-      } else if (m && m.status !== "sent" && m.status !== "already_sent") {
-        setNotice(`Saved to the sheet, but Meta did not accept the sale (${m.status}).`);
-      }
-      await load();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally { setSaving(null); }
-  }, [adminKey, load]);
+  // A press that changed her card reloads the feed, once, a moment later:
+  // three quick sends are one reload, not three Sheets reads.
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleReload = useCallback(() => {
+    if (reloadTimer.current) clearTimeout(reloadTimer.current);
+    reloadTimer.current = setTimeout(() => { void load(); }, 2500);
+  }, [load]);
+  useEffect(() => () => { if (reloadTimer.current) clearTimeout(reloadTimer.current); }, []);
 
-  // Send her the drafted message from the BUSINESS number, in one tap.
-  //
-  // The wa.me link opens whichever WhatsApp is on the phone — a personal
-  // number, not the one she has seen on every automated message since she
-  // filled the quiz. Replying from a stranger's number after a week of messages
-  // from the business one is a small betrayal of the thread.
-  //
-  // This posts the same drafted words to /api/admin/messages, which sends
-  // inside her open 24-hour window: free, no template, no Meta approval. When
-  // that window has shut the send fails and says so, and the wa.me link is
-  // sitting right next to the button as the fallback — so the failure costs a
-  // tap, not the message.
-  const [sendBusy, setSendBusy] = useState<string | null>(null);
-  const [sendDone, setSendDone] = useState<Record<string, boolean>>({});
-  const [sendErr, setSendErr] = useState<Record<string, string>>({});
-  const sendNow = useCallback(async (key: string, phone: string, text: string) => {
-    if (!text) return;
-    setSendErr((p) => ({ ...p, [key]: "" }));
-    setSendBusy(key);
-    try {
-      const r = await fetch("/api/admin/messages", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({ phone, text }),
-      });
-      const j = (await r.json().catch(() => ({}))) as { error?: string; hint?: string };
-      if (!r.ok) throw new Error(j.hint || j.error || `HTTP ${r.status}`);
-      setSendDone((p) => ({ ...p, [key]: true }));
-    } catch (e) {
-      const m = e instanceof Error ? e.message : String(e);
-      setSendErr((p) => ({
-        ...p,
-        // The one failure worth naming, because it has a different fix.
-        [key]: /window|24|re-?engag/i.test(m) ? "Her 24-hour window has shut — use WhatsApp" : m,
-      }));
-    } finally {
-      setSendBusy(null);
-    }
-  }, [adminKey]);
+  // The clock the cards count down against. Ticked by state, not read during
+  // render, so two cards on one screen never disagree about what "now" is.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
-  // His call notes, her summary PDF and her folder are opened from the row by
-  // ./RowTools, which pre-opens each tab inside the tap so no popup blocker
-  // can eat it.
-  //
   // Whether the bridge to his Drive is set up at all, read from config and
   // never by calling the script, so the Connect card shows only while it is
-  // needed. A row whose Drive button meets a script that refuses the stored
+  // needed. A card whose Drive button meets a script that refuses the stored
   // pairing brings the card back (showConnectCard): every hint for that
   // failure tells him to use the card, so the card has to be there.
   const [drive, setDrive] = useState<DriveStatus | null>(null);
@@ -280,78 +175,30 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
     if (code) setDriveJustConnected(false);
   }, []);
 
-  // The second write this screen makes, and the cheapest. One tap, straight
-  // after the call, while he still remembers who was on it. Held optimistically
-  // so the pill flips under his thumb instead of waiting on a sheet round-trip
-  // — the row it belongs to often disappears moments later, when the same call
-  // gets marked as closed.
-  const [dmSaved, setDmSaved] = useState<Record<number, "yes" | "no">>({});
-  const [dmBusy, setDmBusy] = useState<number | null>(null);
-  const markDmPresent = useCallback(async (row: number, present: "yes" | "no") => {
-    setDmBusy(row); setDmSaved((m) => ({ ...m, [row]: present }));
-    try {
-      const r = await fetch("/api/admin/mark", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({ row, field: "dmPresent", value: present }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      await load();
-    } catch (e) {
-      // Put the pill back rather than leaving a tap that looks saved and is not.
-      setDmSaved((m) => { const n = { ...m }; delete n[row]; return n; });
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally { setDmBusy(null); }
-  }, [adminKey, load]);
+  const hooks: CardHooks = useMemo(
+    () => ({ adminKey, onChanged: scheduleReload, onNotice: setNotice, onBridgeResult }),
+    [adminKey, scheduleReload, onBridgeResult],
+  );
 
-  // ── Mark your calls ────────────────────────────────────────────────────
-  // One card per past call with no outcome. "Did she join?" first; a yes opens
-  // the ten checks. Saving writes the Calls sheet through /api/admin/call-outcome,
-  // which is what show-up rate and the checklist read. Nothing here reaches
-  // Meta — a sale is still recorded with the green "Paid" buttons below.
-  const [joined, setJoined] = useState<Record<string, boolean>>({});
-  const [checks, setChecks] = useState<Record<string, Partial<Record<ScorecardKey, boolean>>>>({});
-  const [markBusy, setMarkBusy] = useState<string | null>(null);
-  // The price named on the call — Pitched's write path. 0 = no price was named.
-  const [priced, setPriced] = useState<Record<string, number>>({});
-  const saveOutcome = useCallback(async (c: Data["toMark"][number], attended: boolean) => {
-    setMarkBusy(c.bookingUid); setErr("");
-    try {
-      const r = await fetch("/api/admin/call-outcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({
-          bookingUid: c.bookingUid, attended, occurredAt: c.startAt,
-          name: c.name, email: c.email, phone: c.phone,
-          ...(attended ? { checks: checks[c.bookingUid] ?? {} } : {}),
-          ...(attended && (priced[c.bookingUid] ?? 0) > 0 ? { pricePitched: priced[c.bookingUid] } : {}),
-        }),
-      });
-      const j = (await r.json().catch(() => ({}))) as { reason?: string; error?: string };
-      if (!r.ok) throw new Error(j.reason || j.error || `HTTP ${r.status}`);
-      setNotice(attended ? `Saved — ${c.name || "her"} attended.` : `Saved — ${c.name || "she"} did not join.`);
-      await load();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally { setMarkBusy(null); }
-  }, [adminKey, checks, priced, load]);
+  // A funnel bar narrows the cards to the women in it.
+  const [bar, setBar] = useState<DropKey | null>(null);
+  const [showWaiting, setShowWaiting] = useState(false);
 
-  // Reading the clock during render is impure — React can re-render at any
-  // moment and two rows on the same screen would disagree about what "today"
-  // is. Captured once, and refreshed on Refresh so a dashboard left open
-  // overnight does not keep offering yesterday.
-  const [nowMs, setNowMs] = useState(() => Date.now());
-  const todayValue = toDateInputValue(new Date(nowMs));
+  const cards = d?.cards ?? [];
+  const generated = Date.parse(d?.generatedAt ?? "") || nowMs;
+  const week = { from: generated - 7 * 86_400_000, to: generated + 1 };
+  const shown = bar ? cards.filter((c) => inDropBar(c, bar, week)) : cards;
+  const overdue = shown.filter((c) => c.primary?.danger);
+  const doNow = shown.filter((c) => !c.primary?.danger && (c.primary || c.secondary.length));
+  const waiting = shown.filter((c) => !c.primary && !c.secondary.length);
+  const bars = d?.dropFunnel?.bars ?? [];
+  const drop = worstDrop(bars);
+  const checksMissed = d?.checklist.checks.slice(0, 3) ?? [];
 
-  // Per-row payment date, defaulting to today. Held outside the row so the
-  // picker survives a re-render mid-edit.
-  const [payDates, setPayDates] = useState<Record<number, string>>({});
-  const payDateFor = (row: number) => payDates[row] ?? todayValue;
-
-  const wrap: React.CSSProperties = { background: N.bg, color: N.text, minHeight: "100vh", padding: "0 0 48px", fontFamily: "Inter, system-ui, sans-serif" };
-  const inner: React.CSSProperties = { maxWidth: 620, margin: "0 auto", padding: "0 16px" };
-  const card: React.CSSProperties = { background: N.card, border: `1px solid ${N.line}`, borderRadius: 14, padding: 16 };
-  const kicker: React.CSSProperties = { fontSize: 11, letterSpacing: ".07em", textTransform: "uppercase", color: N.dim };
+  const page: React.CSSProperties = { background: t.paper, color: t.ink1, minHeight: "100vh", padding: "0 0 48px", fontFamily: FONT.sans };
+  const inner: React.CSSProperties = { maxWidth: 640, margin: "0 auto", padding: "0 16px" };
+  const box: React.CSSProperties = { background: t.card, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.card, padding: 16 };
+  const kicker: React.CSSProperties = { fontSize: 11, letterSpacing: ".07em", textTransform: "uppercase", color: t.ink2, fontWeight: 600 };
   const h6: React.CSSProperties = { ...kicker, margin: "26px 0 10px" };
 
   const a = d?.acquisition;
@@ -359,31 +206,59 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
   const diverge = a && a.costPerConsultPayer !== null && a.costPerProgrammeClient !== null
     && a.costPerProgrammeClient > a.costPerConsultPayer * 12;
 
+  const card = (c: ClientCard) => (
+    <JourneyCard key={c.key} t={t} ink={N} card={c} hooks={hooks} nowMs={nowMs} missedMost={checksMissed} />
+  );
+
+  const counts = d?.cardCounts;
+  const overdueSummaries = cards.filter((c) => c.primary?.id === "summary" && c.primary.danger).length;
+  const tiles: { label: string; value: string; sub: string; tone?: string }[] = [
+    { label: "Calls today", value: counts ? String(counts.callsToday) : "…", sub: "on your calendar" },
+    {
+      label: "Summaries to send", value: counts ? String(counts.summariesToSend) : "…",
+      sub: overdueSummaries ? `${overdueSummaries} past 30 minutes` : "30 minutes after each call",
+      tone: overdueSummaries ? t.clay : undefined,
+    },
+    { label: "Follow-ups due", value: counts ? String(counts.followUpsDue) : "…", sub: "day 1, 3 and 7" },
+    {
+      label: "Paid this week", value: d?.week ? String(d.week.won) : "…",
+      sub: d?.week ? (d.week.revenue > 0 ? `${inr(d.week.revenue)} collected` : "no programme sales") : "",
+      tone: d?.week && d.week.won > 0 ? t.won : undefined,
+    },
+  ];
+
   return (
-    <div style={wrap}>
+    <div style={page}>
       <div style={inner}>
         {d?.testMode ? (
-          <div style={{ background: N.bad, color: N.onAccent, borderRadius: 10, padding: "12px 14px", margin: "14px 0 0", fontWeight: 700, letterSpacing: 0.2 }}>
+          <div style={{ background: t.clay, color: N.onAccent, borderRadius: RADIUS.card, padding: "12px 14px", margin: "14px 0 0", fontWeight: 700, letterSpacing: 0.2 }}>
             TEST MODE IS ON — Cashfree is charging ₹1, not ₹299. Every page still shows ₹299. Turn it off before any ad runs.
           </div>
         ) : null}
-        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "22px 0 4px" }}>
+        <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "22px 0 4px", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 21, fontWeight: 600 }}>Today</div>
-            <div style={kicker}>
-              {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+            <div style={{ fontFamily: FONT.serif, fontSize: 24, fontWeight: 500, letterSpacing: "-.01em" }}>Today</div>
+            <div style={{ ...kicker, fontWeight: 500 }}>
+              {new Date(nowMs).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
             </div>
           </div>
-          <button onClick={() => { setNowMs(Date.now()); void load(); void loadDrive(); }} disabled={busy}
-            style={{ background: "none", border: `1px solid ${N.line}`, color: N.dim, borderRadius: 999, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>
+          <Button t={t} variant="secondary" size="sm" busy={busy} onClick={() => { setNowMs(Date.now()); void load(); void loadDrive(); }}>
             {busy ? "Syncing…" : "Refresh"}
-          </button>
+          </Button>
         </header>
+
+        {err && <div style={{ ...box, borderColor: t.clay, color: t.clay, marginTop: 12 }}>Could not load: {err}</div>}
+        {notice && (
+          <div style={{ ...box, borderColor: t.amber, color: t.amber, marginTop: 12, fontSize: 13, display: "flex", gap: 10, alignItems: "center" }}>
+            <span style={{ flex: 1 }}>{notice}</span>
+            <Button t={t} variant="quiet" size="sm" ariaLabel="Dismiss" onClick={() => setNotice("")}>Close</Button>
+          </div>
+        )}
 
         {/* Before everything else on the screen, because every Drive button
             below depends on it. Gone the moment it has done its job. */}
         {driveJustConnected ? (
-          <div style={{ ...card, marginTop: 14, padding: "11px 14px", fontSize: 13.5, fontWeight: 600, color: N.good }}>
+          <div style={{ ...box, marginTop: 14, padding: "11px 14px", fontSize: 13.5, fontWeight: 600, color: t.won }}>
             Google Drive connected
           </div>
         ) : drive && showConnectCard(drive, bridgeCode) ? (
@@ -391,232 +266,191 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
             onConnected={() => { setDriveJustConnected(true); setBridgeCode(""); void loadDrive(); }} />
         ) : null}
 
-        {/* 0 — What you miss most on calls. Above everything: revenue says
-            what happened, this says what to change tomorrow. */}
+        {/* 0 — Overdue: impossible to miss, and the button is right there. */}
+        {overdue.length > 0 && (
+          <section aria-label="Overdue" style={{ marginTop: 16 }}>
+            <div style={{ ...kicker, color: t.clay, marginBottom: 8 }}>
+              Overdue · {overdue.length} {overdue.length === 1 ? "summary" : "summaries"} past 30 minutes
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>{overdue.map(card)}</div>
+          </section>
+        )}
+
+        {/* 1 — Four tiles. Counts of the cards below, and lib/metrics' wins. */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 8, marginTop: 16 }}>
+          {tiles.map((x) => (
+            <div key={x.label} style={{ ...box, padding: 12 }}>
+              <div style={kicker}>{x.label}</div>
+              <div style={{ fontFamily: FONT.mono, fontSize: 26, fontWeight: 500, marginTop: 4, color: x.tone ?? t.ink1, letterSpacing: "-.02em" }}>{x.value}</div>
+              <div style={{ fontSize: 11.5, color: t.ink2, marginTop: 3, lineHeight: 1.35 }}>{x.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* 2 — Where this week's women stop. A bar filters the cards to them. */}
+        <div style={{ ...box, marginTop: 12 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+            <h2 style={{ margin: 0, fontFamily: FONT.serif, fontWeight: 500, fontSize: 19, color: t.ink1 }}>This week: where clients drop off</h2>
+            <span style={{ fontSize: 11.5, color: t.ink2 }}>last 7 days · tap a bar</span>
+          </div>
+          {d ? (
+            <StageFunnel t={t} stages={bars} ariaLabel="This week: where clients drop off"
+              onSelect={(key) => setBar((b) => (b === key ? null : (key as DropKey)))} />
+          ) : (
+            <div style={{ fontSize: 13, color: t.ink2 }}>…</div>
+          )}
+          <p style={{ margin: "10px 0 0", fontSize: 12.5, lineHeight: 1.5, color: t.ink2 }}>
+            Women who came in over the last 7 days, by the furthest step each reached.
+            {drop ? <> The biggest loss: <strong style={{ color: t.ink1 }}>{drop.lost} of {drop.from}</strong> never reached {drop.label}.</> : null}
+          </p>
+        </div>
+
+        {/* 3 — Do now: one card per woman, one button per card. */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, margin: "26px 0 10px", flexWrap: "wrap" }}>
+          <span style={{ ...kicker, margin: 0 }}>Do now · one button per client</span>
+          {d ? (
+            <span style={{ fontSize: 12, color: t.ink2 }}>
+              {d.needsAction.count} on the action list
+              {d.needsAction.overdue > 0 ? <span style={{ color: t.clay }}> · {d.needsAction.overdue} waiting over 6 hr</span> : null}
+            </span>
+          ) : null}
+        </div>
+        {bar ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontSize: 12.5, color: t.ink2 }}>
+            <span>Showing the women at {bars.find((b) => b.key === bar)?.label ?? bar} or further who are on this screen.</span>
+            <Button t={t} variant="quiet" size="sm" onClick={() => setBar(null)}>Show all</Button>
+          </div>
+        ) : null}
+        {d && doNow.length === 0 && overdue.length === 0 && (
+          <div style={{ ...box, color: t.ink2, fontSize: 14 }}>{bar ? "Nobody in that bar needs you right now." : "Nothing waiting on you. Rare — enjoy it."}</div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>{doNow.map(card)}</div>
+
+        {waiting.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <Button t={t} variant="quiet" size="sm" onClick={() => setShowWaiting((v) => !v)}>
+              {showWaiting ? "Hide" : "Show"} {waiting.length} with nothing to do yet
+            </Button>
+            {showWaiting ? <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10, marginTop: 8 }}>{waiting.map(card)}</div> : null}
+          </div>
+        )}
+
+        {/* 4 — What you miss most on calls: what to change tomorrow. */}
         {d?.checklist && d.checklist.callsScored > 0 && (
-          <div style={{ ...card, marginTop: 14, borderLeft: `3px solid ${N.warn}` }}>
+          <div style={{ ...box, marginTop: 26, borderLeft: `3px solid ${t.amber}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
               <span style={kicker}>What you miss most on calls</span>
-              <span style={{ fontSize: 13, color: N.warn, fontWeight: 700 }}>
+              <span style={{ fontSize: 13, color: t.amber, fontWeight: 700 }}>
                 {d.checklist.avgMisses}/10 missed per call
               </span>
             </div>
             <ol style={{ margin: "10px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
               {d.checklist.checks.slice(0, 3).map((c) => (
                 <li key={c.key} style={{ fontSize: 14, lineHeight: 1.45 }}>
-                  {c.label} <span style={{ color: N.dim, fontSize: 12 }}>· missed {c.missed} of {c.total}</span>
+                  {c.label} <span style={{ color: t.ink2, fontSize: 12 }}>· missed {c.missed} of {c.total}</span>
                 </li>
               ))}
             </ol>
-            <div style={{ fontSize: 11.5, color: N.dim, marginTop: 8 }}>
+            <div style={{ fontSize: 11.5, color: t.ink2, marginTop: 8 }}>
               From {d.checklist.callsScored} scored call{d.checklist.callsScored === 1 ? "" : "s"}. Tick the checklist after each call to keep this true.
             </div>
           </div>
         )}
 
-        {/* 0b — Headline numbers. From lib/metrics, over the shared range. */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "18px 0 8px", gap: 8, flexWrap: "wrap" }}>
+        {/* Headline numbers. From lib/metrics, over the shared range. */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "26px 0 8px", gap: 8, flexWrap: "wrap" }}>
           <span style={kicker}>Numbers</span>
           <div style={{ display: "flex", gap: 4 }}>
             {RANGE_CHOICES.map((w) => (
-              <button key={w} onClick={() => setDays(w)}
-                style={{ background: days === w ? N.accent : "transparent", color: days === w ? N.onAccent : N.dim,
-                  border: `1px solid ${days === w ? N.accent : N.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12, cursor: "pointer" }}>
+              <Button key={w} t={t} size="sm" variant={days === w ? "primary" : "secondary"} onClick={() => setDays(w)}>
                 {rangeLabel(w)}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
         {(() => {
           const m = d?.metrics;
-          const tiles: { label: string; value: string; sub: string; tone?: string }[] = [
+          const numberTiles: { label: string; value: string; sub: string; tone?: string }[] = [
             { label: "Leads", value: m ? String(m.leads) : "…", sub: m ? `${pct(m.leadToBooked)} booked` : "" },
             { label: "Booked", value: m ? String(m.booked) : "…", sub: m ? `${m.cancelled} cancelled` : "" },
             {
               label: "Show-up rate", value: m ? pct(m.showUpRate) : "…",
               sub: m ? `${m.attended} came · ${m.noShow} no-show${m.attendanceUnknown ? ` · ${m.attendanceUnknown} unknown` : ""}` : "",
-              tone: m && m.showUpRate !== null && m.showUpRate < 0.6 ? N.warn : undefined,
+              tone: m && m.showUpRate !== null && m.showUpRate < 0.6 ? t.amber : undefined,
             },
-            { label: "Won", value: m ? String(m.won) : "…", sub: m ? (m.revenue > 0 ? `${inr(m.revenue)} collected` : "no programme sales") : "", tone: m && m.won > 0 ? N.good : undefined },
+            { label: "Won", value: m ? String(m.won) : "…", sub: m ? (m.revenue > 0 ? `${inr(m.revenue)} collected` : "no programme sales") : "", tone: m && m.won > 0 ? t.won : undefined },
             { label: "₹299 fees", value: m ? String(m.consultFees.count) : "…", sub: m ? `${inr(m.consultFees.amount)} · not revenue` : "" },
           ];
           return (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(104px,1fr))", gap: 8 }}>
-              {tiles.map((x) => (
-                <div key={x.label} style={{ ...card, padding: 12 }}>
+              {numberTiles.map((x) => (
+                <div key={x.label} style={{ ...box, padding: 12 }}>
                   <div style={kicker}>{x.label}</div>
-                  <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4, color: x.tone ?? N.text }}>{x.value}</div>
-                  <div style={{ fontSize: 11.5, color: N.dim, marginTop: 3, lineHeight: 1.35 }}>{x.sub}</div>
+                  <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4, color: x.tone ?? t.ink1 }}>{x.value}</div>
+                  <div style={{ fontSize: 11.5, color: t.ink2, marginTop: 3, lineHeight: 1.35 }}>{x.sub}</div>
                 </div>
               ))}
             </div>
           );
         })()}
 
-        {/* 0c — Mark your calls: the checklist records the outcome. */}
-        {d && d.toMark.length > 0 && (
-          <>
-            <div style={h6}>Mark your calls · {d.toMark.length}</div>
-            <div style={{ fontSize: 12, color: N.dim, marginBottom: 8, lineHeight: 1.5 }}>
-              No recording reached the system for these, so their outcome is unknown until you mark them.
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {d.toMark.map((c) => {
-                const j = joined[c.bookingUid];
-                const mine = checks[c.bookingUid] ?? {};
-                const when = new Date(c.startAt);
-                return (
-                  <div key={c.bookingUid} style={{ ...card, padding: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 15 }}>{c.name || "(no name)"}</div>
-                        <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
-                          {when.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
-                        </div>
-                      </div>
-                      {c.phone && (
-                        <a href={`https://wa.me/91${c.phone}`} target="_blank" rel="noreferrer"
-                          style={{ flex: "none", alignSelf: "flex-start", color: N.accent, fontSize: 12.5, textDecoration: "none" }}>
-                          WhatsApp →
-                        </a>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 12.5 }}>Did she join?</span>
-                      <button disabled={markBusy === c.bookingUid} onClick={() => setJoined((x) => ({ ...x, [c.bookingUid]: true }))}
-                        style={{ background: j === true ? `${N.good}22` : "transparent", color: j === true ? N.good : N.dim,
-                          border: `1px solid ${j === true ? N.good : N.line}`, borderRadius: 999, padding: "5px 13px", fontSize: 12.5, cursor: "pointer" }}>
-                        Yes
-                      </button>
-                      <button disabled={markBusy === c.bookingUid} onClick={() => void saveOutcome(c, false)}
-                        style={{ background: "transparent", color: N.dim, border: `1px solid ${N.line}`, borderRadius: 999, padding: "5px 13px", fontSize: 12.5, cursor: "pointer" }}>
-                        No — no-show
-                      </button>
-                    </div>
-                    {j === true && (
-                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${N.line}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-                          <span style={{ fontSize: 12.5, marginRight: 2 }}>Price you named</span>
-                          {[0, 15000, 20000, 25000, 30000].map((amt) => {
-                            const on = (priced[c.bookingUid] ?? -1) === amt;
-                            return (
-                              <button key={amt} onClick={() => setPriced((x) => ({ ...x, [c.bookingUid]: amt }))}
-                                style={{ background: on ? `${N.accent}22` : "transparent", color: on ? N.accent : N.dim,
-                                  border: `1px solid ${on ? N.accent : N.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12, cursor: "pointer" }}>
-                                {amt === 0 ? "None" : inr(amt)}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <div style={{ fontSize: 11.5, color: N.dim, marginBottom: 8 }}>Tap each check you did. Leave the ones that did not apply.</div>
-                        <div style={{ display: "grid", gap: 6 }}>
-                          {SCORECARD_KEYS.map((k) => {
-                            const v = mine[k];
-                            return (
-                              <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <span style={{ flex: 1, fontSize: 13, lineHeight: 1.4 }}>{SCORECARD_LABEL[k]}</span>
-                                {([true, false] as const).map((val) => (
-                                  <button key={String(val)} onClick={() => setChecks((x) => ({ ...x, [c.bookingUid]: { ...mine, [k]: val } }))}
-                                    style={{ flex: "none", background: v === val ? (val ? `${N.good}22` : `${N.bad}22`) : "transparent",
-                                      color: v === val ? (val ? N.good : N.bad) : N.dim, border: `1px solid ${v === val ? (val ? N.good : N.bad) : N.line}`,
-                                      borderRadius: 999, padding: "3px 10px", fontSize: 11.5, cursor: "pointer" }}>
-                                    {val ? "Did" : "Missed"}
-                                  </button>
-                                ))}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <button disabled={markBusy === c.bookingUid} onClick={() => void saveOutcome(c, true)}
-                          style={{ marginTop: 12, background: N.good, color: N.onAccent, border: 0, borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                          {markBusy === c.bookingUid ? "Saving…" : "Save call"}
-                        </button>
-                        <div style={{ fontSize: 11.5, color: N.dim, marginTop: 8 }}>
-                          If she paid for the programme, record it in &ldquo;Did she pay?&rdquo; — that is what tells Meta.
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* The one number this screen is trying to move. It sits above the
-            money because the money follows it: a consultation held without the
-            person who shares the decision is a consultation that ends in "let
-            me talk to it over". Shown as an em dash, never 0%, until something
-            has actually been marked. */}
-        <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 12,
-          border: `1px solid ${N.line}`, background: N.card,
+        {/* The one number this screen is trying to move. Shown as an em dash,
+            never 0%, until something has actually been marked. */}
+        <div style={{ ...box, marginTop: 12, padding: "10px 14px",
           display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 13.5,
-            color: dmp && dmp.pct !== null && dmp.pct >= DM_PRESENCE_TARGET_PCT ? N.good : N.text }}>
+            color: dmp && dmp.pct !== null && dmp.pct >= DM_PRESENCE_TARGET_PCT ? t.won : t.ink1 }}>
             {dmp ? formatDmPresence(dmp) : "Decision-maker present: …"}
           </span>
-          <span style={{ fontSize: 11.5, color: N.dim }}>
+          <span style={{ fontSize: 11.5, color: t.ink2 }}>
             {dmp && dmp.unmarked > 0
               ? `${dmp.unmarked} held call${dmp.unmarked === 1 ? "" : "s"} not marked · target ${DM_PRESENCE_TARGET_PCT}%`
               : `target ${DM_PRESENCE_TARGET_PCT}%`}
           </span>
         </div>
 
-        {err && <div style={{ ...card, borderColor: N.bad, color: N.bad, marginTop: 12 }}>Could not load: {err}</div>}
-        {notice && (
-          <div style={{ ...card, borderColor: N.warn, color: N.warn, marginTop: 12, fontSize: 13, display: "flex", gap: 10 }}>
-            <span style={{ flex: 1 }}>{notice}</span>
-            <button onClick={() => setNotice("")}
-              style={{ background: "none", border: 0, color: N.dim, cursor: "pointer", fontSize: 13 }}>✕</button>
-          </div>
-        )}
-
-        {/* 1 — Acquisition */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 0 10px" }}>
+        {/* Acquisition */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 0 10px", gap: 8, flexWrap: "wrap" }}>
           <span style={kicker}>Acquisition cost</span>
-          <span style={{ fontSize: 12, color: N.dim }}>
+          <span style={{ fontSize: 12, color: t.ink2 }}>
             {rangeLabel(days)} · same range as above
             {d?.acquisition.spendAsOf ? ` · ad spend as of ${asOfLabel(d.acquisition.spendAsOf)}` : ""}
           </span>
         </div>
-
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 12 }}>
-          <div style={card}>
+          <div style={box}>
             <div style={kicker}>Cost per ₹299 payer</div>
-            <div style={{ fontSize: 36, fontWeight: 600, letterSpacing: "-.02em", marginTop: 6 }}>
+            <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-.02em", marginTop: 6 }}>
               {inr(a?.costPerConsultPayer ?? null)}
             </div>
-            <div style={{ fontSize: 12, color: N.dim, marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: t.ink2, marginTop: 6 }}>
               {a?.consultPayers ?? 0} payers · {a?.spendAvailable ? inr(Math.round(a.spend ?? 0)) : "spend n/a"} spend
             </div>
-            <div style={{ height: 1, background: N.line, margin: "10px 0" }} />
-            <div style={{ fontSize: 11, color: N.dim }}>Target under ₹1,500</div>
+            <div style={{ height: 1, background: t.hairline, margin: "10px 0" }} />
+            <div style={{ fontSize: 11, color: t.ink2 }}>Target under ₹1,500</div>
           </div>
-
-          <div style={card}>
+          <div style={box}>
             <div style={kicker}>Cost per programme client</div>
-            <div style={{ fontSize: 36, fontWeight: 600, letterSpacing: "-.02em", marginTop: 6,
-              color: diverge ? N.warn : N.text }}>
+            <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-.02em", marginTop: 6, color: diverge ? t.amber : t.ink1 }}>
               {inr(a?.costPerProgrammeClient ?? null)}
             </div>
-            <div style={{ fontSize: 12, color: N.dim, marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: t.ink2, marginTop: 6 }}>
               {a?.programmeCloses ?? 0} closes · {inr(a?.contracted ?? 0)} contracted
               {(a?.collected ?? 0) > 0 && (a?.collected ?? 0) !== (a?.contracted ?? 0)
                 ? ` · ${inr(a?.collected ?? 0)} collected` : ""}
             </div>
-            <div style={{ height: 1, background: N.line, margin: "10px 0" }} />
-            <div style={{ fontSize: 11, color: N.dim }}>
+            <div style={{ height: 1, background: t.hairline, margin: "10px 0" }} />
+            <div style={{ fontSize: 11, color: t.ink2 }}>
               {(a?.programmeCloses ?? 0) === 0 ? "No closes in window — too young to judge" : "Against ₹15,000–30,000 per client"}
             </div>
           </div>
         </div>
-
         {diverge && (
-          <div style={{ ...card, marginTop: 12, borderColor: N.warn, display: "flex", gap: 10 }}>
-            <span style={{ color: N.warn, fontSize: 18, lineHeight: 1 }}>▲</span>
+          <div style={{ ...box, marginTop: 12, borderColor: t.amber, display: "flex", gap: 10 }}>
+            <span style={{ color: t.amber, fontSize: 18, lineHeight: 1 }}>▲</span>
             <div>
               <div style={{ fontWeight: 600, fontSize: 14 }}>Cheap payers, expensive clients</div>
-              <div style={{ fontSize: 13, color: N.dim, marginTop: 3 }}>
+              <div style={{ fontSize: 13, color: t.ink2, marginTop: 3 }}>
                 You are buying ₹299 payments efficiently but they are not converting to programmes.
                 Look at the call, not the ad.
               </div>
@@ -624,300 +458,59 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
           </div>
         )}
 
-        {/* 1b — Calls in the next 24 hours: the calendar, with what to remember. */}
-        {d && d.callsToday.length > 0 && (
-          <>
-            <div style={h6}>Calls in the next 24 hours · {d.callsToday.length}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {d.callsToday.map((c) => {
-                const badgeColor = c.badge?.tone === "warn" ? N.warn : N.good;
-                const tools = rowTools({ type: "call" });
-                return (
-                  <div key={c.bookingUid} style={{ ...card, padding: 14, borderLeft: `3px solid ${N.accent}` }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 15 }}>{c.name || "(no name)"}</div>
-                        <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
-                          {new Date(c.when).toLocaleString("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit" })}
-                        </div>
-                        {/* Whether her report is in yet sits beside who decides:
-                            both are what to know before he dials. */}
-                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 6 }}>
-                          {c.badge && (
-                            <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999,
-                              fontSize: 10, fontWeight: 800, letterSpacing: ".07em", color: badgeColor,
-                              border: `1px solid ${badgeColor}44`, background: `${badgeColor}14` }}>
-                              {c.badge.label}
-                            </span>
-                          )}
-                          <ReportChip report={c.report} ink={N} mode={tools.report} />
-                        </div>
-                      </div>
-                      {c.wa && (
-                        <a href={c.wa} target="_blank" rel="noreferrer"
-                          style={{ flex: "none", background: N.accent, color: N.onAccent, borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
-                          WhatsApp
-                        </a>
-                      )}
-                    </div>
-                    {/* Notes is opened during the call, not after it. The doc is
-                        made by the server so nothing later has to guess which
-                        notes belong to which call — see lib/drive. Summary turns
-                        those notes into her PDF; Drive opens her folder. On their
-                        own line so the phone keeps room for her name. */}
-                    <RowTools adminKey={adminKey} ink={N} name={c.name} phone={c.phone}
-                      notesWhen={c.when} summaryWhen={c.when} tools={tools} onBridgeResult={onBridgeResult} />
-                    {/* Before the call, not after it: the three checks missed most often. */}
-                    {(d.checklist.checks.length ?? 0) > 0 && (
-                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5 }}>
-                        <div style={{ color: N.warn, fontWeight: 700, marginBottom: 3 }}>On this call, don&rsquo;t miss:</div>
-                        {d.checklist.checks.slice(0, 3).map((ck, i) => (
-                          <div key={ck.key} style={{ color: N.text }}>{i + 1}. {ck.label}</div>
-                        ))}
-                      </div>
-                    )}
-                    {c.badge?.prompt && (
-                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5, color: N.warn }}>
-                        {c.badge.prompt}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* 2 — Needs me now: the one action list, shared with Pipeline and Analytics. */}
-        <div style={h6}>
-          Needs me now{d ? ` · ${d.needsAction.count}` : ""}
-          {d && d.needsAction.overdue > 0 ? <span style={{ color: N.bad }}> · {d.needsAction.overdue} overdue</span> : null}
-        </div>
-        {d && d.queue.length === 0 && (
-          <div style={{ ...card, color: N.dim, fontSize: 14 }}>Nothing waiting on you. Rare — enjoy it.</div>
-        )}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {d?.queue.map((q) => {
-            // Colour is age, the same rule on every tab: under 1 hr neutral,
-            // 1-6 hr amber, over 6 hr red.
-            const accent = q.tone === "red" ? N.bad : q.tone === "amber" ? N.warn : N.dim;
-            // Same identity the row is keyed by, so "Sent ✓" stays on the row
-            // it belongs to across a refresh rather than following a position.
-            const rowKey = `${q.phone}-${q.kind}-${q.since}`;
-            const wait = q.waitMin >= 120 ? `${Math.round(q.waitMin / 60)} hr` : `${Math.round(q.waitMin)} min`;
-            const tools = rowTools({ type: "queue", kind: q.kind });
-            return (
-              <div key={`${q.phone}-${q.kind}-${q.since}`} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.name || "(no name)"}</div>
-                    <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
-                      <span style={{ color: accent, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                        {q.overdue ? "Overdue · " : ""}{wait}
-                      </span>
-                      {" · "}{q.reason}
-                    </div>
-                    {reportChip(q.report, tools.report) && (
-                      <div style={{ marginTop: 6 }}>
-                        <ReportChip report={q.report} ink={N} mode={tools.report} />
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
-                  {q.kind === "mark_call" ? (
-                    <span style={{ flex: "none", color: N.warn, fontSize: 12.5, fontWeight: 700 }}>Mark above ↑</span>
-                  ) : q.wa ? (
-                    <>
-                      {/* One tap does the thing, from the number she knows. The
-                          wa.me link stays beside it as the fallback for a shut
-                          24-hour window — the failure costs a tap, not the
-                          message. */}
-                      {q.text && (
-                        <button
-                          type="button"
-                          onClick={() => sendNow(rowKey, q.phone, q.text)}
-                          disabled={sendBusy === rowKey || sendDone[rowKey]}
-                          style={{ background: sendDone[rowKey] ? "transparent" : accent === N.dim ? N.accent : accent,
-                            color: sendDone[rowKey] ? N.good : N.onAccent,
-                            border: sendDone[rowKey] ? `1px solid ${N.good}` : 0,
-                            borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
-                            cursor: sendBusy === rowKey ? "wait" : sendDone[rowKey] ? "default" : "pointer",
-                            whiteSpace: "nowrap" }}>
-                          {sendDone[rowKey] ? "Sent ✓" : sendBusy === rowKey ? "Sending…" : (ACTION_VERB[q.kind] ?? "Send")}
-                        </button>
-                      )}
-                      <a href={q.wa} target="_blank" rel="noreferrer"
-                        title="Open in WhatsApp instead"
-                        style={{ border: `1px solid ${N.line}`, color: N.dim, borderRadius: 999,
-                          padding: "6px 12px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
-                        {q.text ? "WA" : (ACTION_VERB[q.kind] ?? "WhatsApp")}
-                      </a>
-                    </>
-                  ) : null}
-                  </div>
-                </div>
-                {sendErr[rowKey] && (
-                  <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>{sendErr[rowKey]}</div>
-                )}
-                {/* Notes is reachable from any row she appears on. The calls
-                    section renders only when something is booked in the next
-                    24 hours, so on every other day the notes button went with
-                    it — and he typed the notes into an untitled doc instead.
-                    Summary only where her call has happened (rowTools), filed
-                    under the call's date: `since` is when it was held, or for
-                    mark_call ninety minutes after the slot, so only a call
-                    after 22:30 IST files under the next day. */}
-                <RowTools adminKey={adminKey} ink={N} name={q.name} phone={q.phone}
-                  summaryWhen={q.since} tools={tools} onBridgeResult={onBridgeResult} />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 2b — Decide: the only manual step in the whole system */}
-        {d && d.decide.length > 0 && (
-          <>
-            <div style={h6}>Did she pay? · {d.decide.length}</div>
-            <div style={{ fontSize: 12, color: N.dim, marginBottom: 8, lineHeight: 1.5 }}>
-              The one thing no webhook can see. Everything else came off the call recording.
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {d.decide.map((p) => {
-                const amounts = p.pitched > 0 ? [p.pitched] : [15000, 20000, 25000, 30000];
-                const payDate = payDateFor(p.row);
-                const when = paymentDateStatus(payDate, nowMs);
-                // The optimistic tap wins over the sheet until the reload lands.
-                const dmAnswer = dmSaved[p.row] ?? (p.dmPresent ?? "").trim().toLowerCase();
-                return (
-                  <div key={p.row} style={{ ...card, padding: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 15 }}>{p.name}</div>
-                        <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
-                          {p.pitched > 0 ? `Pitched ${inr(p.pitched)}` : "No price captured"}
-                          {" · "}{p.daysSince === 0 ? "today" : `${p.daysSince}d ago`}
-                        </div>
-                        {p.objection && (
-                          <div style={{ fontSize: 12, color: N.warn, marginTop: 4 }}>{p.objection.slice(0, 70)}</div>
-                        )}
-                      </div>
-                      <a href={`https://wa.me/91${p.phone}`} target="_blank" rel="noreferrer"
-                        style={{ flex: "none", alignSelf: "flex-start", color: N.accent, fontSize: 12.5, textDecoration: "none" }}>
-                        WhatsApp →
-                      </a>
-                    </div>
-                    {/* Default today, so the common case stays one tap. Future
-                        dates are refused by the picker itself. */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 11 }}>
-                      <span style={{ fontSize: 11.5, color: N.dim }}>Paid on</span>
-                      <input type="date" value={payDate} max={todayValue}
-                        onChange={(e) => setPayDates((m) => ({ ...m, [p.row]: e.target.value }))}
-                        style={{ background: "transparent", color: N.text, border: `1px solid ${N.line}`,
-                          borderRadius: 8, padding: "5px 8px", fontSize: 12.5, colorScheme: "dark" }} />
-                    </div>
-                    {when.stale && (
-                      <div style={{ fontSize: 12, color: N.warn, marginTop: 7, lineHeight: 1.45 }}>
-                        Older than {META_ATTRIBUTION_WINDOW_DAYS} days — Meta may not attribute this sale.
-                        Mark payments the same day.
-                      </div>
-                    )}
-                    {/* Asked BEFORE the money buttons on purpose: marking the
-                        money removes this row from the list, so a question
-                        placed after it would only ever be answered by accident. */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 11.5, color: N.dim }}>Decision-maker present on the call?</span>
-                      {(["yes", "no"] as const).map((v) => {
-                        const on = dmAnswer === v;
-                        return (
-                          <button key={v} disabled={dmBusy === p.row}
-                            onClick={() => void markDmPresent(p.row, v)}
-                            style={{ background: on ? `${N.accent}22` : "transparent",
-                              color: on ? N.accent : N.dim,
-                              border: `1px solid ${on ? N.accent : N.line}`, borderRadius: 999,
-                              padding: "4px 12px", fontSize: 12, fontWeight: on ? 700 : 400, cursor: "pointer" }}>
-                            {v === "yes" ? "Yes" : "No"}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ display: "flex", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
-                      {amounts.map((amt) => (
-                        <button key={amt} disabled={saving === p.row}
-                          onClick={() => void markClosed(p.row, amt, payDate)}
-                          style={{ background: N.good, color: N.onAccent, border: 0, borderRadius: 999,
-                            padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                          Paid {inr(amt)}
-                        </button>
-                      ))}
-                      <button disabled={saving === p.row}
-                        onClick={() => {
-                          const v = window.prompt("Total agreed (₹)", p.pitched ? String(p.pitched) : "");
-                          if (!v) return;
-                          const total = Number(v.replace(/[^\d]/g, ""));
-                          if (!total) return;
-                          const c = window.prompt(`Received now (₹) — leave as ${total} if paid in full`, String(total));
-                          const got = Number(String(c ?? total).replace(/[^\d]/g, "")) || total;
-                          void markClosed(p.row, total, payDate, got);
-                        }}
-                        style={{ background: "transparent", color: N.dim, border: `1px solid ${N.line}`,
-                          borderRadius: 999, padding: "7px 14px", fontSize: 12.5, cursor: "pointer" }}>
-                        Part payment…
-                      </button>
-                      {saving === p.row && <span style={{ fontSize: 12, color: N.dim, alignSelf: "center" }}>Saving…</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* 3 — Automation health */}
+        {/* Automation health */}
         <div style={h6}>Automation health · 24h</div>
-        <div style={card}>
+        <div style={box}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ width: 9, height: 9, borderRadius: 99,
-              background: (d?.health.failed24 ?? 0) > 0 ? N.bad : (d?.health.sent24 ?? 0) > 0 ? N.good : N.dim }} />
+              background: (d?.health.failed24 ?? 0) > 0 ? t.clay : (d?.health.sent24 ?? 0) > 0 ? t.won : t.ink3 }} />
             <span style={{ fontSize: 14 }}>
               {d ? `${d.health.sent24} delivered · ${d.health.failed24} failed` : "…"}
             </span>
           </div>
           {(d?.health.failed24 ?? 0) > 0 && (
-            <div style={{ fontSize: 12.5, color: N.bad, marginTop: 8 }}>
+            <div style={{ fontSize: 12.5, color: t.clay, marginTop: 8 }}>
               Failures are usually Meta&rsquo;s marketing frequency cap. The message was sent and never arrived.
             </div>
           )}
           <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-            {d?.health.byTemplate.map((t) => (
-              <div key={t.name} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: N.dim }}>
-                <span>{t.name}</span><span>{t.sent}</span>
+            {d?.health.byTemplate.map((x) => (
+              <div key={x.name} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: t.ink2, gap: 10 }}>
+                <span style={{ overflowWrap: "anywhere" }}>{x.name}</span><span>{x.sent}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* 4 — Capacity */}
-        <div style={h6}>Capacity · {new Date().toLocaleDateString("en-IN", { month: "long" })}</div>
-        <div style={card}>
-          <div style={{ display: "flex", gap: 7, marginBottom: 10 }}>
+        {/* Capacity */}
+        <div style={h6}>Capacity · {new Date(nowMs).toLocaleDateString("en-IN", { month: "long" })}</div>
+        <div style={box}>
+          <div style={{ display: "flex", gap: 7, marginBottom: 10, flexWrap: "wrap" }}>
             {Array.from({ length: d?.capacity.ceiling ?? 7 }, (_, i) => (
               <span key={i} style={{ width: 26, height: 26, borderRadius: 8,
-                background: i < (d?.capacity.closed ?? 0) ? N.good : "transparent",
-                border: `1px solid ${i < (d?.capacity.closed ?? 0) ? N.good : N.line}` }} />
+                background: i < (d?.capacity.closed ?? 0) ? t.won : "transparent",
+                border: `1px solid ${i < (d?.capacity.closed ?? 0) ? t.won : t.hairline}` }} />
             ))}
           </div>
           <div style={{ fontSize: 14 }}>
             {d?.capacity.closed ?? 0} of {d?.capacity.ceiling ?? 7} clients this month
           </div>
-          <div style={{ fontSize: 12, color: N.dim, marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: t.ink2, marginTop: 4 }}>
             {(d?.capacity.closed ?? 0) >= (d?.capacity.ceiling ?? 7)
               ? "Sold out. More spend buys a waitlist, not revenue."
               : `${(d?.capacity.ceiling ?? 7) - (d?.capacity.closed ?? 0)} places left`}
           </div>
         </div>
 
+        {/* The switches: what may go by itself, and the links the follow-ups carry. */}
+        <div style={h6}>Settings</div>
+        <div id="payment-links" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12 }}>
+          <div style={box}><AutomationToggles t={t} apiKey={adminKey} /></div>
+          <div style={box}><PaymentLinksCard t={t} apiKey={adminKey} /></div>
+        </div>
+
         {d?.caveats?.length ? (
-          <div style={{ marginTop: 18, fontSize: 11.5, color: N.dim, lineHeight: 1.6 }}>
+          <div style={{ marginTop: 18, fontSize: 11.5, color: t.ink2, lineHeight: 1.6 }}>
             {d.caveats.map((c) => <div key={c}>· {c}</div>)}
           </div>
         ) : null}
