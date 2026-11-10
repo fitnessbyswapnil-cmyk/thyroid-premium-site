@@ -66,8 +66,33 @@ export function isTrackingUrl(url?: string | null): boolean {
 }
 
 /**
- * A JavaScript expression, for embedding in the inline tracking snippets, that
- * is true when the browser is on the production host.
+ * Operator pages: the dashboard (/admin), the pipeline on a phone (/crm) and
+ * the WhatsApp inbox (/inbox). They show client names, phone numbers and
+ * health conversations.
+ *
+ * Found 10-Nov-2026: the GTM container fires Microsoft Clarity's session
+ * recorder on every page (custom HTML tag 121, trigger gtm.js) and the Meta
+ * pixel on every page (tag 75, gtm.init). Because GTM loaded on these pages
+ * too, every dashboard session was recorded for Microsoft and the owner was
+ * counted as a site visitor in Meta. No tracking snippet runs here now.
+ *
+ * A whole path segment matches: /admin and /admin/x are internal, while
+ * /administrator would not be. Add a path here whenever a new operator page
+ * ships; lib/operator-pages-untracked.test.ts runs the real snippet against
+ * each of these paths.
+ */
+export const INTERNAL_PATHS = ["/admin", "/crm", "/inbox"] as const;
+
+/** True for an operator page's path (see INTERNAL_PATHS). */
+export function isInternalPath(pathname?: string | null): boolean {
+  if (typeof pathname !== "string") return false;
+  return INTERNAL_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+/**
+ * A JavaScript statement, for embedding in the inline tracking snippets, that
+ * returns early unless the browser is on the production host AND on a page
+ * that is not an operator page (see INTERNAL_PATHS).
  *
  * The snippets are injected as raw strings, so they cannot import this module.
  * Generating the literal here keeps PRODUCTION_HOST as the single definition
@@ -79,5 +104,10 @@ export function isTrackingUrl(url?: string | null): boolean {
  * generation to fix a tracking bug.
  */
 export function inlineHostGuard(): string {
-  return `if(location.hostname!==${JSON.stringify(PRODUCTION_HOST)})return;`;
+  const internal = INTERNAL_PATHS.map((path) => path.slice(1)).join("|");
+  return (
+    `if(location.hostname!==${JSON.stringify(PRODUCTION_HOST)})return;` +
+    // pathname, never href: a query string cannot switch tracking back on.
+    `if(/^\\/(?:${internal})(?:\\/|$)/.test(location.pathname))return;`
+  );
 }
