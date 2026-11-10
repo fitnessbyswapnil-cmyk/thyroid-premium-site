@@ -35,7 +35,6 @@ import { StatusPill } from "./ui/StatusPill";
 import { pendingTab } from "./RowTools";
 import { readAdminKey } from "./adminKey";
 import { ReadReportWithClaude } from "./ReadReportWithClaude";
-import type { MarkerValue } from "@/lib/ai-jobs";
 import { istClock } from "@/lib/admin-actions";
 import { draftWaLink } from "@/lib/draft-message";
 import {
@@ -83,19 +82,9 @@ function ReportReaderSlot(p: ReportReaderProps & { apiKey?: string }): JSX.Eleme
       t={p.t}
       apiKey={p.apiKey}
       mediaId={p.mediaId}
-      onMarkers={(found) => p.onMarkers(found.map(markerRowOf))}
+      onMarkers={p.onMarkers}
     />
   );
-}
-
-/** Claude's reading, in the card's own row shape: the unit rides with the value, the flag is the report's word. */
-function markerRowOf(m: MarkerValue): MarkerRow {
-  return {
-    marker: m.name,
-    value: [m.value, m.unit].filter(Boolean).join(" "),
-    range: m.refRange || undefined,
-    flag: m.flag || undefined,
-  };
 }
 
 export function PrecallTools({ t, name, phone, when, apiKey, mediaId }: {
