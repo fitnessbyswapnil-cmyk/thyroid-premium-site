@@ -17,15 +17,24 @@ import { checkAdminKey } from "../_lib";
 import { readMessages, appendMessage, markThreadRead, type WaMessage } from "@/lib/wa-messages";
 import { sendWhatsAppText, toWhatsAppNumber } from "@/lib/whatsapp";
 import { readTags } from "@/lib/wa-tags";
+import { savedReportsFor } from "@/lib/report-save";
+import { canSaveToDrive } from "@/lib/admin-actions";
 
 export const dynamic = "force-dynamic";
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * A media message carries `driveUrl`: her copy in Drive, or null when there is
+ * none. WhatsApp deletes media after about 30 days, so for an old report the
+ * Drive copy is the only one that still opens.
+ */
+export type ThreadMessage = WaMessage & { driveUrl?: string | null };
+
 export type Thread = {
   phone: string;
   name: string;
-  messages: WaMessage[];
+  messages: ThreadMessage[];
   lastTs: string;
   unread: number;
   /** Minutes left to reply free-form; 0 once her window has closed. */
@@ -40,9 +49,18 @@ export async function GET(req: NextRequest) {
     const all = await readMessages();
     // Tags are per contact, so they ride along with the threads rather than
     // making the phone fetch them separately for every thread it renders.
-    const tagMap = await readTags().catch(() => new Map<string, string[]>());
-    const byPhone = new Map<string, WaMessage[]>();
-    for (const m of all) {
+    // Drive copies the same way: ONE lookup for every savable attachment in
+    // the inbox, not one per bubble, and a failed lookup costs the links only.
+    const savable = [...new Set(all.filter(canSaveToDrive).map((m) => m.mediaId))];
+    const [tagMap, inDrive] = await Promise.all([
+      readTags().catch(() => new Map<string, string[]>()),
+      savable.length
+        ? savedReportsFor(savable).catch(() => new Map<string, { url: string; savedAt: number }>())
+        : Promise.resolve(new Map<string, { url: string; savedAt: number }>()),
+    ]);
+    const byPhone = new Map<string, ThreadMessage[]>();
+    for (const raw of all) {
+      const m: ThreadMessage = raw.mediaId ? { ...raw, driveUrl: inDrive.get(raw.mediaId)?.url ?? null } : raw;
       const list = byPhone.get(m.phone) ?? [];
       list.push(m);
       byPhone.set(m.phone, list);

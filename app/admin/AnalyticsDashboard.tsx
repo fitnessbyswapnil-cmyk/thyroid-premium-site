@@ -22,44 +22,127 @@ import { waitLabel, type AgeTone, type ActionItem } from "@/lib/journey";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
 import { WEBINAR_START_ISO, WEBINAR_WHEN_LONG } from "@/lib/webinar";
 import { cohortKey } from "@/lib/webinar-reminders";
+import { canSaveToDrive } from "@/lib/admin-actions";
 
 type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string; name: string; read: boolean;
   // /api/admin/messages has always returned these; the type simply never
   // declared them, so a client's report showed here as the bare text
   // "[report.pdf]" with no way to open it.
-  mediaId?: string; mediaType?: string; mediaMime?: string; mediaName?: string };
+  mediaId?: string; mediaType?: string; mediaMime?: string; mediaName?: string; messageId?: string;
+  /** Her copy of this attachment in Drive, or null when there is none (media messages only). */
+  driveUrl?: string | null };
 /**
  * One WhatsApp attachment. The admin key rides in the URL rather than a header
  * because <img> and target=_blank cannot set one; /api/admin/media accepts ?k=
  * for exactly this reason and never exposes the WhatsApp token to the browser.
  */
-function Attachment({ m, apiKey }: { m: WaMsg; apiKey: string }) {
+function Attachment({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string; phone: string; clientName: string }) {
   const [failed, setFailed] = useState(false);
   if (!m.mediaId) return null;
   const src = `/api/admin/media?id=${encodeURIComponent(m.mediaId)}&k=${encodeURIComponent(apiKey)}`;
 
+  let media: React.ReactNode;
   if (failed) {
-    return <div style={{ fontSize: 11, color: WARN }}>Attachment unavailable — WhatsApp deletes media after about 30 days.</div>;
-  }
-  if (m.mediaType === "image" || m.mediaType === "sticker") {
-    return (
+    media = <div style={{ fontSize: 11, color: WARN }}>Attachment unavailable — WhatsApp deletes media after about 30 days.</div>;
+  } else if (m.mediaType === "image" || m.mediaType === "sticker") {
+    media = (
       <a href={src} target="_blank" rel="noopener noreferrer">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={m.mediaName || "attachment"} onError={() => setFailed(true)}
           style={{ maxWidth: "100%", borderRadius: 9, display: "block", marginBottom: 5 }} />
       </a>
     );
+  } else if (m.mediaType === "audio") {
+    media = <audio controls src={src} style={{ width: "100%", marginBottom: 5 }} />;
+  } else if (m.mediaType === "video") {
+    media = <video controls src={src} style={{ maxWidth: "100%", borderRadius: 9, marginBottom: 5 }} />;
+  } else {
+    media = (
+      <a href={src} target="_blank" rel="noopener noreferrer"
+        style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", marginBottom: 5,
+          background: "rgba(255,255,255,0.06)", borderRadius: 9, color: INK1, textDecoration: "none",
+          fontSize: 12, fontWeight: 600 }}>
+        <span style={{ fontSize: 15 }}>📄</span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.mediaName || "Open document"}</span>
+      </a>
+    );
   }
-  if (m.mediaType === "audio") return <audio controls src={src} style={{ width: "100%", marginBottom: 5 }} />;
-  if (m.mediaType === "video") return <video controls src={src} style={{ maxWidth: "100%", borderRadius: 9, marginBottom: 5 }} />;
+  // Under the media even when WhatsApp has deleted it: past 30 days the Drive
+  // copy is the only one that still opens.
   return (
-    <a href={src} target="_blank" rel="noopener noreferrer"
-      style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", marginBottom: 5,
-        background: "rgba(255,255,255,0.06)", borderRadius: 9, color: INK1, textDecoration: "none",
-        fontSize: 12, fontWeight: 600 }}>
-      <span style={{ fontSize: 15 }}>📄</span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.mediaName || "Open document"}</span>
-    </a>
+    <>
+      {media}
+      <DriveCopy m={m} apiKey={apiKey} phone={phone} clientName={clientName} />
+    </>
+  );
+}
+
+/**
+ * Her report's copy in Drive, or the button that makes one.
+ *
+ * Reports are saved automatically as they arrive; this is the fallback for
+ * one that arrived before that existed, or while the save failed. One tap,
+ * and the route says in words why when it cannot (not a lead, too large,
+ * Drive not connected).
+ */
+function DriveCopy({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string; phone: string; clientName: string }) {
+  const [savedUrl, setSavedUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
+  // disabled lands only after a re-render; a double tap must not save twice.
+  const inFlight = useRef(false);
+
+  const url = m.driveUrl || savedUrl;
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer"
+        style={{ display: "inline-block", marginBottom: 5, fontSize: 11, fontWeight: 700, color: PURPLE, textDecoration: "underline", textUnderlineOffset: 2 }}>
+        In Drive
+      </a>
+    );
+  }
+  if (!canSaveToDrive(m)) return null;
+
+  const save = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    setNote(null);
+    try {
+      const res = await fetch("/api/admin/save-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": apiKey },
+        body: JSON.stringify({
+          mediaId: m.mediaId, phone, name: clientName, messageId: m.messageId ?? "",
+          mime: m.mediaMime ?? "", filename: m.mediaName ?? "", kind: m.mediaType ?? "", ts: m.ts,
+        }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { saved?: boolean; url?: string; reason?: string; hint?: string; error?: string };
+      if (res.ok && j.saved) {
+        if (j.url) setSavedUrl(j.url);
+        else setNote({ text: "Saved to her Drive folder", ok: true });
+      } else {
+        setNote({ text: j.hint || j.reason || j.error || `HTTP ${res.status}`, ok: false });
+      }
+    } catch (e) {
+      setNote({ text: e instanceof Error ? e.message : String(e), ok: false });
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 5 }}>
+      {!note?.ok && (
+        <button type="button" onClick={save} disabled={busy} aria-busy={busy}
+          style={{ background: "transparent", border: `1px solid ${GRID}`, color: INK2, borderRadius: 999,
+            padding: "4px 11px", fontSize: 11, fontWeight: 700, cursor: busy ? "wait" : "pointer", whiteSpace: "nowrap" }}>
+          {busy ? "Saving…" : "Save to Drive"}
+        </button>
+      )}
+      {note && <span style={{ fontSize: 11, lineHeight: 1.4, color: note.ok ? GOOD : WARN, whiteSpace: "normal" }}>{note.text}</span>}
+    </div>
   );
 }
 
@@ -2079,7 +2162,7 @@ export default function AnalyticsDashboard() {
                                 border: `1px solid ${m.direction === "out" ? "rgba(168,85,247,0.32)" : GRID}`,
                                 borderRadius: 12, padding: "8px 11px", fontSize: 12.5, color: INK1, whiteSpace: "pre-wrap", wordBreak: "break-word",
                               }}>
-                                {m.mediaId && key ? <Attachment m={m} apiKey={key} /> : null}
+                                {m.mediaId && key ? <Attachment m={m} apiKey={key} phone={t.phone} clientName={t.name || lead?.name || ""} /> : null}
                                 {m.text}
                               </div>
                               <p style={{ fontSize: 9.5, color: MUTED, marginTop: 3, textAlign: m.direction === "out" ? "right" : "left" }}>

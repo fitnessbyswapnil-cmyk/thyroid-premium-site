@@ -32,8 +32,11 @@ import type { DecisionBadge } from "@/lib/decision-maker";
 import { DM_PRESENCE_TARGET_PCT, formatDmPresence, type PresenceRate } from "@/lib/dm-presence";
 import type { Summary, ChecklistSummary } from "@/lib/metrics";
 import { SCORECARD_KEYS, SCORECARD_LABEL, type ScorecardKey } from "@/lib/scorecard";
+import { reportChip, rowTools, showConnectCard, type DriveStatus, type SavedReport } from "@/lib/admin-actions";
 import { useRange, RANGE_CHOICES, rangeLabel, pct } from "./useMetrics";
 import { LIGHT, DARK, type Tokens } from "./tokens";
+import RowTools, { ReportChip } from "./RowTools";
+import ConnectDrive from "./ConnectDrive";
 
 /**
  * The palette comes from ./tokens now, and follows the theme switch in the
@@ -103,9 +106,10 @@ type Data = {
     spendAsOf?: string | null;
   };
   /** The one needs-action list (lib/journey) — same items and count as Pipeline and Analytics. */
-  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string; text: string }[];
+  queue: { name: string; phone: string; reason: string; kind: string; since: string; waitMin: number; overdue: boolean; tone: "neutral" | "amber" | "red"; bookingUid: string; leadId: string; wa: string; text: string; report?: SavedReport }[];
   needsAction: { count: number; overdue: number };
-  callsToday: { name: string; phone: string; when: string; bookingUid: string; wa: string; badge?: DecisionBadge }[];
+  /** `report`: the newest report she sent that is saved in her Drive folder, or null. */
+  callsToday: { name: string; phone: string; when: string; bookingUid: string; wa: string; badge?: DecisionBadge; report?: SavedReport }[];
   decide: { row: number; name: string; phone: string; pitched: number; objection: string; daysSince: number; dmPresent?: string }[];
   dmPresence?: PresenceRate;
   testMode?: boolean;
@@ -130,6 +134,20 @@ function asOfLabel(iso: string): string {
 
 const inr = (n: number | null) => (n === null ? "—" : "₹" + n.toLocaleString("en-IN"));
 
+/**
+ * GET /api/admin/drive-setup, or null when it could not be read. Unknown is
+ * not "disconnected": a failed read leaves the Connect card hidden rather than
+ * nagging him about a set-up that may be fine.
+ */
+async function readDriveStatus(adminKey: string): Promise<DriveStatus | null> {
+  try {
+    const r = await fetch("/api/admin/drive-setup", { headers: { "x-admin-key": adminKey }, cache: "no-store" });
+    return r.ok ? ((await r.json()) as DriveStatus) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function Today({ adminKey, dark = false }: { adminKey: string; dark?: boolean }) {
   const N = palette(dark);
   // Shared with Pipeline and Analytics: one range, the same numbers everywhere.
@@ -149,6 +167,9 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
     } finally { setBusy(false); }
   }, [days, adminKey]);
 
+  // load() flips the button to "Syncing…" before it fetches, on purpose: the
+  // first paint and every range change should say a fetch is under way.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
 
   // The only write this screen makes. field "closed" stamps the programme
@@ -234,39 +255,30 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
     }
   }, [adminKey]);
 
-  // His call notes, as a Doc, opened from the row the call is on.
+  // His call notes, her summary PDF and her folder are opened from the row by
+  // ./RowTools, which pre-opens each tab inside the tap so no popup blocker
+  // can eat it.
   //
-  // The tab is opened SYNCHRONOUSLY, before the fetch, and pointed at the doc
-  // when the id comes back: a window.open() inside an await is a popup the
-  // browser blocks, and the failure is silent — he taps, nothing happens, and
-  // the button looks broken. On failure the blank tab is closed again so he is
-  // not left staring at one.
-  const [notesBusy, setNotesBusy] = useState<string | null>(null);
-  const [notesErr, setNotesErr] = useState<Record<string, string>>({});
-  const openNotes = useCallback(
-    async (c: { key: string; name: string; phone: string; when?: string }) => {
-      setNotesErr((p) => ({ ...p, [c.key]: "" }));
-      setNotesBusy(c.key);
-      const tab = window.open("", "_blank");
-      try {
-        const r = await fetch("/api/admin/call-notes", {
-          method: "POST",
-          headers: { "content-type": "application/json", "x-admin-key": adminKey },
-          body: JSON.stringify({ name: c.name, phone: c.phone, when: c.when ?? "" }),
-        });
-        const j = (await r.json()) as { url?: string; hint?: string; error?: string };
-        if (!r.ok || !j.url) throw new Error(j.hint || j.error || `HTTP ${r.status}`);
-        if (tab) tab.location.href = j.url;
-        else window.location.href = j.url;
-      } catch (e) {
-        tab?.close();
-        setNotesErr((p) => ({ ...p, [c.key]: e instanceof Error ? e.message : String(e) }));
-      } finally {
-        setNotesBusy(null);
-      }
-    },
-    [adminKey],
-  );
+  // Whether the bridge to his Drive is set up at all, read from config and
+  // never by calling the script, so the Connect card shows only while it is
+  // needed. A row whose Drive button meets a script that refuses the stored
+  // pairing brings the card back (showConnectCard): every hint for that
+  // failure tells him to use the card, so the card has to be there.
+  const [drive, setDrive] = useState<DriveStatus | null>(null);
+  const [bridgeCode, setBridgeCode] = useState("");
+  const [driveJustConnected, setDriveJustConnected] = useState(false);
+  const loadDrive = useCallback(() => {
+    void readDriveStatus(adminKey).then((s) => { if (s) setDrive(s); });
+  }, [adminKey]);
+  useEffect(() => {
+    let live = true;
+    void readDriveStatus(adminKey).then((s) => { if (live && s) setDrive(s); });
+    return () => { live = false; };
+  }, [adminKey]);
+  const onBridgeResult = useCallback((code: string) => {
+    setBridgeCode(code);
+    if (code) setDriveJustConnected(false);
+  }, []);
 
   // The second write this screen makes, and the cheapest. One tap, straight
   // after the call, while he still remembers who was on it. Held optimistically
@@ -362,11 +374,22 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
               {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
             </div>
           </div>
-          <button onClick={() => { setNowMs(Date.now()); void load(); }} disabled={busy}
+          <button onClick={() => { setNowMs(Date.now()); void load(); void loadDrive(); }} disabled={busy}
             style={{ background: "none", border: `1px solid ${N.line}`, color: N.dim, borderRadius: 999, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>
             {busy ? "Syncing…" : "Refresh"}
           </button>
         </header>
+
+        {/* Before everything else on the screen, because every Drive button
+            below depends on it. Gone the moment it has done its job. */}
+        {driveJustConnected ? (
+          <div style={{ ...card, marginTop: 14, padding: "11px 14px", fontSize: 13.5, fontWeight: 600, color: N.good }}>
+            Google Drive connected
+          </div>
+        ) : drive && showConnectCard(drive, bridgeCode) ? (
+          <ConnectDrive adminKey={adminKey} ink={N} status={drive}
+            onConnected={() => { setDriveJustConnected(true); setBridgeCode(""); void loadDrive(); }} />
+        ) : null}
 
         {/* 0 — What you miss most on calls. Above everything: revenue says
             what happened, this says what to change tomorrow. */}
@@ -608,6 +631,7 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {d.callsToday.map((c) => {
                 const badgeColor = c.badge?.tone === "warn" ? N.warn : N.good;
+                const tools = rowTools({ type: "call" });
                 return (
                   <div key={c.bookingUid} style={{ ...card, padding: 14, borderLeft: `3px solid ${N.accent}` }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -616,40 +640,33 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                         <div style={{ fontSize: 12.5, color: N.dim, marginTop: 2 }}>
                           {new Date(c.when).toLocaleString("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit" })}
                         </div>
-                        {c.badge && (
-                          <span style={{ display: "inline-block", marginTop: 6, padding: "2px 8px", borderRadius: 999,
-                            fontSize: 10, fontWeight: 800, letterSpacing: ".07em", color: badgeColor,
-                            border: `1px solid ${badgeColor}44`, background: `${badgeColor}14` }}>
-                            {c.badge.label}
-                          </span>
-                        )}
+                        {/* Whether her report is in yet sits beside who decides:
+                            both are what to know before he dials. */}
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 6 }}>
+                          {c.badge && (
+                            <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999,
+                              fontSize: 10, fontWeight: 800, letterSpacing: ".07em", color: badgeColor,
+                              border: `1px solid ${badgeColor}44`, background: `${badgeColor}14` }}>
+                              {c.badge.label}
+                            </span>
+                          )}
+                          <ReportChip report={c.report} ink={N} mode={tools.report} />
+                        </div>
                       </div>
-                      <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
-                        {/* Opened during the call, not after it. The doc is made
-                            by the server so nothing later has to guess which
-                            notes belong to which call — see lib/drive. */}
-                        <button
-                          type="button"
-                          onClick={() => openNotes({ key: c.bookingUid, name: c.name, phone: c.phone, when: c.when })}
-                          disabled={notesBusy === c.bookingUid}
-                          style={{ background: "transparent", border: `1px solid ${N.line}`, color: N.text,
-                            borderRadius: 999, padding: "6px 13px", fontSize: 12.5, fontWeight: 700,
-                            cursor: notesBusy === c.bookingUid ? "wait" : "pointer", whiteSpace: "nowrap" }}>
-                          {notesBusy === c.bookingUid ? "Opening…" : "Notes"}
-                        </button>
-                        {c.wa && (
-                          <a href={c.wa} target="_blank" rel="noreferrer"
-                            style={{ background: N.accent, color: N.onAccent, borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
-                            WhatsApp
-                          </a>
-                        )}
-                      </div>
+                      {c.wa && (
+                        <a href={c.wa} target="_blank" rel="noreferrer"
+                          style={{ flex: "none", background: N.accent, color: N.onAccent, borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                          WhatsApp
+                        </a>
+                      )}
                     </div>
-                    {notesErr[c.bookingUid] && (
-                      <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>
-                        {notesErr[c.bookingUid]}
-                      </div>
-                    )}
+                    {/* Notes is opened during the call, not after it. The doc is
+                        made by the server so nothing later has to guess which
+                        notes belong to which call — see lib/drive. Summary turns
+                        those notes into her PDF; Drive opens her folder. On their
+                        own line so the phone keeps room for her name. */}
+                    <RowTools adminKey={adminKey} ink={N} name={c.name} phone={c.phone}
+                      notesWhen={c.when} summaryWhen={c.when} tools={tools} onBridgeResult={onBridgeResult} />
                     {/* Before the call, not after it: the three checks missed most often. */}
                     {(d.checklist.checks.length ?? 0) > 0 && (
                       <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${N.line}`, fontSize: 12.5, lineHeight: 1.5 }}>
@@ -688,6 +705,7 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
             // it belongs to across a refresh rather than following a position.
             const rowKey = `${q.phone}-${q.kind}-${q.since}`;
             const wait = q.waitMin >= 120 ? `${Math.round(q.waitMin / 60)} hr` : `${Math.round(q.waitMin)} min`;
+            const tools = rowTools({ type: "queue", kind: q.kind });
             return (
               <div key={`${q.phone}-${q.kind}-${q.since}`} style={{ ...card, padding: 14, borderLeft: `3px solid ${accent}` }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -699,22 +717,13 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                       </span>
                       {" · "}{q.reason}
                     </div>
+                    {reportChip(q.report, tools.report) && (
+                      <div style={{ marginTop: 6 }}>
+                        <ReportChip report={q.report} ink={N} mode={tools.report} />
+                      </div>
+                    )}
                   </div>
                   <div style={{ flex: "none", display: "flex", gap: 8, alignItems: "center" }}>
-                    {/* Reachable from any row she appears on. The calls section
-                        renders only when something is booked in the next 24
-                        hours, so on every other day the notes button went with
-                        it — and he typed the notes into an untitled doc instead. */}
-                    <button
-                      type="button"
-                      onClick={() => openNotes({ key: rowKey, name: q.name, phone: q.phone })}
-                      disabled={notesBusy === rowKey}
-                      title="Open her call-notes Doc"
-                      style={{ background: "transparent", border: `1px solid ${N.line}`, color: N.dim,
-                        borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 700,
-                        cursor: notesBusy === rowKey ? "wait" : "pointer", whiteSpace: "nowrap" }}>
-                      {notesBusy === rowKey ? "…" : "Notes"}
-                    </button>
                   {q.kind === "mark_call" ? (
                     <span style={{ flex: "none", color: N.warn, fontSize: 12.5, fontWeight: 700 }}>Mark above ↑</span>
                   ) : q.wa ? (
@@ -747,9 +756,19 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
                   ) : null}
                   </div>
                 </div>
-                {(sendErr[rowKey] || notesErr[rowKey]) && (
-                  <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>{sendErr[rowKey] || notesErr[rowKey]}</div>
+                {sendErr[rowKey] && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: N.bad, lineHeight: 1.45 }}>{sendErr[rowKey]}</div>
                 )}
+                {/* Notes is reachable from any row she appears on. The calls
+                    section renders only when something is booked in the next
+                    24 hours, so on every other day the notes button went with
+                    it — and he typed the notes into an untitled doc instead.
+                    Summary only where her call has happened (rowTools), filed
+                    under the call's date: `since` is when it was held, or for
+                    mark_call ninety minutes after the slot, so only a call
+                    after 22:30 IST files under the next day. */}
+                <RowTools adminKey={adminKey} ink={N} name={q.name} phone={q.phone}
+                  summaryWhen={q.since} tools={tools} onBridgeResult={onBridgeResult} />
               </div>
             );
           })}
