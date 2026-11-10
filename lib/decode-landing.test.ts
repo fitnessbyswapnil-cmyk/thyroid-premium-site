@@ -135,7 +135,7 @@ test("the page keeps its order, and the long argument stays off it", () => {
   // docs/decode-redesign-feeldvibes-style.md. The long page lives at /decode-long.
   const ORDER = [
     ["hero", 'className="decode-hero'],
-    ["the owner's video", "<HeroVideo />"],
+    ["the owner's video", '<HeroVideo cut="decode" />'],
     // Was SymptomChips. Replaced 23-Sep by the comparison that answers "I have
     // tried five things already" — see the note above CompareSection.
     ["why nothing has worked", "<CompareSection />"],
