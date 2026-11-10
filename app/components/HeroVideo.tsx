@@ -25,7 +25,30 @@ const VSL_OVERRIDE = (process.env.NEXT_PUBLIC_VSL_URL ?? "").trim();
 const VSL_URL = VSL_OVERRIDE && !VSL_OVERRIDE.includes("blob.vercel-storage.com")
   ? VSL_OVERRIDE
   : `${MEDIA_BASE}/videos/vsl.mp4`;
-const VSL_POSTER = "/videos/posters/vsl-poster.jpg";
+
+// Two cuts, one player. The homepage (the ₹299 funnel) keeps the original.
+// /decode plays the 10-Nov-2026 cut, which ends on "Your free session": on the
+// paid page it would give away what that page sells.
+// A new cut is ALWAYS a new file name. The media domain serves every file as
+// `immutable` with a one-year max-age, so a new cut uploaded over an old name
+// keeps playing the old one from every warm edge and every browser that saw it.
+// The decode poster is a frame of that cut (22.5s, between two subtitle lines)
+// with him moved to the right third, the empty left strip mirrored in to fill.
+// Centred, the play button sat on his mouth; here it sits on the dark ground.
+// NEXT_PUBLIC_VSL_URL above still moves only the original.
+const CUTS = {
+  original: {
+    src: VSL_URL,
+    poster: "/videos/posters/vsl-poster.jpg",
+    label: "Video: Why your thyroid blocks fat loss",
+  },
+  decode: {
+    src: `${MEDIA_BASE}/videos/vsl-2026-11-10.mp4`,
+    poster: "/videos/posters/vsl-2026-11-10.jpg",
+    label: "Video: Swapnil Umbarkar, thyroid fat-loss specialist",
+  },
+} as const;
+export type VslCut = keyof typeof CUTS;
 
 // Progress milestones — each fires exactly once per mount (Set guard), so
 // scrubbing back and forth can never re-fire one.
@@ -43,7 +66,8 @@ function fmt(t: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export default function HeroVideo() {
+export default function HeroVideo({ cut = "original" }: { cut?: VslCut }) {
+  const vsl = CUTS[cut];
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
@@ -53,7 +77,7 @@ export default function HeroVideo() {
   // No Blob URL configured yet → show the "coming soon" frame immediately
   // rather than waiting on a load probe. Build-time inlined, so server and
   // client agree and there is no hydration mismatch.
-  const [missing, setMissing] = useState(!VSL_URL);
+  const [missing, setMissing] = useState(!vsl.src);
   // Lazy source: null until the first play click, so NOTHING of the video
   // (not even metadata) downloads before the user asks for it. Only the
   // poster image loads up front.
@@ -161,7 +185,7 @@ export default function HeroVideo() {
       setStarted(true);
       // Single MP4 for every device — attaching the src here is what starts
       // the download. Nothing before this line costs video bandwidth.
-      setSrc(VSL_URL);
+      setSrc(vsl.src);
       return;
     }
     if (v.paused) {
@@ -199,8 +223,8 @@ export default function HeroVideo() {
               <video
                 ref={videoRef}
                 src={src ?? undefined}
-                poster={VSL_POSTER}
-                aria-label="Video: Why your thyroid blocks fat loss"
+                poster={vsl.poster}
+                aria-label={vsl.label}
                 playsInline
                 preload="metadata"
                 muted={muted}
