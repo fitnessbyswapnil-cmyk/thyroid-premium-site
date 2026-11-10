@@ -14,11 +14,17 @@
  *
  * Sends NOTHING to Meta. A payment is still recorded through /api/admin/mark,
  * the one path that sends the programme sale, unchanged.
+ *
+ * THE THANK-YOU HOOK (additive). When she attended and the outcome was
+ * recorded, lib/thank-you's autoThankYou runs after the response. It does
+ * nothing at all unless he has turned on thank_you_auto (default off), and it
+ * never throws, so every reply below is exactly what it was without it.
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { checkAdminKey } from "../_lib";
 import { writeCall, type CallFields } from "@/lib/crm-calls";
 import { SCORECARD_KEYS, type ScorecardKey } from "@/lib/scorecard";
+import { autoThankYou } from "@/lib/thank-you";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +80,18 @@ export async function POST(req: NextRequest) {
     const plan = await writeCall(fields);
     if (plan.action === "skip") {
       return NextResponse.json({ ok: false, reason: plan.skipReason ?? "row already reviewed" }, { status: 409 });
+    }
+    if (body.attended) {
+      after(() =>
+        autoThankYou({
+          trigger: "call-outcome",
+          bookingUid: uid,
+          name: fields.name ?? "",
+          email: fields.email ?? "",
+          phone: fields.phone ?? "",
+          callStart: fields.occurredAt ?? "",
+        }),
+      );
     }
     return NextResponse.json({ ok: true, action: plan.action });
   } catch (err) {

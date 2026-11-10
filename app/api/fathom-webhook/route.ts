@@ -25,6 +25,11 @@
  * than a webhook sender will wait. We verify, acknowledge in milliseconds, and
  * do the real work in after(). A bare un-awaited promise would be killed when
  * the serverless invocation freezes — silently, with nothing in the logs.
+ *
+ * THE THANK-YOU HOOK (additive). On the CallHeld path, once CallHeld has gone,
+ * lib/thank-you's autoThankYou runs in the same after(). It does nothing at
+ * all unless he has turned on thank_you_auto (default off), and it never
+ * throws, so the delivery contract above and CallHeld are unchanged.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
@@ -41,6 +46,7 @@ import { isOwnerTest } from "@/lib/owner-filter";
 import { extractCall, failedCount, EXTRACT_MODEL } from "@/lib/call-extract";
 import { inferAttendance } from "@/lib/call-attendance";
 import { writeCall, type CallFields } from "@/lib/crm-calls";
+import { autoThankYou } from "@/lib/thank-you";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -231,4 +237,14 @@ async function processMeeting(meeting: ReturnType<typeof normaliseMeeting>) {
   const plan = await writeCall(fields);
   console.log(`[fathom-webhook] Calls row ${plan.action}${plan.skipReason ? ` (${plan.skipReason})` : ""} uid=${match.uid}`);
   await fireCallHeld({ uid: match.uid, name: fields.name ?? "", email: fields.email ?? "", phone: fields.phone ?? "", attended, emails: meeting.emails, startedAt: meeting.startedAt, partnerBySpeakers: heard.partnerPresent });
+  if (attended) {
+    await autoThankYou({
+      trigger: "fathom",
+      bookingUid: match.uid,
+      name: fields.name ?? "",
+      email: fields.email ?? "",
+      phone: fields.phone ?? "",
+      callStart: meeting.startedAt || booking?.startIso || "",
+    });
+  }
 }
