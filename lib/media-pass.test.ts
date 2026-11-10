@@ -66,6 +66,15 @@ test("the inbox never puts the admin key in a media URL", () => {
   assert.doesNotMatch(hook, /from\s+["'][^"']*media-pass(\.ts)?["']|from\s+["']node:crypto["']/, "the client hook must not pull node:crypto into the browser");
 });
 
+test("neither inbox puts the key in a URL, and the media route no longer reads one", () => {
+  const dash = read("app/admin/AnalyticsDashboard.tsx");
+  assert.doesNotMatch(dash, /api\/admin\/media\?[^`"'\n]*\bk=/, "the dashboard's inbox tile uses passes too");
+  assert.match(dash, /mediaSrc\(/);
+  const media = read("app/api/admin/media/route.ts");
+  assert.doesNotMatch(media, /get\(["']k["']\)/, "the route must never accept ?k= again");
+  assert.doesNotMatch(media, /ADMIN_DASH_KEY/, "the key is checked only by checkAdminKey, on the header");
+});
+
 test("passes are minted only behind the admin key, and never without a signing secret", () => {
   const route = read("app/api/admin/media-pass/route.ts");
   assert.match(route, /if \(!checkAdminKey\(req\)\) return NextResponse\.json\(\{ error: "unauthorized" \}, \{ status: 401 \}\)/);

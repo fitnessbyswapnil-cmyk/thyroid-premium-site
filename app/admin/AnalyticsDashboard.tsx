@@ -30,6 +30,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CreativeOutcomes from "./CreativeOutcomes";
 import { LIGHT, DARK, FONT, RADIUS, ELEV, type Tokens } from "./tokens";
+import { mediaSrc, useMediaPass, type MediaPass } from "./useMediaPass";
 import { useMetrics, useRange, RANGE_CHOICES, rangeLabel } from "./useMetrics";
 import { waitLabel, type AgeTone, type ActionItem } from "@/lib/journey";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
@@ -49,16 +50,26 @@ type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string;
  * because <img> and target=_blank cannot set one; /api/admin/media accepts ?k=
  * for exactly this reason and never exposes the WhatsApp token to the browser.
  */
-function Attachment({ m, apiKey, phone, clientName, t }: { m: WaMsg; apiKey: string; phone: string; clientName: string; t: Tokens }) {
+function Attachment({ m, apiKey, phone, clientName, t, pass, passFailed }: {
+  m: WaMsg; apiKey: string; phone: string; clientName: string; t: Tokens;
+  pass: MediaPass | null; passFailed: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   if (!m.mediaId) return null;
-  const src = `/api/admin/media?id=${encodeURIComponent(m.mediaId)}&k=${encodeURIComponent(apiKey)}`;
+  // A short-lived pass, never the admin key: see lib/media-pass.ts.
+  const src = pass ? mediaSrc(m.mediaId, pass) : "";
 
   let media: React.ReactNode;
   if (failed) {
     // Neutral, not clay: WhatsApp expiring media is the platform's rule, not
     // something that should have happened here. The Drive copy below is the fix.
     media = <div style={{ fontSize: 11, color: t.ink2 }}>Attachment unavailable — WhatsApp deletes media after about 30 days.</div>;
+  } else if (!src) {
+    media = (
+      <div style={{ fontSize: 11, color: passFailed ? t.clay : t.ink2 }}>
+        {passFailed ? "Attachments can't load right now. Retrying every minute." : "Loading attachment…"}
+      </div>
+    );
   } else if (m.mediaType === "image" || m.mediaType === "sticker") {
     media = (
       <a href={src} target="_blank" rel="noopener noreferrer">
@@ -942,6 +953,7 @@ function WebinarPanel({ t }: { t: Tokens }) {
 export default function AnalyticsDashboard({ dark = false }: { dark?: boolean }) {
   const t: Tokens = dark ? (DARK as unknown as Tokens) : LIGHT;
   const [key, setKey] = useState<string | null>(null);
+  const { pass: mediaPass, failed: mediaPassFailed } = useMediaPass(key ?? "");
   const [input, setInput] = useState("");
   const [authError, setAuthError] = useState("");
   const [leads, setLeads] = useState<Lead[] | null>(null);
@@ -2232,7 +2244,7 @@ export default function AnalyticsDashboard({ dark = false }: { dark?: boolean })
                                 border: `1px solid ${t.hairline}`,
                                 borderRadius: RADIUS.card, padding: "8px 11px", fontSize: 12.5, color: t.ink1, whiteSpace: "pre-wrap", wordBreak: "break-word",
                               }}>
-                                {m.mediaId && key ? <Attachment t={t} m={m} apiKey={key} phone={th.phone} clientName={th.name || lead?.name || ""} /> : null}
+                                {m.mediaId && key ? <Attachment t={t} m={m} apiKey={key} phone={th.phone} clientName={th.name || lead?.name || ""} pass={mediaPass} passFailed={mediaPassFailed} /> : null}
                                 {m.text}
                               </div>
                               <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 3, textAlign: m.direction === "out" ? "right" : "left" }}>

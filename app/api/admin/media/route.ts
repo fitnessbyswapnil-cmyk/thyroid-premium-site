@@ -28,14 +28,9 @@ export const dynamic = "force-dynamic";
 function authorized(req: NextRequest): boolean {
   if (checkAdminKey(req)) return true;
   const q = req.nextUrl.searchParams;
-  if (verifyMediaPass(process.env.MEDIA_URL_SECRET, q.get("exp"), q.get("sig"))) return true;
-  // LEGACY, REMOVE NEXT: `?k=<admin key>` is still read only because the
-  // dashboard's own inbox tile (Attachment in app/admin/AnalyticsDashboard.tsx)
-  // builds its URLs that way until it moves to passes. The follow-up that moves
-  // it deletes these three lines; lib/media-pass.test.ts then locks them out.
-  const expected = process.env.ADMIN_DASH_KEY;
-  const given = q.get("k");
-  return !!expected && !!given && given === expected;
+  // `?k=<admin key>` is gone for good: both inboxes use passes, and
+  // lib/media-pass.test.ts fails if this route ever reads `k` again.
+  return verifyMediaPass(process.env.MEDIA_URL_SECRET, q.get("exp"), q.get("sig"));
 }
 
 export async function GET(req: NextRequest) {
