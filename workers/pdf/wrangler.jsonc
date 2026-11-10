@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Prints the consultation summary to PDF with Browser Run. Called only by
+  // thyroid-funnel through its PDF_RENDERER service binding (lib/pdf-render.ts).
+  "name": "thyroid-pdf",
+  "account_id": "d531de7791cdc9c2aa990c44d9901610",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Browser Run. Workers Free: 10 browser-minutes a day, one new browser every
+  // 20 seconds, a browser closes after 60 seconds idle.
+  "browser": {
+    "binding": "BROWSER"
+  },
+  // No public address of any kind: no routes, no *.workers.dev, no preview
+  // URLs. The service binding is the only way in, which is why this worker
+  // has no key of its own.
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true
+  }
+}
