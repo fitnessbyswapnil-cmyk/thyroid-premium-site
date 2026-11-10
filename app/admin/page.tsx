@@ -118,7 +118,7 @@ export default function AdminShell() {
                     fontFamily: FONT.sans,
                     fontSize: 13.5,
                     fontWeight: on ? 600 : 400,
-                    color: on ? t.ink1 : t.ink3,
+                    color: on ? t.ink1 : t.ink2,
                     borderBottom: on ? `2px solid ${t.teal}` : "2px solid transparent",
                     cursor: "pointer",
                   }}
@@ -130,7 +130,7 @@ export default function AdminShell() {
           </nav>
 
           <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: t.ink3 }}>
+            <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: t.ink2 }}>
               {new Date().toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
             </span>
             <button
@@ -152,7 +152,7 @@ export default function AdminShell() {
                   clearAdminKey();
                   window.location.reload();
                 }}
-                style={{ background: "transparent", border: 0, color: t.ink3, padding: 0, fontSize: 12.5, fontFamily: FONT.sans, cursor: "pointer" }}
+                style={{ background: "transparent", border: 0, color: t.ink2, padding: 0, fontSize: 12.5, fontFamily: FONT.sans, cursor: "pointer" }}
               >
                 Log out
               </button>
@@ -219,7 +219,7 @@ function KeyGate({ t }: { t: Tokens }) {
       >
         Open Today
       </button>
-      <p style={{ margin: 0, color: t.ink3, fontFamily: FONT.sans, fontSize: 13 }}>
+      <p style={{ margin: 0, color: t.ink2, fontFamily: FONT.sans, fontSize: 13 }}>
         This device remembers it until you log out. It unlocks every tab.
       </p>
     </form>
