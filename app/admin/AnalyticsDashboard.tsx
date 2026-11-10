@@ -7,16 +7,29 @@
  * Was itself /admin/page.tsx until the pipeline shipped. Moved verbatim rather
  * than rewritten: every number in here is load-bearing and well-tested by use.
  *
- * Design (per dataviz method): dark surface matching the site; brand purple
- * for single-series marks; a 3-slot validated categorical set for sources
- * (fixed per ENTITY: Facebook=blue, Instagram=orange, Other=aqua); status
- * colors (good/warning/critical) reserved for risk & outcome states, always
- * paired with a label — never color alone. Charts are hand-rolled SVG:
- * thin marks, 2px gaps, direct labels where they earn it, hover tooltips.
+ * Design: rendered from ./tokens, like Today and Pipeline, so it follows the
+ * theme switch and the three tabs read as one desk. It used to paint itself a
+ * dark purple instrument panel with seven hues of its own, which made the
+ * shell flip its whole chrome dark whenever this tab was open.
+ *
+ * The rules are the ones in tokens.ts, applied by MEANING rather than by
+ * swapping one hex for another:
+ *  - teal is the one hue: progress, links, the WhatsApp actions, and every
+ *    single-series chart mark. Lead sources are the two teal steps that clear
+ *    3:1 on a card plus a neutral — no new hues for categories.
+ *  - won colours money in and the won outcome, and nothing else.
+ *  - amber marks figures where high is bad (a wait, a cost, a loss).
+ *  - clay means missing or failed — no phone, overdue, a sync or a save that
+ *    did not happen. No-show and cancelled stay neutral.
+ *  - text is ink1 or ink2; ink3 is a 3.25:1 grey, so it only ever draws marks.
+ * Every state is still paired with a label — never colour alone. Charts are
+ * hand-rolled SVG: thin marks, 2px gaps, direct labels where they earn it,
+ * hover tooltips.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CreativeOutcomes from "./CreativeOutcomes";
+import { LIGHT, DARK, FONT, RADIUS, ELEV, type Tokens } from "./tokens";
 import { useMetrics, useRange, RANGE_CHOICES, rangeLabel } from "./useMetrics";
 import { waitLabel, type AgeTone, type ActionItem } from "@/lib/journey";
 import { readAdminKey, saveAdminKey, clearAdminKey, ADMIN_KEY_EVENT } from "./adminKey";
@@ -36,31 +49,33 @@ type WaMsg = { ts: string; phone: string; direction: "in" | "out"; text: string;
  * because <img> and target=_blank cannot set one; /api/admin/media accepts ?k=
  * for exactly this reason and never exposes the WhatsApp token to the browser.
  */
-function Attachment({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string; phone: string; clientName: string }) {
+function Attachment({ m, apiKey, phone, clientName, t }: { m: WaMsg; apiKey: string; phone: string; clientName: string; t: Tokens }) {
   const [failed, setFailed] = useState(false);
   if (!m.mediaId) return null;
   const src = `/api/admin/media?id=${encodeURIComponent(m.mediaId)}&k=${encodeURIComponent(apiKey)}`;
 
   let media: React.ReactNode;
   if (failed) {
-    media = <div style={{ fontSize: 11, color: WARN }}>Attachment unavailable — WhatsApp deletes media after about 30 days.</div>;
+    // Neutral, not clay: WhatsApp expiring media is the platform's rule, not
+    // something that should have happened here. The Drive copy below is the fix.
+    media = <div style={{ fontSize: 11, color: t.ink2 }}>Attachment unavailable — WhatsApp deletes media after about 30 days.</div>;
   } else if (m.mediaType === "image" || m.mediaType === "sticker") {
     media = (
       <a href={src} target="_blank" rel="noopener noreferrer">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={m.mediaName || "attachment"} onError={() => setFailed(true)}
-          style={{ maxWidth: "100%", borderRadius: 9, display: "block", marginBottom: 5 }} />
+          style={{ maxWidth: "100%", borderRadius: RADIUS.card, display: "block", marginBottom: 5 }} />
       </a>
     );
   } else if (m.mediaType === "audio") {
     media = <audio controls src={src} style={{ width: "100%", marginBottom: 5 }} />;
   } else if (m.mediaType === "video") {
-    media = <video controls src={src} style={{ maxWidth: "100%", borderRadius: 9, marginBottom: 5 }} />;
+    media = <video controls src={src} style={{ maxWidth: "100%", borderRadius: RADIUS.card, marginBottom: 5 }} />;
   } else {
     media = (
       <a href={src} target="_blank" rel="noopener noreferrer"
         style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", marginBottom: 5,
-          background: "rgba(255,255,255,0.06)", borderRadius: 9, color: INK1, textDecoration: "none",
+          background: t.sunk, borderRadius: RADIUS.card, color: t.ink1, textDecoration: "none",
           fontSize: 12, fontWeight: 600 }}>
         <span style={{ fontSize: 15 }}>📄</span>
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.mediaName || "Open document"}</span>
@@ -72,7 +87,7 @@ function Attachment({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string
   return (
     <>
       {media}
-      <DriveCopy m={m} apiKey={apiKey} phone={phone} clientName={clientName} />
+      <DriveCopy m={m} apiKey={apiKey} phone={phone} clientName={clientName} t={t} />
     </>
   );
 }
@@ -85,7 +100,7 @@ function Attachment({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string
  * and the route says in words why when it cannot (not a lead, too large,
  * Drive not connected).
  */
-function DriveCopy({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string; phone: string; clientName: string }) {
+function DriveCopy({ m, apiKey, phone, clientName, t }: { m: WaMsg; apiKey: string; phone: string; clientName: string; t: Tokens }) {
   const [savedUrl, setSavedUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
@@ -96,7 +111,7 @@ function DriveCopy({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string;
   if (url) {
     return (
       <a href={url} target="_blank" rel="noopener noreferrer"
-        style={{ display: "inline-block", marginBottom: 5, fontSize: 11, fontWeight: 700, color: PURPLE, textDecoration: "underline", textUnderlineOffset: 2 }}>
+        style={{ display: "inline-block", marginBottom: 5, fontSize: 11, fontWeight: 700, color: t.teal, textDecoration: "underline", textUnderlineOffset: 2 }}>
         In Drive
       </a>
     );
@@ -136,12 +151,12 @@ function DriveCopy({ m, apiKey, phone, clientName }: { m: WaMsg; apiKey: string;
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 5 }}>
       {!note?.ok && (
         <button type="button" onClick={save} disabled={busy} aria-busy={busy}
-          style={{ background: "transparent", border: `1px solid ${GRID}`, color: INK2, borderRadius: 999,
+          style={{ background: "transparent", border: `1px solid ${t.hairline}`, color: t.ink2, borderRadius: RADIUS.chip,
             padding: "4px 11px", fontSize: 11, fontWeight: 700, cursor: busy ? "wait" : "pointer", whiteSpace: "nowrap" }}>
           {busy ? "Saving…" : "Save to Drive"}
         </button>
       )}
-      {note && <span style={{ fontSize: 11, lineHeight: 1.4, color: note.ok ? GOOD : WARN, whiteSpace: "normal" }}>{note.text}</span>}
+      {note && <span style={{ fontSize: 11, lineHeight: 1.4, color: note.ok ? t.teal : t.clay, whiteSpace: "normal" }}>{note.text}</span>}
     </div>
   );
 }
@@ -210,27 +225,28 @@ type Lead = {
   lastOutboundAt: string;
 };
 
-// ── palette (validated: 3-slot categorical + purple ordinal, dark surface) ──
-const INK1 = "#f4f2f7";
-const INK2 = "#b9b3c4";
-const MUTED = "#8a8494";
-const GRID = "#26242c";
-const CARD = "#17181c";
-const PURPLE = "#c793ff";
-const SRC_COLORS: Record<string, string> = { fb: "#3987e5", ig: "#d95926", other: "#199e70" };
+// ── palette: every colour comes from ./tokens ───────────────────────────────
 const SRC_LABELS: Record<string, string> = { fb: "Facebook", ig: "Instagram", other: "Other" };
-const FUNNEL_RAMP = ["#e0c6ff", "#c793ff", "#a855f7", "#7e22ce"];
-const GOOD = "#0ca30c";
-const WARN = "#fab219";
-const CRIT = "#d03b3b";
+/**
+ * Lead sources are three categories, not a sequence, and the system has one
+ * hue. So: the two teal steps that clear 3:1 against a card, plus a neutral —
+ * fixed per ENTITY, so Instagram is the same mark in the donut and the table.
+ */
+const srcColors = (t: Tokens): Record<string, string> => ({ ig: t.tealFill4, fb: t.tealFill3, other: t.ink3 });
 
 /** Manually entered ad spend, used while the Meta ads token cannot read the
  *  account. Without it the whole ROAS panel is dark on the exact days the
  *  owner most needs it — a broken token should cost him a live number, not
  *  the ability to compute one at all. */
 const SPEND_STORE = "admin_manual_ad_spend";
-/** Queue age colours: neutral under 1 hr, amber to 6 hr, red beyond. */
-const TONE: Record<AgeTone, string> = { neutral: "#8a8494", amber: "#E0A93B", red: "#E5544B" };
+/**
+ * Queue age, the same rule Pipeline and Today draw: neutral under 1 hr, amber
+ * to 6 hr (a wait is a figure where high is bad), clay beyond — overdue is
+ * "should have happened and didn't". Text and edge differ only for neutral:
+ * a neutral row has no accent at all, and its wait reads in ink2.
+ */
+const toneText = (t: Tokens): Record<AgeTone, string> => ({ neutral: t.ink2, amber: t.amber, red: t.clay });
+const toneEdge = (t: Tokens): Record<AgeTone, string> => ({ neutral: t.hairline, amber: t.amber, red: t.clay });
 
 const dayMs = 86400000;
 
@@ -480,7 +496,7 @@ function isToday(sessionDate: string): boolean {
 
 // ── tiny chart primitives ────────────────────────────────────────────────────
 
-function useTooltip() {
+function useTooltip(t: Tokens) {
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
   const show = (e: React.MouseEvent, text: string) => {
     const host = (e.currentTarget as SVGElement).closest(".chart-card") as HTMLElement | null;
@@ -495,12 +511,14 @@ function useTooltip() {
         position: "absolute",
         left: Math.min(tip.x + 10, 240),
         top: tip.y - 34,
-        background: "#0b0b0e",
-        border: `1px solid ${GRID}`,
-        color: INK1,
+        // An overlay, so it is the one place that takes the e2 shadow.
+        background: t.card,
+        border: `1px solid ${t.hairline}`,
+        boxShadow: ELEV.e2,
+        color: t.ink1,
         fontSize: 11.5,
         padding: "4px 8px",
-        borderRadius: 6,
+        borderRadius: RADIUS.card,
         pointerEvents: "none",
         whiteSpace: "nowrap",
         zIndex: 5,
@@ -512,8 +530,8 @@ function useTooltip() {
   return { show, hide, node };
 }
 
-function BarChart({ data }: { data: { label: string; value: number }[] }) {
-  const { show, hide, node } = useTooltip();
+function BarChart({ data, t }: { data: { label: string; value: number }[]; t: Tokens }) {
+  const { show, hide, node } = useTooltip(t);
   const W = 320, H = 120, PAD = 4;
   const max = Math.max(1, ...data.map((d) => d.value));
   const bw = (W - PAD * 2) / data.length;
@@ -521,7 +539,7 @@ function BarChart({ data }: { data: { label: string; value: number }[] }) {
     <div style={{ position: "relative" }}>
       {node}
       <svg viewBox={`0 0 ${W} ${H + 16}`} style={{ width: "100%", display: "block" }}>
-        <line x1={PAD} x2={W - PAD} y1={H} y2={H} stroke={GRID} strokeWidth="1" />
+        <line x1={PAD} x2={W - PAD} y1={H} y2={H} stroke={t.hairline} strokeWidth="1" />
         {data.map((d, i) => {
           const h = d.value === 0 ? 0 : Math.max(3, (d.value / max) * (H - 14));
           const x = PAD + i * bw;
@@ -529,17 +547,17 @@ function BarChart({ data }: { data: { label: string; value: number }[] }) {
             <g key={d.label}>
               <rect
                 x={x + 1} y={H - h} width={Math.max(2, bw - 2)} height={h}
-                rx={2} fill={PURPLE}
+                rx={2} fill={t.teal}
                 onMouseEnter={(e) => show(e, `${d.label}: ${d.value}`)}
                 onMouseLeave={hide}
               />
               {d.value > 0 && d.value === max && (
-                <text x={x + bw / 2} y={H - h - 4} textAnchor="middle" fontSize="10" fill={INK2}>
+                <text x={x + bw / 2} y={H - h - 4} textAnchor="middle" fontSize="10" fill={t.ink2}>
                   {d.value}
                 </text>
               )}
               {(i === 0 || i === data.length - 1) && (
-                <text x={x + bw / 2} y={H + 12} textAnchor="middle" fontSize="9" fill={MUTED}>
+                <text x={x + bw / 2} y={H + 12} textAnchor="middle" fontSize="9" fill={t.ink2}>
                   {d.label}
                 </text>
               )}
@@ -551,27 +569,33 @@ function BarChart({ data }: { data: { label: string; value: number }[] }) {
   );
 }
 
-function Funnel({ stages }: { stages: { label: string; value: number }[] }) {
-  const { show, hide, node } = useTooltip();
+/**
+ * One teal for every step, on a recessed track — the same drawing as
+ * Pipeline's funnel. The stage ramp was the obvious choice for a sequence, but
+ * its two lightest steps sit near 1.3:1 on a card, so the first bars would
+ * all but vanish; the labels already say which step is which.
+ */
+function Funnel({ stages, t }: { stages: { label: string; value: number }[]; t: Tokens }) {
+  const { show, hide, node } = useTooltip(t);
   const max = Math.max(1, stages[0]?.value ?? 1);
   return (
     <div style={{ position: "relative", display: "grid", gap: 6 }}>
       {node}
-      {stages.map((s, i) => {
+      {stages.map((s) => {
         const pct = max ? Math.round((s.value / max) * 100) : 0;
         return (
           <div key={s.label} style={{ display: "grid", gridTemplateColumns: "64px 1fr 44px", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: INK2 }}>{s.label}</span>
+            <span style={{ fontSize: 11, color: t.ink2 }}>{s.label}</span>
             <svg viewBox="0 0 100 14" preserveAspectRatio="none" style={{ width: "100%", height: 16, display: "block" }}>
-              <rect x="0" y="2" width="100" height="10" rx="3" fill={GRID} />
+              <rect x="0" y="2" width="100" height="10" rx="3" fill={t.sunk} />
               <rect
                 x="0" y="2" width={Math.max(s.value > 0 ? 3 : 0, pct)} height="10" rx="3"
-                fill={FUNNEL_RAMP[Math.min(i, FUNNEL_RAMP.length - 1)]}
+                fill={t.teal}
                 onMouseEnter={(e) => show(e, `${s.label}: ${s.value} (${pct}%)`)}
                 onMouseLeave={hide}
               />
             </svg>
-            <span style={{ fontSize: 12, color: INK1, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+            <span style={{ fontSize: 12, color: t.ink1, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
               {s.value}
             </span>
           </div>
@@ -581,8 +605,8 @@ function Funnel({ stages }: { stages: { label: string; value: number }[] }) {
   );
 }
 
-function Donut({ parts }: { parts: { key: string; label: string; value: number; color: string }[] }) {
-  const { show, hide, node } = useTooltip();
+function Donut({ parts, t }: { parts: { key: string; label: string; value: number; color: string }[]; t: Tokens }) {
+  const { show, hide, node } = useTooltip(t);
   const total = parts.reduce((s, p) => s + p.value, 0) || 1;
   const R = 40, CX = 50, CY = 50, SW = 16;
   let acc = 0;
@@ -608,16 +632,16 @@ function Donut({ parts }: { parts: { key: string; label: string; value: number; 
           acc += frac;
           return el;
         })}
-        <text x={CX} y={CY + 4} textAnchor="middle" fontSize="16" fontWeight="700" fill={INK1}>
+        <text x={CX} y={CY + 4} textAnchor="middle" fontSize="16" fontWeight="700" fill={t.ink1}>
           {total}
         </text>
       </svg>
       <div style={{ display: "grid", gap: 6 }}>
         {parts.map((p) => (
-          <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: INK2 }}>
+          <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: t.ink2 }}>
             <span style={{ width: 9, height: 9, borderRadius: 2, background: p.color, flexShrink: 0 }} />
             {p.label}
-            <span style={{ color: INK1, fontVariantNumeric: "tabular-nums" }}>{p.value}</span>
+            <span style={{ color: t.ink1, fontVariantNumeric: "tabular-nums" }}>{p.value}</span>
           </div>
         ))}
       </div>
@@ -625,15 +649,15 @@ function Donut({ parts }: { parts: { key: string; label: string; value: number; 
   );
 }
 
-function HBars({ data, color, suffix }: { data: { label: string; value: number; note?: string }[]; color: string; suffix?: string }) {
-  const { show, hide, node } = useTooltip();
+function HBars({ data, color, suffix, t }: { data: { label: string; value: number; note?: string }[]; color: string; suffix?: string; t: Tokens }) {
+  const { show, hide, node } = useTooltip(t);
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
     <div style={{ position: "relative", display: "grid", gap: 7 }}>
       {node}
       {data.map((d) => (
         <div key={d.label} style={{ display: "grid", gridTemplateColumns: "minmax(70px,110px) 1fr auto", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: INK2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.label}</span>
+          <span style={{ fontSize: 11, color: t.ink2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.label}</span>
           <svg viewBox="0 0 100 12" preserveAspectRatio="none" style={{ width: "100%", height: 14, display: "block" }}>
             <rect
               x="0" y="2" width={Math.max(3, (d.value / max) * 100)} height="8" rx="3" fill={color}
@@ -641,8 +665,8 @@ function HBars({ data, color, suffix }: { data: { label: string; value: number; 
               onMouseLeave={hide}
             />
           </svg>
-          <span style={{ fontSize: 11.5, color: INK1, fontVariantNumeric: "tabular-nums" }}>
-            {d.value}{suffix ?? ""}{d.note ? <span style={{ color: MUTED }}> · {d.note}</span> : null}
+          <span style={{ fontSize: 11.5, color: t.ink1, fontVariantNumeric: "tabular-nums" }}>
+            {d.value}{suffix ?? ""}{d.note ? <span style={{ color: t.ink2 }}> · {d.note}</span> : null}
           </span>
         </div>
       ))}
@@ -650,13 +674,15 @@ function HBars({ data, color, suffix }: { data: { label: string; value: number; 
   );
 }
 
-// Daily series (thin, muted) + 7-day moving average (bold purple) on ONE
+// Daily series (thin, neutral) + 7-day moving average (bold teal) on ONE
 // axis — same unit, so no dual-axis sin. Direct label on the latest average.
-function TrendChart({ data, unit }: { data: { label: string; value: number | null }[]; unit: string }) {
-  const { show, hide, node } = useTooltip();
+// The daily line is ink3 at full strength: it used to be faded to 55%, which
+// on a white card would take a 1px mark well under 3:1.
+function TrendChart({ data, unit, t }: { data: { label: string; value: number | null }[]; unit: string; t: Tokens }) {
+  const { show, hide, node } = useTooltip(t);
   const W = 320, H = 110, PADX = 6, PADY = 10;
   const vals = data.map((d) => d.value).filter((v): v is number => v !== null && Number.isFinite(v));
-  if (vals.length < 2) return <p style={{ fontSize: 12, color: MUTED }}>Not enough days with data yet</p>;
+  if (vals.length < 2) return <p style={{ fontSize: 12, color: t.ink2 }}>Not enough days with data yet</p>;
   const max = Math.max(...vals) * 1.1 || 1;
   const x = (i: number) => PADX + (i / Math.max(1, data.length - 1)) * (W - PADX * 2);
   const y = (v: number) => H - PADY - (v / max) * (H - PADY * 2);
@@ -681,15 +707,15 @@ function TrendChart({ data, unit }: { data: { label: string; value: number | nul
     <div style={{ position: "relative" }}>
       {node}
       <svg viewBox={`0 0 ${W} ${H + 14}`} style={{ width: "100%", display: "block" }}>
-        <line x1={PADX} x2={W - PADX} y1={H - PADY} y2={H - PADY} stroke={GRID} strokeWidth="1" />
-        <path d={path(data.map((d) => d.value))} fill="none" stroke={MUTED} strokeWidth="1" opacity="0.55" />
-        <path d={path(avg)} fill="none" stroke={PURPLE} strokeWidth="2" strokeLinecap="round" />
+        <line x1={PADX} x2={W - PADX} y1={H - PADY} y2={H - PADY} stroke={t.hairline} strokeWidth="1" />
+        <path d={path(data.map((d) => d.value))} fill="none" stroke={t.ink3} strokeWidth="1" />
+        <path d={path(avg)} fill="none" stroke={t.teal} strokeWidth="2" strokeLinecap="round" />
         {lastAvgIdx >= 0 && avg[lastAvgIdx] !== null && (
           <>
-            <circle cx={x(lastAvgIdx)} cy={y(avg[lastAvgIdx] as number)} r="3" fill={PURPLE} />
+            <circle cx={x(lastAvgIdx)} cy={y(avg[lastAvgIdx] as number)} r="3" fill={t.teal} />
             <text
               x={Math.min(x(lastAvgIdx), W - 4)} y={Math.max(10, y(avg[lastAvgIdx] as number) - 7)}
-              textAnchor="end" fontSize="10.5" fontWeight="700" fill={INK1}
+              textAnchor="end" fontSize="10.5" fontWeight="700" fill={t.ink1}
             >
               {unit}{Math.round(avg[lastAvgIdx] as number).toLocaleString("en-IN")}
             </text>
@@ -704,17 +730,17 @@ function TrendChart({ data, unit }: { data: { label: string; value: number | nul
             onMouseLeave={hide}
           />
         ))}
-        <text x={PADX} y={H + 11} fontSize="9" fill={MUTED}>{data[0]?.label}</text>
-        <text x={W - PADX} y={H + 11} textAnchor="end" fontSize="9" fill={MUTED}>{data[data.length - 1]?.label}</text>
+        <text x={PADX} y={H + 11} fontSize="9" fill={t.ink2}>{data[0]?.label}</text>
+        <text x={W - PADX} y={H + 11} textAnchor="end" fontSize="9" fill={t.ink2}>{data[data.length - 1]?.label}</text>
       </svg>
-      <p style={{ fontSize: 9.5, color: MUTED, marginTop: 2 }}>
-        thin line = daily (noisy at low volume) · <span style={{ color: PURPLE, fontWeight: 700 }}>bold = 7-day average, judge this one</span>
+      <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 2 }}>
+        thin line = daily (noisy at low volume) · <span style={{ color: t.teal, fontWeight: 700 }}>bold = 7-day average, judge this one</span>
       </p>
     </div>
   );
 }
 
-function CopyBtn({ text }: { text: string }) {
+function CopyBtn({ text, t }: { text: string; t: Tokens }) {
   const [done, setDone] = useState(false);
   return (
     <button
@@ -726,7 +752,7 @@ function CopyBtn({ text }: { text: string }) {
         } catch { /* clipboard unavailable */ }
       }}
       title="Copy message"
-      style={{ background: "transparent", border: `1px solid ${GRID}`, color: done ? GOOD : INK2, borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}
+      style={{ background: "transparent", border: `1px solid ${t.hairline}`, color: done ? t.teal : t.ink2, borderRadius: RADIUS.card, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}
     >
       {done ? "✓ Copied" : "⧉ Copy"}
     </button>
@@ -736,18 +762,22 @@ function CopyBtn({ text }: { text: string }) {
 function MeetLinkEditor({
   lead,
   onSave,
+  t,
 }: {
   lead: Lead;
   onSave: (row: number, url: string) => void;
+  t: Tokens;
 }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(lead.meetLink);
   if (!editing) {
+    // A missing link is carried by weight and a visible dashed edge, not by a
+    // warning colour: amber is for figures where high is bad, and this is not one.
     return (
       <button
         onClick={() => { setVal(lead.meetLink); setEditing(true); }}
         title={lead.meetLink ? "Edit meet link" : "Paste the Google Meet / Zoom link from Cal.com"}
-        style={{ background: "transparent", border: `1px dashed ${lead.meetLink ? GRID : WARN}`, color: lead.meetLink ? MUTED : WARN, borderRadius: 6, padding: "3px 8px", fontSize: 10.5, cursor: "pointer" }}
+        style={{ background: "transparent", border: `1px dashed ${lead.meetLink ? t.hairline : t.ink3}`, color: lead.meetLink ? t.ink2 : t.ink1, borderRadius: RADIUS.card, padding: "3px 8px", fontSize: 10.5, cursor: "pointer" }}
       >
         {lead.meetLink ? "🔗 link set" : "+ meet link"}
       </button>
@@ -760,7 +790,7 @@ function MeetLinkEditor({
         onChange={(e) => setVal(e.target.value)}
         placeholder="meet.google.com/xxx-xxxx-xxx"
         autoFocus
-        style={{ width: 150, fontSize: 10.5, background: "#0f1012", border: `1px solid ${GRID}`, borderRadius: 6, padding: "3px 6px", color: INK1 }}
+        style={{ width: 150, fontSize: 10.5, background: t.card, border: `1px solid ${t.ink3}`, borderRadius: RADIUS.card, padding: "3px 6px", color: t.ink1 }}
       />
       <button
         onClick={() => {
@@ -769,7 +799,7 @@ function MeetLinkEditor({
           onSave(lead.row, withScheme);
           setEditing(false);
         }}
-        style={{ background: PURPLE, border: "none", color: "#1a0f24", borderRadius: 6, padding: "3px 8px", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}
+        style={{ background: t.teal, border: "none", color: t.card, borderRadius: RADIUS.card, padding: "3px 8px", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}
       >
         Save
       </button>
@@ -780,11 +810,13 @@ function MeetLinkEditor({
 function SequenceButtons({
   lead,
   onSend,
+  t,
 }: {
   lead: Lead;
   onSend: (row: number, step: "msg1" | "msg2" | "msg3") => void;
+  t: Tokens;
 }) {
-  if (!lead.phone) return <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>;
+  if (!lead.phone) return <span style={{ color: t.clay, fontSize: 11 }}>✕ no phone</span>;
   const steps = buildSequence(lead);
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -797,10 +829,10 @@ function SequenceButtons({
           onClick={() => { if (!s.sent) onSend(lead.row, s.key); }}
           title={`Opens WhatsApp with the ${s.label} message pre-typed — review, then send`}
           style={{
-            fontSize: 10.5, fontWeight: 700, textDecoration: "none", borderRadius: 999, padding: "3px 8px",
-            color: s.sent ? GOOD : "#0f1012",
-            background: s.sent ? "transparent" : GOOD,
-            border: `1px solid ${GOOD}`,
+            fontSize: 10.5, fontWeight: 700, textDecoration: "none", borderRadius: RADIUS.chip, padding: "3px 8px",
+            color: s.sent ? t.teal : t.card,
+            background: s.sent ? "transparent" : t.teal,
+            border: `1px solid ${t.teal}`,
           }}
         >
           {s.sent ? `✓ ${s.label}` : s.label}
@@ -825,11 +857,11 @@ type WebinarReport = {
 };
 
 /** One webinar figure, sized so three still fit across a phone. */
-function WebinarStat({ label, value }: { label: string; value: string }) {
+function WebinarStat({ label, value, t }: { label: string; value: string; t: Tokens }) {
   return (
-    <div style={{ background: "#0f1012", border: `1px solid ${GRID}`, borderRadius: 10, padding: "8px 10px" }}>
-      <p style={{ margin: 0, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: MUTED }}>{label}</p>
-      <p style={{ margin: "2px 0 0", fontSize: 17, fontWeight: 800, color: INK1, fontVariantNumeric: "tabular-nums" }}>{value}</p>
+    <div style={{ background: t.card, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.card, padding: "8px 10px" }}>
+      <p style={{ margin: 0, fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: t.ink2 }}>{label}</p>
+      <p style={{ margin: "2px 0 0", fontSize: 17, fontWeight: 800, color: t.ink1, fontVariantNumeric: "tabular-nums" }}>{value}</p>
     </div>
   );
 }
@@ -839,7 +871,7 @@ function WebinarStat({ label, value }: { label: string; value: string }) {
  * rather than typed here, so the panel follows the class whenever it moves and
  * can never sit on a key that no registration carries.
  */
-function WebinarPanel() {
+function WebinarPanel({ t }: { t: Tokens }) {
   const [report, setReport] = useState<WebinarReport | null>(null);
   const [error, setError] = useState("");
   const cohort = cohortKey(WEBINAR_START_ISO);
@@ -860,43 +892,43 @@ function WebinarPanel() {
 
   return (
     <section style={{ marginTop: 28 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 4px" }}>Webinar</h2>
-      <p style={{ fontSize: 13, color: MUTED, margin: "0 0 10px" }}>{WEBINAR_WHEN_LONG} · cohort {cohort}</p>
+      <h2 style={{ fontSize: 18, fontWeight: 500, fontFamily: FONT.serif, margin: "0 0 4px" }}>Webinar</h2>
+      <p style={{ fontSize: 13, color: t.ink2, margin: "0 0 10px" }}>{WEBINAR_WHEN_LONG} · cohort {cohort}</p>
       {error ? (
-        <p style={{ fontSize: 12, color: WARN, margin: 0 }}>⚠ Masterclass numbers unavailable — {error}</p>
+        <p style={{ fontSize: 12, color: t.clay, margin: 0 }}>⚠ Masterclass numbers unavailable — {error}</p>
       ) : !reg || !att ? (
-        <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>Loading the masterclass numbers…</p>
+        <p style={{ fontSize: 12, color: t.ink2, margin: 0 }}>Loading the masterclass numbers…</p>
       ) : (
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(104px, 1fr))", gap: 8 }}>
-            <WebinarStat label="Registered" value={String(reg.total)} />
+            <WebinarStat t={t} label="Registered" value={String(reg.total)} />
             {/* Zero attended and "the sheet has no Attended Min column yet" look
                 identical in the numbers, and only one of them means nobody came. */}
             {att.imported && (
               <>
-                <WebinarStat label="Attended" value={String(att.attended)} />
-                <WebinarStat label="Stayed to pitch" value={String(att.stayedToPitch)} />
-                <WebinarStat label="Show-up" value={att.showUpPct === null ? "—" : `${att.showUpPct}%`} />
-                <WebinarStat label="Avg minutes" value={att.averageMinutes === null ? "—" : String(att.averageMinutes)} />
+                <WebinarStat t={t} label="Attended" value={String(att.attended)} />
+                <WebinarStat t={t} label="Stayed to pitch" value={String(att.stayedToPitch)} />
+                <WebinarStat t={t} label="Show-up" value={att.showUpPct === null ? "—" : `${att.showUpPct}%`} />
+                <WebinarStat t={t} label="Avg minutes" value={att.averageMinutes === null ? "—" : String(att.averageMinutes)} />
               </>
             )}
           </div>
           {!att.imported && (
-            <p style={{ fontSize: 12, color: MUTED, margin: "8px 0 0" }}>Attendance not imported yet.</p>
+            <p style={{ fontSize: 12, color: t.ink2, margin: "8px 0 0" }}>Attendance not imported yet.</p>
           )}
-          <p style={{ fontSize: 11.5, color: INK2, margin: "8px 0 0" }}>
-            paid {reg.paid} · nurture {reg.nurture} · shared {reg.share} — only <strong style={{ color: INK1 }}>paid</strong> belongs in cost
+          <p style={{ fontSize: 11.5, color: t.ink2, margin: "8px 0 0" }}>
+            paid {reg.paid} · nurture {reg.nurture} · shared {reg.share} — only <strong style={{ color: t.ink1 }}>paid</strong> belongs in cost
             per registration; the nurture and share rows were never bought.
           </p>
           {ads.length > 0 && (
             <div style={{ overflowX: "auto", marginTop: 10 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead><tr>{["Ad (utm_content)", "Registrations"].map((h) => (
-                  <th key={h} style={{ textAlign: h === "Registrations" ? "right" : "left", padding: "6px 8px", borderBottom: `1px solid ${GRID}`, fontWeight: 600, color: INK2 }}>{h}</th>))}</tr></thead>
+                  <th key={h} style={{ textAlign: h === "Registrations" ? "right" : "left", padding: "6px 8px", borderBottom: `1px solid ${t.hairline}`, fontWeight: 600, color: t.ink2 }}>{h}</th>))}</tr></thead>
                 <tbody>{ads.map(([ad, n]) => (
                   <tr key={ad}>
-                    <td style={{ padding: "6px 8px", borderBottom: `1px solid ${GRID}` }}>{ad}</td>
-                    <td style={{ textAlign: "right", padding: "6px 8px", borderBottom: `1px solid ${GRID}`, fontVariantNumeric: "tabular-nums" }}>{n}</td>
+                    <td style={{ padding: "6px 8px", borderBottom: `1px solid ${t.hairline}` }}>{ad}</td>
+                    <td style={{ textAlign: "right", padding: "6px 8px", borderBottom: `1px solid ${t.hairline}`, fontVariantNumeric: "tabular-nums" }}>{n}</td>
                   </tr>))}</tbody>
               </table>
             </div>
@@ -907,7 +939,8 @@ function WebinarPanel() {
   );
 }
 
-export default function AnalyticsDashboard() {
+export default function AnalyticsDashboard({ dark = false }: { dark?: boolean }) {
+  const t: Tokens = dark ? (DARK as unknown as Tokens) : LIGHT;
   const [key, setKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [authError, setAuthError] = useState("");
@@ -1264,13 +1297,16 @@ export default function AnalyticsDashboard() {
       const ctr = a.impressions > 0 ? (a.linkClicks / a.impressions) * 100 : 0;
       const cpl = j.n > 0 ? a.spend / j.n : null;
       const cpb = j.booked > 0 ? a.spend / j.booked : null;
+      // SCALE is the one verdict that moves money forward (teal); KILL is the
+      // one where bookings should have come and didn't (clay). WATCH and
+      // LEARNING are judgements, not alarms — neutral, told apart by weight.
       let verdict: { label: string; color: string; why: string };
-      if (a.spend < 500) verdict = { label: "LEARNING", color: MUTED, why: "under Rs500 spent - too early to judge" };
-      else if (j.booked > 0 && cpb !== null && cpb <= 1200) verdict = { label: "SCALE", color: GOOD, why: `booking calls at Rs${Math.round(cpb)} - raise budget 20-30%` };
-      else if (j.booked === 0 && a.spend > 1500) verdict = { label: "KILL", color: CRIT, why: `Rs${Math.round(a.spend)} spent, zero bookings` };
-      else if (ctr < 0.8) verdict = { label: "WATCH", color: WARN, why: `weak CTR ${ctr.toFixed(2)}% - creative not hooking` };
-      else if (a.frequency > 3) verdict = { label: "WATCH", color: WARN, why: `frequency ${a.frequency.toFixed(1)} - fatigue, rotate creative` };
-      else verdict = { label: "WATCH", color: WARN, why: "delivering - needs bookings to earn SCALE" };
+      if (a.spend < 500) verdict = { label: "LEARNING", color: t.ink2, why: "under Rs500 spent - too early to judge" };
+      else if (j.booked > 0 && cpb !== null && cpb <= 1200) verdict = { label: "SCALE", color: t.teal, why: `booking calls at Rs${Math.round(cpb)} - raise budget 20-30%` };
+      else if (j.booked === 0 && a.spend > 1500) verdict = { label: "KILL", color: t.clay, why: `Rs${Math.round(a.spend)} spent, zero bookings` };
+      else if (ctr < 0.8) verdict = { label: "WATCH", color: t.ink1, why: `weak CTR ${ctr.toFixed(2)}% - creative not hooking` };
+      else if (a.frequency > 3) verdict = { label: "WATCH", color: t.ink1, why: `frequency ${a.frequency.toFixed(1)} - fatigue, rotate creative` };
+      else verdict = { label: "WATCH", color: t.ink1, why: "delivering - needs bookings to earn SCALE" };
       return {
         ...a, ctr, cpl, cpb,
         leads: j.n,
@@ -1281,7 +1317,7 @@ export default function AnalyticsDashboard() {
     });
 
     return { cplSeries, cur, prev, adRows };
-  }, [adsData, leads]);
+  }, [adsData, leads, t]);
 
   // ── Operator layer: action queue, speed-to-touch, money, insights ──
   const ops = useMemo(() => {
@@ -1457,19 +1493,19 @@ export default function AnalyticsDashboard() {
   // ── auth gate ──
   if (!key) {
     return (
-      <main style={{ minHeight: "100vh", background: "#0f1012", display: "grid", placeItems: "center", padding: 20 }}>
-        <form onSubmit={submitKey} style={{ width: "min(92vw, 340px)", background: CARD, border: `1px solid ${GRID}`, borderRadius: 16, padding: 28, textAlign: "center" }}>
-          <p style={{ fontSize: 13, letterSpacing: "0.18em", color: MUTED, textTransform: "uppercase", marginBottom: 14 }}>Private Dashboard</p>
+      <main style={{ minHeight: "100vh", background: t.paper, color: t.ink1, fontFamily: FONT.sans, display: "grid", placeItems: "center", padding: 20 }}>
+        <form onSubmit={submitKey} style={{ width: "min(92vw, 340px)", background: t.card, border: `1px solid ${t.hairline}`, boxShadow: ELEV.e1, borderRadius: RADIUS.card, padding: 28, textAlign: "center" }}>
+          <p style={{ fontSize: 13, letterSpacing: "0.18em", color: t.ink2, textTransform: "uppercase", marginBottom: 14 }}>Private Dashboard</p>
           <input
             type="password"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Passcode"
             autoFocus
-            style={{ width: "100%", background: "#0f1012", border: `1px solid ${GRID}`, borderRadius: 10, padding: "12px 14px", color: INK1, fontSize: 15, textAlign: "center", outline: "none" }}
+            style={{ width: "100%", background: t.card, border: `1px solid ${t.ink3}`, borderRadius: RADIUS.card, padding: "12px 14px", color: t.ink1, fontSize: 15, textAlign: "center", outline: "none" }}
           />
-          {authError && <p style={{ color: CRIT, fontSize: 12, marginTop: 10 }}>✕ {authError}</p>}
-          <button type="submit" style={{ marginTop: 14, width: "100%", background: "#a855f7", border: "none", borderRadius: 10, padding: "12px 0", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          {authError && <p style={{ color: t.clay, fontSize: 12, marginTop: 10 }}>✕ {authError}</p>}
+          <button type="submit" style={{ marginTop: 14, width: "100%", background: t.teal, border: "none", borderRadius: RADIUS.card, padding: "12px 0", color: t.card, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             Open
           </button>
         </form>
@@ -1477,33 +1513,43 @@ export default function AnalyticsDashboard() {
     );
   }
 
-  const card: React.CSSProperties = { background: CARD, border: `1px solid ${GRID}`, borderRadius: 14, padding: "14px 16px", position: "relative" };
-  const cardTitle: React.CSSProperties = { fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED, marginBottom: 10 };
+  // Cards are the system's: a white lift on paper, a hairline and e1, not a
+  // dark box. Text inside is ink1/ink2 only — ink3 never carries words here.
+  const card: React.CSSProperties = { background: t.card, border: `1px solid ${t.hairline}`, boxShadow: ELEV.e1, borderRadius: RADIUS.card, padding: "14px 16px", position: "relative" };
+  const cardTitle: React.CSSProperties = { fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: t.ink2, marginBottom: 10 };
+  const SRC = srcColors(t);
+  const TONE_TEXT = toneText(t);
+  const TONE_EDGE = toneEdge(t);
+  // A row inside a card: the card's own white, bounded by a hairline.
+  const row: React.CSSProperties = { background: t.card, borderRadius: RADIUS.card, border: `1px solid ${t.hairline}` };
+  // The WhatsApp and link actions — teal is the system's colour for links.
+  const action: React.CSSProperties = { fontWeight: 700, color: t.card, background: t.teal, borderRadius: RADIUS.chip, padding: "4px 10px", textDecoration: "none" };
 
   return (
-    <main style={{ minHeight: "100vh", background: "#0f1012", color: INK1, fontFamily: "var(--font-body), Inter, system-ui, sans-serif", padding: "16px 14px 60px" }}>
+    <main style={{ minHeight: "100vh", background: t.paper, color: t.ink1, fontFamily: FONT.sans, padding: "16px 14px 60px" }}>
       <div style={{ maxWidth: 1080, margin: "0 auto" }}>
 
         {/* header */}
         <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
           <div>
-            <p style={{ fontSize: 10.5, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED }}>
+            <p style={{ fontSize: 10.5, letterSpacing: "0.16em", textTransform: "uppercase", color: t.ink2 }}>
               {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </p>
-            <h1 style={{ fontSize: 24, fontWeight: 800, fontFamily: "var(--font-display), Georgia, serif" }}>
+            <h1 style={{ fontSize: 24, fontWeight: 500, fontFamily: FONT.serif }}>
               {(() => { const h = new Date().getHours(); return h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening"; })()}, Swapnil
               {ops && ops.monthRevenue > 0 && (
-                <span style={{ marginLeft: 12, verticalAlign: "middle", fontSize: 12, fontWeight: 700, fontFamily: "var(--font-body), Inter, sans-serif", color: PURPLE, border: `1px solid ${GRID}`, background: CARD, borderRadius: 999, padding: "5px 12px", whiteSpace: "nowrap" }}>
+                <span style={{ marginLeft: 12, verticalAlign: "middle", fontSize: 12, fontWeight: 700, fontFamily: FONT.sans, color: t.won, border: `1px solid ${t.hairline}`, background: t.card, borderRadius: RADIUS.chip, padding: "5px 12px", whiteSpace: "nowrap" }}>
                   ● ₹{ops.monthRevenue.toLocaleString("en-IN")} collected this month
                 </span>
               )}
             </h1>
-            <p style={{ fontSize: 11, color: MUTED }}>
+            <p style={{ fontSize: 11, color: t.ink2 }}>
               {updatedAt ? `Live · updated ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : "Loading…"}
-              {loadError && <span style={{ color: WARN }}> · ⚠ {loadError}</span>}
+              {loadError && <span style={{ color: t.clay }}> · ⚠ {loadError}</span>}
             </p>
+            {/* A healthy sync is quiet; only a failed one takes colour. */}
             {calStatus && (
-              <p style={{ fontSize: 10.5, color: calStatus.error ? WARN : calStatus.matched > 0 ? GOOD : MUTED }}>
+              <p style={{ fontSize: 10.5, color: calStatus.error ? t.clay : t.ink2 }}>
                 Cal sync:{" "}
                 {calStatus.error
                   ? `⚠ ${calStatus.error}`
@@ -1511,12 +1557,12 @@ export default function AnalyticsDashboard() {
                   ? `✓ ${calStatus.matched} matched · ${calStatus.cancelled} cancelled (${calStatus.source}, ${calStatus.fetched} bookings)`
                   : `no upcoming bookings found (${calStatus.source})`}
                 {calStatus.error && calStatus.sample.length > 0 && (
-                  <span style={{ color: MUTED }}> · fields: {calStatus.sample.join(", ")}</span>
+                  <span style={{ color: t.ink2 }}> · fields: {calStatus.sample.join(", ")}</span>
                 )}
               </p>
             )}
             {adsData && (
-              <p style={{ fontSize: 10.5, color: adsData.status.ok ? (adsData.status.error ? WARN : GOOD) : WARN }}>
+              <p style={{ fontSize: 10.5, color: adsData.status.ok && !adsData.status.error ? t.ink2 : t.clay }}>
                 Ads data:{" "}
                 {adsData.status.ok
                   ? adsData.status.error
@@ -1531,11 +1577,12 @@ export default function AnalyticsDashboard() {
               <button
                 key={d}
                 onClick={() => setDays(d)}
+                // The selected range is ink, as on Pipeline: a choice, not progress.
                 style={{
-                  padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: days === d ? "#a855f7" : "transparent",
-                  color: days === d ? "#fff" : INK2,
-                  border: `1px solid ${days === d ? "#a855f7" : GRID}`,
+                  padding: "6px 12px", borderRadius: RADIUS.chip, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  background: days === d ? t.ink1 : "transparent",
+                  color: days === d ? t.card : t.ink2,
+                  border: `1px solid ${days === d ? t.ink1 : t.hairline}`,
                 }}
               >
                 {rangeLabel(d)}
@@ -1545,7 +1592,7 @@ export default function AnalyticsDashboard() {
         </header>
 
         {leads === null ? (
-          <p style={{ color: MUTED, padding: 40, textAlign: "center" }}>Loading your leads…</p>
+          <p style={{ color: t.ink2, padding: 40, textAlign: "center" }}>Loading your leads…</p>
         ) : (
           <>
             {/* ── ACTION QUEUE: the one needs-action list (lib/journey) ── */}
@@ -1557,14 +1604,19 @@ export default function AnalyticsDashboard() {
               const visible = ops.queue.filter((q) => !dismissed.has(dKeyOf(q)));
               const hidden = ops.queue.length - visible.length;
               const overdue = ops.queue.filter((q) => q.urgent).length;
+              // The card keeps its hairline even when something is overdue: the
+              // count says so in clay, and so does each overdue row. Outlining
+              // the whole card every morning is the scolding the system avoids.
+              // Avg first touch is a figure where high is bad, so past 15 min
+              // it is amber; under it, it is as quiet as the rest of the title.
               return (
-              <div style={{ ...card, marginBottom: 12, borderColor: overdue ? WARN : GRID }}>
+              <div style={{ ...card, marginBottom: 12 }}>
                 <p style={cardTitle}>
                   Needs Action Now · {ops.queue.length}
-                  {overdue > 0 ? <span style={{ color: CRIT }}> · {overdue} overdue (over 6 hr)</span> : null}
-                  {hidden > 0 ? <span style={{ color: MUTED, textTransform: "none", letterSpacing: 0 }}> · {hidden} hidden on this device</span> : null}
+                  {overdue > 0 ? <span style={{ color: t.clay }}> · {overdue} overdue (over 6 hr)</span> : null}
+                  {hidden > 0 ? <span style={{ color: t.ink2, textTransform: "none", letterSpacing: 0 }}> · {hidden} hidden on this device</span> : null}
                   {ops.avgTouchMin !== null && (
-                    <span style={{ float: "right", textTransform: "none", letterSpacing: 0, color: ops.avgTouchMin <= 15 ? GOOD : ops.avgTouchMin <= 60 ? WARN : CRIT }}>
+                    <span style={{ float: "right", textTransform: "none", letterSpacing: 0, color: ops.avgTouchMin <= 15 ? t.ink2 : t.amber }}>
                       avg first touch: {ops.avgTouchMin < 60 ? `${ops.avgTouchMin} min` : `${(ops.avgTouchMin / 60).toFixed(1)} hr`}
                     </span>
                   )}
@@ -1576,19 +1628,19 @@ export default function AnalyticsDashboard() {
                     const phone = q.lead?.phone || q.item.phone;
                     return (
                       // Colour is AGE, one rule for every row: under 1 hr neutral,
-                      // 1-6 hr amber, over 6 hr red (lib/journey).
-                      <div key={dKey} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", background: "#0f1012", borderRadius: 10, border: `1px solid ${GRID}`, borderLeft: `3px solid ${TONE[q.tone]}` }}>
-                        <span style={{ fontSize: 11, fontWeight: 800, color: TONE[q.tone], fontVariantNumeric: "tabular-nums", minWidth: 44 }}>
+                      // 1-6 hr amber, over 6 hr clay (lib/journey) — as on Pipeline.
+                      <div key={dKey} style={{ ...row, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "7px 10px", borderLeft: `3px solid ${TONE_EDGE[q.tone]}` }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: TONE_TEXT[q.tone], fontVariantNumeric: "tabular-nums", minWidth: 44 }}>
                           {waitLabel(q.waitMin)}
                         </span>
-                        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: q.urgent ? CRIT : MUTED, border: `1px solid ${q.urgent ? CRIT : GRID}`, borderRadius: 5, padding: "2px 6px" }}>
+                        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: q.urgent ? t.clay : t.ink2, border: `1px solid ${q.urgent ? t.clay : t.hairline}`, borderRadius: RADIUS.cell, padding: "2px 6px" }}>
                           {q.urgent ? "OVERDUE" : "TO DO"}
                         </span>
                         <span style={{ fontWeight: 700, fontSize: 12.5 }}>{q.item.name || q.lead?.name || "(no name)"}</span>
-                        <span style={{ fontSize: 11.5, color: q.urgent ? WARN : INK2 }}>{q.label}</span>
+                        <span style={{ fontSize: 11.5, color: q.urgent ? t.ink1 : t.ink2 }}>{q.label}</span>
                         <span style={{ marginLeft: "auto", display: "inline-flex", gap: 5 }}>
                           {q.item.kind === "mark_call" ? (
-                            <a href="#today" style={{ fontSize: 11, fontWeight: 700, color: "#0f1012", background: WARN, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
+                            <a href="#today" style={{ ...action, fontSize: 11 }}>
                               Mark on Today
                             </a>
                           ) : phone && m.text ? (
@@ -1596,22 +1648,22 @@ export default function AnalyticsDashboard() {
                               href={waHref(phone, m.text)}
                               target="_blank" rel="noreferrer"
                               onClick={() => { if (m.step && q.lead) mark(q.lead.row, m.step, new Date().toISOString()); }}
-                              style={{ fontSize: 11, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}
+                              style={{ ...action, fontSize: 11 }}
                             >
                               WA · {q.kind}
                             </a>
                           ) : phone ? (
                             <a href={`https://wa.me/91${String(phone).replace(/\D/g, "").slice(-10)}`} target="_blank" rel="noreferrer"
-                              style={{ fontSize: 11, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
+                              style={{ ...action, fontSize: 11 }}>
                               WhatsApp
                             </a>
                           ) : m.text ? (
-                            <CopyBtn text={m.text} />
+                            <CopyBtn t={t} text={m.text} />
                           ) : null}
                           <button
                             onClick={() => dismissQueueItem(dKey)}
                             title="Handled outside WhatsApp — hide it here. It stays counted until her state changes."
-                            style={{ fontSize: 11, fontWeight: 600, color: MUTED, background: "transparent", border: `1px solid ${GRID}`, borderRadius: 999, padding: "4px 10px", cursor: "pointer" }}
+                            style={{ fontSize: 11, fontWeight: 600, color: t.ink2, background: "transparent", border: `1px solid ${t.hairline}`, borderRadius: RADIUS.chip, padding: "4px 10px", cursor: "pointer" }}
                           >
                             Hide
                           </button>
@@ -1634,11 +1686,11 @@ export default function AnalyticsDashboard() {
                 { label: "Showed", v: agg.showed + agg.noshow > 0 ? `${Math.round((agg.showed / (agg.showed + agg.noshow)) * 100)}%` : "–", sub: agg.showed + agg.noshow > 0 ? `${agg.showed} showed · ${agg.noshow} no-show` : "mark calls below" },
                 { label: "Closed", v: String(agg.closedN), sub: agg.revenue > 0 ? `₹${agg.revenue.toLocaleString("en-IN")}` : "mark wins below" },
                 { label: "Avg Score", v: agg.avgScore ? String(agg.avgScore) : "–", sub: "lead quality /100" },
-              ].map((t) => (
-                <div key={t.label} style={card}>
-                  <p style={cardTitle}>{t.label}</p>
-                  <p style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{t.v}</p>
-                  <p style={{ fontSize: 10.5, color: MUTED, marginTop: 6 }}>{t.sub}</p>
+              ].map((tile) => (
+                <div key={tile.label} style={card}>
+                  <p style={cardTitle}>{tile.label}</p>
+                  <p style={{ fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{tile.v}</p>
+                  <p style={{ fontSize: 10.5, color: t.ink2, marginTop: 6 }}>{tile.sub}</p>
                 </div>
               ))}
             </div>
@@ -1648,10 +1700,10 @@ export default function AnalyticsDashboard() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 12 }}>
                 <div style={card}>
                   <p style={cardTitle}>Revenue</p>
-                  <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, color: ops.revenue > 0 ? GOOD : INK1 }}>
+                  <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, color: ops.revenue > 0 ? t.won : t.ink1 }}>
                     {ops.revenue > 0 ? `₹${ops.revenue.toLocaleString("en-IN")}` : "₹0"}
                   </p>
-                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>
+                  <p style={{ fontSize: 10, color: t.ink2, marginTop: 6 }}>
                     {ops.onPace !== null ? `on pace for ₹${ops.onPace.toLocaleString("en-IN")} this month` : "closed wins in range"}
                   </p>
                 </div>
@@ -1660,7 +1712,7 @@ export default function AnalyticsDashboard() {
                   <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>
                     {ops.roas !== null ? `${ops.roas.toFixed(1)}×` : "–"}
                   </p>
-                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>
+                  <p style={{ fontSize: 10, color: t.ink2, marginTop: 6 }}>
                     {ops.roas !== null
                       ? `₹${Math.round(ops.spendInRange).toLocaleString("en-IN")} spend → ₹${ops.revenue.toLocaleString("en-IN")}`
                       : "unlocks with first closed win + ads data"}
@@ -1671,7 +1723,7 @@ export default function AnalyticsDashboard() {
                   <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>
                     {ops.pipeline !== null ? `₹${ops.pipeline.toLocaleString("en-IN")}` : `${ops.upcoming} calls`}
                   </p>
-                  <p style={{ fontSize: 10, color: MUTED, marginTop: 6 }}>
+                  <p style={{ fontSize: 10, color: t.ink2, marginTop: 6 }}>
                     {ops.pipeline !== null
                       ? `${ops.upcoming} upcoming × ${Math.round((ops.closeRate ?? 0) * 100)}% close × avg ₹${Math.round(ops.avgTicket ?? 0).toLocaleString("en-IN")}`
                       : "expected value unlocks after 3+ marked calls"}
@@ -1689,39 +1741,42 @@ export default function AnalyticsDashboard() {
                 <p style={cardTitle}>
                   Return on ad spend — {ops.moneyWindowLabel}
                   {ops.campaignsLive > 0 && (
-                    <span style={{ color: MUTED, fontWeight: 500 }}>
+                    <span style={{ color: t.ink2, fontWeight: 500 }}>
                       {"  ·  "}{ops.campaignsLive} campaign{ops.campaignsLive === 1 ? "" : "s"} with spend
                     </span>
                   )}
                 </p>
 
-                {/* ── the calculation, spelled out ── */}
+                {/* ── the calculation, spelled out ──
+                    Swatches key the two bars below: won for the programme money
+                    that counts (MONEY IN), ink3 for ad spend (MONEY OUT). The
+                    two lines that are "not revenue" take a neutral ink2 mark. */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", rowGap: 7, columnGap: 16, fontSize: 12.5, marginBottom: 14 }}>
-                  <span style={{ color: INK2 }}>
-                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#e0c6ff", marginRight: 7, verticalAlign: -1 }} />
-                    ₹299 consultation fees · <b style={{ color: INK1 }}>{ops.consultCount}</b> paid
-                    <span style={{ color: MUTED }}> {" "}· not revenue</span>
+                  <span style={{ color: t.ink2 }}>
+                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: t.ink2, marginRight: 7, verticalAlign: -1 }} />
+                    ₹299 consultation fees · <b style={{ color: t.ink1 }}>{ops.consultCount}</b> paid
+                    <span style={{ color: t.ink2 }}> {" "}· not revenue</span>
                   </span>
-                  <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                  <span style={{ color: t.ink1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
                     ₹{ops.consultRevenue.toLocaleString("en-IN")}
                   </span>
 
-                  <span style={{ color: INK2 }}>
-                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#a855f7", marginRight: 7, verticalAlign: -1 }} />
-                    Programme payments · <b style={{ color: INK1 }}>{ops.clientCount}</b> client{ops.clientCount === 1 ? "" : "s"}
+                  <span style={{ color: t.ink2 }}>
+                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: t.won, marginRight: 7, verticalAlign: -1 }} />
+                    Programme payments · <b style={{ color: t.ink1 }}>{ops.clientCount}</b> client{ops.clientCount === 1 ? "" : "s"}
                   </span>
-                  <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                  <span style={{ color: t.ink1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
                     ₹{ops.programRevenue.toLocaleString("en-IN")}
                   </span>
 
                   {/* every client named — no bucketing, no guessing at "lock vs full" */}
                   {ops.clients.length > 0 && (
                     <>
-                      <span style={{ gridColumn: "1 / -1", paddingLeft: 16, fontSize: 11, color: MUTED, lineHeight: 1.7 }}>
+                      <span style={{ gridColumn: "1 / -1", paddingLeft: 16, fontSize: 11, color: t.ink2, lineHeight: 1.7 }}>
                         {ops.clients.map((c: { name: string; amount: number }, i: number) => (
                           <span key={c.name + i}>
-                            {i > 0 && <span style={{ color: GRID }}>{"  ·  "}</span>}
-                            {c.name} <b style={{ color: INK2 }}>₹{c.amount.toLocaleString("en-IN")}</b>
+                            {i > 0 && <span style={{ color: t.ink2 }}>{"  ·  "}</span>}
+                            {c.name} <b style={{ color: t.ink2 }}>₹{c.amount.toLocaleString("en-IN")}</b>
                           </span>
                         ))}
                       </span>
@@ -1730,49 +1785,52 @@ export default function AnalyticsDashboard() {
 
                   {ops.unmarkedExtra > 0 && (
                     <>
-                      <span style={{ color: WARN }}>
-                        <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: WARN, marginRight: 7, verticalAlign: -1 }} />
+                      <span style={{ color: t.ink2 }}>
+                        <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: t.ink2, marginRight: 7, verticalAlign: -1 }} />
                         Other payments (₹300–₹14,999) · not revenue, not a win
                       </span>
-                      <span style={{ color: WARN, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                      <span style={{ color: t.ink1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
                         ₹{Math.round(ops.unmarkedExtra).toLocaleString("en-IN")}
                       </span>
                     </>
                   )}
 
-                  <span style={{ gridColumn: "1 / -1", borderTop: `1px solid ${GRID}`, marginTop: 3 }} />
+                  <span style={{ gridColumn: "1 / -1", borderTop: `1px solid ${t.hairline}`, marginTop: 3 }} />
 
-                  <span style={{ color: INK1, fontWeight: 700 }}>Programme revenue</span>
-                  <span style={{ color: GOOD, fontWeight: 800, fontVariantNumeric: "tabular-nums", textAlign: "right", fontSize: 14 }}>
+                  <span style={{ color: t.ink1, fontWeight: 700 }}>Programme revenue</span>
+                  <span style={{ color: t.won, fontWeight: 800, fontVariantNumeric: "tabular-nums", textAlign: "right", fontSize: 14 }}>
                     ₹{Math.round(ops.revenue).toLocaleString("en-IN")}
                   </span>
 
-                  <span style={{ color: INK2 }}>
-                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "#6b6379", marginRight: 7, verticalAlign: -1 }} />
-                    Ad spend {ops.spendIsManual && <span style={{ color: WARN }}>(entered by hand)</span>}
+                  <span style={{ color: t.ink2 }}>
+                    <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: t.ink3, marginRight: 7, verticalAlign: -1 }} />
+                    Ad spend {ops.spendIsManual && <span style={{ color: t.ink2 }}>(entered by hand)</span>}
                   </span>
-                  <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                  <span style={{ color: t.ink1, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
                     {ops.spendInRange > 0 ? `− ₹${Math.round(ops.spendInRange).toLocaleString("en-IN")}` : "—"}
                   </span>
 
-                  <span style={{ gridColumn: "1 / -1", borderTop: `1px solid ${GRID}`, marginTop: 3 }} />
+                  <span style={{ gridColumn: "1 / -1", borderTop: `1px solid ${t.hairline}`, marginTop: 3 }} />
 
-                  <span style={{ color: INK1, fontWeight: 800 }}>{ops.netProfit >= 0 ? "Profit" : "Loss"}</span>
-                  <span style={{ fontWeight: 800, fontVariantNumeric: "tabular-nums", textAlign: "right", fontSize: 15, color: ops.spendInRange <= 0 ? MUTED : ops.netProfit >= 0 ? GOOD : CRIT }}>
+                  {/* A profit is money won; a loss is a figure where high is bad. */}
+                  <span style={{ color: t.ink1, fontWeight: 800 }}>{ops.netProfit >= 0 ? "Profit" : "Loss"}</span>
+                  <span style={{ fontWeight: 800, fontVariantNumeric: "tabular-nums", textAlign: "right", fontSize: 15, color: ops.spendInRange <= 0 ? t.ink2 : ops.netProfit >= 0 ? t.won : t.amber }}>
                     {ops.spendInRange > 0 ? `₹${Math.abs(Math.round(ops.netProfit)).toLocaleString("en-IN")}` : "—"}
                   </span>
                 </div>
 
-                {/* ── hero + bars ── */}
+                {/* ── hero + bars ──
+                    ROAS at or past 1× is money won back, so it takes won; under
+                    it stays ink — the Loss line above is the one that warns. */}
                 {ops.spendInRange > 0 ? (
                   <div style={{ display: "grid", gridTemplateColumns: "minmax(150px, 200px) 1fr", gap: 22, alignItems: "center" }}>
                     <div>
-                      <p style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em", color: ops.roas === null ? INK2 : ops.roas >= 1 ? GOOD : ops.roas >= 0.5 ? WARN : CRIT }}>
+                      <p style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em", color: ops.roas === null ? t.ink2 : ops.roas >= 1 ? t.won : t.ink1 }}>
                         {ops.roas !== null ? `${ops.roas.toFixed(2)}×` : "–"}
                       </p>
-                      <p style={{ fontSize: 11, color: MUTED, marginTop: 7, lineHeight: 1.5, fontVariantNumeric: "tabular-nums" }}>
+                      <p style={{ fontSize: 11, color: t.ink2, marginTop: 7, lineHeight: 1.5, fontVariantNumeric: "tabular-nums" }}>
                         ₹{Math.round(ops.revenue).toLocaleString("en-IN")} ÷ ₹{Math.round(ops.spendInRange).toLocaleString("en-IN")}
-                        <br />every ₹1 of ads returned <b style={{ color: INK1 }}>₹{(ops.roas ?? 0).toFixed(2)}</b>
+                        <br />every ₹1 of ads returned <b style={{ color: t.ink1 }}>₹{(ops.roas ?? 0).toFixed(2)}</b>
                       </p>
                     </div>
                     {(() => {
@@ -1781,28 +1839,30 @@ export default function AnalyticsDashboard() {
                       const H = 28;
                       return (
                         <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: MUTED, marginBottom: 4 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: t.ink2, marginBottom: 4 }}>
                             <span>MONEY OUT · ads</span>
-                            <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>₹{Math.round(ops.spendInRange).toLocaleString("en-IN")}</span>
+                            <span style={{ color: t.ink1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>₹{Math.round(ops.spendInRange).toLocaleString("en-IN")}</span>
                           </div>
-                          <div style={{ height: H, background: GRID, borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
-                            <div style={{ width: pct(ops.spendInRange), height: "100%", background: "#6b6379", borderRadius: 4 }} />
+                          <div style={{ height: H, background: t.sunk, borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
+                            <div style={{ width: pct(ops.spendInRange), height: "100%", background: t.ink3, borderRadius: 4 }} />
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: MUTED, marginBottom: 4 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: t.ink2, marginBottom: 4 }}>
                             <span>MONEY IN · collected</span>
-                            <span style={{ color: INK1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>₹{Math.round(ops.revenue).toLocaleString("en-IN")}</span>
+                            <span style={{ color: t.ink1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>₹{Math.round(ops.revenue).toLocaleString("en-IN")}</span>
                           </div>
-                          <div style={{ height: H, background: GRID, borderRadius: 4, display: "flex", gap: 2, overflow: "hidden" }}>
-                            {ops.programRevenue > 0 && <div style={{ width: pct(ops.programRevenue), height: "100%", background: "#a855f7", borderRadius: 4 }} />}
+                          <div style={{ height: H, background: t.sunk, borderRadius: 4, display: "flex", gap: 2, overflow: "hidden" }}>
+                            {ops.programRevenue > 0 && <div style={{ width: pct(ops.programRevenue), height: "100%", background: t.won, borderRadius: 4 }} />}
                           </div>
                         </div>
                       );
                     })()}
                   </div>
                 ) : (
-                  <div style={{ background: "#1f1b12", border: `1px solid ${WARN}`, borderRadius: 8, padding: 12 }}>
-                    <p style={{ fontSize: 12, color: WARN, fontWeight: 700, marginBottom: 4 }}>Ad spend unavailable — ROAS cannot be computed</p>
-                    <p style={{ fontSize: 11, color: INK2, marginBottom: 9, lineHeight: 1.5 }}>
+                  // Spend should have been read and wasn't, which is clay's one
+                  // meaning — on clayTint, the system's single tinted surface.
+                  <div style={{ background: t.clayTint, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.card, padding: 12 }}>
+                    <p style={{ fontSize: 12, color: t.clay, fontWeight: 700, marginBottom: 4 }}>Ad spend unavailable — ROAS cannot be computed</p>
+                    <p style={{ fontSize: 11, color: t.ink2, marginBottom: 9, lineHeight: 1.5 }}>
                       The Meta token cannot read this ad account. Fix it properly by setting <b>META_ADS_TOKEN</b> (with <b>ads_read</b>) in Vercel — or type the spend from Ads Manager to see ROAS right now.
                     </p>
                     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -1817,26 +1877,26 @@ export default function AnalyticsDashboard() {
                           setManualSpend(v);
                           try { localStorage.setItem(SPEND_STORE, String(v)); } catch { /* ignore */ }
                         }}
-                        style={{ background: CARD, border: `1px solid ${GRID}`, color: INK1, borderRadius: 6, padding: "7px 10px", fontSize: 12, width: 210 }}
+                        style={{ background: t.card, border: `1px solid ${t.ink3}`, color: t.ink1, borderRadius: RADIUS.card, padding: "7px 10px", fontSize: 12, width: 210 }}
                       />
-                      <span style={{ fontSize: 10.5, color: MUTED }}>press Enter · saved in this browser only</span>
+                      <span style={{ fontSize: 10.5, color: t.ink2 }}>press Enter · saved in this browser only</span>
                     </div>
                   </div>
                 )}
 
                 {/* ── what each outcome cost ── */}
                 {ops.spendInRange > 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))", gap: 8, borderTop: `1px solid ${GRID}`, paddingTop: 12, marginTop: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))", gap: 8, borderTop: `1px solid ${t.hairline}`, paddingTop: 12, marginTop: 14 }}>
                     {[
                       { label: "Cost per ₹299 booking", v: ops.costPerConsult !== null ? `₹${Math.round(ops.costPerConsult).toLocaleString("en-IN")}` : "–", sub: `${ops.consultCount} booked` },
                       { label: "Cost per client", v: ops.costPerClient !== null ? `₹${Math.round(ops.costPerClient).toLocaleString("en-IN")}` : "–", sub: `${ops.clientCount} closed` },
                       { label: "Avg client value", v: ops.avgClientValue !== null ? `₹${Math.round(ops.avgClientValue).toLocaleString("en-IN")}` : "–", sub: "programme fee" },
                       { label: "Breakeven at", v: ops.avgClientValue ? `${Math.max(1, Math.ceil(ops.spendInRange / ops.avgClientValue))} clients` : "–", sub: "for this spend" },
-                    ].map((t) => (
-                      <div key={t.label}>
-                        <p style={{ fontSize: 10, color: MUTED, marginBottom: 3 }}>{t.label}</p>
-                        <p style={{ fontSize: 16, fontWeight: 800, color: INK1, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>{t.v}</p>
-                        <p style={{ fontSize: 9.5, color: MUTED, marginTop: 2 }}>{t.sub}</p>
+                    ].map((tile) => (
+                      <div key={tile.label}>
+                        <p style={{ fontSize: 10, color: t.ink2, marginBottom: 3 }}>{tile.label}</p>
+                        <p style={{ fontSize: 16, fontWeight: 800, color: t.ink1, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>{tile.v}</p>
+                        <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 2 }}>{tile.sub}</p>
                       </div>
                     ))}
                   </div>
@@ -1851,19 +1911,21 @@ export default function AnalyticsDashboard() {
                 <div style={{ display: "grid", gap: 8 }}>
                   {agg.todaySessions.map((l) => {
                     const risk = riskOf(l);
-                    const rc = risk === "high" ? CRIT : risk === "med" ? WARN : GOOD;
+                    // No-show risk is a figure where high is bad, so only "high"
+                    // takes amber; medium and likely are told apart by weight.
+                    const rc = risk === "high" ? t.amber : risk === "med" ? t.ink1 : t.ink2;
                     const rl = risk === "high" ? "✕ high no-show risk" : risk === "med" ? "△ medium risk" : "✓ likely to show";
                     const time = l.sessionDate.match(/\d{1,2}:\d{2} [AP]M/)?.[0] ?? l.sessionDate;
                     return (
-                      <div key={l.row} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", background: "#0f1012", borderRadius: 10, border: `1px solid ${GRID}` }}>
+                      <div key={l.row} style={{ ...row, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px" }}>
                         <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, fontSize: 13, minWidth: 64 }}>{time}</span>
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{l.name || "—"}</span>
-                        <span style={{ fontSize: 11, color: MUTED }}>score {l.score ?? "–"}</span>
+                        <span style={{ fontSize: 11, color: t.ink2 }}>score {l.score ?? "–"}</span>
                         <span style={{ fontSize: 11, color: rc, marginLeft: "auto" }}>{rl}</span>
                         {l.phone && (
                           <a href={waHref(l.phone, buildTodayReminder(l))} target="_blank" rel="noreferrer"
                             title="Opens WhatsApp with today's reminder pre-typed"
-                            style={{ fontSize: 11.5, fontWeight: 700, color: "#0f1012", background: GOOD, borderRadius: 999, padding: "4px 10px", textDecoration: "none" }}>
+                            style={{ ...action, fontSize: 11.5 }}>
                             WA · Remind
                           </a>
                         )}
@@ -1878,47 +1940,47 @@ export default function AnalyticsDashboard() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10, marginBottom: 12 }}>
               <div className="chart-card" style={card}>
                 <p style={cardTitle}>Leads per day</p>
-                <BarChart data={agg.perDay} />
+                <BarChart t={t} data={agg.perDay} />
               </div>
               <div className="chart-card" style={card}>
                 <p style={cardTitle}>Funnel</p>
-                <Funnel stages={[
+                <Funnel t={t} stages={[
                   { label: "Leads", value: agg.total },
                   { label: "Booked", value: agg.booked },
                   { label: "Showed", value: agg.showed },
                   { label: "Closed", value: agg.closedN },
                 ]} />
                 {ops && ops.stageRates.lb !== null ? (
-                  <p style={{ fontSize: 10, color: MUTED, marginTop: 8 }}>
+                  <p style={{ fontSize: 10, color: t.ink2, marginTop: 8 }}>
                     Lead→Booked {ops.stageRates.lb}%{ops.stageRates.bs !== null ? ` · Booked→Showed ${ops.stageRates.bs}%` : ""}{ops.stageRates.sc !== null ? ` · Showed→Closed ${ops.stageRates.sc}%` : ""}
                   </p>
                 ) : (
-                  <p style={{ fontSize: 10, color: MUTED, marginTop: 8 }}>Showed/Closed fill as you mark calls below</p>
+                  <p style={{ fontSize: 10, color: t.ink2, marginTop: 8 }}>Showed/Closed fill as you mark calls below</p>
                 )}
               </div>
               <div className="chart-card" style={card}>
                 <p style={cardTitle}>Lead source</p>
-                <Donut parts={(["ig", "fb", "other"] as const).map((k) => ({
-                  key: k, label: SRC_LABELS[k], value: agg.srcCount[k], color: SRC_COLORS[k],
+                <Donut t={t} parts={(["ig", "fb", "other"] as const).map((k) => ({
+                  key: k, label: SRC_LABELS[k], value: agg.srcCount[k], color: SRC[k],
                 }))} />
               </div>
               <div className="chart-card" style={card}>
                 <p style={cardTitle}>Lead quality (score)</p>
-                <HBars data={agg.buckets} color={PURPLE} />
+                <HBars t={t} data={agg.buckets} color={t.teal} />
               </div>
               <div className="chart-card" style={card}>
                 <p style={cardTitle}>Top ads · leads + avg quality</p>
-                {agg.ads.length ? <HBars data={agg.ads} color={PURPLE} /> : <p style={{ fontSize: 12, color: MUTED }}>No ad-tagged leads in range</p>}
+                {agg.ads.length ? <HBars t={t} data={agg.ads} color={t.teal} /> : <p style={{ fontSize: 12, color: t.ink2 }}>No ad-tagged leads in range</p>}
               </div>
               <div className="chart-card" style={card}>
                 <p style={cardTitle}>Top cities</p>
-                {agg.cities.length ? <HBars data={agg.cities} color={PURPLE} /> : <p style={{ fontSize: 12, color: MUTED }}>No city data in range</p>}
+                {agg.cities.length ? <HBars t={t} data={agg.cities} color={t.teal} /> : <p style={{ fontSize: 12, color: t.ink2 }}>No city data in range</p>}
               </div>
               {ops && (
                 <div className="chart-card" style={card}>
                   <p style={cardTitle}>Lead arrivals by weekday</p>
-                  <HBars data={ops.arrivals} color={PURPLE} />
-                  <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>
+                  <HBars t={t} data={ops.arrivals} color={t.teal} />
+                  <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 6 }}>
                     {ops.arrivalsInsight ?? "Feeds ad scheduling — heavy days deserve heavier budget"}
                   </p>
                 </div>
@@ -1928,11 +1990,11 @@ export default function AnalyticsDashboard() {
                   <p style={cardTitle}>Show-rate by lead score</p>
                   {ops.insights ? (
                     <>
-                      <HBars data={ops.insights} color={PURPLE} suffix="%" />
-                      <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>If high scores show more, the scoring is honest — trust the tiers</p>
+                      <HBars t={t} data={ops.insights} color={t.teal} suffix="%" />
+                      <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 6 }}>If high scores show more, the scoring is honest — trust the tiers</p>
                     </>
                   ) : (
-                    <p style={{ fontSize: 12, color: MUTED }}>
+                    <p style={{ fontSize: 12, color: t.ink2 }}>
                       Unlocks at {ops.INSIGHT_MIN} marked calls — {ops.outcomes}/{ops.INSIGHT_MIN} done. Keep tapping Showed / No-show after every session.
                     </p>
                   )}
@@ -1952,13 +2014,16 @@ export default function AnalyticsDashboard() {
                       { label: "CTR · 7d", v: adPerf.cur.ctr !== null ? `${adPerf.cur.ctr.toFixed(2)}%` : "–", cur: adPerf.cur.ctr, prev: adPerf.prev.ctr, lowerBetter: false },
                       { label: "CPM · 7d", v: adPerf.cur.cpm !== null ? `₹${Math.round(adPerf.cur.cpm)}` : "–", cur: adPerf.cur.cpm, prev: adPerf.prev.cpm, lowerBetter: true },
                     ] as { label: string; v: string; cur: number | null; prev: number | null; lowerBetter: boolean; neutral?: boolean }[]
-                  ).map((t) => {
-                    let delta: React.ReactNode = <span style={{ color: MUTED }}>vs prev 7d: –</span>;
-                    if (t.cur !== null && t.prev !== null && t.prev > 0) {
-                      const pct = ((t.cur - t.prev) / t.prev) * 100;
+                  ).map((tile) => {
+                    let delta: React.ReactNode = <span style={{ color: t.ink2 }}>vs prev 7d: –</span>;
+                    if (tile.cur !== null && tile.prev !== null && tile.prev > 0) {
+                      const pct = ((tile.cur - tile.prev) / tile.prev) * 100;
                       const up = pct >= 0;
-                      const good = t.neutral ? null : t.lowerBetter ? !up : up;
-                      const color = good === null ? MUTED : good ? GOOD : CRIT;
+                      const good = tile.neutral ? null : tile.lowerBetter ? !up : up;
+                      // Better is progress (teal). Worse is a cost per result
+                      // rising — a figure where high is bad (amber); a falling
+                      // CTR is the same rise in cost per click.
+                      const color = good === null ? t.ink2 : good ? t.teal : t.amber;
                       delta = (
                         <span style={{ color }}>
                           {up ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}% vs prev 7d
@@ -1966,9 +2031,9 @@ export default function AnalyticsDashboard() {
                       );
                     }
                     return (
-                      <div key={t.label} style={card}>
-                        <p style={cardTitle}>{t.label}</p>
-                        <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{t.v}</p>
+                      <div key={tile.label} style={card}>
+                        <p style={cardTitle}>{tile.label}</p>
+                        <p style={{ fontSize: 24, fontWeight: 800, lineHeight: 1 }}>{tile.v}</p>
                         <p style={{ fontSize: 10, marginTop: 6 }}>{delta}</p>
                       </div>
                     );
@@ -1978,24 +2043,24 @@ export default function AnalyticsDashboard() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 10, marginBottom: 12 }}>
                   <div className="chart-card" style={card}>
                     <p style={cardTitle}>Cost per lead — 30-day trend</p>
-                    <TrendChart data={adPerf.cplSeries} unit="₹" />
+                    <TrendChart t={t} data={adPerf.cplSeries} unit="₹" />
                   </div>
                   <div className="chart-card" style={{ ...card, overflowX: "auto" }}>
                     <p style={cardTitle}>Per-ad verdict — last 14 days · spend × lead quality</p>
                     {adPerf.adRows.length === 0 ? (
-                      <p style={{ fontSize: 12, color: MUTED }}>No ads with spend in the last 14 days</p>
+                      <p style={{ fontSize: 12, color: t.ink2 }}>No ads with spend in the last 14 days</p>
                     ) : (
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, minWidth: 460 }}>
                         <thead>
-                          <tr style={{ color: MUTED, textAlign: "left" }}>
+                          <tr style={{ color: t.ink2, textAlign: "left" }}>
                             {["Ad", "Spend", "Leads", "CPL", "Score", "Bkd", "₹/Bkd", "Verdict"].map((h) => (
-                              <th key={h} style={{ padding: "5px 6px", fontWeight: 600, fontSize: 9.5, letterSpacing: "0.06em", textTransform: "uppercase", borderBottom: `1px solid ${GRID}` }}>{h}</th>
+                              <th key={h} style={{ padding: "5px 6px", fontWeight: 600, fontSize: 9.5, letterSpacing: "0.06em", textTransform: "uppercase", borderBottom: `1px solid ${t.hairline}` }}>{h}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
                           {adPerf.adRows.map((a) => (
-                            <tr key={a.adId} style={{ borderBottom: `1px solid ${GRID}` }} title={a.verdict.why}>
+                            <tr key={a.adId} style={{ borderBottom: `1px solid ${t.hairline}` }} title={a.verdict.why}>
                               <td style={{ padding: "6px", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={`${a.adName} (…${a.adId.slice(-5)}) — ${a.verdict.why}`}>
                                 {a.adName || `…${a.adId.slice(-5)}`}
                               </td>
@@ -2013,7 +2078,7 @@ export default function AnalyticsDashboard() {
                         </tbody>
                       </table>
                     )}
-                    <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>
+                    <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 6 }}>
                       Tap/hover a row for the reason. Judge on ₹/Booked + Score, never CPL alone.
                     </p>
                   </div>
@@ -2033,11 +2098,13 @@ export default function AnalyticsDashboard() {
             {waStatus && (
               <div style={{ ...card, marginBottom: 12 }}>
                 <p style={{ ...cardTitle }}>WhatsApp automation</p>
+                {/* Working is quiet (ink, with its tick); only a chain that is
+                    not sending or not receiving takes clay. */}
                 <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, color: waStatus.sending === "ok" ? GOOD : CRIT }}>
+                  <span style={{ fontSize: 12, color: waStatus.sending === "ok" ? t.ink2 : t.clay }}>
                     {waStatus.sending === "ok" ? "✓ Sending live" : "✕ Sending not configured"}
                   </span>
-                  <span style={{ fontSize: 12, color: waStatus.receiving === "ok" ? GOOD : CRIT }}>
+                  <span style={{ fontSize: 12, color: waStatus.receiving === "ok" ? t.ink2 : t.clay }}>
                     {waStatus.receiving === "ok"
                       ? "✓ Receiving live"
                       : waStatus.receiving === "never_received"
@@ -2046,7 +2113,7 @@ export default function AnalyticsDashboard() {
                       ? "✕ Receiving not configured"
                       : "? Receiving unknown"}
                   </span>
-                  <span style={{ fontSize: 12, color: MUTED }}>
+                  <span style={{ fontSize: 12, color: t.ink2 }}>
                     {waStatus.inbox.outbound} sent · {waStatus.inbox.inbound} received · auto-reply {waStatus.autoReply}
                   </span>
                 </div>
@@ -2059,7 +2126,7 @@ export default function AnalyticsDashboard() {
                       <span
                         key={a.name}
                         title={a.lastAt ? `last sent ${new Date(a.lastAt).toLocaleString("en-IN")}` : ""}
-                        style={{ fontSize: 11, color: INK2, border: `1px solid ${GRID}`, borderRadius: 999, padding: "4px 10px" }}
+                        style={{ fontSize: 11, color: t.ink2, border: `1px solid ${t.hairline}`, borderRadius: RADIUS.chip, padding: "4px 10px" }}
                       >
                         {a.name} · {a.count}
                         {a.lastAt ? ` · ${new Date(a.lastAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
@@ -2071,15 +2138,15 @@ export default function AnalyticsDashboard() {
                 {waStatus.actions.length > 0 ? (
                   <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
                     {waStatus.actions.map((a) => (
-                      <li key={a} style={{ fontSize: 12, color: INK2, lineHeight: 1.55 }}>{a}</li>
+                      <li key={a} style={{ fontSize: 12, color: t.ink2, lineHeight: 1.55 }}>{a}</li>
                     ))}
                   </ul>
                 ) : waStatus.inbox.totalMessages === 0 ? (
-                  <p style={{ fontSize: 12, color: MUTED }}>
+                  <p style={{ fontSize: 12, color: t.ink2 }}>
                     Everything is connected — no conversations yet. Sends and replies will appear here.
                   </p>
                 ) : null}
-                <p style={{ fontSize: 11, color: MUTED, marginTop: 10 }}>
+                <p style={{ fontSize: 11, color: t.ink2, marginTop: 10 }}>
                   Webhook URL: <code>{waStatus.webhook.callbackUrl}</code> · subscribe to <code>{waStatus.webhook.subscribeTo}</code>
                 </p>
               </div>
@@ -2089,45 +2156,47 @@ export default function AnalyticsDashboard() {
               <div style={{ ...card, marginBottom: 12, padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 16px 10px" }}>
                   <p style={{ ...cardTitle, marginBottom: 0 }}>WhatsApp inbox</p>
-                  {threads.reduce((n, t) => n + t.unread, 0) > 0 && (
-                    <span style={{ background: CRIT, color: "#fff", fontSize: 10, fontWeight: 800, borderRadius: 999, padding: "2px 8px" }}>
-                      {threads.reduce((n, t) => n + t.unread, 0)} new
+                  {/* A reply from her is movement in the conversation, so unread
+                      is teal — not clay: nothing has been missed yet. */}
+                  {threads.reduce((n, th) => n + th.unread, 0) > 0 && (
+                    <span style={{ background: t.teal, color: t.card, fontSize: 10, fontWeight: 800, borderRadius: RADIUS.chip, padding: "2px 8px" }}>
+                      {threads.reduce((n, th) => n + th.unread, 0)} new
                     </span>
                   )}
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: openThread ? "minmax(0,260px) minmax(0,1fr)" : "1fr", borderTop: `1px solid ${GRID}` }}>
+                <div style={{ display: "grid", gridTemplateColumns: openThread ? "minmax(0,260px) minmax(0,1fr)" : "1fr", borderTop: `1px solid ${t.hairline}` }}>
                   {/* thread list */}
-                  <div style={{ borderRight: openThread ? `1px solid ${GRID}` : "none", maxHeight: 420, overflowY: "auto" }}>
-                    {threads.map((t) => {
-                      const last = t.messages[t.messages.length - 1];
-                      const active = openThread === t.phone;
-                      const lead = leads?.find((l) => l.phone && t.phone.endsWith(l.phone.slice(-10)));
+                  <div style={{ borderRight: openThread ? `1px solid ${t.hairline}` : "none", maxHeight: 420, overflowY: "auto" }}>
+                    {threads.map((th) => {
+                      const last = th.messages[th.messages.length - 1];
+                      const active = openThread === th.phone;
+                      const lead = leads?.find((l) => l.phone && th.phone.endsWith(l.phone.slice(-10)));
                       return (
                         <button
-                          key={t.phone}
-                          onClick={() => openConversation(t.phone)}
+                          key={th.phone}
+                          onClick={() => openConversation(th.phone)}
                           style={{
                             display: "block", width: "100%", textAlign: "left", padding: "11px 14px", cursor: "pointer",
-                            background: active ? "rgba(168,85,247,0.10)" : "transparent",
-                            border: "none", borderBottom: `1px solid ${GRID}`,
-                            borderLeft: `2px solid ${active ? PURPLE : "transparent"}`,
+                            background: active ? t.sunk : "transparent",
+                            border: "none", borderBottom: `1px solid ${t.hairline}`,
+                            borderLeft: `2px solid ${active ? t.teal : "transparent"}`,
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 12.5, fontWeight: 700, color: INK1 }}>
-                              {t.name || lead?.name || `+${t.phone}`}
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: t.ink1 }}>
+                              {th.name || lead?.name || `+${th.phone}`}
                             </span>
-                            {t.unread > 0 && <span style={{ width: 7, height: 7, borderRadius: 999, background: CRIT }} />}
+                            {th.unread > 0 && <span style={{ width: 7, height: 7, borderRadius: RADIUS.chip, background: t.teal }} />}
                             {/* Her budget bracket, right here in the inbox. No
                                 external tool could show this next to her message. */}
                             {lead?.budget && (
-                              <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, color: budgetRank(lead.budget) === 3 ? GOOD : MUTED }}>
+                              <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, color: budgetRank(lead.budget) === 3 ? t.ink1 : t.ink2 }}>
                                 {budgetShort(lead.budget)}
                               </span>
                             )}
                           </div>
-                          <p style={{ fontSize: 11, color: t.unread ? INK2 : MUTED, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <p style={{ fontSize: 11, color: th.unread ? t.ink1 : t.ink2, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {last?.direction === "out" ? "You: " : ""}{last?.text || ""}
                           </p>
                         </button>
@@ -2137,42 +2206,43 @@ export default function AnalyticsDashboard() {
 
                   {/* conversation */}
                   {openThread && (() => {
-                    const t = threads.find((x) => x.phone === openThread);
-                    if (!t) return null;
-                    const lead = leads?.find((l) => l.phone && t.phone.endsWith(l.phone.slice(-10)));
-                    const open = t.windowMinutesLeft > 0;
-                    const hrs = Math.floor(t.windowMinutesLeft / 60);
+                    const th = threads.find((x) => x.phone === openThread);
+                    if (!th) return null;
+                    const lead = leads?.find((l) => l.phone && th.phone.endsWith(l.phone.slice(-10)));
+                    const open = th.windowMinutesLeft > 0;
+                    const hrs = Math.floor(th.windowMinutesLeft / 60);
                     return (
                       <div style={{ display: "flex", flexDirection: "column", maxHeight: 420 }}>
-                        <div style={{ padding: "10px 14px", borderBottom: `1px solid ${GRID}`, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{t.name || lead?.name || `+${t.phone}`}</span>
-                          {lead?.score != null && <span style={{ fontSize: 10.5, color: MUTED }}>score {lead.score}</span>}
-                          {lead?.paid && <span style={{ fontSize: 10, fontWeight: 700, color: GOOD }}>PAID</span>}
-                          <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: open ? GOOD : WARN }}>
-                            {open ? `${hrs > 0 ? `${hrs}h` : `${t.windowMinutesLeft}m`} free-reply window` : "window closed"}
+                        <div style={{ padding: "10px 14px", borderBottom: `1px solid ${t.hairline}`, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{th.name || lead?.name || `+${th.phone}`}</span>
+                          {lead?.score != null && <span style={{ fontSize: 10.5, color: t.ink2 }}>score {lead.score}</span>}
+                          {lead?.paid && <span style={{ fontSize: 10, fontWeight: 700, color: t.won }}>PAID</span>}
+                          <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: open ? t.teal : t.ink2 }}>
+                            {open ? `${hrs > 0 ? `${hrs}h` : `${th.windowMinutesLeft}m`} free-reply window` : "window closed"}
                           </span>
-                          <button onClick={() => setOpenThread(null)} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", fontSize: 15 }}>×</button>
+                          <button onClick={() => setOpenThread(null)} style={{ background: "none", border: "none", color: t.ink2, cursor: "pointer", fontSize: 15 }}>×</button>
                         </div>
 
                         <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "grid", gap: 8 }}>
-                          {t.messages.map((m, i) => (
+                          {th.messages.map((m, i) => (
                             <div key={i} style={{ justifySelf: m.direction === "out" ? "end" : "start", maxWidth: "78%" }}>
+                              {/* Same pairing as Pipeline's timeline: his on sunk, hers on card. */}
                               <div style={{
-                                background: m.direction === "out" ? "rgba(168,85,247,0.16)" : CARD,
-                                border: `1px solid ${m.direction === "out" ? "rgba(168,85,247,0.32)" : GRID}`,
-                                borderRadius: 12, padding: "8px 11px", fontSize: 12.5, color: INK1, whiteSpace: "pre-wrap", wordBreak: "break-word",
+                                background: m.direction === "out" ? t.sunk : t.card,
+                                border: `1px solid ${t.hairline}`,
+                                borderRadius: RADIUS.card, padding: "8px 11px", fontSize: 12.5, color: t.ink1, whiteSpace: "pre-wrap", wordBreak: "break-word",
                               }}>
-                                {m.mediaId && key ? <Attachment m={m} apiKey={key} phone={t.phone} clientName={t.name || lead?.name || ""} /> : null}
+                                {m.mediaId && key ? <Attachment t={t} m={m} apiKey={key} phone={th.phone} clientName={th.name || lead?.name || ""} /> : null}
                                 {m.text}
                               </div>
-                              <p style={{ fontSize: 9.5, color: MUTED, marginTop: 3, textAlign: m.direction === "out" ? "right" : "left" }}>
+                              <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 3, textAlign: m.direction === "out" ? "right" : "left" }}>
                                 {new Date(m.ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                               </p>
                             </div>
                           ))}
                         </div>
 
-                        <div style={{ borderTop: `1px solid ${GRID}`, padding: "10px 12px" }}>
+                        <div style={{ borderTop: `1px solid ${t.hairline}`, padding: "10px 12px" }}>
                           {open ? (
                             <>
                               <div style={{ display: "flex", gap: 8 }}>
@@ -2182,24 +2252,24 @@ export default function AnalyticsDashboard() {
                                   onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendReply(); }}
                                   placeholder="Reply… (⌘/Ctrl + Enter to send)"
                                   rows={2}
-                                  style={{ flex: 1, resize: "none", background: "#0f1014", border: `1px solid ${GRID}`, borderRadius: 10, color: INK1, fontSize: 12.5, padding: "8px 10px", fontFamily: "inherit" }}
+                                  style={{ flex: 1, resize: "none", background: t.card, border: `1px solid ${t.ink3}`, borderRadius: RADIUS.card, color: t.ink1, fontSize: 12.5, padding: "8px 10px", fontFamily: "inherit" }}
                                 />
                                 <button
                                   onClick={sendReply}
                                   disabled={sending || !draft.trim()}
-                                  style={{ alignSelf: "stretch", padding: "0 16px", borderRadius: 10, border: "none", background: draft.trim() ? PURPLE : GRID, color: draft.trim() ? "#fff" : MUTED, fontSize: 12.5, fontWeight: 800, cursor: draft.trim() && !sending ? "pointer" : "default" }}
+                                  style={{ alignSelf: "stretch", padding: "0 16px", borderRadius: RADIUS.card, border: "none", background: draft.trim() ? t.teal : t.sunk, color: draft.trim() ? t.card : t.ink2, fontSize: 12.5, fontWeight: 800, cursor: draft.trim() && !sending ? "pointer" : "default" }}
                                 >
                                   {sending ? "…" : "Send"}
                                 </button>
                               </div>
-                              <p style={{ fontSize: 9.5, color: MUTED, marginTop: 6 }}>Free-form replies cost nothing inside her 24-hour window.</p>
+                              <p style={{ fontSize: 9.5, color: t.ink2, marginTop: 6 }}>Free-form replies cost nothing inside her 24-hour window.</p>
                             </>
                           ) : (
-                            <p style={{ fontSize: 11, color: WARN }}>
+                            <p style={{ fontSize: 11, color: t.ink2 }}>
                               Her 24-hour window has closed — a free reply is no longer possible. Send an approved template from WhatsApp Manager, or wait for her to message again.
                             </p>
                           )}
-                          {sendError && <p style={{ fontSize: 11, color: CRIT, marginTop: 6 }}>{sendError}</p>}
+                          {sendError && <p style={{ fontSize: 11, color: t.clay, marginTop: 6 }}>{sendError}</p>}
                         </div>
                       </div>
                     );
@@ -2217,10 +2287,10 @@ export default function AnalyticsDashboard() {
                     key={f}
                     onClick={() => setLeadFilter(f)}
                     style={{
-                      padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 600, cursor: "pointer",
-                      background: leadFilter === f ? "#a855f7" : "transparent",
-                      color: leadFilter === f ? "#fff" : INK2,
-                      border: `1px solid ${leadFilter === f ? "#a855f7" : GRID}`,
+                      padding: "4px 11px", borderRadius: RADIUS.chip, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      background: leadFilter === f ? t.ink1 : "transparent",
+                      color: leadFilter === f ? t.card : t.ink2,
+                      border: `1px solid ${leadFilter === f ? t.ink1 : t.hairline}`,
                     }}
                   >
                     {f}
@@ -2229,9 +2299,9 @@ export default function AnalyticsDashboard() {
               </div>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, minWidth: 640 }}>
                 <thead>
-                  <tr style={{ color: MUTED, textAlign: "left" }}>
+                  <tr style={{ color: t.ink2, textAlign: "left" }}>
                     {["When", "Name", "Score", "Budget", "Src", "Session", "Contact", "Outcome"].map((h) => (
-                      <th key={h} style={{ padding: "6px 8px", fontWeight: 600, fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: `1px solid ${GRID}` }}>{h}</th>
+                      <th key={h} style={{ padding: "6px 8px", fontWeight: 600, fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: `1px solid ${t.hairline}` }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -2254,14 +2324,17 @@ export default function AnalyticsDashboard() {
                     .map((l) => {
                     const d = new Date(l.ts);
                     const sc = l.score ?? 0;
-                    const scColor = sc >= 75 ? GOOD : sc >= 60 ? WARN : MUTED;
+                    // Score and budget are lead attributes, not outcomes, so they
+                    // stay neutral (as on Pipeline): the top tier reads in ink1,
+                    // everything else in ink2. The label carries the tier.
+                    const scColor = sc >= 75 ? t.ink1 : t.ink2;
                     return (
-                      <tr key={l.row} style={{ borderBottom: `1px solid ${GRID}` }}>
-                        <td style={{ padding: "8px", color: MUTED, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                      <tr key={l.row} style={{ borderBottom: `1px solid ${t.hairline}` }}>
+                        <td style={{ padding: "8px", color: t.ink2, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                           {fmtDay(d)} {d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                         </td>
                         <td style={{ padding: "8px", fontWeight: 600 }}>{l.name || "—"}<br />
-                          <span style={{ fontWeight: 400, fontSize: 10.5, color: MUTED }}>{l.city}</span>
+                          <span style={{ fontWeight: 400, fontSize: 10.5, color: t.ink2 }}>{l.city}</span>
                         </td>
                         <td style={{ padding: "8px" }}>
                           <span
@@ -2279,37 +2352,38 @@ export default function AnalyticsDashboard() {
                           {/* Severity and intent are different questions, so the
                               column says which one it is showing. */}
                           {l.scoreBasis === "severity" && (
-                            <span style={{ fontSize: 9, color: MUTED }}> sev</span>
+                            <span style={{ fontSize: 9, color: t.ink2 }}> sev</span>
                           )}
                           {l.scoreBasis === "intent" && l.scoreAnswered < 6 && (
-                            <span style={{ fontSize: 9, color: WARN }}> {l.scoreAnswered}/10</span>
+                            <span style={{ fontSize: 9, color: t.ink2 }}> {l.scoreAnswered}/10</span>
                           )}
-                          <span style={{ fontSize: 10, color: MUTED }}> {l.tier}</span>
+                          <span style={{ fontSize: 10, color: t.ink2 }}> {l.tier}</span>
                         </td>
                         <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
                           {l.budget ? (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: budgetRank(l.budget) === 3 ? GOOD : budgetRank(l.budget) === 2 ? WARN : MUTED }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: budgetRank(l.budget) === 3 ? t.ink1 : t.ink2 }}>
                               {budgetShort(l.budget)}
                             </span>
                           ) : (
-                            <span style={{ fontSize: 11, color: MUTED }}>—</span>
+                            <span style={{ fontSize: 11, color: t.ink2 }}>—</span>
                           )}
                           {l.paid && (
-                            <><br /><span style={{ fontSize: 10, fontWeight: 700, color: GOOD }}>PAID{l.paidAmount ? ` ₹${l.paidAmount}` : ""}</span></>
+                            <><br /><span style={{ fontSize: 10, fontWeight: 700, color: t.won }}>PAID{l.paidAmount ? ` ₹${l.paidAmount}` : ""}</span></>
                           )}
                         </td>
                         <td style={{ padding: "8px" }}>
-                          <span style={{ width: 8, height: 8, borderRadius: 2, display: "inline-block", background: SRC_COLORS[l.source === "fb" || l.source === "ig" ? l.source : "other"], marginRight: 5 }} />
+                          <span style={{ width: 8, height: 8, borderRadius: 2, display: "inline-block", background: SRC[l.source === "fb" || l.source === "ig" ? l.source : "other"], marginRight: 5 }} />
                           {l.source || "—"}
                         </td>
-                        <td style={{ padding: "8px", whiteSpace: "nowrap", color: l.cancelled ? CRIT : l.booked ? INK1 : MUTED }}>
+                        {/* Cancelled stays neutral, as everywhere on the desk. */}
+                        <td style={{ padding: "8px", whiteSpace: "nowrap", color: l.cancelled ? t.ink2 : l.booked ? t.ink1 : t.ink2 }}>
                           {l.cancelled ? (
                             <>
                               <span style={{ fontWeight: 700, fontSize: 10.5, letterSpacing: "0.04em" }}>✕ CANCELLED</span>
                               {l.sessionDate && (
                                 <>
                                   <br />
-                                  <span style={{ fontSize: 10.5, color: MUTED, textDecoration: "line-through" }}>
+                                  <span style={{ fontSize: 10.5, color: t.ink2, textDecoration: "line-through" }}>
                                     {l.sessionDate.replace(/ \d{4}/, "")}
                                   </span>
                                 </>
@@ -2324,8 +2398,8 @@ export default function AnalyticsDashboard() {
                         <td style={{ padding: "8px", minWidth: 190 }}>
                           {l.booked && l.showed !== "Y" && l.showed !== "N" && (l.closedAmt ?? 0) <= 0 ? (
                             <div style={{ display: "grid", gap: 5 }}>
-                              <SequenceButtons lead={l} onSend={(row, step) => mark(row, step, new Date().toISOString())} />
-                              <MeetLinkEditor lead={l} onSave={(row, url) => mark(row, "meetlink", url)} />
+                              <SequenceButtons t={t} lead={l} onSend={(row, step) => mark(row, step, new Date().toISOString())} />
+                              <MeetLinkEditor t={t} lead={l} onSave={(row, url) => mark(row, "meetlink", url)} />
                             </div>
                           ) : (
                             (() => {
@@ -2333,21 +2407,21 @@ export default function AnalyticsDashboard() {
                               if (!l.phone)
                                 return msg ? (
                                   <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
-                                    <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
-                                    <CopyBtn text={msg.text} />
+                                    <span style={{ color: t.clay, fontSize: 11 }}>✕ no phone</span>
+                                    <CopyBtn t={t} text={msg.text} />
                                   </span>
                                 ) : (
-                                  <span style={{ color: CRIT, fontSize: 11 }}>✕ no phone</span>
+                                  <span style={{ color: t.clay, fontSize: 11 }}>✕ no phone</span>
                                 );
-                              if (!msg) return <span style={{ color: MUTED, fontSize: 11 }}>—</span>;
+                              if (!msg) return <span style={{ color: t.ink2, fontSize: 11 }}>—</span>;
                               return (
                                 <span style={{ display: "inline-flex", gap: 5, alignItems: "center", whiteSpace: "nowrap" }}>
                                   <a href={waHref(l.phone, msg.text)} target="_blank" rel="noreferrer"
                                     title={`Opens WhatsApp with the ${msg.kind} message pre-typed — review, then send`}
-                                    style={{ color: GOOD, fontWeight: 700, textDecoration: "none" }}>
+                                    style={{ color: t.teal, fontWeight: 700, textDecoration: "none" }}>
                                     WA · {msg.kind} ↗
                                   </a>
-                                  <CopyBtn text={msg.text} />
+                                  <CopyBtn t={t} text={msg.text} />
                                 </span>
                               );
                             })()
@@ -2356,7 +2430,7 @@ export default function AnalyticsDashboard() {
                         <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
                           {(l.closedAmt ?? 0) > 0 ? (
                             <>
-                              <span style={{ color: GOOD, fontWeight: 700 }}>✓ ₹{(l.closedAmt ?? 0).toLocaleString("en-IN")}</span>
+                              <span style={{ color: t.won, fontWeight: 700 }}>✓ ₹{(l.closedAmt ?? 0).toLocaleString("en-IN")}</span>
                               {metaSend?.row === l.row && (
                                 <span
                                   title={
@@ -2372,10 +2446,10 @@ export default function AnalyticsDashboard() {
                                     marginTop: 2,
                                     color:
                                       metaSend.status === "sent"
-                                        ? GOOD
+                                        ? t.teal
                                         : metaSend.status === "already_sent"
-                                        ? MUTED
-                                        : CRIT,
+                                        ? t.ink2
+                                        : t.clay,
                                   }}
                                 >
                                   {metaSend.status === "sent"
@@ -2388,27 +2462,28 @@ export default function AnalyticsDashboard() {
                             </>
                           ) : l.showed === "Y" ? (
                             <>
-                              <span style={{ color: GOOD, marginRight: 6 }}>✓ showed</span>
+                              {/* Attended is a step forward (teal); only a sale is won. */}
+                              <span style={{ color: t.teal, marginRight: 6 }}>✓ showed</span>
                               <button onClick={() => { const a = window.prompt("Closed amount (₹)?"); if (a && /^\d+$/.test(a.trim())) mark(l.row, "closed", a.trim()); }}
-                                style={{ background: "transparent", border: `1px solid ${GRID}`, color: INK2, borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>
+                                style={{ background: "transparent", border: `1px solid ${t.hairline}`, color: t.ink2, borderRadius: RADIUS.card, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>
                                 + Closed ₹
                               </button>
                             </>
                           ) : l.showed === "N" ? (
-                            <span style={{ color: CRIT }}>✕ no-show</span>
+                            <span style={{ color: t.ink2 }}>✕ no-show</span>
                           ) : l.booked ? (
                             <>
                               <button onClick={() => mark(l.row, "showed", "Y")}
-                                style={{ background: "transparent", border: `1px solid ${GOOD}`, color: GOOD, borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", marginRight: 5 }}>
+                                style={{ background: "transparent", border: `1px solid ${t.teal}`, color: t.teal, borderRadius: RADIUS.card, padding: "3px 8px", fontSize: 11, cursor: "pointer", marginRight: 5 }}>
                                 Showed
                               </button>
                               <button onClick={() => mark(l.row, "showed", "N")}
-                                style={{ background: "transparent", border: `1px solid ${GRID}`, color: MUTED, borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>
+                                style={{ background: "transparent", border: `1px solid ${t.hairline}`, color: t.ink2, borderRadius: RADIUS.card, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>
                                 No-show
                               </button>
                             </>
                           ) : (
-                            <span style={{ color: MUTED, fontSize: 11 }}>—</span>
+                            <span style={{ color: t.ink2, fontSize: 11 }}>—</span>
                           )}
                         </td>
                       </tr>
@@ -2420,8 +2495,8 @@ export default function AnalyticsDashboard() {
           </>
         )}
       </div>
-      <WebinarPanel />
-      <CreativeOutcomes />
+      <WebinarPanel t={t} />
+      <CreativeOutcomes t={t} />
     </main>
   );
 }
