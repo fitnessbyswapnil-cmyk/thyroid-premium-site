@@ -64,7 +64,9 @@ export async function GET(req: NextRequest) {
   const { sheets, sheetId } = await getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A1:BZ`,
+    // A1:DZ, not A1:BZ: the Leads sheet is ~93 columns wide, and a narrower
+    // range silently drops every column past BZ.
+    range: `${SHEET_NAME}!A1:DZ`,
   });
   const all = (res.data.values as string[][]) ?? [];
   const header = (all[0] ?? []).map((h) => String(h ?? "").trim());
