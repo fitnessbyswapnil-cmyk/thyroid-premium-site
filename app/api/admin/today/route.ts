@@ -47,6 +47,8 @@ import {
 } from "@/lib/next-action";
 import type { Journey } from "@/lib/journey";
 import { readFlags } from "@/lib/automation-flags";
+import { liveBridgeConfig } from "@/lib/bridge-settings";
+import { DRIVE_BRIDGE_VERSION } from "@/lib/drive-bridge-source";
 import { payLinkFor, readPaymentLinks } from "@/lib/payment-links";
 
 export const dynamic = "force-dynamic";
@@ -499,6 +501,14 @@ export async function GET(req: NextRequest) {
     return r ? { url: r.url, count: r.count } : null;
   };
 
+  // Drive status rides in this feed so Today makes one request on load, not
+  // two (each extra request can cost a cold isolate ~1.5 s of CPU). Config
+  // only, never a call to the script: same as GET /api/admin/drive-setup.
+  const bridge = await liveBridgeConfig().catch(() => null);
+  const drive = bridge
+    ? { connected: bridge.source !== "none", source: bridge.source, folderConfigured: Boolean(bridge.folderId), version: DRIVE_BRIDGE_VERSION }
+    : null;
+
   return NextResponse.json({
     generatedAt: new Date(now).toISOString(),
     window: { days, since: new Date(since).toISOString() },
@@ -514,6 +524,7 @@ export async function GET(req: NextRequest) {
       spendAsOf,
     },
     // The shared action list, whole — its count is the count on every tab.
+    drive,
     queue: queue.map((q, i) => ({ ...q, report: reportOf(q.phone), card: cardOf.get(J.needsAction.items[i]?.personId ?? "") ?? null })),
     needsAction: { count: J.needsAction.count, overdue: J.needsAction.overdue },
     callsToday: callsToday.map((c) => ({ ...c, report: reportOf(c.phone), card: cardOf.get(c.personId) ?? null })),
