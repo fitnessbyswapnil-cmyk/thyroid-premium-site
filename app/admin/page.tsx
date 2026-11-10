@@ -9,8 +9,9 @@
  * The analytics view is the original /admin page, moved to AnalyticsDashboard
  * verbatim rather than rewritten. Every number in it is load-bearing — ROAS,
  * cost per booking, per-ad lead quality — and replacing a working dashboard to
- * make room for a new one would have cost more than it bought. It keeps its own
- * dark chrome; only the pipeline carries the case-file design.
+ * make room for a new one would have cost more than it bought. Its colours were
+ * re-skinned onto ./tokens later, so all three tabs now carry the case-file
+ * design and one chrome.
  *
  * The tab lives in the URL hash so a reload, a bookmark and the back button all
  * land where you left off. Theme is remembered per device — dark exists for the
@@ -76,27 +77,25 @@ export default function AdminShell() {
     });
   };
 
-  // Analytics is still its own dark instrument panel with a palette of its
-  // own, so it keeps its ground. Today no longer is: it renders from ./tokens
-  // like Pipeline, so it follows the theme switch with everything else. The
-  // chrome below keys off `onLight`, not the tab — a screen that is on the
-  // system gets the system's header, and the one that isn't keeps the dark one.
+  // Every tab renders from ./tokens now — Analytics was the last one with a
+  // palette of its own — so the chrome no longer changes ground per tab. It
+  // used to flip to a dark purple header whenever Analytics was open, which
+  // made one desk look like two products; it follows the theme switch alone.
   const onPipeline = tab === "pipeline";
-  const onLight = onPipeline || tab === "today";
 
   return (
-    <main style={{ background: onLight ? t.paper : "#0e0e11", minHeight: "100vh", color: t.ink1 }}>
+    <main style={{ background: t.paper, minHeight: "100vh", color: t.ink1 }}>
       <header
         style={{
           position: "sticky",
           top: 0,
           zIndex: 20,
-          background: onLight ? t.card : "#17181c",
-          borderBottom: `1px solid ${onLight ? t.hairline : "#26242c"}`,
+          background: t.card,
+          borderBottom: `1px solid ${t.hairline}`,
         }}
       >
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "12px 18px", display: "flex", alignItems: "baseline", gap: 20, flexWrap: "wrap" }}>
-          <strong style={{ fontFamily: FONT.serif, fontWeight: 500, fontSize: 21, letterSpacing: "-.01em", color: onLight ? t.ink1 : "#f4f2f7" }}>
+          <strong style={{ fontFamily: FONT.serif, fontWeight: 500, fontSize: 21, letterSpacing: "-.01em", color: t.ink1 }}>
             Practice
           </strong>
 
@@ -119,8 +118,8 @@ export default function AdminShell() {
                     fontFamily: FONT.sans,
                     fontSize: 13.5,
                     fontWeight: on ? 600 : 400,
-                    color: on ? (onLight ? t.ink1 : "#f4f2f7") : onLight ? t.ink3 : "#8a8494",
-                    borderBottom: on ? `2px solid ${onLight ? t.teal : "#c793ff"}` : "2px solid transparent",
+                    color: on ? t.ink1 : t.ink3,
+                    borderBottom: on ? `2px solid ${t.teal}` : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -131,17 +130,17 @@ export default function AdminShell() {
           </nav>
 
           <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: onLight ? t.ink3 : "#8a8494" }}>
+            <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: t.ink3 }}>
               {new Date().toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: true })}
             </span>
             <button
               onClick={toggleTheme}
               aria-label={dark ? "Switch to light" : "Switch to dark"}
-              style={{ background: "transparent", border: `1px solid ${onLight ? t.hairline : "#26242c"}`, color: onLight ? t.ink2 : "#b9b3c4", padding: "4px 11px", borderRadius: RADIUS.chip, fontSize: 11.5, fontFamily: FONT.sans, cursor: "pointer" }}
+              style={{ background: "transparent", border: `1px solid ${t.hairline}`, color: t.ink2, padding: "4px 11px", borderRadius: RADIUS.chip, fontSize: 11.5, fontFamily: FONT.sans, cursor: "pointer" }}
             >
               {dark ? "Light" : "Dark"}
             </button>
-            <a href="/inbox" style={{ fontFamily: FONT.sans, fontSize: 12.5, color: onLight ? t.teal : "#8a8494", textDecoration: "none" }}>
+            <a href="/inbox" style={{ fontFamily: FONT.sans, fontSize: 12.5, color: t.teal, textDecoration: "none" }}>
               Inbox
             </a>
             {/* This device stays signed in until this is pressed — the key now
@@ -153,7 +152,7 @@ export default function AdminShell() {
                   clearAdminKey();
                   window.location.reload();
                 }}
-                style={{ background: "transparent", border: 0, color: onLight ? t.ink3 : "#8a8494", padding: 0, fontSize: 12.5, fontFamily: FONT.sans, cursor: "pointer" }}
+                style={{ background: "transparent", border: 0, color: t.ink3, padding: 0, fontSize: 12.5, fontFamily: FONT.sans, cursor: "pointer" }}
               >
                 Log out
               </button>
@@ -176,7 +175,7 @@ export default function AdminShell() {
           <Pipeline dark={dark} />
         </div>
         <div style={{ display: tab === "analytics" ? "block" : "none" }}>
-          <AnalyticsDashboard />
+          <AnalyticsDashboard dark={dark} />
         </div>
       </div>
     </main>
