@@ -44,6 +44,8 @@ type HarnessOpts = {
   /** SHARED_SECRET in Script Properties; null = never paired. */
   secret?: string | null;
   failCreate?: boolean;
+  /** Google fails after the Doc exists: appendTable throws. */
+  failRender?: boolean;
   /** Drive search does not see a folder made during the test until indexAll(). */
   searchLag?: boolean;
   cacheDown?: boolean;
@@ -177,7 +179,9 @@ function harness(opts: HarnessOpts = {}) {
     const api = {
       getType: () => n.type,
       getText: () => n.text,
-      setText: (t: string) => { n.text = String(t); return api; },
+      // Apps Script's Paragraph.setText returns nothing (null in V8). A fake
+      // that returned `this` hid a chained call that failed live on 10-Nov.
+      setText: (t: string) => { n.text = String(t); return null; },
       getHeading: () => n.heading,
       setHeading: (h: string) => { n.heading = h; return api; },
       editAsText: () => textApi(n),
@@ -241,6 +245,7 @@ function harness(opts: HarnessOpts = {}) {
         return paraApi(n);
       },
       appendTable: (cells: string[][]) => {
+        if (opts.failRender) throw new Error("Service error: Docs");
         const n: TableNode = { type: "TABLE", rows: Array.from(cells, (row) => Array.from(row, (c) => ({ text: String(c), background: null, ...plain() }))) };
         body.push(n);
         return tableApi(n);
@@ -830,6 +835,23 @@ test("a Google failure mid-create comes back as script_error, and the lock is st
   assert.match(String(r.detail), /too many times/);
   assert.equal(h.lock.releases, h.lock.waits);
   assert.equal(h.lock.held, false);
+});
+
+test("a Doc that fails half-way through rendering is binned, not left in My Drive", () => {
+  const h = harness({ failRender: true });
+  const r = h.post(docReq());
+  assert.equal(r.error, "script_error");
+  assert.match(String(r.detail), /Service error: Docs/);
+  const docs = h.files.filter((f) => f.mimeType === GOOGLE_DOCS);
+  assert.equal(docs.length, 1, "the half-made Doc was created");
+  assert.equal(docs[0].trashed, true, "and then binned");
+  assert.equal(h.lock.releases, h.lock.waits);
+});
+
+test("the heading is set in two statements, because setText returns nothing", () => {
+  const h = harness();
+  const r = h.post(docReq());
+  assert.equal(r.ok, true, String(r.detail));
 });
 
 // ── readDoc ─────────────────────────────────────────────────────────────────
