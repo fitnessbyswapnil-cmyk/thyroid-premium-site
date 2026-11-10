@@ -644,3 +644,88 @@ export async function sendWhatsAppText(to: string, text: string): Promise<WhatsA
     return { sent: false, error: message }
   }
 }
+
+/**
+ * A file, sent as a WhatsApp document: her consultation summary PDF.
+ *
+ * Two calls. The bytes go up to /<phone number id>/media first, which answers
+ * with a media id, and the message then points at that id. Uploading means the
+ * file never needs a public URL, which matters for a document about her health.
+ *
+ * Like sendWhatsAppText it is free-form, so it only goes through inside her
+ * 24-hour window. Outside it Meta answers (#131047), reported as windowClosed
+ * so the caller can offer the wa.me fallback instead of a bare error.
+ *
+ * Never throws, like everything else here. The media id comes back even when
+ * the send fails, so a retry or the inbox can point at the same upload.
+ */
+export async function sendWhatsAppDocument(
+  to: string,
+  bytes: Uint8Array,
+  filename: string,
+  caption = '',
+): Promise<WhatsAppResult & { mediaId?: string; windowClosed?: boolean }> {
+  const token = readToken()
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  if (!token || !phoneNumberId) return { sent: false, skipped: 'whatsapp_not_configured' }
+
+  const recipient = toWhatsAppNumber(to)
+  if (recipient.length < 12) return { sent: false, skipped: 'invalid_phone' }
+  if (!bytes || !bytes.length) return { sent: false, skipped: 'empty_file' }
+
+  const name = (filename || 'document.pdf').replace(/[\\/\r\n]+/g, ' ').trim().slice(0, 240)
+  const mime = /\.pdf$/i.test(name) ? 'application/pdf' : 'application/octet-stream'
+  const base = `https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}`
+
+  try {
+    const form = new FormData()
+    form.append('messaging_product', 'whatsapp')
+    form.append('type', mime)
+    form.append('file', new Blob([bytes as BlobPart], { type: mime }), name)
+    // The upload carries the whole file, so it gets longer than a text send.
+    const up = await fetch(`${base}/media`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      signal: AbortSignal.timeout(20000),
+    })
+    const upJson = (await up.json().catch(() => ({}))) as { id?: string; error?: { message?: string; code?: number } }
+    if (!up.ok || upJson.error || !upJson.id) {
+      const err = `upload ${upJson.error?.code ?? up.status}: ${upJson.error?.message ?? 'no media id returned'}`
+      console.error(`[whatsapp] document upload failed to=***${recipient.slice(-4)} ${err}`)
+      return { sent: false, error: err }
+    }
+    const mediaId = upJson.id
+
+    const text = (caption || '').trim().slice(0, 1024)
+    const res = await fetch(`${base}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipient,
+        type: 'document',
+        document: { id: mediaId, filename: name, ...(text ? { caption: text } : {}) },
+      }),
+      signal: AbortSignal.timeout(8000),
+    })
+    const json = (await res.json().catch(() => ({}))) as { messages?: { id?: string }[]; error?: { message?: string; code?: number } }
+    if (!res.ok || json.error) {
+      const code = json.error?.code
+      const windowClosed = code === 131047
+      const err = windowClosed
+        ? 'Her 24-hour reply window has closed — send an approved template instead.'
+        : `${code ?? res.status}: ${json.error?.message ?? 'unknown'}`
+      console.error(`[whatsapp] document send failed to=***${recipient.slice(-4)} ${err}`)
+      return { sent: false, error: err, mediaId, ...(windowClosed ? { windowClosed } : {}) }
+    }
+    const messageId = json.messages?.[0]?.id
+    console.log(`[whatsapp] sent document to=***${recipient.slice(-4)} id=${messageId ?? '(none)'}`)
+    return { sent: true, messageId, mediaId }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[whatsapp] document send threw', message)
+    return { sent: false, error: message }
+  }
+}

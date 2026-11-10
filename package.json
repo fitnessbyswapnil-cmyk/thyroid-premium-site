@@ -12,7 +12,8 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "lint:type": "node scripts/check-typography.mjs"
+    "lint:type": "node scripts/check-typography.mjs",
+    "sync:bridge": "node scripts/sync-drive-bridge-source.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

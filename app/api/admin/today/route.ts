@@ -34,6 +34,7 @@ import { decisionBadge, findColumn } from "@/lib/decision-maker";
 import { dmPresenceRate, type PresenceRecord } from "@/lib/dm-presence";
 import { IS_TEST_MODE } from "../../create-cashfree-order/route";
 import { cachedSpend } from "@/lib/ads-cache";
+import { savedReportsForPhones } from "@/lib/report-save";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -63,7 +64,9 @@ export async function GET(req: NextRequest) {
   const { sheets, sheetId } = await getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${SHEET_NAME}!A1:BZ`,
+    // A1:DZ, not A1:BZ: the Leads sheet is ~93 columns wide, and a narrower
+    // range silently drops every column past BZ.
+    range: `${SHEET_NAME}!A1:DZ`,
   });
   const all = (res.data.values as string[][]) ?? [];
   const header = (all[0] ?? []).map((h) => String(h ?? "").trim());
@@ -234,6 +237,18 @@ export async function GET(req: NextRequest) {
       };
     });
 
+  // ── Her report, if one is in her Drive folder ─────────────────────────────
+  // ONE lookup for every woman on this screen, never one per row: forty rows
+  // would be forty database round trips before the page could answer. Started
+  // here and awaited at the end, so it runs while the Sheets reads below do.
+  // A failure costs the chips, not the page.
+  const reportsLookup = savedReportsForPhones(
+    [...new Set([...queue, ...callsToday].map((x) => x.phone).filter((p) => p.length === 10))],
+  ).catch((e) => {
+    console.error("[today] saved reports lookup failed (swallowed):", e instanceof Error ? e.message : String(e));
+    return new Map<string, { url: string; savedAt: number; count: number }>();
+  });
+
   // ── Decision-maker presence ───────────────────────────────────────────────
   // The scoreboard for the badges above. Of the consultations actually held in
   // the last fortnight, how many had the person who shares the decision on
@@ -353,6 +368,12 @@ export async function GET(req: NextRequest) {
     .map(([name, v]) => ({ name, sent: v.sent, last: v.last }))
     .sort((a, b) => (a.last < b.last ? 1 : -1));
 
+  const reports = await reportsLookup;
+  const reportOf = (phone: string) => {
+    const r = reports.get(phone);
+    return r ? { url: r.url, count: r.count } : null;
+  };
+
   return NextResponse.json({
     generatedAt: new Date(now).toISOString(),
     window: { days, since: new Date(since).toISOString() },
@@ -368,9 +389,9 @@ export async function GET(req: NextRequest) {
       spendAsOf,
     },
     // The shared action list, whole — its count is the count on every tab.
-    queue,
+    queue: queue.map((q) => ({ ...q, report: reportOf(q.phone) })),
     needsAction: { count: J.needsAction.count, overdue: J.needsAction.overdue },
-    callsToday,
+    callsToday: callsToday.map((c) => ({ ...c, report: reportOf(c.phone) })),
     dmPresence: presence,
     // True means Cashfree is charging Rs 1 while every page still reads Rs 299.
     // Left on by accident it costs roughly Rs 900/day and fills the calendar

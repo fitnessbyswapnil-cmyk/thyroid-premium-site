@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Separate workers with their own package.json, built and deployed on
+    // their own (workers/pdf is the summary PDF printer). Never the app's.
+    "workers/**",
   ]),
 ]);
 
