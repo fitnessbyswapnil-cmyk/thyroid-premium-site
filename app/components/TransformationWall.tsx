@@ -81,7 +81,8 @@ const WALL = [
     name: "Vaidehi",
     // Printed on her own composite: "Vaidehi | Age: 34 years".
     age: 34,
-    occupation: "",
+    // Confirmed by the owner, 26-Nov-2026.
+    occupation: "IT Professional",
     condition: "Hypothyroidism",
     from: "72 kg",
     to: "60 kg",
@@ -96,7 +97,8 @@ const WALL = [
     name: "Surekha",
     // Printed on her own composite: "Surekha | Age: 36 years".
     age: 36,
-    occupation: "",
+    // Confirmed by the owner, 26-Nov-2026.
+    occupation: "Bank Manager",
     condition: "Hypothyroidism",
     from: "78 kg",
     to: "66 kg",
@@ -111,7 +113,8 @@ const WALL = [
     name: "Namrata",
     // Printed on her own composite: "Namrata | Age: 34 years".
     age: 34,
-    occupation: "",
+    // Confirmed by the owner, 26-Nov-2026.
+    occupation: "Homemaker",
     condition: "Hypothyroidism",
     from: "84 kg",
     to: "68 kg",
