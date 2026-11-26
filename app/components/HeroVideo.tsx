@@ -27,12 +27,17 @@ const VSL_URL = VSL_OVERRIDE && !VSL_OVERRIDE.includes("blob.vercel-storage.com"
   : `${MEDIA_BASE}/videos/vsl.mp4`;
 
 // Two cuts, one player. The homepage (the ₹299 funnel) keeps the original.
-// /decode plays the 10-Nov-2026 cut, which ends on "Your free session": on the
-// paid page it would give away what that page sells.
+// /decode plays the 26-Nov-2026 cut, which ends on "Your free session": on the
+// paid page it would give away what that page sells. It is the 10-Nov cut
+// re-edited, every spoken word kept: restyled subtitles that sit at ~74% of the
+// frame (clear of the 44px control bar on a phone), word-synced panels, client
+// faces only where her name is spoken, a soft music bed, and a 3s end card.
+// The 10-Nov file stays on the media domain as the rollback.
 // A new cut is ALWAYS a new file name. The media domain serves every file as
 // `immutable` with a one-year max-age, so a new cut uploaded over an old name
 // keeps playing the old one from every warm edge and every browser that saw it.
-// The decode poster is a frame of that cut (22.5s, between two subtitle lines)
+// The decode poster is a frame of the 10-Nov cut (22.5s, between two subtitle
+// lines), still a clean frame of the same footage, so the 26-Nov cut keeps it
 // with him moved to the right third, the empty left strip mirrored in to fill.
 // Centred, the play button sat on his mouth; here it sits on the dark ground.
 // NEXT_PUBLIC_VSL_URL above still moves only the original.
@@ -43,7 +48,7 @@ const CUTS = {
     label: "Video: Why your thyroid blocks fat loss",
   },
   decode: {
-    src: `${MEDIA_BASE}/videos/vsl-2026-11-10.mp4`,
+    src: `${MEDIA_BASE}/videos/vsl-2026-11-26.mp4`,
     poster: "/videos/posters/vsl-2026-11-10.jpg",
     label: "Video: Swapnil Umbarkar, thyroid fat-loss specialist",
   },
