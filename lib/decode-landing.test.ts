@@ -108,7 +108,9 @@ test("no transformation card carries an occupation nobody confirmed", () => {
   //
   // Adding a name to CONFIRMED is the deliberate act. Do it only after the
   // owner has actually confirmed that client's occupation.
-  const CONFIRMED = new Set(["", "IT Professional"]);
+  // Vaidehi (IT Professional), Surekha (Bank Manager) and Namrata (Homemaker)
+  // confirmed by the owner on 26-Nov-2026.
+  const CONFIRMED = new Set(["", "IT Professional", "Bank Manager", "Homemaker"]);
   const found = [...WALL.matchAll(/occupation:\s*"([^"]*)"/g)].map((m) => m[1]);
   assert.equal(found.length, 4, "every card must declare the field, even empty");
   for (const occupation of found) {

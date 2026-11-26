@@ -38,7 +38,7 @@ export type ProofCard = {
 export const PROOF_CARDS: readonly ProofCard[] = [
   {
     name: "Vaidehi",
-    occupation: "",
+    occupation: "IT Professional",
     condition: "Hypothyroidism",
     from: "72 kg",
     to: "60 kg",
@@ -47,7 +47,7 @@ export const PROOF_CARDS: readonly ProofCard[] = [
   },
   {
     name: "Surekha",
-    occupation: "",
+    occupation: "Bank Manager",
     condition: "Hypothyroidism",
     from: "78 kg",
     to: "66 kg",
@@ -56,7 +56,7 @@ export const PROOF_CARDS: readonly ProofCard[] = [
   },
   {
     name: "Namrata",
-    occupation: "",
+    occupation: "Homemaker",
     condition: "Hypothyroidism",
     from: "84 kg",
     to: "68 kg",
