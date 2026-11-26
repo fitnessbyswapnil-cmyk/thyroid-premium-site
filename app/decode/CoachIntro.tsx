@@ -38,6 +38,13 @@ export default function CoachIntro() {
             <span className="decode-gold">BLS</span> certified &middot;{" "}
             <span className="decode-gold">100+</span> thyroid women coached
           </p>
+          {/* 26-Nov, specific authority (Cialdini): his own words from the
+              /decode VSL, "for the last 5 years I have dedicated my practice to
+              helping only one type of client, which is Indian women with
+              hypothyroidism". */}
+          <p className="mt-3 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t1)]">
+            5 years, one kind of client: Indian women with hypothyroidism.
+          </p>
           {/* "Your report will show why." was pulled on 08-Nov-2026. Set as a
               gold-ruled blockquote it read as the section's most important
               sentence, and its "why" had no referent — nothing above it asks a

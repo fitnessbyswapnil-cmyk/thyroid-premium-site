@@ -76,6 +76,22 @@ test("every link goes to the quiz, except one privacy link in the footer", () =>
   for (const h of hrefs) if (h !== "/privacy") assert.equal(h, "/decode/quiz");
 });
 
+test("the one-tap start is the quiz's own first question, posted to the quiz", () => {
+  // 26-Nov. The page must not carry its own copy of the wording: every option
+  // is a stored value and a scoring weight.
+  assert.match(PAGE, /<form action="\/decode\/quiz" method="get"/);
+  assert.ok(PAGE.includes("FIRST_QUESTION.options.map"), "options come from the shared module");
+  // The quiz keeps its own literal (lib/decode-quiz-order.test.ts parses it);
+  // this copy must match it exactly, wording and options.
+  const quiz = read("app/decode/DecodeQuiz.tsx");
+  const q1 = quiz.slice(quiz.indexOf("const QUESTIONS: Q[] = ["), quiz.indexOf("id: \"pattern\""));
+  const first = read("app/decode/first-question.ts");
+  for (const piece of [...first.matchAll(/"([^"]+)"/g)].map((m) => m[1])) {
+    assert.ok(q1.includes(`"${piece}"`), `"${piece}" on the page is not in the quiz's first question`);
+  }
+  for (const m of PAGE.matchAll(/<form action="([^"]+)"/g)) assert.equal(m[1], "/decode/quiz");
+});
+
 test("every /decode CTA says the same thing about cost", () => {
   const subs = [...`${PAGE}${STICKY}`.matchAll(/<span className="cta-sub">([^<]+)</g)]
     .map((m) => m[1].trim());
@@ -231,7 +247,7 @@ test("the page's own words stay under budget", () => {
 test("proof is capped, and never cut", () => {
   assert.match(PAGE, /<WhatsappProofSection hideCta limit=\{3\} \/>/);
   // Faces and voices: owner's explicit call — never cut.
-  assert.match(PAGE, /<TransformationWall compact( countUp)? \/>/);
+  assert.match(PAGE, /<TransformationWall compact[^>]*\/>/);
   assert.ok(PAGE.includes("<VideoTestimonial compact />"));
   assert.equal((WALL.match(/src: "\/transformations\//g) ?? []).length, 4);
 });

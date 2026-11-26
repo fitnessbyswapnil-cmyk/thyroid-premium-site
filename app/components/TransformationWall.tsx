@@ -79,6 +79,8 @@ const WALL = [
     before: "/transformations/cards/vaidehi-before.jpg",
     after: "/transformations/cards/vaidehi-after.jpg",
     name: "Vaidehi",
+    // Printed on her own composite: "Vaidehi | Age: 34 years".
+    age: 34,
     occupation: "",
     condition: "Hypothyroidism",
     from: "72 kg",
@@ -92,6 +94,8 @@ const WALL = [
     before: "/transformations/cards/surekha-before.jpg",
     after: "/transformations/cards/surekha-after.jpg",
     name: "Surekha",
+    // Printed on her own composite: "Surekha | Age: 36 years".
+    age: 36,
     occupation: "",
     condition: "Hypothyroidism",
     from: "78 kg",
@@ -105,6 +109,8 @@ const WALL = [
     before: "/transformations/cards/namrata-before.jpg",
     after: "/transformations/cards/namrata-after.jpg",
     name: "Namrata",
+    // Printed on her own composite: "Namrata | Age: 34 years".
+    age: 34,
     occupation: "",
     condition: "Hypothyroidism",
     from: "84 kg",
@@ -118,6 +124,8 @@ const WALL = [
     before: "/transformations/cards/heenal-before.jpg",
     after: "/transformations/cards/heenal-after.jpg",
     name: "Heenal",
+    // Printed on her own composite: "Heenal | Age: 26 years".
+    age: 26,
     occupation: "IT Professional",
     condition: "Hypothyroidism",
     from: "82 kg",
@@ -136,7 +144,7 @@ type WallEntry = (typeof WALL)[number];
 const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
 const COUNT_WORD = NUMBER_WORDS[WALL.length] ?? String(WALL.length);
 
-function Card({ entry, index, countUp = false }: { entry: WallEntry; index: number; countUp?: boolean }) {
+function Card({ entry, index, countUp = false, showAge = false }: { entry: WallEntry; index: number; countUp?: boolean; showAge?: boolean }) {
   const { ref, visible } = useInView(0.08);
   // Clarity, 14 days to 21-Sep: on /decode mobile both dead-click leaders were
   // these images (4 taps each, 53% of all dead taps between them) and four of
@@ -221,6 +229,7 @@ function Card({ entry, index, countUp = false }: { entry: WallEntry; index: numb
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="m-0 text-[length:var(--fs-base)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)]">
             {entry.name}
+            {showAge ? <span className="font-normal text-[var(--t2)]">, {entry.age}</span> : null}
           </h3>
           {entry.occupation ? <span className="proof-tag">{entry.occupation}</span> : null}
         </div>
@@ -280,7 +289,8 @@ function Card({ entry, index, countUp = false }: { entry: WallEntry; index: numb
 export default function TransformationWall({
   compact = false,
   countUp = false,
-}: { compact?: boolean; countUp?: boolean } = {}) {
+  showAge = false,
+}: { compact?: boolean; countUp?: boolean; showAge?: boolean } = {}) {
   return (
     <section
       className="cv-auto section-pad-tight relative bg-[var(--bg-elevated)]"
@@ -325,7 +335,7 @@ export default function TransformationWall({
             so all four must sit in the vertical scroll path. */}
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
           {WALL.map((entry, i) => (
-            <Card key={entry.src} entry={entry} index={i} countUp={countUp} />
+            <Card key={entry.src} entry={entry} index={i} countUp={countUp} showAge={showAge} />
           ))}
         </div>
 

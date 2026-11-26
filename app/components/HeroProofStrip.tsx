@@ -71,7 +71,8 @@ function Avatar({ a }: { a: ProofAvatar }) {
 export default function HeroProofStrip({
   claimsOnly = false,
   countUp = false,
-}: { claimsOnly?: boolean; countUp?: boolean } = {}) {
+  face = "",
+}: { claimsOnly?: boolean; countUp?: boolean; face?: string } = {}) {
   return (
     // All five items visible on a 390px screen with NO horizontal scrolling —
     // the old row overflowed, cutting quotes mid-word ("Lost 4.5 …") unless
@@ -83,7 +84,21 @@ export default function HeroProofStrip({
         {/* The 100+ claim */}
         <div role="listitem" className="flex shrink-0 flex-col items-center">
           <div className="flex items-center gap-3">
-            <Rule />
+            {/* /decode only: the coach's face where the left rule was, same
+                height, so the hero button does not move (Cialdini: liking). */}
+            {face ? (
+              <Image
+                src={face}
+                alt="Coach Swapnil"
+                width={44}
+                height={44}
+                priority
+                className="h-11 w-11 shrink-0 rounded-full object-cover"
+                style={{ boxShadow: "0 0 0 2px #ffffff, 0 0 0 3px var(--p-border)" }}
+              />
+            ) : (
+              <Rule />
+            )}
             <div data-tabular className="text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] tracking-[var(--ls-display)] text-[var(--p300)]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
               {countUp ? <CountUp value={100} suffix="+" /> : "100+"}
             </div>
