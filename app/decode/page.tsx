@@ -36,6 +36,14 @@ import HashimotoProof from "@/app/components/HashimotoProof";
  *   8 FAQ ............... three one-line answers
  *   9 last button
  *
+ * 26-NOV-2026 (owner): the page was checked against a twelve-part
+ * lead-quality structure and four things were added, in place, without moving
+ * any section: "working" in the hero callout, a "Sound familiar?" strip above
+ * the comparison, a "Why now" section before the fit list, a "not for you"
+ * list under it, and an honest line that the coaching after the free call is
+ * paid. The ORDER did not change on purpose: proof stays high because Clarity
+ * showed half of mobile visitors gone early (see FOLD ORDER below).
+ *
  * Unchanged, and must stay so: every button goes to /decode/quiz with the ad's
  * own label; the proof claim is "100+"; testimonial words are verbatim. (The
  * ₹299 and its refund sentence were in this list until 23-Sep. The call is free
@@ -77,13 +85,13 @@ export const metadata: Metadata = {
 // Mirrors the video ad (17-Sep): she was promised a Root Cause Map, her
 // report read, and what the next 90 days should look like.
 const GET = [
-  "Your Root Cause Map: your biggest fat-loss blocker, in simple words",
+  "Your Root Cause Map: your biggest fat-loss blocker, in plain words",
   "Your report read line by line: TSH, T3, T4, and antibodies if you have them",
   "What your next 90 days should look like.",
 ] as const;
 
 const STEPS = [
-  { h: "Fill your intake form", p: "12 quick taps about your report and what you have tried. I read it before we speak." },
+  { h: "Fill your intake form", p: "12 quick taps. I read your answers before we speak." },
   { h: "Pick your slot", p: "Choose a time that suits you." },
   { h: "We talk", p: "On a video call." },
 ] as const;
@@ -99,6 +107,26 @@ const FOR_YOU = [
   "You are ready to start within the next 30 days",
 ] as const;
 
+// "Not for you" (26-Nov, owner). The push half of the fit section: it lets a
+// woman who wants a shortcut leave on her own before she takes a call slot.
+// Still no price filter and no decision-maker filter (see FOR_YOU above).
+const NOT_FOR_YOU = [
+  "You want a quick fix",
+  "You want a diet chart only",
+  "You cannot give 30 minutes a day",
+] as const;
+
+// "Why now" (26-Nov, owner). Urgency from her own life, never from the page:
+// no deadline, no slot count, no "limited". These are moments, written about
+// what happens to women in general, so no line tells the reader she has a
+// condition (Meta's personal-attributes rule, see the header).
+const WHY_NOW = [
+  "A family wedding coming up",
+  "The dose went up again",
+  "A photo she did not want to see",
+  "Knees that hurt on the stairs",
+] as const;
+
 const FAQ = [
   { q: "Is it really free?", a: "Yes. No card, nothing to pay on the call, nothing added at the end." },
   {
@@ -106,6 +134,7 @@ const FAQ = [
     a: "Answer the questions anyway. On the call I tell you which tests to get and why.",
   },
   { q: "Who is on the call?", a: "Me. Not an assistant, not a sales team. Sixty minutes, one to one." },
+  { q: "I work long hours. Will this fit?", a: "Yes. 30 to 40 minutes of training, and your family's food." },
 ] as const;
 
 // Built and deliberately left OFF until 26-Sep-2026 (quiz gates first need two
@@ -128,13 +157,23 @@ const SHOW_PROGRAMME_PRICE = false;
  * every line is a deliverable, not a claim, so nothing here needs a qualifier.
  * SymptomChips itself stays on the homepage, where she arrives cold.
  */
+// "Sound familiar?" (26-Nov, owner). Three situations, not symptoms of a
+// named condition, so the strip recognises her without diagnosing her. It is
+// a strip and not the old SymptomChips section on purpose: no tick boxes, and
+// it hands straight over to the comparison underneath.
+const FAMILIAR = [
+  "1,200 calories, and the scale still climbs",
+  "The 3pm crash at your desk",
+  "Normal reports, and still exhausted",
+] as const;
+
 const COMPARE_OLD = [
   "Eat less, walk 10,000 steps",
   "The same calorie chart as everyone else",
   "Your report never opened",
   "Cut out rice and roti",
   "Blamed when the scale does not move",
-  "A new diet every time the last one stops",
+  "A new diet every time one stops",
 ] as const;
 
 const COMPARE_NEW = [
@@ -142,8 +181,8 @@ const COMPARE_NEW = [
   "Food built around what your report shows",
   "Roti, dal, sabzi, curd \u2014 nothing banned",
   "Joint-friendly training, 30\u201340 minutes",
-  "Weekly check-ins on energy, sleep and bloating, not just the scale",
-  "A repeat blood test at the end, so the markers move too",
+  "Weekly check-ins on energy, sleep and bloating",
+  "A repeat blood test at the end",
 ] as const;
 
 function Cross() {
@@ -219,6 +258,20 @@ function CompareSection() {
   return (
     <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="compare-why-heading">
       <div className="mx-auto w-full max-w-[880px]">
+        <div className="mb-12 text-center">
+          <p className="section-label">Sound familiar?</p>
+          <ul className="mx-auto mt-4 flex max-w-[680px] list-none flex-wrap justify-center gap-2.5 p-0">
+            {FAMILIAR.map((line) => (
+              <li
+                key={line}
+                className="rounded-full px-4 py-2 text-[length:var(--fs-2xs)] leading-[var(--lh-tight)] text-[var(--t1)]"
+                style={{ border: "1px solid rgba(255,255,255,0.16)", background: "rgba(255,255,255,0.04)" }}
+              >
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
         <header className="text-center">
           <p className="section-label">Why nothing has worked</p>
           <h2 id="compare-why-heading" className="section-title mx-auto text-balance">
@@ -292,7 +345,7 @@ export default function DecodePage() {
       <section className="decode-hero bg-white">
         <div className="container-default mx-auto w-full max-w-[760px] px-4 pb-10 pt-7 text-center md:px-6 md:pb-14 md:pt-14">
           <p className="m-0 text-[length:var(--fs-3xs)] font-medium text-[var(--t2)]">
-            For Indian women 28+ who are doing everything right and still feel stuck
+            For working Indian women 28+ who are doing everything right and still feel stuck
           </p>
           {/* The family is NOT pinned here any more. It used to be set inline
               to the body face, which beat every stylesheet rule by
@@ -493,9 +546,9 @@ export default function DecodePage() {
               ))}
             </ul>
             <p className="mx-auto mt-4 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              Even if we never work together, you leave with the answers. If a
-              full programme suits you, I will show you what it involves and what
-              it costs.
+              Even if we never work together, you leave with the answers. The
+              call is free; the 3-month coaching after it is paid, and I share
+              the fee on the call.
             </p>
 
             <header className="mt-14 text-center">
@@ -530,6 +583,29 @@ export default function DecodePage() {
           </div>
         </section>
 
+        {/* ── 7a. Why now ──────────────────────────────────────────────── */}
+        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="now-heading">
+          <div className="mx-auto w-full max-w-[640px]">
+            <header className="text-center">
+              <p className="section-label">Why now</p>
+              <h2 id="now-heading" className="section-title mx-auto text-balance">
+                What will the <span className="decode-gold">next year</span> look like?
+              </h2>
+            </header>
+            <p className="mt-7 text-center text-[length:var(--fs-xs)] font-bold text-white">It often starts with:</p>
+            <ul className="mt-4 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
+              {WHY_NOW.map((line) => (
+                <li key={line} className="decode-card px-4 py-3.5 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t1)]">
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <p className="mx-auto mt-5 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+              Another year on the same plan gives the same result.
+            </p>
+          </div>
+        </section>
+
         {/* ── 7. Who this is for ───────────────────────────────────────── */}
         <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="fit-heading">
           <div className="mx-auto w-full max-w-[640px]">
@@ -546,6 +622,15 @@ export default function DecodePage() {
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" className="mt-[3px] flex-none">
                     <path d="M4 10.5l4 4 8-9" fill="none" stroke="#ffc91e" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 text-[length:var(--fs-xs)] font-bold text-white">This is not for you if:</p>
+            <ul className="mt-3 flex list-none flex-col gap-3 p-0">
+              {NOT_FOR_YOU.map((line) => (
+                <li key={line} className="flex gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+                  <Cross />
                   <span>{line}</span>
                 </li>
               ))}
