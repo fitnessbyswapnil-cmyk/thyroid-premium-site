@@ -83,6 +83,8 @@ type Q = { id: string; q: string; options: string[] };
 // reordered freely, and the wording and options must NOT be edited to suit an
 // order — every option label is a stored value and a scoring weight.
 const QUESTIONS: Q[] = [
+  // Also offered on /decode as a one-tap start (./first-question.ts). A test
+  // holds the two copies identical; change both or neither.
   {
     id: "stuck",
     q: "How long has your weight been stuck?",
@@ -336,6 +338,22 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     },
     [i],
   );
+
+  // One-tap start from /decode (26-Nov): the page's first-question buttons
+  // submit ?stuck=<option>. Recorded through pick() itself, so it is the same
+  // state change and the same decode_quiz_answer event as tapping it here; an
+  // unknown value is ignored and she simply starts at question 1. The param is
+  // then dropped so a refresh cannot answer it twice.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current || !autostart || i !== 0) return;
+    prefilled.current = true;
+    const first = QUESTIONS[0];
+    const v = new URLSearchParams(window.location.search).get(first.id);
+    if (!v || !first.options.includes(v)) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    pick(first, v);
+  }, [autostart, i, pick]);
 
   /** The follow-up's answer. It gates nothing: all three advance identically.
    *  Deliberately not wrapped in useCallback — the compiler already declines to

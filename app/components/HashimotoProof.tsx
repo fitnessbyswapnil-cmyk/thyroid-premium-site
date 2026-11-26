@@ -29,7 +29,7 @@ type HashimotoStory = {
   markers?: readonly { label: string; before: string; after: string }[];
 };
 
-const HASHIMOTO_STORIES: readonly HashimotoStory[] = [
+export const HASHIMOTO_STORIES: readonly HashimotoStory[] = [
   {
     name: "Divya M.",
     where: "Bengaluru",

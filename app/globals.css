@@ -2462,3 +2462,16 @@ a {
   color: #87580f;
   background: rgba(224, 160, 66, 0.14);
 }
+
+/* One-tap start on /decode: quiet white tiles, petrol edge on hover/focus so
+   they read as choices, not as a second button style competing with the CTA. */
+.theme-clinic .one-tap {
+  background: #ffffff;
+  border: 1px solid rgba(20, 40, 45, 0.14);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.theme-clinic .one-tap:hover,
+.theme-clinic .one-tap:focus-visible {
+  border-color: #0e3f49;
+  box-shadow: 0 0 0 1px #0e3f49;
+}

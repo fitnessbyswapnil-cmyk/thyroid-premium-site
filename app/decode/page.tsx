@@ -5,7 +5,9 @@ import HeroVideo from "@/app/components/HeroVideo";
 import { PILLARS } from "@/app/components/PillarsSection";
 import DecodeStickyCta from "./DecodeStickyCta";
 import CoachIntro from "./CoachIntro";
-import HashimotoProof from "@/app/components/HashimotoProof";
+import HashimotoProof, { HASHIMOTO_STORIES } from "@/app/components/HashimotoProof";
+import { COACH_IMAGE } from "@/app/lib/authority";
+import { FIRST_QUESTION } from "./first-question";
 import RevealOnScroll from "./RevealOnScroll";
 
 /**
@@ -54,6 +56,13 @@ import RevealOnScroll from "./RevealOnScroll";
  * .theme-clinic in globals.css, so /decode-long and the home page are not
  * touched. No new packages: the doc's own risk notes (bundle, 10 ms CPU) are
  * why the motion is written here rather than installed.
+ *
+ * 26-NOV-2026, PERSUASION PASS (owner: "apply the books"). Cialdini's
+ * commitment (the quiz's own first question, one tap, right under the hero
+ * button), liking (his face beside 100+), social proof at the moment of
+ * decision (a verbatim client quote under two buttons) and similarity (real
+ * ages on the wall, read off each client's own composite). Every fact here
+ * already existed in the project; nothing was invented.
  *
  * Unchanged, and must stay so: every button goes to /decode/quiz with the ad's
  * own label; the proof claim is "100+"; testimonial words are verbatim. (The
@@ -312,11 +321,30 @@ function BookButton() {
   );
 }
 
-function ButtonRow() {
+/** A client's own words beside a button: social proof at the moment she
+ *  decides. Verbatim from HashimotoProof's data, never retyped here. */
+function ButtonQuote({ who, sentences = 1 }: { who: string; sentences?: number }) {
+  const story = HASHIMOTO_STORIES.find((h) => h.name === who);
+  if (!story) return null;
+  const words = story.quote.split(/(?<=\.)\s/).slice(0, sentences).join(" ");
+  return (
+    <figure className="mx-auto mt-5 max-w-[440px] text-center">
+      <blockquote className="m-0 text-[length:var(--fs-sm)] italic leading-[var(--lh-body)] text-[var(--t1)]">
+        &ldquo;{words}&rdquo;
+      </blockquote>
+      <figcaption className="mt-1.5 text-[length:var(--fs-3xs)] text-[var(--t2)]">
+        {story.name} &middot; {story.where}
+      </figcaption>
+    </figure>
+  );
+}
+
+function ButtonRow({ quote }: { quote?: string } = {}) {
   return (
     <section className="px-4 pb-12 md:px-6">
       <div className="mx-auto w-full max-w-[760px] text-center">
         <BookButton />
+        {quote ? <ButtonQuote who={quote} /> : null}
       </div>
     </section>
   );
@@ -409,7 +437,7 @@ export default function DecodePage() {
               text, and the video stays below the button so it cannot push the CTA
               down the page. Anything added to this hero in future goes BELOW the
               button, not above it. */}
-          <HeroProofStrip claimsOnly countUp />
+          <HeroProofStrip claimsOnly countUp face={COACH_IMAGE} />
 
           <div className="mt-6 flex flex-col items-center">
             <a
@@ -443,6 +471,32 @@ export default function DecodePage() {
             </p>
           </div>
 
+          {/* ONE-TAP START (26-Nov). The quiz's own first question, so her
+              first act is a tap about herself, not "book a consultation". A
+              GET form, not links: each option lands on /decode/quiz?stuck=…,
+              which records it exactly like a tap inside the quiz. */}
+          <form action="/decode/quiz" method="get" className="mx-auto mt-8 w-full max-w-[560px]">
+            <p className="m-0 text-[length:var(--fs-3xs)] font-semibold uppercase tracking-[var(--ls-caps)] text-[var(--t2)]">
+              Or start with one tap
+            </p>
+            <p className="mb-0 mt-2 text-[length:var(--fs-lg)] font-semibold leading-[var(--lh-tight)] text-[var(--t1)]">
+              {FIRST_QUESTION.q}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              {FIRST_QUESTION.options.map((o) => (
+                <button
+                  key={o}
+                  type="submit"
+                  name={FIRST_QUESTION.id}
+                  value={o}
+                  className="one-tap rounded-xl px-3 py-3.5 text-[length:var(--fs-sm)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]"
+                >
+                  {o}
+                </button>
+              ))}
+            </div>
+          </form>
+
           {/* The owner's own video: the 10-Nov-2026 cut that ends on the free
               session (the homepage keeps the original; see CUTS in
               HeroVideo). Only its poster loads until she taps play, so it
@@ -465,8 +519,8 @@ export default function DecodePage() {
 
       <div className="band-sand">
         {/* ── 3. Proof ─────────────────────────────────────────────────── */}
-        <TransformationWall compact countUp />
-        <ButtonRow />
+        <TransformationWall compact countUp showAge />
+        <ButtonRow quote="Divya M." />
       </div>
 
       <div className="band-clinic">
@@ -579,6 +633,7 @@ export default function DecodePage() {
             </ol>
             <div className="mt-4 text-center">
               <BookButton />
+              <ButtonQuote who="Kavitha N." sentences={2} />
             </div>
           </div>
         </section>
