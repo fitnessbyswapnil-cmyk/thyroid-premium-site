@@ -30,7 +30,7 @@ export default function CoachIntro() {
           <h2 id="coach-heading" className="section-title m-0 text-balance">
             Hey, I&rsquo;m <span className="decode-gold">Coach Swapnil</span>.
           </h2>
-          <p className="mt-4 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-white">
+          <p className="mt-4 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-[var(--t1)]">
             Scientific Thyroid Lean Method for fat loss
           </p>
           <p className="mt-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">

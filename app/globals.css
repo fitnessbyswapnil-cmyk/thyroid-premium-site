@@ -2257,3 +2257,208 @@ a {
 /* An accent phrase inside a headline. Resolves green on the deep band and the
    AA-safe dark green on white, because both come from the same token. */
 .hl { color: var(--gold-ink); }
+
+/* ── /decode: the clinic skin (26-Nov-2026) ─────────────────────────────────
+   Owner's Claude Doc "Decode landing page — design repos & direction":
+   warm ivory, white cards, sand every third section, deep-ink text, amber
+   only for marks (rules, icons, step numbers, never body text) and ONE action
+   colour, petrol, so Meta traffic from the petrol/amber/cream Instagram
+   creatives lands on a page that matches the ad.
+
+   Scoped to .theme-clinic, which only /decode and its quiz carry. /decode-long
+   keeps .theme-decode alone and is untouched; so is the home page.
+
+   This replaces the September red button and the near-black band ON THIS PAGE
+   ONLY. The reasons red won in September (continuity with red/white/yellow
+   creatives, see the reference-page skin above) are the same argument applied
+   to the new creatives: the button matches the ad that sent her.
+
+   It works the way .band-deep does: by redefining the ink and surface tokens
+   on the wrapper, so every proof component re-skins with no markup fork. */
+.theme-clinic {
+  --clinic-ivory: #faf7f2;
+  --clinic-sand: #f1ece3;
+  --clinic-ink: #14282d;
+  --clinic-muted: #56676b;
+  --clinic-amber: #e0a042;
+  --clinic-amber-ink: #87580f;
+  --clinic-amber-wash: #fbf1e0;
+  --clinic-petrol: #0e3f49;
+  --clinic-line: rgba(20, 40, 45, 0.1);
+
+  background: var(--clinic-ivory);
+
+  --t1: #14282d;
+  --t2: #56676b;
+  --t3: #56676b;
+  --t4: #56676b;
+  --t5: #56676b;
+  --t2-decode: #56676b;
+
+  --accent-yellow: #e0a042;
+  --accent-wash: #fbf1e0;
+  --accent-ink: #87580f;
+  --gold-ink: #87580f;
+  --p300: #87580f;
+  --p400: #87580f;
+  --p500: #87580f;
+  --p600: #87580f;
+  --p-subtle: rgba(224, 160, 66, 0.1);
+  --p-tint: rgba(224, 160, 66, 0.07);
+  --p-border: rgba(224, 160, 66, 0.45);
+
+  /* One action colour: petrol, white label (11.5:1). */
+  --cta-bg: #0e3f49;
+  --cta-fg: #ffffff;
+  --cta-sub-fg: #ffffff;
+  --cta-sub-opacity: 0.88;
+  --cta-bg-hover: #0a2f37;
+  --cta-bg-active: #082730;
+  --cta-shadow-hover: 0 12px 28px rgba(14, 63, 73, 0.24);
+  --focus-ring: #0e3f49;
+}
+
+/* The light bands that replace .band-deep / .band-deeper on this page. */
+.theme-clinic .band-clinic,
+.theme-clinic .band-sand {
+  --bg-page: #faf7f2;
+  --bg-section: #faf7f2;
+  --bg-elevated: #faf7f2;
+  --surface-page: #faf7f2;
+  --surface-wash: #faf7f2;
+  --surface-wash-strong: #f1ece3;
+  --surface-card: #ffffff;
+  --border-hairline: rgba(20, 40, 45, 0.1);
+  --border-on-wash: rgba(20, 40, 45, 0.12);
+  --border-strong: rgba(20, 40, 45, 0.2);
+  --b-soft: rgba(20, 40, 45, 0.1);
+  --b-mid: rgba(20, 40, 45, 0.18);
+  --s1: rgba(20, 40, 45, 0.03);
+  --s2: rgba(20, 40, 45, 0.05);
+  --s3: rgba(20, 40, 45, 0.07);
+  --shadow-card: 0 1px 2px rgba(20, 40, 45, 0.04), 0 8px 24px rgba(20, 40, 45, 0.06);
+  background: #faf7f2;
+}
+.theme-clinic .band-sand {
+  --bg-page: #f1ece3;
+  --bg-section: #f1ece3;
+  --bg-elevated: #f1ece3;
+  --surface-page: #f1ece3;
+  --surface-wash: #f1ece3;
+  background: #f1ece3;
+}
+.theme-clinic .band-clinic section,
+.theme-clinic .band-sand section {
+  background: transparent;
+}
+
+.theme-clinic .decode-hero {
+  background: #faf7f2;
+}
+
+/* Headings: Newsreader at 500, never bold, in ink. */
+.theme-clinic h1,
+.theme-clinic h2,
+.theme-clinic h3,
+.theme-clinic .section-title {
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: var(--ls-heading);
+  color: var(--t1);
+}
+.theme-clinic .section-title {
+  font-size: var(--fs-2xl);
+}
+
+/* Eyebrow: 13px caps, 0.12em, amber ink; the dash in amber. */
+.theme-clinic .section-label {
+  color: var(--clinic-amber-ink);
+  font-weight: 600;
+}
+.theme-clinic .section-label::before {
+  color: var(--clinic-amber);
+}
+
+/* The heading half that used to be gold: amber ink, italic serif. Amber itself
+   is 2.1:1 on ivory and can never be type. */
+.theme-clinic .decode-gold {
+  color: var(--clinic-amber-ink);
+  font-weight: 600;
+}
+.theme-clinic :is(h1, h2, h3, .section-title) .decode-gold {
+  font-style: italic;
+  font-weight: 500;
+}
+
+.theme-clinic .decode-card {
+  background: #ffffff;
+  border: 1px solid rgba(20, 40, 45, 0.08);
+  box-shadow: 0 1px 2px rgba(20, 40, 45, 0.04), 0 8px 24px rgba(20, 40, 45, 0.05);
+}
+
+/* Sticky bar: a calm ivory bar with one petrol button, clear of the home
+   indicator. Other pages keep the dark scrim in DecodeStickyCta. */
+.theme-clinic .decode-sticky-bar {
+  background: rgba(250, 247, 242, 0.97) !important;
+  border-top: 1px solid rgba(20, 40, 45, 0.1);
+  padding-top: 12px !important;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+}
+.theme-clinic .decode-sticky-bar .cta-button {
+  box-shadow: none !important;
+}
+
+/* FAQ: native <details>, no JavaScript. */
+.theme-clinic .faq-item > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.theme-clinic .faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+.theme-clinic .faq-item[open] .faq-chevron {
+  transform: rotate(180deg);
+}
+.theme-clinic .faq-chevron {
+  transition: transform 0.2s ease;
+}
+
+/* Scroll reveal (BlurFade's behaviour without its runtime): RevealOnScroll
+   marks only what starts BELOW the fold, so nothing on the first screen ever
+   blinks, and a visitor without JavaScript sees everything. Runs once. */
+.theme-clinic [data-reveal] {
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.6s ease;
+}
+.theme-clinic [data-reveal].reveal-wait {
+  opacity: 0;
+  transform: translateY(8px);
+  filter: blur(6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-clinic [data-reveal] {
+    transition: none;
+  }
+  .theme-clinic .faq-chevron {
+    transition: none;
+  }
+}
+
+/* The comparison on /decode: the old way on a quiet translucent card, the
+   thyroid way on a white card with an amber edge. */
+.theme-clinic .compare-col {
+  border: 1px solid rgba(20, 40, 45, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+}
+.theme-clinic .compare-col .compare-tag {
+  color: #8f3f2f;
+  background: rgba(180, 83, 63, 0.09);
+}
+.theme-clinic .compare-col--good {
+  border-color: rgba(224, 160, 66, 0.55);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 40, 45, 0.04), 0 10px 28px rgba(20, 40, 45, 0.07);
+}
+.theme-clinic .compare-col--good .compare-tag {
+  color: #87580f;
+  background: rgba(224, 160, 66, 0.14);
+}

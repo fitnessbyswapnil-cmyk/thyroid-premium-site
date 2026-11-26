@@ -1,5 +1,7 @@
 "use client";
 
+import CountUp from "./CountUp";
+
 import Image from "next/image";
 import { Fragment } from "react";
 
@@ -68,7 +70,8 @@ function Avatar({ a }: { a: ProofAvatar }) {
  */
 export default function HeroProofStrip({
   claimsOnly = false,
-}: { claimsOnly?: boolean } = {}) {
+  countUp = false,
+}: { claimsOnly?: boolean; countUp?: boolean } = {}) {
   return (
     // All five items visible on a 390px screen with NO horizontal scrolling —
     // the old row overflowed, cutting quotes mid-word ("Lost 4.5 …") unless
@@ -82,7 +85,7 @@ export default function HeroProofStrip({
           <div className="flex items-center gap-3">
             <Rule />
             <div data-tabular className="text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] tracking-[var(--ls-display)] text-[var(--p300)]" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
-              100+
+              {countUp ? <CountUp value={100} suffix="+" /> : "100+"}
             </div>
             <Rule />
           </div>

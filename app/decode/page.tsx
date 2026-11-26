@@ -6,6 +6,7 @@ import { PILLARS } from "@/app/components/PillarsSection";
 import DecodeStickyCta from "./DecodeStickyCta";
 import CoachIntro from "./CoachIntro";
 import HashimotoProof from "@/app/components/HashimotoProof";
+import RevealOnScroll from "./RevealOnScroll";
 
 /**
  * /decode — the FREE 1-1 consultation offer. Ad traffic only.
@@ -35,6 +36,24 @@ import HashimotoProof from "@/app/components/HashimotoProof";
  *   7 who this is for ... five checkmarks
  *   8 FAQ ............... three one-line answers
  *   9 last button
+ *
+ * 26-NOV-2026 (owner): the page was checked against a twelve-part
+ * lead-quality structure and four things were added, in place, without moving
+ * any section: "working" in the hero callout, a "Sound familiar?" strip above
+ * the comparison, a "Why now" section before the fit list, a "not for you"
+ * list under it, and an honest line that the coaching after the free call is
+ * paid. The ORDER did not change on purpose: proof stays high because Clarity
+ * showed half of mobile visitors gone early (see FOLD ORDER below).
+ *
+ * 26-NOV-2026, LOOK (owner): the clinic skin from his Claude Doc "Decode
+ * landing page — design repos & direction". Ivory/white/sand grounds instead
+ * of the near-black band, deep-ink text, amber only as a mark, ONE petrol
+ * button. Newsreader headings at 500, body at 16px, sections at 64/112px.
+ * Motion is a soft rise-in (RevealOnScroll) and count-ups on 100+ and the kg
+ * figures (CountUp); the FAQ is native <details>. All of it lives under
+ * .theme-clinic in globals.css, so /decode-long and the home page are not
+ * touched. No new packages: the doc's own risk notes (bundle, 10 ms CPU) are
+ * why the motion is written here rather than installed.
  *
  * Unchanged, and must stay so: every button goes to /decode/quiz with the ad's
  * own label; the proof claim is "100+"; testimonial words are verbatim. (The
@@ -77,13 +96,13 @@ export const metadata: Metadata = {
 // Mirrors the video ad (17-Sep): she was promised a Root Cause Map, her
 // report read, and what the next 90 days should look like.
 const GET = [
-  "Your Root Cause Map: your biggest fat-loss blocker, in simple words",
+  "Your Root Cause Map: your biggest fat-loss blocker, in plain words",
   "Your report read line by line: TSH, T3, T4, and antibodies if you have them",
   "What your next 90 days should look like.",
 ] as const;
 
 const STEPS = [
-  { h: "Fill your intake form", p: "12 quick taps about your report and what you have tried. I read it before we speak." },
+  { h: "Fill your intake form", p: "12 quick taps. I read your answers before we speak." },
   { h: "Pick your slot", p: "Choose a time that suits you." },
   { h: "We talk", p: "On a video call." },
 ] as const;
@@ -99,6 +118,26 @@ const FOR_YOU = [
   "You are ready to start within the next 30 days",
 ] as const;
 
+// "Not for you" (26-Nov, owner). The push half of the fit section: it lets a
+// woman who wants a shortcut leave on her own before she takes a call slot.
+// Still no price filter and no decision-maker filter (see FOR_YOU above).
+const NOT_FOR_YOU = [
+  "You want a quick fix",
+  "You want a diet chart only",
+  "You cannot give 30 minutes a day",
+] as const;
+
+// "Why now" (26-Nov, owner). Urgency from her own life, never from the page:
+// no deadline, no slot count, no "limited". These are moments, written about
+// what happens to women in general, so no line tells the reader she has a
+// condition (Meta's personal-attributes rule, see the header).
+const WHY_NOW = [
+  "A family wedding coming up",
+  "The dose went up again",
+  "A photo she did not want to see",
+  "Knees that hurt on the stairs",
+] as const;
+
 const FAQ = [
   { q: "Is it really free?", a: "Yes. No card, nothing to pay on the call, nothing added at the end." },
   {
@@ -106,6 +145,7 @@ const FAQ = [
     a: "Answer the questions anyway. On the call I tell you which tests to get and why.",
   },
   { q: "Who is on the call?", a: "Me. Not an assistant, not a sales team. Sixty minutes, one to one." },
+  { q: "I work long hours. Will this fit?", a: "Yes. 30 to 40 minutes of training, and your family's food." },
 ] as const;
 
 // Built and deliberately left OFF until 26-Sep-2026 (quiz gates first need two
@@ -128,13 +168,23 @@ const SHOW_PROGRAMME_PRICE = false;
  * every line is a deliverable, not a claim, so nothing here needs a qualifier.
  * SymptomChips itself stays on the homepage, where she arrives cold.
  */
+// "Sound familiar?" (26-Nov, owner). Three situations, not symptoms of a
+// named condition, so the strip recognises her without diagnosing her. It is
+// a strip and not the old SymptomChips section on purpose: no tick boxes, and
+// it hands straight over to the comparison underneath.
+const FAMILIAR = [
+  "1,200 calories, and the scale still climbs",
+  "The 3pm crash at your desk",
+  "Normal reports, and still exhausted",
+] as const;
+
 const COMPARE_OLD = [
   "Eat less, walk 10,000 steps",
   "The same calorie chart as everyone else",
   "Your report never opened",
   "Cut out rice and roti",
   "Blamed when the scale does not move",
-  "A new diet every time the last one stops",
+  "A new diet every time one stops",
 ] as const;
 
 const COMPARE_NEW = [
@@ -142,8 +192,8 @@ const COMPARE_NEW = [
   "Food built around what your report shows",
   "Roti, dal, sabzi, curd \u2014 nothing banned",
   "Joint-friendly training, 30\u201340 minutes",
-  "Weekly check-ins on energy, sleep and bloating, not just the scale",
-  "A repeat blood test at the end, so the markers move too",
+  "Weekly check-ins on energy, sleep and bloating",
+  "A repeat blood test at the end",
 ] as const;
 
 function Cross() {
@@ -151,10 +201,10 @@ function Cross() {
     <span
       aria-hidden="true"
       className="mt-[2px] flex h-5 w-5 flex-none items-center justify-center rounded-full"
-      style={{ background: "rgba(220,52,52,0.16)" }}
+      style={{ background: "rgba(180,83,63,0.1)" }}
     >
       <svg width="10" height="10" viewBox="0 0 12 12">
-        <path d="M2 2l8 8M10 2l-8 8" fill="none" stroke="#ff6b6b" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M2 2l8 8M10 2l-8 8" fill="none" stroke="#b4533f" strokeWidth="2.2" strokeLinecap="round" />
       </svg>
     </span>
   );
@@ -165,45 +215,35 @@ function Tick() {
     <span
       aria-hidden="true"
       className="mt-[2px] flex h-5 w-5 flex-none items-center justify-center rounded-full"
-      style={{ background: "rgba(255,201,30,0.16)" }}
+      style={{ background: "rgba(224,160,66,0.18)" }}
     >
       <svg width="11" height="11" viewBox="0 0 12 12">
-        <path d="M2 6.4l2.6 2.6L10 3" fill="none" stroke="#ffc91e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M2 6.4l2.6 2.6L10 3" fill="none" stroke="#a8701c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
 }
 
 function CompareColumn({
-  tag, tagColor, tagBg, borderColor, title, lines, good,
+  tag, title, lines, good,
 }: {
-  tag: string; tagColor: string; tagBg: string; borderColor: string;
-  title: string; lines: readonly string[]; good: boolean;
+  tag: string; title: string; lines: readonly string[]; good: boolean;
 }) {
+  // Colours live in globals.css (.compare-col): one place, and no colour codes
+  // inflating this page's word count.
   return (
-    <article
-      className="rounded-2xl p-5 md:p-7"
-      style={{
-        border: `1px solid ${borderColor}`,
-        background: good
-          ? "linear-gradient(180deg, rgba(255,201,30,0.05) 0%, rgba(255,255,255,0.02) 45%)"
-          : "rgba(255,255,255,0.02)",
-      }}
-    >
-      <p
-        className="m-0 inline-block rounded-lg px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
-        style={{ color: tagColor, background: tagBg }}
-      >
+    <article className={`compare-col rounded-2xl p-5 md:p-7${good ? " compare-col--good" : ""}`}>
+      <p className="compare-tag m-0 inline-block rounded-lg px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]">
         {tag}
       </p>
-      <h3 className="mb-0 mt-3 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-white">
+      <h3 className="mb-0 mt-3 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-[var(--t1)]">
         {title}
       </h3>
       <ul className="mt-5 flex list-none flex-col gap-3.5 p-0">
         {lines.map((line) => (
           <li
             key={line}
-            className="flex gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)]"
+            className="flex gap-3 text-[length:var(--fs-sm)] leading-[var(--lh-body)]"
             style={{ color: good ? "var(--t1)" : "var(--t2)" }}
           >
             {good ? <Tick /> : <Cross />}
@@ -217,44 +257,42 @@ function CompareColumn({
 
 function CompareSection() {
   return (
-    <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="compare-why-heading">
+    <section className="px-4 py-16 md:px-6 md:py-28" aria-labelledby="compare-why-heading">
       <div className="mx-auto w-full max-w-[880px]">
-        <header className="text-center">
+        <div className="mb-12 text-center">
+          <p className="section-label">Sound familiar?</p>
+          <ul className="mx-auto mt-4 flex max-w-[680px] list-none flex-wrap justify-center gap-2.5 p-0">
+            {FAMILIAR.map((line) => (
+              <li
+                key={line}
+                className="rounded-full px-4 py-2 text-[length:var(--fs-sm)] leading-[var(--lh-tight)] text-[var(--t1)]"
+                style={{ border: "1px solid rgba(20,40,45,0.12)", background: "#ffffff" }}
+              >
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <header className="text-center" data-reveal>
           <p className="section-label">Why nothing has worked</p>
           <h2 id="compare-why-heading" className="section-title mx-auto text-balance">
             Normal fat loss and <span className="decode-gold">thyroid fat loss</span> are not the same thing
           </h2>
         </header>
 
-        <div className="mt-8 grid grid-cols-1 items-stretch gap-4 md:grid-cols-[1fr_auto_1fr] md:gap-5">
-          <CompareColumn
-            tag="EVERY OTHER PLAN"
-            tagColor="#ff8a8a"
-            tagBg="rgba(220,52,52,0.14)"
-            borderColor="rgba(220,52,52,0.35)"
-            title="What you have been handed"
-            lines={COMPARE_OLD}
-            good={false}
-          />
+        <div className="mt-8 grid grid-cols-1 items-stretch gap-4 md:grid-cols-[1fr_auto_1fr] md:gap-5" data-reveal>
+          <CompareColumn tag="EVERY OTHER PLAN" title="What you have been handed" lines={COMPARE_OLD} good={false} />
 
           <div className="flex items-center justify-center md:px-1">
             <span
               className="flex h-11 w-11 items-center justify-center rounded-full text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)] text-[var(--t2)]"
-              style={{ border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.03)" }}
+              style={{ border: "1px solid rgba(20,40,45,0.14)", background: "#ffffff" }}
             >
               VS
             </span>
           </div>
 
-          <CompareColumn
-            tag="THE THYROID WAY"
-            tagColor="#ffc91e"
-            tagBg="rgba(255,201,30,0.14)"
-            borderColor="rgba(255,201,30,0.5)"
-            title="What we do instead"
-            lines={COMPARE_NEW}
-            good
-          />
+          <CompareColumn tag="THE THYROID WAY" title="What we do instead" lines={COMPARE_NEW} good />
         </div>
       </div>
     </section>
@@ -287,19 +325,20 @@ function ButtonRow() {
 export default function DecodePage() {
   return (
     // theme-decode: red buttons, gold accents (globals.css).
-    <main className="theme-decode">
+    <main className="theme-decode theme-clinic">
+      <RevealOnScroll />
       {/* ── 1. Hero (white) ─────────────────────────────────────────────── */}
       <section className="decode-hero bg-white">
         <div className="container-default mx-auto w-full max-w-[760px] px-4 pb-10 pt-7 text-center md:px-6 md:pb-14 md:pt-14">
           <p className="m-0 text-[length:var(--fs-3xs)] font-medium text-[var(--t2)]">
-            For Indian women 28+ who are doing everything right and still feel stuck
+            For working Indian women 28+ who are doing everything right and still feel stuck
           </p>
           {/* The family is NOT pinned here any more. It used to be set inline
               to the body face, which beat every stylesheet rule by
               specificity, so /decode's headline could not be reskinned without
               editing this file. The serif now comes from `.theme-decode h1` in
               globals.css, where the rest of the page's type decisions live. */}
-          <h1 className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[#0b1120]">
+          <h1 className="mx-auto mt-3 max-w-[680px] text-balance text-[length:var(--fs-2xl)] font-bold leading-[var(--lh-display)] text-[var(--t1)] md:text-[length:var(--fs-3xl)]">
             {/* Was "You're Not The Problem. Your Thyroid Is." — the 17-Sep video
                 hook, word for word. Replaced 22-Sep: it tells the reader she has
                 a thyroid condition, which is exactly what Meta's personal
@@ -323,7 +362,7 @@ export default function DecodePage() {
             I&rsquo;ll Help You Lose 10+ kg, Improve Your Metabolism &amp; Energy Levels In 90 Days
           </h1>
 
-          <p className="mx-auto mt-4 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] md:text-[length:var(--fs-lg)]" style={{ color: "#dc3434" }}>
+          <p className="mx-auto mt-4 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] md:text-[length:var(--fs-lg)]" style={{ color: "#87580f" }}>
             Or I&rsquo;ll Keep Coaching You Free Until You Get There.
           </p>
 
@@ -370,7 +409,7 @@ export default function DecodePage() {
               text, and the video stays below the button so it cannot push the CTA
               down the page. Anything added to this hero in future goes BELOW the
               button, not above it. */}
-          <HeroProofStrip claimsOnly />
+          <HeroProofStrip claimsOnly countUp />
 
           <div className="mt-6 flex flex-col items-center">
             <a
@@ -390,15 +429,15 @@ export default function DecodePage() {
                 it made was "you will not leave empty-handed", and that still
                 stands. Do not reinstate the ₹299 wording while the call is
                 free. */}
-            <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-2xs)] font-bold leading-[var(--lh-body)] text-[#0b1120]">
+            <p className="mx-auto mt-3 max-w-[560px] text-[length:var(--fs-sm)] font-bold leading-[var(--lh-body)] text-[var(--t1)]">
               No card, nothing to pay. Come with your report and leave knowing your blocker.
             </p>
             {/* The one line that reframes the whole offer, moved below the button
                 on 23-Sep: the fold rule from Clarity is that nothing new goes
                 above the CTA. It answers "my reports are normal, why would a call
                 help", which is the objection the ad traffic arrives with. */}
-            <p className="mx-auto mt-4 text-[length:var(--fs-xs)] font-bold leading-[var(--lh-tight)] text-[#0b1120] md:text-[length:var(--fs-base)]">
-              <span className="rounded-lg px-2 py-1" style={{ background: "#ffe98a", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
+            <p className="mx-auto mt-4 text-[length:var(--fs-xs)] font-bold leading-[var(--lh-tight)] text-[var(--t1)] md:text-[length:var(--fs-base)]">
+              <span className="rounded-lg px-2 py-1" style={{ background: "#f6e6c8", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
                 A &ldquo;normal&rdquo; report is not the same as a thyroid that is working.
               </span>
             </p>
@@ -409,7 +448,7 @@ export default function DecodePage() {
               HeroVideo). Only its poster loads until she taps play, so it
               costs the page almost nothing. */}
           <div className="mx-auto mt-8 w-full max-w-[560px]">
-            <p className="mb-3 text-[length:var(--fs-xs)] font-bold text-[#0b1120]">
+            <p className="mb-3 text-[length:var(--fs-xs)] font-bold text-[var(--t1)]">
               Why thyroid fat loss is not the same
             </p>
             <HeroVideo cut="decode" />
@@ -417,14 +456,20 @@ export default function DecodePage() {
         </div>
       </section>
 
-      {/* Everything after the hero sits on the near-black band. */}
-      <div className="band-deep">
+      {/* After the hero: ivory, with sand every third block (26-Nov clinic
+          skin; was the near-black band). */}
+      <div className="band-clinic">
         {/* ── 2. Why nothing has worked (was SymptomChips) ─────────────── */}
         <CompareSection />
+      </div>
 
+      <div className="band-sand">
         {/* ── 3. Proof ─────────────────────────────────────────────────── */}
-        <TransformationWall compact />
+        <TransformationWall compact countUp />
         <ButtonRow />
+      </div>
+
+      <div className="band-clinic">
         <VideoTestimonial compact />
         <HashimotoProof />
         {/* The Hashimoto's reader is at her most convinced right here: she came
@@ -434,44 +479,47 @@ export default function DecodePage() {
         <ButtonRow />
       </div>
 
-      <div className="band-deep band-deeper">
+      <div className="band-sand">
         <WhatsappProofSection hideCta limit={3} />
         <ButtonRow />
       </div>
 
-      <div className="band-deep">
+      <div className="band-clinic">
         {/* ── 4. Meet your coach ───────────────────────────────────────── */}
         <CoachIntro />
 
         {/* ── 5. The method ────────────────────────────────────────────── */}
-        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="method-heading">
+        <section className="px-4 py-16 md:px-6 md:py-28" aria-labelledby="method-heading">
           <div className="mx-auto w-full max-w-[880px]">
-            <header className="text-center">
+            <header className="text-center" data-reveal>
               <p className="section-label">The method</p>
               <h2 id="method-heading" className="section-title mx-auto text-balance">
                 The <span className="decode-gold">Scientific Thyroid Lean Method</span>
               </h2>
             </header>
-            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3" data-reveal>
               {PILLARS.map((p) => (
                 <article key={p.n} className="decode-card p-5 md:p-6">
                   <p className="m-0 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)] decode-gold">
                     PILLAR {p.n}
                   </p>
-                  <h3 className="mb-2 mt-2 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-white">
+                  <h3 className="mb-2 mt-2 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-[var(--t1)]">
                     {p.name}
                   </h3>
-                  <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{p.body}</p>
+                  <p className="m-0 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">{p.body}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
+      </div>
+
+      <div className="band-sand">
         {/* ── 6. What you get · how booking works ──────────────────────── */}
-        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="get-heading">
+        <section className="px-4 py-16 md:px-6 md:py-28" aria-labelledby="get-heading">
           <div className="mx-auto w-full max-w-[640px]">
-            <header className="text-center">
+            <header className="text-center" data-reveal>
               <p className="section-label">Your Root Cause Session</p>
               <h2 id="get-heading" className="section-title mx-auto text-balance">
                 What you leave <span className="decode-gold">with</span>
@@ -481,7 +529,7 @@ export default function DecodePage() {
               {GET.map((line) => (
                 <li
                   key={line}
-                  className="decode-card relative py-4 pl-11 pr-4 text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-white"
+                  className="decode-card relative py-4 pl-11 pr-4 text-[length:var(--fs-xs)] font-medium leading-[var(--lh-tight)] text-[var(--t1)]"
                 >
                   <span
                     aria-hidden="true"
@@ -492,35 +540,40 @@ export default function DecodePage() {
                 </li>
               ))}
             </ul>
-            <p className="mx-auto mt-4 text-center text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              Even if we never work together, you leave with the answers. If a
-              full programme suits you, I will show you what it involves and what
-              it costs.
+            <p className="mx-auto mt-4 text-center text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">
+              Even if we never work together, you leave with the answers. The
+              call is free; the 3-month coaching after it is paid, and I share
+              the fee on the call.
             </p>
 
-            <header className="mt-14 text-center">
+            <header className="mt-14 text-center" data-reveal>
               <p className="section-label">How booking works</p>
               <h2 id="steps-heading" className="section-title mx-auto text-balance">
                 Three steps to <span className="decode-gold">your call</span>
               </h2>
             </header>
-            <ol className="mx-auto mt-8 flex list-none flex-col p-0">
+            <ol className="mx-auto mt-8 flex max-w-[480px] list-none flex-col p-0" data-reveal>
               {STEPS.map((s, i) => (
-                <li
-                  key={s.h}
-                  className="flex flex-col items-center py-6 text-center"
-                  style={{ borderTop: i ? "1px solid rgba(255,255,255,0.08)" : "none" }}
-                >
+                <li key={s.h} className="relative flex gap-4 pb-8 last:pb-2">
+                  {i < STEPS.length - 1 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-5 top-11 w-px"
+                      style={{ bottom: "4px", background: "rgba(224,160,66,0.45)" }}
+                    />
+                  )}
                   <span
-                    className="flex h-10 w-10 items-center justify-center rounded-lg text-[length:var(--fs-2xs)] font-bold decode-gold"
-                    style={{ border: "1px solid var(--accent-yellow)" }}
+                    className="relative flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white text-[length:var(--fs-xs)] font-semibold"
+                    style={{ border: "1.5px solid var(--accent-yellow)", color: "#87580f" }}
                   >
-                    0{i + 1}
+                    {i + 1}
                   </span>
-                  <h3 className="mb-1 mt-3 text-[length:var(--fs-base)] font-bold leading-[var(--lh-tight)] text-white">
-                    {s.h}
-                  </h3>
-                  <p className="m-0 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{s.p}</p>
+                  <div className="pt-1.5">
+                    <h3 className="m-0 text-[length:var(--fs-lg)] leading-[var(--lh-tight)] text-[var(--t1)]">
+                      {s.h}
+                    </h3>
+                    <p className="m-0 mt-1 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">{s.p}</p>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -530,22 +583,57 @@ export default function DecodePage() {
           </div>
         </section>
 
-        {/* ── 7. Who this is for ───────────────────────────────────────── */}
-        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="fit-heading">
+      </div>
+
+      <div className="band-clinic">
+        {/* ── 7a. Why now ──────────────────────────────────────────────── */}
+        <section className="px-4 py-16 md:px-6 md:py-28" aria-labelledby="now-heading">
           <div className="mx-auto w-full max-w-[640px]">
-            <header className="text-center">
+            <header className="text-center" data-reveal>
+              <p className="section-label">Why now</p>
+              <h2 id="now-heading" className="section-title mx-auto text-balance">
+                What will the <span className="decode-gold">next year</span> look like?
+              </h2>
+            </header>
+            <p className="mt-7 text-center text-[length:var(--fs-xs)] font-bold text-[var(--t1)]">It often starts with:</p>
+            <ul className="mt-4 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
+              {WHY_NOW.map((line) => (
+                <li key={line} className="decode-card px-4 py-3.5 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t1)]">
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <p className="mx-auto mt-5 text-center text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">
+              Another year on the same plan gives the same result.
+            </p>
+          </div>
+        </section>
+
+        {/* ── 7. Who this is for ───────────────────────────────────────── */}
+        <section className="px-4 py-16 md:px-6 md:py-28" aria-labelledby="fit-heading">
+          <div className="mx-auto w-full max-w-[640px]">
+            <header className="text-center" data-reveal>
               <p className="section-label">Who this is for</p>
               <h2 id="fit-heading" className="section-title mx-auto text-balance">
                 Not another diet chart. <span className="decode-gold">Your report, read properly.</span>
               </h2>
             </header>
-            <p className="mt-7 text-[length:var(--fs-xs)] font-bold text-white">This is for you if:</p>
+            <p className="mt-7 text-[length:var(--fs-xs)] font-bold text-[var(--t1)]">This is for you if:</p>
             <ul className="mt-3 flex list-none flex-col gap-3 p-0">
               {FOR_YOU.map((line) => (
-                <li key={line} className="flex gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t1)]">
+                <li key={line} className="flex gap-3 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t1)]">
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" className="mt-[3px] flex-none">
-                    <path d="M4 10.5l4 4 8-9" fill="none" stroke="#ffc91e" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 10.5l4 4 8-9" fill="none" stroke="#a8701c" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 text-[length:var(--fs-xs)] font-bold text-[var(--t1)]">This is not for you if:</p>
+            <ul className="mt-3 flex list-none flex-col gap-3 p-0">
+              {NOT_FOR_YOU.map((line) => (
+                <li key={line} className="flex gap-3 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">
+                  <Cross />
                   <span>{line}</span>
                 </li>
               ))}
@@ -554,22 +642,27 @@ export default function DecodePage() {
         </section>
 
         {/* ── 8. FAQ ───────────────────────────────────────────────────── */}
-        <section className="px-4 py-12 md:px-6 md:py-16" aria-labelledby="faq-heading">
+        <section className="px-4 py-16 md:px-6 md:py-28" aria-labelledby="faq-heading">
           <div className="mx-auto w-full max-w-[640px]">
-            <header className="text-center">
+            <header className="text-center" data-reveal>
               <p className="section-label">Before you book</p>
               <h2 id="faq-heading" className="section-title mx-auto text-balance">
                 Quick <span className="decode-gold">questions</span>
               </h2>
             </header>
-            <dl className="mt-7 flex flex-col gap-3">
+            <div className="mt-7 flex flex-col gap-3" data-reveal>
               {FAQ.map((f) => (
-                <div key={f.q} className="decode-card px-5 py-4">
-                  <dt className="text-[length:var(--fs-xs)] font-bold leading-[var(--lh-tight)] text-white">{f.q}</dt>
-                  <dd className="m-0 mt-1.5 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">{f.a}</dd>
-                </div>
+                <details key={f.q} className="faq-item decode-card px-5 py-4">
+                  <summary className="flex items-center justify-between gap-4 text-[length:var(--fs-sm)] font-semibold leading-[var(--lh-tight)] text-[var(--t1)]">
+                    {f.q}
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 10 10" className="faq-chevron flex-none">
+                      <polyline points="2,4 5,7 8,4" fill="none" stroke="#a8701c" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </summary>
+                  <p className="m-0 mt-2 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">{f.a}</p>
+                </details>
               ))}
-            </dl>
+            </div>
           </div>
         </section>
 

@@ -24,8 +24,9 @@ export default function DecodeQuizPage() {
     // line, the progress bar and every selected-answer border rendered in the
     // free funnel's electric green, one tap after a red CTA — which is the
     // ad-to-page break the palette exists to close, reopened at the step where
-    // she is actually deciding.
-    <main className="theme-decode min-h-screen bg-[var(--bg-page)]">
+    // she is actually deciding. theme-clinic (26-Nov) carries the same rule
+    // forward: /decode is petrol and ivory now, so the quiz is too.
+    <main className="theme-decode theme-clinic min-h-screen bg-[var(--bg-page)]">
       <header className="mx-auto flex w-full max-w-[900px] items-center justify-between px-4 pt-5 md:px-6">
         <a href="/decode" className="text-[length:var(--fs-3xs)] font-medium text-[var(--t3)]" aria-label="Back to the page">
           &larr; Back

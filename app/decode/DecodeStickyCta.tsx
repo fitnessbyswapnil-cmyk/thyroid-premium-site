@@ -112,7 +112,7 @@ export default function DecodeStickyCta({ fromTop = false }: { fromTop?: boolean
     <div
       ref={barRef}
       aria-hidden={!show}
-      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-4 pt-6 transition-transform duration-300"
+      className="decode-sticky-bar fixed inset-x-0 bottom-0 z-40 px-3 pb-4 pt-6 transition-transform duration-300"
       style={{
         transform: show ? "translateY(0)" : "translateY(110%)",
         // No bar. The button floats.

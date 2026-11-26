@@ -91,12 +91,12 @@ function Column({ tag, tagColor, tagBg, borderColor, title, lines, good }: {
       style={{
         border: `1px solid ${borderColor}`,
         background: good
-          ? "linear-gradient(180deg, rgba(255,201,30,0.05) 0%, rgba(255,255,255,0.02) 45%)"
-          : "rgba(255,255,255,0.02)",
+          ? "linear-gradient(180deg, rgba(255,201,30,0.05) 0%, var(--s1) 45%)"
+          : "var(--s1)",
       }}>
       <p className="m-0 inline-block rounded-lg px-2.5 py-1 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)]"
         style={{ color: tagColor, background: tagBg }}>{tag}</p>
-      <h3 className="mb-0 mt-3 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-white">{title}</h3>
+      <h3 className="mb-0 mt-3 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-[var(--t1)]">{title}</h3>
       <ul className="mt-5 flex list-none flex-col gap-3.5 p-0">
         {lines.map((line) => (
           <li key={line} className="flex gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)]"
@@ -128,7 +128,7 @@ export default function HashimotoProof() {
             <article
               key={h.name}
               className="rounded-2xl p-5 md:p-7"
-              style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.02)" }}
+              style={{ border: "1px solid var(--b-soft)", background: "var(--s1)" }}
             >
               <p className="m-0 text-[length:var(--fs-3xs)] font-bold tracking-[var(--ls-caps)] text-[var(--t2)]">
                 {h.detail}

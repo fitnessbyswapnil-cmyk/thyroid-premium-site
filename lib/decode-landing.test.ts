@@ -139,7 +139,8 @@ test("the page keeps its order, and the long argument stays off it", () => {
     // Was SymptomChips. Replaced 23-Sep by the comparison that answers "I have
     // tried five things already" — see the note above CompareSection.
     ["why nothing has worked", "<CompareSection />"],
-    ["proof: transformations", "<TransformationWall compact />"],
+    // 26-Nov: the clinic skin adds countUp; the marker matches with or without it.
+    ["proof: transformations", "<TransformationWall compact"],
     ["proof: videos", "<VideoTestimonial compact />"],
     // Added 25-Sep: prospects ask for Hashimoto's proof by name. Its own
     // guards live in lib/hashimoto-proof.test.ts.
@@ -149,6 +150,8 @@ test("the page keeps its order, and the long argument stays off it", () => {
     ["the method", 'id="method-heading"'],
     ["what you get", 'id="get-heading"'],
     ["how booking works", 'id="steps-heading"'],
+    // Added 26-Nov (owner): urgency from her own life, right before the fit list.
+    ["why now", 'id="now-heading"'],
     ["who this is for", 'id="fit-heading"'],
     ["FAQ", 'id="faq-heading"'],
   ] as const;
@@ -160,8 +163,21 @@ test("the page keeps its order, and the long argument stays off it", () => {
     previous = at;
   }
   const code = rendered("app/decode/page.tsx");
-  for (const gone of ["<DeficitDiagram", "<AbsolveBlock", "<ShareWithFamily", 'id="compare-heading"', "NOT_FOR_YOU"]) {
+  // NOT_FOR_YOU left this list on 26-Nov-2026: the owner asked for the
+  // "not for you" half of the fit section back, as a deliberate push filter.
+  for (const gone of ["<DeficitDiagram", "<AbsolveBlock", "<ShareWithFamily", 'id="compare-heading"']) {
     assert.ok(!code.includes(gone), `${gone} was removed on purpose — it lives on /decode-long`);
+  }
+});
+
+test("the push lists stay honest: no fake urgency, no price or decision filter", () => {
+  // Added 26-Nov with the "Why now" and "not for you" lists. Urgency on this
+  // page comes from her life, never from a slot count or a deadline.
+  for (const name of ["WHY_NOW", "NOT_FOR_YOU"]) {
+    const list = PAGE.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\] as const;`))?.[1] ?? "";
+    assert.ok(list.length > 0, `${name} must exist`);
+    assert.ok(!/limited|slot|spots|deadline|hurry|last chance|only \\d/i.test(list), `${name} must not invent scarcity`);
+    assert.ok(!/invest|₹|cost|afford|decision|husband/i.test(list), `${name} must not filter on money or who decides`);
   }
 });
 
@@ -215,7 +231,7 @@ test("the page's own words stay under budget", () => {
 test("proof is capped, and never cut", () => {
   assert.match(PAGE, /<WhatsappProofSection hideCta limit=\{3\} \/>/);
   // Faces and voices: owner's explicit call — never cut.
-  assert.ok(PAGE.includes("<TransformationWall compact />"));
+  assert.match(PAGE, /<TransformationWall compact( countUp)? \/>/);
   assert.ok(PAGE.includes("<VideoTestimonial compact />"));
   assert.equal((WALL.match(/src: "\/transformations\//g) ?? []).length, 4);
 });
