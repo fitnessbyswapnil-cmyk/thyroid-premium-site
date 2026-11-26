@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import CountUp from "./CountUp";
 import { useEffect, useState } from "react";
 
 import { useInView } from "../lib/useInView";
@@ -135,7 +136,7 @@ type WallEntry = (typeof WALL)[number];
 const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
 const COUNT_WORD = NUMBER_WORDS[WALL.length] ?? String(WALL.length);
 
-function Card({ entry, index }: { entry: WallEntry; index: number }) {
+function Card({ entry, index, countUp = false }: { entry: WallEntry; index: number; countUp?: boolean }) {
   const { ref, visible } = useInView(0.08);
   // Clarity, 14 days to 21-Sep: on /decode mobile both dead-click leaders were
   // these images (4 taps each, 53% of all dead taps between them) and four of
@@ -233,7 +234,9 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
           <span className="wall-figure">
             {entry.from} &rarr; {entry.to}
           </span>
-          <span className="wall-delta">&minus;{entry.kg}</span>
+          <span className="wall-delta">
+            &minus;{countUp && /^\d+ kg$/.test(entry.kg) ? <CountUp value={parseInt(entry.kg, 10)} suffix=" kg" /> : entry.kg}
+          </span>
         </p>
 
         <p className="mt-3 text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
@@ -274,7 +277,10 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
 
 /** `compact`: drops the line under the heading (the 100+ claim, already in the
  *  /decode hero). The cards and their words are never touched. Default off. */
-export default function TransformationWall({ compact = false }: { compact?: boolean } = {}) {
+export default function TransformationWall({
+  compact = false,
+  countUp = false,
+}: { compact?: boolean; countUp?: boolean } = {}) {
   return (
     <section
       className="cv-auto section-pad-tight relative bg-[var(--bg-elevated)]"
@@ -319,7 +325,7 @@ export default function TransformationWall({ compact = false }: { compact?: bool
             so all four must sit in the vertical scroll path. */}
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
           {WALL.map((entry, i) => (
-            <Card key={entry.src} entry={entry} index={i} />
+            <Card key={entry.src} entry={entry} index={i} countUp={countUp} />
           ))}
         </div>
 

@@ -139,7 +139,8 @@ test("the page keeps its order, and the long argument stays off it", () => {
     // Was SymptomChips. Replaced 23-Sep by the comparison that answers "I have
     // tried five things already" — see the note above CompareSection.
     ["why nothing has worked", "<CompareSection />"],
-    ["proof: transformations", "<TransformationWall compact />"],
+    // 26-Nov: the clinic skin adds countUp; the marker matches with or without it.
+    ["proof: transformations", "<TransformationWall compact"],
     ["proof: videos", "<VideoTestimonial compact />"],
     // Added 25-Sep: prospects ask for Hashimoto's proof by name. Its own
     // guards live in lib/hashimoto-proof.test.ts.
@@ -230,7 +231,7 @@ test("the page's own words stay under budget", () => {
 test("proof is capped, and never cut", () => {
   assert.match(PAGE, /<WhatsappProofSection hideCta limit=\{3\} \/>/);
   // Faces and voices: owner's explicit call — never cut.
-  assert.ok(PAGE.includes("<TransformationWall compact />"));
+  assert.match(PAGE, /<TransformationWall compact( countUp)? \/>/);
   assert.ok(PAGE.includes("<VideoTestimonial compact />"));
   assert.equal((WALL.match(/src: "\/transformations\//g) ?? []).length, 4);
 });
