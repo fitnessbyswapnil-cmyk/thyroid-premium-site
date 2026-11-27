@@ -2475,3 +2475,110 @@ a {
   border-color: #0e3f49;
   box-shadow: 0 0 0 1px #0e3f49;
 }
+
+/* ── 27-Nov: finishing the owner's design doc on /decode ───────────────── */
+
+/* Body 16px inside every band, the proof components included: their 14-15px
+   steps resolve to the 16-17px step here and nowhere else. */
+.theme-clinic .band-clinic,
+.theme-clinic .band-sand {
+  --fs-2xs: var(--fs-sm);
+  --fs-xs: var(--fs-sm);
+}
+
+/* Section rhythm 64px mobile / 112px desktop for every content section in a
+   band, the proof components' own sections included. Button rows keep their
+   own tight spacing, and a section that hands straight to a button row gives
+   up most of its bottom padding so the button stays with its proof. */
+.theme-clinic :is(.band-clinic, .band-sand) > section:not(.button-row) {
+  padding-top: clamp(4rem, 9vw, 7rem);
+  padding-bottom: clamp(4rem, 9vw, 7rem);
+}
+.theme-clinic :is(.band-clinic, .band-sand) > section:not(.button-row):has(+ .button-row) {
+  padding-bottom: 2rem;
+}
+
+/* Inter at 400/500 only (the doc): everything set in the body face that was
+   600 or 700 reads at 500 here. Headings are the serif and already 500. */
+.theme-clinic :is(.font-bold, .font-semibold):not(h1, h2, h3, .section-title),
+.theme-clinic .cta-button,
+.theme-clinic .section-label {
+  font-weight: 500;
+}
+
+/* Credential badges in the coach section. */
+.theme-clinic .cred-badge {
+  font-size: var(--fs-3xs);
+  font-weight: 500;
+  letter-spacing: var(--ls-caps);
+  color: #87580f;
+  background: #fbf1e0;
+  border: 1px solid rgba(224, 160, 66, 0.45);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+/* The one petrol band: white ink, amber button with ink label. */
+.theme-clinic .band-petrol {
+  background: #0e3f49;
+  --t1: #ffffff;
+  --t2: rgba(255, 255, 255, 0.78);
+  --t3: rgba(255, 255, 255, 0.78);
+  --cta-bg: #e0a042;
+  --cta-fg: #14282d;
+  --cta-sub-fg: #14282d;
+  --cta-sub-opacity: 0.85;
+  --cta-bg-hover: #eab25e;
+  --cta-bg-active: #d39434;
+  --cta-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.25);
+  --focus-ring: #e0a042;
+}
+.theme-clinic .band-petrol h2 {
+  color: #ffffff;
+}
+
+/* Results strip (Marquee's behaviour, CSS only). Two copies of the list
+   slide one width to the left and loop; hover pauses it. */
+.theme-clinic .results-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.theme-clinic .results-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: results-marquee 48s linear infinite;
+}
+.theme-clinic .results-marquee:hover .results-marquee__track {
+  animation-play-state: paused;
+}
+.theme-clinic .results-marquee__list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.theme-clinic .results-marquee__item {
+  white-space: nowrap;
+  color: var(--t2);
+  padding: 8px 14px;
+  margin-right: 10px;
+  border: 1px solid rgba(20, 40, 45, 0.1);
+  border-radius: 999px;
+  background: #ffffff;
+}
+@keyframes results-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-clinic .results-marquee {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .theme-clinic .results-marquee__track {
+    animation: none;
+  }
+}
