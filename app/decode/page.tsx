@@ -8,6 +8,7 @@ import CoachIntro from "./CoachIntro";
 import HashimotoProof, { HASHIMOTO_STORIES } from "@/app/components/HashimotoProof";
 import { COACH_IMAGE } from "@/app/lib/authority";
 import { FIRST_QUESTION } from "./first-question";
+import { HERO_FACES } from "./hero-faces";
 import RevealOnScroll from "./RevealOnScroll";
 
 /**
@@ -93,6 +94,7 @@ import RevealOnScroll from "./RevealOnScroll";
 const VideoTestimonial = dynamic(() => import("@/app/components/VideoTestimonial"));
 const TransformationWall = dynamic(() => import("@/app/components/TransformationWall"));
 const WhatsappProofSection = dynamic(() => import("@/app/components/WhatsappProofSection"));
+const ResultsMarquee = dynamic(() => import("@/app/components/TransformationWall").then((m) => m.ResultsMarquee));
 
 export const metadata: Metadata = {
   title: "Book your 1-1 Thyroid Consultation | Swapnil Umbarkar",
@@ -341,7 +343,7 @@ function ButtonQuote({ who, sentences = 1 }: { who: string; sentences?: number }
 
 function ButtonRow({ quote }: { quote?: string } = {}) {
   return (
-    <section className="px-4 pb-12 md:px-6">
+    <section className="button-row px-4 pb-12 md:px-6">
       <div className="mx-auto w-full max-w-[760px] text-center">
         <BookButton />
         {quote ? <ButtonQuote who={quote} /> : null}
@@ -437,7 +439,7 @@ export default function DecodePage() {
               text, and the video stays below the button so it cannot push the CTA
               down the page. Anything added to this hero in future goes BELOW the
               button, not above it. */}
-          <HeroProofStrip claimsOnly countUp face={COACH_IMAGE} />
+          <HeroProofStrip claimsOnly countUp face={COACH_IMAGE} faces={HERO_FACES} />
 
           <div className="mt-6 flex flex-col items-center">
             <a
@@ -507,6 +509,7 @@ export default function DecodePage() {
             </p>
             <HeroVideo cut="decode" />
           </div>
+          <ResultsMarquee />
         </div>
       </section>
 
@@ -659,7 +662,7 @@ export default function DecodePage() {
               ))}
             </ul>
             <p className="mx-auto mt-5 text-center text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">
-              Another year on the same plan gives the same result.
+              Same plan, same result.
             </p>
           </div>
         </section>
@@ -721,9 +724,17 @@ export default function DecodePage() {
           </div>
         </section>
 
-        {/* ── 9. Last button ───────────────────────────────────────────── */}
-        <section className="px-4 pt-4 text-center md:px-6">
+      </div>
+
+      {/* ── 9. Last button, on the page's ONE petrol band (owner's design
+          doc, 27-Nov). The button turns amber with ink text here (6.8:1),
+          the doc's own A/B colour, because a petrol button on petrol would
+          vanish; the sticky bar is hidden while this button is on screen, so
+          no screen ever shows two button styles. */}
+      <div className="band-petrol">
+        <section className="px-4 py-16 text-center md:px-6 md:py-28">
           <div className="mx-auto w-full max-w-[760px]">
+            <h2 className="m-0 mb-8 text-[length:var(--fs-2xl)] leading-[var(--lh-display)]">Find your blocker.</h2>
             <a
               href="/decode/quiz"
               className="cta-button mx-auto"
@@ -741,7 +752,9 @@ export default function DecodePage() {
             )}
           </div>
         </section>
+      </div>
 
+      <div className="band-clinic">
         {/* THE PAGE'S ONE EXIT. Every other link here goes to the quiz, and the
             page test enforces it; /privacy is the exception she is owed,
             because the next screen asks for her WhatsApp number and her

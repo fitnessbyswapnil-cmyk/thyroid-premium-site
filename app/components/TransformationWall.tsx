@@ -287,6 +287,36 @@ function Card({ entry, index, countUp = false, showAge = false }: { entry: WallE
   );
 }
 
+/**
+ * The results strip under the /decode hero (owner's design doc: Magic UI's
+ * Marquee, CSS only). It reads the wall's own data, so it can never say
+ * anything the cards do not, and it carries the results-vary line inside the
+ * loop: kilograms and a timeframe next to the hero need the qualifier where
+ * they are read (Meta Health and Wellness). Reduced motion: a still,
+ * swipeable row instead.
+ */
+export function ResultsMarquee() {
+  const items = [
+    ...WALL.map((w) => `${w.name}, ${w.age}${w.occupation ? ` \u00b7 ${w.occupation}` : ""} \u00b7 \u2212${w.kg} in 90 days`),
+    "Individual results vary",
+  ];
+  return (
+    <div className="results-marquee mx-auto mt-8 w-full max-w-[760px]" aria-label="Client results">
+      <div className="results-marquee__track">
+        {[0, 1].map((copy) => (
+          <ul key={copy} className="results-marquee__list" aria-hidden={copy === 1}>
+            {items.map((t) => (
+              <li key={t} className="results-marquee__item text-[length:var(--fs-3xs)]">
+                {t}
+              </li>
+            ))}
+          </ul>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** `compact`: drops the line under the heading (the 100+ claim, already in the
  *  /decode hero). The cards and their words are never touched. Default off. */
 export default function TransformationWall({

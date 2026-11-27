@@ -213,8 +213,9 @@ test("the coach section says only what the owner said, and the hype stays off", 
   // template rather than as him.
   assert.ok(!/no obligation|spots left|limited spots/i.test(rendered("app/decode/page.tsx")));
   assert.ok(COACH.includes("Scientific Thyroid Lean Method for fat loss"));
-  assert.match(COACH, /ACE<\/span> &middot; <span className="decode-gold">INFS<\/span>/);
-  assert.match(COACH, /BLS<\/span> certified/);
+  // 27-Nov: badges. Exactly the four he names in the /decode VSL, no more.
+  const creds = COACH.match(/\{\[([^\]]*)\]\.map\(\(c\) =>/)?.[1] ?? "";
+  assert.deepEqual([...creds.matchAll(/"([^"]+)"/g)].map((m) => m[1]), ["ACE", "INFS", "AIHM", "AHA BLS"]);
   // "50,000+ women trained" and the S.H.A.P.E. framework belong to the page this
   // one is benchmarked against. They are not his and never go on this page.
   // The keep-coaching-free guarantee USED to be banned by this same line; the

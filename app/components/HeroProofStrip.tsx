@@ -72,7 +72,8 @@ export default function HeroProofStrip({
   claimsOnly = false,
   countUp = false,
   face = "",
-}: { claimsOnly?: boolean; countUp?: boolean; face?: string } = {}) {
+  faces = [],
+}: { claimsOnly?: boolean; countUp?: boolean; face?: string; faces?: readonly string[] } = {}) {
   return (
     // All five items visible on a 390px screen with NO horizontal scrolling —
     // the old row overflowed, cutting quotes mid-word ("Lost 4.5 …") unless
@@ -87,15 +88,30 @@ export default function HeroProofStrip({
             {/* /decode only: the coach's face where the left rule was, same
                 height, so the hero button does not move (Cialdini: liking). */}
             {face ? (
-              <Image
-                src={face}
-                alt="Coach Swapnil"
-                width={44}
-                height={44}
-                priority
-                className="h-11 w-11 shrink-0 rounded-full object-cover"
-                style={{ boxShadow: "0 0 0 2px #ffffff, 0 0 0 3px var(--p-border)" }}
-              />
+              <span className="flex shrink-0 items-center">
+                <Image
+                  src={face}
+                  alt="Coach Swapnil"
+                  width={44}
+                  height={44}
+                  priority
+                  className="relative z-10 h-11 w-11 rounded-full object-cover"
+                  style={{ boxShadow: "0 0 0 2px #ffffff, 0 0 0 3px var(--p-border)" }}
+                />
+                {/* Clients he coached, cropped from their own published after
+                    photos (TransformationWall), stacked behind him. */}
+                {faces.map((src, n) => (
+                  <Image
+                    key={src}
+                    src={src}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="-ml-3 h-10 w-10 rounded-full object-cover"
+                    style={{ zIndex: 9 - n, position: "relative", boxShadow: "0 0 0 2px #ffffff" }}
+                  />
+                ))}
+              </span>
             ) : (
               <Rule />
             )}
