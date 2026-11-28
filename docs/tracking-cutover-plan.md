@@ -91,7 +91,6 @@ if the sGTM PageView tag carries the head id (§4-B step B2/B3).
 | GTM "Meta Pixel – Lead (Browser)" | web GTM | Browser | **GTM: check.** Memory from 07-Sep notes the event-id variables are inconsistent (`{{DL - event_id}}` / `{{js – Persistent Lead ID}}` / `{{DLV - event_id}}`). | Carries advanced matching (em/ph/external_id/fn). |
 | `/api/events` Lead | `ScheduleClient` (no-existing-lead path), `QuizFunnel`, `QualifyingFlow`, `BookingFlow` | Server | same `lead_…` as the push | **Not sent from the live `/decode` gate**: `DecodeQuiz` calls `trackLead` only. |
 | Stape CAPI Lead | sGTM | Server | **GTM: check** | |
-| `/api/tally-webhook` | legacy Tally form | Server | form's `event_id` or `Lead_tally_<id>` | |
 
 Dedup on the live gate is decided entirely by the GTM Lead tag and the sGTM
 Lead tag. They pair only if both read the dataLayer `event_id`. Where

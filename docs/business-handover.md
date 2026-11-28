@@ -80,7 +80,7 @@ by opening the image.
 |---|---|
 | Payments | `/api/create-cashfree-order`, `/api/verify-payment`, `/api/cashfree-webhook` |
 | Booking | `/api/booking`, `/api/booking-access`, `/api/cal-webhook` |
-| Leads | `/api/lead`, `/api/leads`, `/api/leads/[leadId]`, `/api/quiz-lead`, `/api/tally-webhook` |
+| Leads | `/api/lead`, `/api/leads`, `/api/leads/[leadId]`, `/api/quiz-lead` |
 | Tracking | `/api/events` — browser-to-CAPI bridge |
 | WhatsApp | `/api/whatsapp-webhook`, and under `/api/admin/`: broadcast, messages, send-template, templates, wa-account, wa-migrate, whatsapp-status |
 | Admin / cron | `/api/admin/dashboard`, `/api/admin/ads`, `/api/admin/digest`, `/api/admin/mark`, `/api/cron/payment-reminder` |
@@ -171,7 +171,7 @@ the admin dashboard.
 `META_ADS_TOKEN`, `META_AD_ACCOUNT_ID`, `META_CAPI_TOKEN`, `META_PIXEL_ID`,
 `META_TEST_EVENT_CODE`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GTM_ID`,
 `NEXT_PUBLIC_SGTM_URL`, `NEXT_PUBLIC_VSL_URL`, `NEXT_PUBLIC_WHATSAPP_NUMBER`,
-`TALLY_SIGNING_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_AUTOREPLY`,
+`WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_AUTOREPLY`,
 `WHATSAPP_AUTOREPLY_COOLDOWN_HOURS`, `WHATSAPP_PHONE_NUMBER_ID`,
 `WHATSAPP_TEMPLATE_LANG`, `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN`,
 `WHATSAPP_WABA_ID`, `WINDSOR_API_KEY`

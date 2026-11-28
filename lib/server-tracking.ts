@@ -3,7 +3,6 @@
  *
  * Use from:
  *  - app/api/events/route.ts     (generic event endpoint)
- *  - app/api/tally-webhook/route.ts
  *  - app/api/cal-webhook/route.ts
  *  - app/api/cashfree-webhook/route.ts
  *
