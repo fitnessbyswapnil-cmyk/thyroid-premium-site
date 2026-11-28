@@ -62,7 +62,29 @@
 import { canonicalEmail, isOwnerTest } from "./owner-filter.ts";
 import { SCORECARD_KEYS, labelFor } from "./scorecard.ts";
 
+/**
+ * One payment of this much or more is programme revenue and a win (decision 2).
+ *
+ * Since D6 (28-Nov-2026) every Cashfree payment is a programme payment, and
+ * /api/cashfree-webhook ADDS each new one to her Paid Amount (lib/payment-row).
+ * So ₹15,000 + ₹5,000 reads as ₹20,000 here, in either order.
+ *
+ * OPEN for the owner (PR #194 review, 28-Nov-2026), and unchanged until he
+ * answers: a ₹5,000 `thyroid`-form payment ON ITS OWN is still "other
+ * payments", neither revenue nor a win, until her total reaches ₹15,000 or he
+ * marks the sale in Today. This rule is from 14-Sep, before D6. Counting a lone
+ * part-payment as revenue would also count the ₹2,000–₹12,000 form payments
+ * from before D6, which sit in the same column with nothing to tell them
+ * apart. Change it only with him.
+ */
 export const PROGRAMME_MIN_AMOUNT = 15000;
+/**
+ * ₹299 and under: the "₹299 fees" line, never revenue, never a win. Since D6
+ * no consultation fee is charged, so a new payment this small can only be a
+ * ₹1 test form (deactivated under D1) or a leftover ₹299 API order. On her row
+ * a stored amount this small is replaced by her next payment, not added to
+ * (lib/payment-row), so a fee never folds into programme money.
+ */
 export const CONSULT_MAX_AMOUNT = 299;
 /** A slot this many minutes past its start, with no recording, may be judged. */
 export const NO_SHOW_GRACE_MIN = 90;

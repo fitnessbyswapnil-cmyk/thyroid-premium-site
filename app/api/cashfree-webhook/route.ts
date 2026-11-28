@@ -20,11 +20,23 @@
  * was asked to pick a consultation slot. Nothing is sent to correct events
  * already sent: Meta events are never offset.
  *
+ * A programme fee paid in parts is ADDED up on her row (lib/payment-row): on
+ * 23-Nov one client paid ₹15,000 and then ₹5,000, and her Paid Amount must
+ * read ₹20,000, not the last part. Paid At and Status describe the latest
+ * payment; Payment Ref lists every reference on the row. A replay of any of
+ * them, or the same payment arriving on a second webhook channel, is not
+ * added again.
+ *
  * How lib/metrics counts what this writes: it classifies Paid Amount, not this
  * route. ₹15,000 and over is programme revenue and a win; ₹300–₹14,999 is
- * "other payments" until he marks the sale in Today; ₹299 and under lands on
- * the "₹299 fees" line (never revenue), where the historical consultation fees
- * live — a new one can only be a ₹1 test form or a leftover ₹299 order.
+ * "other payments" until her total reaches ₹15,000 or he marks the sale in
+ * Today (whether a lone part-payment should count is an open question for the
+ * owner, recorded at PROGRAMME_MIN_AMOUNT); ₹299 and under lands on the "₹299
+ * fees" line (never revenue), where the historical consultation fees live — a
+ * new one can only be a ₹1 test form or a leftover ₹299 order.
+ *
+ * Logs: a reference can carry her phone number, so every ref goes through
+ * refForLog and every logged payload through redactForLog (lib/cashfree-log).
  *
  * CASHFREE SETUP:
  *  1. Cashfree Dashboard → Developers → Webhooks (Payment Gateway, Payment
@@ -47,7 +59,9 @@ import {
   MATCH_COLUMNS,
   RESERVED_INDEXES,
 } from '@/lib/lead-sheet'
-import { headerCellWrites } from '@/lib/header-cells'
+import { headerAppendRefusal, headerCellWrites, LEADS_MIN_WIDTH } from '@/lib/header-cells'
+import { planPaidRow, refCellValue } from '@/lib/payment-row'
+import { maskText, redactForLog, refForLog } from '@/lib/cashfree-log'
 import { google } from 'googleapis'
 import { googleClientOptions } from '@/lib/google-fetch'
 
@@ -145,9 +159,35 @@ async function recordPaymentInSheet(data: {
   // never a rewrite of row 1: writing the whole row back is how a short read
   // overwrote four live headers on 24-Sep. The grid has a fixed width, so it
   // is widened first or the write fails with "exceeds grid limits".
+  //
+  // "Past the last column" is only as good as the read. A header read that is
+  // narrower than the tab, or a target column that already holds data, means
+  // the indexes are wrong, so nothing is written to the sheet at all and the
+  // payment is left to the ledger, which still records it below.
   if (plan.newHeaders.length > 0) {
+    const titles = plan.newHeaders.map((h) => h.title).join(', ')
+    const refuse = (why: string): PaymentRecordResult => {
+      console.error(`[cashfree-webhook] NOT appending header(s) ${titles}: ${why}. Payment not written to the sheet (ref=${refForLog(data.refId)}).`)
+      return 'failed'
+    }
+    const tooNarrow = headerAppendRefusal({ headerLength: header.length, minWidth: LEADS_MIN_WIDTH, newHeaders: plan.newHeaders })
+    if (tooNarrow) return refuse(tooNarrow)
+
     const widest = Math.max(...plan.newHeaders.map((h) => h.index))
     await ensureGridColumns(sheets, sheetId, LEADS_SHEET_NAME, widest)
+    const targets = await sheets.spreadsheets.values.batchGet({
+      spreadsheetId: sheetId,
+      majorDimension: 'COLUMNS',
+      ranges: plan.newHeaders.map((h) => `${LEADS_SHEET_NAME}!${colLetter(h.index)}:${colLetter(h.index)}`),
+    })
+    const occupied = headerAppendRefusal({
+      headerLength: header.length,
+      minWidth: LEADS_MIN_WIDTH,
+      newHeaders: plan.newHeaders,
+      targetColumns: plan.newHeaders.map((_, k) => targets.data.valueRanges?.[k]?.values?.[0] ?? []),
+    })
+    if (occupied) return refuse(occupied)
+
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: sheetId,
       requestBody: {
@@ -158,43 +198,53 @@ async function recordPaymentInSheet(data: {
     console.log(`[cashfree-webhook] appended header cell(s): ${plan.newHeaders.map((h) => `${colLetter(h.index)}1 ${h.title}`).join(', ')}`)
   }
 
+  // This payment alone, on a fresh or orphan row. On a row that already holds
+  // a payment, Paid Amount becomes her running total and Payment Ref the list
+  // of every reference on the row (lib/payment-row).
   const paidCells: Record<string, string> = {
     Paid: 'Y',
     'Paid Amount': String(data.amount),
     'Paid At': paidAt,
-    'Payment Ref': data.refId,
+    'Payment Ref': refCellValue(data.refId),
   }
 
   if (rowNumber) {
-    // Durable duplicate guard: if this lead's row is already stamped Paid on
-    // this reference, a second webhook for the same payment (e.g. the gateway
-    // AND the link channel both firing) must not record it again.
-    const paidIndex = plan.indexes['Paid']
-    const refIndex = plan.indexes['Payment Ref']
+    // Durable duplicate guard, and the running total (lib/payment-row). The
+    // row may already hold a payment:
+    //  - on this reference (a replay: Payment Ref lists every reference on
+    //    the row), or with no stored reference (written before the Payment Ref
+    //    column existed): not recorded again;
+    //  - the same amount on another reference seconds ago: the same payment
+    //    arriving on a second webhook channel, not recorded again;
+    //  - an earlier part of her programme fee: ADDED, so ₹15,000 then ₹5,000
+    //    reads ₹20,000. Keying on the Paid flag alone used to drop the second
+    //    part, and overwriting used to keep only the second part.
     const existing = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: `${LEADS_SHEET_NAME}!${rowNumber}:${rowNumber}`,
     })
     const existingRow = (existing.data.values?.[0] ?? []).map((c) => String(c ?? ''))
-    const storedRef = (existingRow[refIndex] ?? '').trim()
-    // Compare the stored reference, not just the Paid flag. Keying on the flag
-    // alone dropped every later payment on an already-paid lead — a programme
-    // fee paid in two parts (₹15,000 then ₹5,000, say) is two references, and
-    // the second must still be recorded. A blank stored ref keeps the old,
-    // cautious behaviour: rows written before this column existed still dedupe
-    // on Paid.
-    //
-    // KNOWN: the row holds ONE payment. A second reference overwrites Paid
-    // Amount / Paid At / Payment Ref with its own; the D1 ledger keeps both,
-    // and marking the sale in Today records the real total.
-    if ((existingRow[paidIndex] ?? '').trim().toUpperCase() === 'Y'
-        && (!storedRef || storedRef === data.refId)) {
-      console.log(`[cashfree-webhook] Lead row ${rowNumber} already paid on this reference — not re-recording (ref=${data.refId})`)
+    const stored = (title: string) => existingRow[plan.indexes[title]] ?? ''
+    const rowPlan = planPaidRow(
+      {
+        paid: stored('Paid'),
+        ref: stored('Payment Ref'),
+        amount: stored('Paid Amount'),
+        at: stored('Paid At'),
+        status: existingRow[STATUS_COLUMN] ?? '',
+      },
+      { refId: data.refId, amount: data.amount },
+      Date.now(),
+    )
+    if (rowPlan.action === 'duplicate') {
+      console.log(`[cashfree-webhook] Lead row ${rowNumber} already holds this payment (${rowPlan.reason}) — not re-recording (ref=${refForLog(data.refId)})`)
       return 'already_paid'
     }
-    if ((existingRow[paidIndex] ?? '').trim().toUpperCase() === 'Y') {
-      console.log(`[cashfree-webhook] Lead row ${rowNumber} was paid on ${storedRef}, now paying on ${data.refId} — recording as a new payment`)
+    if (rowPlan.reason !== 'first') {
+      console.log(`[cashfree-webhook] Lead row ${rowNumber} already held a payment; new payment ${refForLog(data.refId)} → Paid Amount ${rowPlan.paidAmount} (${rowPlan.reason})`)
     }
+    paidCells['Paid Amount'] = String(rowPlan.paidAmount)
+    paidCells['Payment Ref'] = refCellValue(rowPlan.paymentRef)
 
     const cells: { index: number; value: string }[] = [
       { index: STATUS_COLUMN, value: statusValue },
@@ -211,12 +261,12 @@ async function recordPaymentInSheet(data: {
         })),
       },
     })
-    console.log(`[cashfree-webhook] Payment recorded on existing lead row ${rowNumber} (ref=${data.refId})`)
+    console.log(`[cashfree-webhook] Payment recorded on existing lead row ${rowNumber} (ref=${refForLog(data.refId)})`)
     return 'updated'
   }
 
   // No matching lead — append, clearly marked, so it is visible rather than lost.
-  console.warn(`[cashfree-webhook] No lead row matched for ref=${data.refId} leadId=${data.leadId || 'n/a'} — appending orphan row`)
+  console.warn(`[cashfree-webhook] No lead row matched for ref=${refForLog(data.refId)} leadId=${refForLog(data.leadId) || 'n/a'} — appending orphan row`)
 
   const width = plan.header.length
   const row = new Array<string>(width).fill('')
@@ -280,24 +330,26 @@ export async function POST(req: NextRequest) {
     try {
       body = rawBody ? JSON.parse(rawBody) : {}
     } catch {
-      console.error('[cashfree-webhook] Unparseable body:', rawBody.slice(0, 1000))
+      console.error(`[cashfree-webhook] Unparseable body (${rawBody.length} chars):`, maskText(rawBody.slice(0, 1000)))
       return NextResponse.json({ ok: true, ignored: 'unparseable' })
     }
 
     const { source, status, payment } = normalize(body)
 
     if (source === 'UNKNOWN') {
-      console.warn('[cashfree-webhook] Unrecognised payload shape:', JSON.stringify(body).slice(0, 2000))
+      console.warn('[cashfree-webhook] Unrecognised payload shape:', JSON.stringify(redactForLog(body)).slice(0, 2000))
       return NextResponse.json({ ok: true, ignored: 'unknown_shape' })
     }
 
     if (!payment) {
-      // Log the FULL body, not a summary. Cashfree's Payment Form payload shape
-      // is still unobserved in production, and a summary line can never reveal
-      // it — which is exactly how it stayed unknown through two registrations.
+      // Log the whole body's SHAPE, not a summary. Cashfree's Payment Form
+      // payload shape is still unobserved in production, and a summary line can
+      // never reveal it — which is exactly how it stayed unknown through two
+      // registrations. Every key, id, status and amount is kept; her name,
+      // email and phone are redacted (lib/cashfree-log).
       console.log(
         `[cashfree-webhook] ${source} event, status "${status || 'n/a'}" — no action. Body: ` +
-          JSON.stringify(body).slice(0, 4000),
+          JSON.stringify(redactForLog(body)).slice(0, 4000),
       )
       return NextResponse.json({ ok: true, source, status, skipped: true })
     }
@@ -309,7 +361,7 @@ export async function POST(req: NextRequest) {
 
     // Idempotency — return 200 so Cashfree stops retrying
     if (processedOrders.has(payment.refId)) {
-      console.log(`[cashfree-webhook] Duplicate ${source} ${payment.refId} — skipping`)
+      console.log(`[cashfree-webhook] Duplicate ${source} ${refForLog(payment.refId)} — skipping`)
       return NextResponse.json({ ok: true, duplicate: true })
     }
     processedOrders.add(payment.refId)
@@ -359,7 +411,7 @@ export async function POST(req: NextRequest) {
       }
       after(async () => {
         const written = await recordPayment(ledgerDb, ledgerRow)
-        console.log(`[cashfree-webhook] ledger payment ref=${ledgerRow.orderRef} status=${ledgerRow.status} → ${written}`)
+        console.log(`[cashfree-webhook] ledger payment ref=${refForLog(ledgerRow.orderRef)} status=${ledgerRow.status} → ${written}`)
       })
     }
 
@@ -369,7 +421,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Recorded, and that is all. No Meta event and no WhatsApp: see the header.
-    // (No ref in this line: a form ref can carry her phone number.)
     console.log(`[cashfree-webhook] ${source} payment of ${payment.amount} ${payment.currency} recorded as a programme payment (sheet=${sheetResult})`)
     return NextResponse.json({ received: true, source, leadId, sheet: sheetResult })
   } catch (err) {
