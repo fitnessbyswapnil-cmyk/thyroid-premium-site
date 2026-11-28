@@ -945,6 +945,9 @@ export type CallReminderColumns = {
   bookingStatus: number;
   /** Per-stage stamp column, so 24h and 1h can never suppress each other. */
   reminderSent: number;
+  /** Her email, a second way to find her booking in Cal.com besides her
+   *  phone. -1 or absent when the sheet has no Email column. */
+  email?: number;
 };
 
 export type CallReminderSkips = {
@@ -962,7 +965,138 @@ export type CallReminderSkips = {
   noPhone: number;
   duplicatePhone: number;
   overCap: number;
+  // The four below are rows that were otherwise due. See CallReminderCalGate.
+  /** Cal.com could not be read this run, so nothing was sent. */
+  calUnavailable: number;
+  /** Cal.com shows her booking cancelled and no live one. */
+  calCancelled: number;
+  /** She has a live booking in Cal.com, but not at the time the sheet shows. */
+  calRescheduled: number;
+  /** Cal.com has no live booking under her phone or email. */
+  calNoBooking: number;
 };
+
+/**
+ * What Cal.com says about the calls still coming, for the call reminders.
+ *
+ * WHY THE SHEET IS NOT ENOUGH. The reminders read Session Date and Booking
+ * Status from the Leads sheet, and Make wrote those cells. Make is retired
+ * (D3), and /api/cal-webhook does not write cancels or reschedules yet, so
+ * nobody records either one in the sheet. A woman who cancelled in Cal.com
+ * still has her old slot there and would be told her call starts in one hour.
+ *
+ * So a reminder goes out only when Cal.com itself has a live booking for her
+ * (matched by phone or email) that starts at the time the sheet shows. Anything
+ * else is held, and the reason is counted:
+ *
+ *   gate is null      Cal.com could not be read. Nothing is sent this run.
+ *   live, other time  She rescheduled. The sheet still has the old slot, and
+ *                     the per-row stamps belong to that old slot, so a send
+ *                     now would name the wrong time. Held until the sheet
+ *                     shows the new slot.
+ *   cancelled only    She cancelled.
+ *   nothing at all    Cal.com does not know this call. Held too: Cal.com is
+ *                     the only booking path, and a cancellation that missed
+ *                     the one page of cancelled bookings looks exactly like
+ *                     this.
+ *
+ * Holding is the safe failure. Cal.com's own 24-hour and 1-hour emails stay on
+ * until the WhatsApp reminders are proven (intended-flow §8), so a held
+ * reminder still reaches her by email, and Cal.com's emails already follow
+ * cancels and reschedules.
+ */
+export type CallReminderCalGate = {
+  /** Start instant (epoch ms) of every live Cal.com booking, keyed by her
+   *  lower-case email AND by phoneKey() of her phone. An email always has an
+   *  "@" and a phone key is ten digits, so one map holds both safely. */
+  activeStarts: ReadonlyMap<string, readonly number[]>;
+  /** Emails and phone keys whose Cal.com booking was cancelled. Used only to
+   *  name the skip: a live booking always outranks it. */
+  cancelled: ReadonlySet<string>;
+};
+
+/** Two instants this close are the same slot. The live event's slots are an
+ *  hour apart (slot interval = event length), and the sheet keeps the slot to
+ *  the minute, so 5 minutes can only absorb drift, never a real move. */
+export const CAL_SAME_SLOT_TOLERANCE_MS = 5 * 60000;
+
+/** The fetchCalBookingState() fields the gate reads. */
+export type CalStateForCallReminders = {
+  state: {
+    activeStarts: ReadonlyMap<string, readonly number[]>;
+    cancelled: ReadonlySet<string>;
+    cancelledPhones: ReadonlySet<string>;
+  };
+  status: { source: string; error: string };
+};
+
+/**
+ * The gate for this run, or null when Cal.com's answer cannot be trusted:
+ * the fetch threw, no API answered (source "none", which includes an unset
+ * CAL_API_KEY), or the read came back with an error. Null means no call
+ * reminder goes out at all this run.
+ */
+export function callReminderGateFrom(cal: CalStateForCallReminders | null | undefined): CallReminderCalGate | null {
+  if (!cal || cal.status.source === "none" || cal.status.error) return null;
+  return {
+    activeStarts: cal.state.activeStarts,
+    cancelled: new Set([...cal.state.cancelled, ...cal.state.cancelledPhones]),
+  };
+}
+
+/** The Cal.com booking fields her phone can sit in. */
+export type CalBookingPhoneFields = {
+  attendees?: { phoneNumber?: string }[];
+  responses?: Record<string, unknown>;
+  bookingFieldsResponses?: Record<string, unknown>;
+};
+
+/** A booking-field value, which Cal.com sends either bare or as {value}. */
+function calFieldText(v: unknown): string {
+  if (typeof v === "string") return v.trim();
+  if (v && typeof v === "object" && "value" in (v as Record<string, unknown>)) {
+    const inner = (v as { value?: unknown }).value;
+    return typeof inner === "string" ? inner.trim() : "";
+  }
+  return "";
+}
+
+/**
+ * phoneKey() of every phone the booker gave Cal.com: attendees[0].phoneNumber
+ * and the attendeePhoneNumber / phone booking fields. The booking page fills
+ * attendeePhoneNumber from her quiz number, so this is what matches her row.
+ * Guests (later attendees) are left out: a guest's number must never confirm
+ * or cancel somebody else's call.
+ */
+export function calBookingPhoneKeys(b: CalBookingPhoneFields): string[] {
+  const fields = { ...(b.responses ?? {}), ...(b.bookingFieldsResponses ?? {}) };
+  const raw = [
+    String(b.attendees?.[0]?.phoneNumber ?? ""),
+    calFieldText(fields.attendeePhoneNumber),
+    calFieldText(fields.phone),
+  ];
+  return [...new Set(raw.map(phoneKey).filter(Boolean))];
+}
+
+type CalVerdict = "confirmed" | "calUnavailable" | "calCancelled" | "calRescheduled" | "calNoBooking";
+
+function calVerdict(
+  cal: CallReminderCalGate | null,
+  row: string[],
+  cols: CallReminderColumns,
+  sessionAt: number,
+): CalVerdict {
+  if (!cal) return "calUnavailable";
+  const email = cell(row, cols.email ?? -1).toLowerCase();
+  const keys = [email.includes("@") ? email : "", phoneKey(cell(row, cols.phone))].filter(Boolean);
+  const starts = keys.flatMap((k) => cal.activeStarts.get(k) ?? []);
+  // A live booking at the sheet's slot wins, even if an older booking of hers
+  // was cancelled: that is a woman who cancelled and booked again.
+  if (starts.some((s) => Math.abs(s - sessionAt) <= CAL_SAME_SLOT_TOLERANCE_MS)) return "confirmed";
+  if (starts.length) return "calRescheduled";
+  if (keys.some((k) => cal.cancelled.has(k))) return "calCancelled";
+  return "calNoBooking";
+}
 
 export type CallReminderCandidate = {
   rowNumber: number;
@@ -1085,8 +1219,12 @@ export function planCallReminders(opts: {
    *  minutes before the call if its stamp somehow never landed. */
   notWithinHours: number;
   limit?: number;
+  /** Cal.com's live and cancelled bookings, from callReminderGateFrom().
+   *  Required, and null means Cal.com could not be read: then nothing is
+   *  sent. There is no way to call this without the gate. */
+  cal: CallReminderCalGate | null;
 }): CallReminderPlan {
-  const { rows, cols, now, withinHours, notWithinHours, limit = CALL_REMINDER_LIMIT } = opts;
+  const { rows, cols, now, withinHours, notWithinHours, limit = CALL_REMINDER_LIMIT, cal } = opts;
 
   const skipped: CallReminderSkips = {
     noSession: 0,
@@ -1099,6 +1237,10 @@ export function planCallReminders(opts: {
     noPhone: 0,
     duplicatePhone: 0,
     overCap: 0,
+    calUnavailable: 0,
+    calCancelled: 0,
+    calRescheduled: 0,
+    calNoBooking: 0,
   };
 
   const claimedPhones = new Set<string>();
@@ -1147,6 +1289,13 @@ export function planCallReminders(opts: {
     }
     if (hoursUntil <= notWithinHours) {
       skipped.tooLate++;
+      continue;
+    }
+
+    // Last, so these counts are exactly the reminders Cal.com held back.
+    const verdict = calVerdict(cal, row, cols, sessionAt);
+    if (verdict !== "confirmed") {
+      skipped[verdict]++;
       continue;
     }
 

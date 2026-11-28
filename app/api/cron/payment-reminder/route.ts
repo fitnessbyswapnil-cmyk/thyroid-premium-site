@@ -48,6 +48,7 @@ import {
   planBookingNudges,
   planFreeBookingNudges,
   planCallReminders,
+  callReminderGateFrom,
   formatSessionTimeIST,
   firstNameOf,
   BOOKING_NUDGE_STAGE1_MAX_DAYS,
@@ -311,7 +312,13 @@ export async function GET(req: NextRequest) {
     // not fatal — planReminders falls back to those columns — but it is
     // reported in the summary so a dry run shows the gate running degraded
     // rather than silently weakened.
+    //
+    // The call reminders are the exception: they FAIL CLOSED. Without Cal.com
+    // nobody knows who cancelled (Make is retired and the webhook does not
+    // record cancels yet), so a failed read sends no call reminder this run.
+    // Cal.com's own reminder emails still go out. See CallReminderCalGate.
     const cal = await fetchCalBookingState().catch(() => null);
+    const callGate = callReminderGateFrom(cal);
 
     const cols: ReminderColumns = {
       timestamp: 0, // pinned column A, written by the quiz on create
@@ -437,6 +444,10 @@ export async function GET(req: NextRequest) {
     // has no header, so it can only be resolved positionally. Session Date is
     // itself resolved by name with a positional fallback, so this rides on
     // whatever that lands on and stays correct if the sheet shifts.
+    //
+    // The sheet's slot is only a proposal. Each one is checked against
+    // Cal.com's live bookings (callGate), so a cancelled or moved call is held
+    // even though the sheet still shows it.
     const sessionDateCol = byNameOr("Session Date", SESSION_DATE_FALLBACK);
     const callColsBase = {
       name: 2,
@@ -444,15 +455,29 @@ export async function GET(req: NextRequest) {
       sessionDate: sessionDateCol,
       sessionTime: sessionDateCol + 1,
       bookingStatus: byNameOr("Booking Status", BOOKING_STATUS_FALLBACK),
+      email: findCol(header, "Email"),
     };
     const call24Cols: CallReminderColumns = { ...callColsBase, reminderSent: findCol(header, CALL24_SENT_TITLE) };
     const call24Plan = planCallReminders({
-      rows, cols: call24Cols, now: Date.now(), withinHours: 24, notWithinHours: 2,
+      rows, cols: call24Cols, now: Date.now(), withinHours: 24, notWithinHours: 2, cal: callGate,
     });
     const call1Cols: CallReminderColumns = { ...callColsBase, reminderSent: findCol(header, CALL1_SENT_TITLE) };
     const call1Plan = planCallReminders({
-      rows, cols: call1Cols, now: Date.now(), withinHours: 1, notWithinHours: 0,
+      rows, cols: call1Cols, now: Date.now(), withinHours: 1, notWithinHours: 0, cal: callGate,
     });
+    const heldForCal = (s: typeof call24Plan.skipped) => ({
+      calUnavailable: s.calUnavailable,
+      calCancelled: s.calCancelled,
+      calRescheduled: s.calRescheduled,
+      calNoBooking: s.calNoBooking,
+    });
+    if (!callGate && (call24Plan.skipped.calUnavailable || call1Plan.skipped.calUnavailable)) {
+      console.warn(
+        `[payment-reminder] call reminders held: Cal.com booking state unavailable ` +
+          `(${cal?.status.source ?? "threw"}: ${cal?.status.error || "no error text"}) — ` +
+          `24h=${call24Plan.skipped.calUnavailable} 1h=${call1Plan.skipped.calUnavailable} not sent this run`,
+      );
+    }
 
     const summary = {
       dryRun,
@@ -476,6 +501,14 @@ export async function GET(req: NextRequest) {
         calKeySet: cal?.status.keySet ?? false,
         calUpcoming: cal?.state.active.size ?? 0,
         calError: cal?.status.error ?? "fetchCalBookingState threw",
+      },
+      // The call reminders' gate, in every response, live runs included.
+      // `open: false` means Cal.com could not be read and NO call reminder went
+      // out this run (Cal.com's own emails still did). The counts are reminders
+      // that were otherwise due and were held by what Cal.com says.
+      callReminderGate: {
+        open: callGate !== null,
+        held: { h24: heldForCal(call24Plan.skipped), h1: heldForCal(call1Plan.skipped) },
       },
       // ?debug=1 with ?dryRun=1 shows why rows fell out. The counts alone
       // cannot distinguish "correctly gated free-funnel lead" from "paid-funnel
@@ -591,7 +624,8 @@ export async function GET(req: NextRequest) {
           `reminders2=${JSON.stringify(plan2.skipped)} nudges=${JSON.stringify(nudgePlan.skipped)} ` +
           `nudges2=${JSON.stringify(nudge2Plan.skipped)} ` +
           `freeNudges=${JSON.stringify(freeNudgePlan.skipped)} ` +
-          `freeNudges2=${JSON.stringify(freeNudge2Plan.skipped)}`,
+          `freeNudges2=${JSON.stringify(freeNudge2Plan.skipped)} ` +
+          `calls24=${JSON.stringify(call24Plan.skipped)} calls1=${JSON.stringify(call1Plan.skipped)}`,
       );
       return NextResponse.json({ ...summary, sent: 0, failed: 0, results: [] });
     }
