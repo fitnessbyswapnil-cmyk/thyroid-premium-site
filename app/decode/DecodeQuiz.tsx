@@ -27,8 +27,10 @@
  * pay, and defeats the only reason the fee exists. That reasoning is not wrong,
  * it was outweighed: the Rs 299 was filtering out women who would have come,
  * and the competitor this page is benchmarked against sells the same call with
- * no fee at all. So the fee is off the cold path and the filtering falls to the
- * quiz gate above instead.
+ * no fee at all. So the fee is off the cold path. The quiz's timing gate does
+ * not filter either: since D7 (28-Nov-2026) a "not now" answer changes how the
+ * booking is framed and which WhatsApp nudge follows, never whether she may
+ * book. See lib/decode-gate.ts.
  *
  * What that means in code: ScheduleClient still captures the lead, still fires
  * Lead, still writes the sheet row and NATIVE_BOOKING_KEY, and then goes
@@ -55,7 +57,7 @@ import {
   partnerOnCallValue,
 } from "@/lib/decode-commitment";
 import {
-  NURTURE_DESTINATION,
+  NURTURE_INSTAGRAM_URL,
   gateOutcome,
   isNurtureGated,
   normalizeGateOutcome,
@@ -207,9 +209,10 @@ function toLeadAnswers(a: A) {
 
 /**
  * Remembering the gate outcome is what keeps browser Back, a reload and the
- * WhatsApp resume link from landing a gated-out woman back on the checkout she
- * was just told is not for her today. The live answers decide on the way
- * through; this only has to survive the page going away and coming back.
+ * WhatsApp resume link showing a "not now" woman the same no-rush screen she
+ * was given, rather than the version written for a woman starting this week.
+ * The live answers decide on the way through; this only has to survive the
+ * page going away and coming back.
  *
  * Keyed by leadId so one device can hold more than one, and every access is
  * wrapped: a browser in private mode throws on the accessor itself, and that
@@ -290,8 +293,8 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
             setAlready({ paid: !!d.paid, booked: !!d.booked, sessionDate: d.sessionDate ?? "" });
           }
           // The sheet outranks this device: a resume link opened on another
-          // phone must land her on the masterclass, not the checkout the gate
-          // already withheld. Nothing here can re-open it, only close it.
+          // phone must show her the no-rush screen she was given. Nothing here
+          // can turn "not now" back into eligible, only the other way.
           if (d && isNurtureGated(d.gate)) {
             setRemembered("nurture_timing");
             rememberGateOutcome(id, "nurture_timing");
@@ -300,8 +303,8 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
         .catch(() => {});
       setA((prev) => ({ ...prev, report: "Yes, from the last 6 months" }));
       // Her answers are gone on a fresh load, so a.timing cannot be consulted.
-      // Without this the resume link would reopen the checkout for exactly the
-      // woman the gate just turned away.
+      // Without this the resume link would show the "book now" framing to
+      // exactly the woman who said she is not starting yet.
       setRemembered(recallGateOutcome(id));
       setI(QUESTIONS.length + 1);
     } catch { /* no window */ }
@@ -366,9 +369,9 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
 
   const atGate = i === QUESTIONS.length; // answered everything, number not yet given
   const done = i > QUESTIONS.length;      // gate passed, or resumed
-  // The only hard gate in the funnel. The two "not now" answers to the timing
-  // question never reach the booking step; everything else, including an
-  // unanswered timing question, does.
+  // The timing gate. The two "not now" answers to the timing question reach
+  // the SAME free booking as everyone else, framed as no rush (D7); every other
+  // answer, including an unanswered timing question, is eligible.
   // Budget and the decision-maker are deliberately NOT inputs here.
   const gatedOut =
     done && (remembered === "nurture_timing" || gateOutcome(a.timing) === "nurture_timing");
@@ -392,7 +395,11 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   // as "0 of 7" under a number that says otherwise.
   const shownHits = resumeScore != null ? Math.round((resumeScore / 100) * 7) : hits;
   const booking = done && !already && !gatedOut;
-  const meaning = !booking ? undefined : hasReport ? (
+  // "Not now": the same booking, offered without the push (D7).
+  const notNow = done && !already && gatedOut;
+  const meaning = notNow ? (
+    <>You said you are starting a little further out, and that is fine. The session is free whenever you book it. If you would like to know what is behind these signs before you start, the booking is right below.</>
+  ) : !booking ? undefined : hasReport ? (
     score100 >= 57
       ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 60 minutes I read yours line by line and tell you <strong>which</strong> of these signs are real, and <strong>what to change first</strong>.</>
       : <>Your report will show which of these are real and which are not. That is the whole job of the session. And if the answer is that you do not need me, you will hear that too.</>
@@ -557,6 +564,26 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   }
 
   if (done) {
+    // Every booking on this screen, eligible or "not now", carries the same
+    // answers into the same sheet columns.
+    const bookingAnswers = {
+      age: a.age ?? "",
+      diagnosis: a.diagnosis ?? "",
+      onMedication: a.diagnosis ?? "",
+      struggleDuration: a.stuck ?? "",
+      goal: a.goal ?? "",
+      biggestChallenge: a.pattern ?? "",
+      triedBefore: a.tried ?? "",
+      amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
+      budget: a.budget ?? "",
+      timing: a.timing ?? "",
+      decisionMaker: a.decision ?? "",
+      city: a.city ?? "",
+      // No Profession column in the sheet; it rides with the report answer.
+      symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${score100}/100 (${hits}/7)`,
+      leadScore: lead?.score,
+      leadTier: lead?.tier,
+    };
     return (
       <Shell>
         <p className="section-label">Your score</p>
@@ -566,7 +593,11 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           hits={shownHits}
           markers={resumeScore == null ? ms : null}
           meaning={meaning}
-          next={booking ? { href: "#next-step", label: "Book my free session", sub: "Your next step \u00b7 about a minute" } : undefined}
+          next={
+            booking ? { href: "#next-step", label: "Book my free session", sub: "Your next step \u00b7 about a minute" }
+              : notNow ? { href: "#next-step", label: "Book my free session", sub: "No rush \u00b7 whenever it suits you" }
+              : undefined
+          }
         />
 
         {already ? (
@@ -608,39 +639,53 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
             )}
           </div>
         ) : gatedOut ? (
-          // The ONLY hard gate in this funnel, and the only screen that does not
-          // lead to checkout. No shame and no countdown: she has done nothing
-          // wrong, and a woman nurtured well in September is a client in
-          // November. /webinar is the live free masterclass, already running.
-          <div
-            className="mx-auto mt-8 max-w-[560px] rounded-2xl p-6 text-left"
-            style={{ background: "var(--p-subtle)", border: "1.5px solid var(--p-border)" }}
-          >
-            <p className="text-[length:var(--fs-lg)] font-bold text-[var(--t1)]">
-              Start with the free masterclass.
-            </p>
-            <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              You said you are looking to start a little further out, so I am not going to put you
-              into a consultation slot today. That session is built for the woman who is starting
-              now. I read her blood report line by line and she leaves with a plan for that week.
-            </p>
-            <p className="mt-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              Come to the free masterclass first. It is 90 minutes, live, and it covers the same
-              blockers your score just flagged. When you are ready to start, the consultation
-              will still be here.
-            </p>
-            <a
-              href={NURTURE_DESTINATION}
-              className="cta-button mt-5"
-              style={{ maxWidth: "24rem", textDecoration: "none" }}
+          // "Not now" (D7): she said she is starting a month or two out, or is
+          // just exploring. She gets the same free booking as every other
+          // woman, framed as no rush, and a way to follow along if she is not
+          // booking today. The webinar this used to send her to is retired,
+          // and nothing on this screen links to it.
+          <>
+            <NextSteps hasReport={!!hasReport} noRush />
+            <div className="mt-6 text-left">
+              <ScheduleClient
+                wrapper="div"
+                eyebrow="Step 1 of 3"
+                heading="Pick your time"
+                subheading="Check your name and number. Your calendar opens next, with them already filled in. Free, no card."
+                ctaLabel={"Book my free session"}
+                ctaBg="var(--clinic-petrol)"
+                free
+                rationaleTitle="Not starting yet?"
+                rationaleBody="That is fine. You do not have to be starting this week to book. One free hour tells you what your answers point to and what to do first, so when you do start, you start on the right thing."
+                presetThyroid={a.diagnosis || "Yes, hypothyroid and on medication"}
+                existingLeadId={leadId || undefined}
+                initial={resumeInit ?? { name: gate.name, phone: gate.phone }}
+                extraAnswers={bookingAnswers}
+              />
+            </div>
+            <div
+              className="mx-auto mt-8 max-w-[560px] rounded-2xl p-6 text-center"
+              style={{ background: "var(--p-subtle)", border: "1.5px solid var(--p-border)" }}
             >
-              Save my free seat
-              <span className="cta-sub">Free live masterclass &middot; 90 minutes</span>
-            </a>
-            <p className="mt-4 text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t3)]">
-              Your score is on its way to you on WhatsApp as well, so you keep it.
-            </p>
-          </div>
+              <p className="text-[length:var(--fs-xs)] font-bold text-[var(--t1)]">Not booking today?</p>
+              <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
+                Follow along on Instagram in the meantime. Your score is on its way to you on
+                WhatsApp as well, so you keep it.
+              </p>
+              {/* Colour and underline in style: globals.css resets every link
+                  with an unlayered rule that beats any Tailwind utility. A new
+                  tab, so the score and the booking stay where she left them. */}
+              <a
+                href={NURTURE_INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center justify-center px-3 text-[length:var(--fs-2xs)] font-bold"
+                style={{ minHeight: 44, color: "var(--p500)", textDecoration: "underline", textUnderlineOffset: "2px" }}
+              >
+                Follow @heal_thyroid_with_swapnil on Instagram
+              </a>
+            </div>
+          </>
         ) : hasReport ? (
           <>
             <NextSteps hasReport />
@@ -658,24 +703,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 presetThyroid={a.diagnosis || "Yes, hypothyroid and on medication"}
                 existingLeadId={leadId || undefined}
                 initial={resumeInit ?? { name: gate.name, phone: gate.phone }}
-                extraAnswers={{
-                  age: a.age ?? "",
-                  diagnosis: a.diagnosis ?? "",
-                  onMedication: a.diagnosis ?? "",
-                  struggleDuration: a.stuck ?? "",
-                  goal: a.goal ?? "",
-                  biggestChallenge: a.pattern ?? "",
-                  triedBefore: a.tried ?? "",
-                  amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
-                  budget: a.budget ?? "",
-                  timing: a.timing ?? "",
-                  decisionMaker: a.decision ?? "",
-                  city: a.city ?? "",
-                  // No Profession column in the sheet; it rides with the report answer.
-                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${score100}/100 (${hits}/7)`,
-                  leadScore: lead?.score,
-                  leadTier: lead?.tier,
-                }}
+                extraAnswers={bookingAnswers}
               />
             </div>
           </>
@@ -696,23 +724,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
                 presetThyroid={a.diagnosis || "Yes, hypothyroid and on medication"}
                 existingLeadId={leadId || undefined}
                 initial={resumeInit ?? { name: gate.name, phone: gate.phone }}
-                extraAnswers={{
-                  age: a.age ?? "",
-                  diagnosis: a.diagnosis ?? "",
-                  onMedication: a.diagnosis ?? "",
-                  struggleDuration: a.stuck ?? "",
-                  goal: a.goal ?? "",
-                  biggestChallenge: a.pattern ?? "",
-                  triedBefore: a.tried ?? "",
-                  amountSpent: a.tried && a.tried !== "No, never" ? a.tried.replace("Yes, ", "") : "",
-                  budget: a.budget ?? "",
-                  timing: a.timing ?? "",
-                  decisionMaker: a.decision ?? "",
-                  city: a.city ?? "",
-                  symptoms: `Report: ${a.report ?? "—"} | Work: ${a.profession ?? "—"} | Pattern score: ${score100}/100 (${hits}/7)`,
-                  leadScore: lead?.score,
-                  leadTier: lead?.tier,
-                }}
+                extraAnswers={bookingAnswers}
               />
             </div>
 

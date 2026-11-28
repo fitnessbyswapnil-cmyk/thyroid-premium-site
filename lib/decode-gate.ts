@@ -1,41 +1,44 @@
 /**
  * lib/decode-gate.ts
  *
- * The ONE hard gate in the /decode funnel, and the only one there should be.
+ * The /decode timing gate. It no longer shuts anything.
  *
- * Q10 asks when she would want to start. "This week" and "This month" reach the
- * Rs 299 checkout exactly as before. "In a month or two" and "Just exploring
- * for now" never see it: the paid consultation reads a blood report and hands
- * back a plan to act on, and selling that to a woman who is not starting yet
- * buys her a refund request and buys the calendar a no-show.
+ * Q10 asks when she would want to start. "This week" and "This month" are
+ * "eligible": her score, then the free booking. "In a month or two" and "Just
+ * exploring for now" are "nurture_timing" ("not now"), and since 28-Nov-2026
+ * (decision D7 in audit/intended-flow.md) she sees exactly the same score and
+ * exactly the same free booking. What changes is the framing and the follow-up:
  *
- * She is sent to the free masterclass at /webinar instead. That is a nurture
- * destination, not a consolation prize, and the screen that offers it carries
- * no shame and no countdown.
+ *   - the page says there is no rush, and offers an Instagram follow for the
+ *     woman who is not booking today (NURTURE_INSTAGRAM_URL below);
+ *   - WhatsApp sends her only the day-3 free nudge, never the next-morning one
+ *     (lib/reminder-plan.ts, FREE_NUDGE_STAGE1 / FREE_NUDGE_STAGE2). Asking a
+ *     woman who just said "a month or two" to book again the next morning
+ *     reads as not having listened.
  *
- * WHAT IS DELIBERATELY NOT GATED: budget (Q8) and the decision-maker (Q9).
- * Every answer to both still reaches checkout. A woman who says Rs 15,000 is
- * usually saying "I do not want to over-commit before we have spoken", and a
- * woman who needs to ask her husband is describing a delay, not a refusal.
- * Gating on either would cost real buyers.
+ * It used to send her to the free masterclass at /webinar instead of a slot.
+ * The webinar is retired, and nothing in this flow links to it any more.
+ *
+ * WHAT IS DELIBERATELY NOT AN INPUT: budget (Q8) and the decision-maker (Q9).
+ * A woman who says Rs 15,000 is usually saying "I do not want to over-commit
+ * before we have spoken", and a woman who needs to ask her husband is
+ * describing a delay, not a refusal.
+ *
+ * The outcome is still written to the sheet as "Gate Outcome", by header name,
+ * so the cron and the CRM can tell the two apart.
  *
  * Pure and side-effect free: the quiz, the sheet writer and the reminder cron
- * all read the same two functions rather than three copies of a string list.
+ * all read the same functions rather than three copies of a string list.
  */
 
 /** Sheet header for the outcome. Appended by header name, never by index. */
 export const GATE_OUTCOME_HEADER = "Gate Outcome";
 
 /**
- * The live free masterclass. Already built, already running.
- *
- * The marker rides along so a registration that came from this gate can be
- * told apart from one an ad paid for: Meta still attributes her to the /decode
- * ad she clicked (nothing in a tag can change that), but the webinar's own
- * cost per registration must not count her. /api/webinar-register stores it.
+ * Where a "not now" woman can follow along while she is not booking. Shown
+ * under the booking, never instead of it.
  */
-export const NURTURE_SRC = "decode_nurture";
-export const NURTURE_DESTINATION = `/webinar?src=${NURTURE_SRC}`;
+export const NURTURE_INSTAGRAM_URL = "https://www.instagram.com/heal_thyroid_with_swapnil/";
 
 export type GateOutcome = "eligible" | "nurture_timing";
 
@@ -47,9 +50,9 @@ export const NURTURE_TIMING_ANSWERS: readonly string[] = [
 
 /**
  * Only the two answers above gate. Anything else, INCLUDING an unanswered or
- * unrecognised Q10, is eligible: a gate that fires on missing data would shut
- * the checkout for a legacy lead, a renamed option or a dropped field, and
- * nobody would see it happen.
+ * unrecognised Q10, is eligible: a gate that fires on missing data would take
+ * the next-morning nudge away from a legacy lead, a renamed option or a
+ * dropped field, and nobody would see it happen.
  */
 export function gateOutcome(timing: string | null | undefined): GateOutcome {
   const t = (timing ?? "").toString().trim().toLowerCase();
@@ -68,8 +71,8 @@ export function normalizeGateOutcome(v: string | null | undefined): GateOutcome 
 /**
  * True only for a row positively stamped nurture_timing. A blank cell is a
  * lead from before the column existed, and must keep behaving exactly as it
- * did — which is what stops this from silencing the whole back catalogue the
- * first time the cron runs after deploy.
+ * did, which is what stops the cron from treating the whole back catalogue as
+ * "not now" the first time it runs after a deploy.
  */
 export function isNurtureGated(cell: string | null | undefined): boolean {
   return normalizeGateOutcome(cell) === "nurture_timing";

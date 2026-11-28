@@ -63,9 +63,8 @@ import {
   type FreeBookingNudgeColumns,
   type ReminderCandidate,
   isWithinSendingHoursIST,
-  FREE_NUDGE_STAGE1_MAX_DAYS,
-  FREE_NUDGE_STAGE2_MIN_HOURS,
-  FREE_NUDGE_MAX_AGE_DAYS,
+  FREE_NUDGE_STAGE1,
+  FREE_NUDGE_STAGE2,
 } from "@/lib/reminder-plan";
 
 export const dynamic = "force-dynamic";
@@ -199,21 +198,20 @@ const FREE_NUDGE2_AT_TITLE = "Free Booking Nudge 2 At";
  * quiz-lead already withholds her welcome message and her Meta events; a bot
  * must not cost a nudge either.
  *
- * Gate outcome: "nurture_timing" means she said she is months away and was
- * deliberately routed to the free masterclass instead of a slot. Nudging her
- * to book contradicts the routing she was given.
+ * The timing gate is NOT handled here any more. A "not now" lead
+ * (nurture_timing) gets the day-3 nudge and only that one (D7), so which stage
+ * may reach her is decided per stage by the planner, from the Gate Outcome
+ * column passed in freeNudgeColsBase. See FREE_NUDGE_STAGE1 / _STAGE2.
  */
 function nudgeableRowsOnly(
   rows: string[][],
   phoneCol: number,
   botCheckCol = -1,
-  gateCol = -1,
 ): string[][] {
   return rows.map((r) => {
     const unverified =
       botCheckCol >= 0 && String(r?.[botCheckCol] ?? "").trim().toLowerCase() === "unverified";
-    const nurtured = gateCol >= 0 && isNurtureGated(r?.[gateCol]);
-    if (!unverified && !nurtured) return r;
+    if (!unverified) return r;
     const copy = [...(r ?? [])]; copy[phoneCol] = ""; return copy;
   });
 }
@@ -394,13 +392,11 @@ export async function GET(req: NextRequest) {
       bookingStatus: byNameOr("Booking Status", BOOKING_STATUS_FALLBACK),
       sessionDate: byNameOr("Session Date", SESSION_DATE_FALLBACK),
       email: findCol(header, "Email"),
+      // "Not now" leads (nurture_timing) are left out of stage 1 and kept in
+      // stage 2. -1 until the quiz has written the column once.
+      gateOutcome: findCol(header, GATE_OUTCOME_HEADER),
     };
-    const nudgeableRows = nudgeableRowsOnly(
-      rows,
-      3,
-      findCol(header, "Bot Check"),
-      findCol(header, GATE_OUTCOME_HEADER),
-    );
+    const nudgeableRows = nudgeableRowsOnly(rows, 3, findCol(header, "Bot Check"));
     const freeNudgeCols: FreeBookingNudgeColumns = {
       ...freeNudgeColsBase,
       nudgeSent: findCol(header, FREE_NUDGE_SENT_TITLE),
@@ -409,7 +405,8 @@ export async function GET(req: NextRequest) {
       rows: nudgeableRows,
       cols: freeNudgeCols,
       now: Date.now(),
-      maxAgeDays: FREE_NUDGE_STAGE1_MAX_DAYS,
+      // 20 h to 3 days, eligible leads only.
+      ...FREE_NUDGE_STAGE1,
       // ?limit=1 is the documented way to watch a single send land before
       // trusting a job. It has to reach these stages too, or the valve is a
       // lie for the only jobs in here whose copy has never been sent before.
@@ -424,8 +421,8 @@ export async function GET(req: NextRequest) {
       rows: nudgeableRows,
       cols: freeNudge2Cols,
       now: Date.now(),
-      minAgeHours: FREE_NUDGE_STAGE2_MIN_HOURS,
-      maxAgeDays: FREE_NUDGE_MAX_AGE_DAYS,
+      // 3 to 10 days, eligible AND "not now": the only nudge she gets (D7).
+      ...FREE_NUDGE_STAGE2,
       limit,
       bookedEmails,
     });

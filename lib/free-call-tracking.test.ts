@@ -20,9 +20,12 @@ const SESSION_BOOKED = read("app/session-booked/page.tsx");
 const QUIZ = read("app/decode/DecodeQuiz.tsx");
 const CASHFREE_ORDER = read("app/api/create-cashfree-order/route.ts");
 
-test("the /decode quiz books free: both result screens pass free to the scheduler", () => {
+test("the /decode quiz books free: every result screen passes free to the scheduler", () => {
+  // Three screens since D7: with a report, without one, and "not now".
   const frees = QUIZ.match(/\n\s+free\n/g) ?? [];
-  assert.ok(frees.length >= 2, `both ScheduleClient uses on /decode must pass free (found ${frees.length})`);
+  const uses = QUIZ.match(/<ScheduleClient\b/g) ?? [];
+  assert.ok(uses.length >= 3, `expected the three result screens to book (found ${uses.length})`);
+  assert.equal(frees.length, uses.length, "every ScheduleClient use on /decode must pass free");
   assert.ok(!/Pay ₹?299|Pay Rs ?299/i.test(QUIZ), "no pay-first CTA survives on the quiz");
 });
 
