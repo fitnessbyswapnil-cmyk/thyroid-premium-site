@@ -124,7 +124,7 @@ the admin dashboard.
 | Component | Detail |
 |---|---|
 | Pixel / dataset | `1004294955172584` |
-| Browser | GTM container `GTM-P3S5BXQB`, loaded through a Stape server container at `lime.swapnilumbarkarfitness.in` |
+| Browser | GTM container `GTM-P3S5BXQB`, loaded from `www.googletagmanager.com` (the Stape host `lime.swapnilumbarkarfitness.in` was cancelled in Nov-2026 and is no longer used) |
 | Server | `lib/server-tracking.ts` posts to `graph.facebook.com/<META_PIXEL_ID>/events` |
 | Bridge | `/api/events` takes a browser payload and re-sends it via CAPI |
 | Dedup | `app/lib/analytics.ts` generates one `event_id`, pushes it to the dataLayer and returns it for the CAPI call, so both legs share an id |
