@@ -230,10 +230,13 @@ export default function ScoreReport({
 /**
  * What happens after the score, as three steps she can see the end of. Step 1
  * is the form directly below; the other two are what that booking buys her.
+ *
+ * `noRush` is the "not now" screen (D7): the same three steps and the same
+ * booking, labelled for a woman who said she is not starting yet.
  */
-export function NextSteps({ hasReport }: { hasReport: boolean }) {
+export function NextSteps({ hasReport, noRush = false }: { hasReport: boolean; noRush?: boolean }) {
   const steps = [
-    { title: "Pick your time", body: "Right below. It takes about a minute.", now: true },
+    { title: "Pick your time", body: noRush ? "Right below, whenever you are ready. It takes about a minute." : "Right below. It takes about a minute.", now: true },
     hasReport
       ? { title: "Send your report", body: "On WhatsApp, before the call. TSH, T3 and T4 are enough.", now: false }
       : { title: "Get the right tests", body: "I tell you which tests to get, and why most labs leave some out.", now: false },
@@ -244,7 +247,7 @@ export function NextSteps({ hasReport }: { hasReport: boolean }) {
   return (
     <div id="next-step" className="mx-auto mt-12 w-full max-w-[560px] text-left" style={{ scrollMarginTop: 16 }}>
       <p className="text-center text-[length:var(--fs-3xs)] font-semibold uppercase tracking-[var(--ls-caps)] text-[var(--clinic-amber-ink)]">
-        Your next step
+        {noRush ? "No rush" : "Your next step"}
       </p>
       <h2 className="section-title mx-auto mt-2 text-balance text-center">Book your free Thyroid Root Cause Session</h2>
       <ol className="next-steps mt-7 list-none p-0">

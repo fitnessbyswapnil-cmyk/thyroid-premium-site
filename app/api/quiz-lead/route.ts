@@ -64,14 +64,15 @@ type QuizLeadPayload = {
    */
   partnerOnCall?: string;
   /**
-   * Which side of the /decode timing gate she landed on: "eligible" (she saw
-   * the Rs 299 checkout) or "nurture_timing" (she was sent to the free
-   * masterclass at /webinar instead). Absent for every other entry point.
+   * Which side of the /decode timing gate she landed on: "eligible" (starting
+   * this week or month) or "nurture_timing" ("not now": a month or two out, or
+   * just exploring). Both see the same free booking; "not now" sees it framed
+   * as no rush (D7). Absent for every other entry point.
    *
-   * A gated-out lead is still a lead. She gets her row, her QuizComplete and
-   * her WhatsApp score message exactly as before. The stamp exists so the paid
-   * reminder cron can skip her, because chasing a payment nobody was offered is
-   * the fastest way to lose the trust the funnel is built on.
+   * A "not now" lead is still a lead. She gets her row, her QuizComplete and
+   * her WhatsApp score message exactly as before. The stamp exists so the
+   * free-nudge cron sends her only the day-3 nudge, never the next-morning one
+   * (lib/reminder-plan.ts, FREE_NUDGE_STAGE1 / FREE_NUDGE_STAGE2).
    */
   gateOutcome?: string;
   leadScore?: number;

@@ -14,12 +14,15 @@ import {
   FREE_NUDGE_STAGE1_MAX_DAYS,
   FREE_NUDGE_STAGE2_MIN_HOURS,
   FREE_NUDGE_MAX_AGE_DAYS,
+  FREE_NUDGE_STAGE1,
+  FREE_NUDGE_STAGE2,
   isWithinSendingHoursIST,
   type FreeBookingNudgeColumns,
 } from "./reminder-plan.ts";
 
 const COLS: FreeBookingNudgeColumns = {
   name: 0, phone: 1, createdAt: 2, paid: 3, bookingStatus: 4, sessionDate: 5, email: 6, nudgeSent: 7,
+  gateOutcome: 8,
 };
 
 const NOW = Date.parse("2026-09-24T12:00:00.000Z");
@@ -29,6 +32,8 @@ type RowOpts = {
   name?: string; phone?: string; age?: number;
   paid?: string; bookingStatus?: string; sessionDate?: string; nudged?: string;
   createdAt?: string; email?: string;
+  /** "Gate Outcome": "eligible", "nurture_timing", or "" for a legacy row. */
+  gate?: string;
 };
 function row(o: RowOpts = {}): string[] {
   return [
@@ -40,6 +45,7 @@ function row(o: RowOpts = {}): string[] {
     o.sessionDate ?? "",
     o.email ?? "",
     o.nudged ?? "",
+    o.gate ?? "",
   ];
 }
 const plan = (rows: string[][], over: Partial<Parameters<typeof planFreeBookingNudges>[0]> = {}) =>
@@ -208,4 +214,109 @@ test("nudges are held outside civil hours in India", () => {
   assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T03:31:00Z")), true, "9:01am IST");
   assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T15:29:00Z")), true, "8:59pm IST");
   assert.equal(isWithinSendingHoursIST(Date.parse("2026-09-24T15:31:00Z")), false, "9:01pm IST");
+});
+
+// ── "Not now" leads: the day-3 nudge only (D7) ──────────────────────────────
+//
+// She answered "In a month or two" or "Just exploring for now". The cron
+// spreads FREE_NUDGE_STAGE1 and FREE_NUDGE_STAGE2 into the planner exactly as
+// below (lib/decode-not-now.test.ts holds the route to that), so these tests
+// run the same rules the route sends with.
+
+const NOT_NOW = "nurture_timing";
+type PlanOver = Partial<Parameters<typeof planFreeBookingNudges>[0]>;
+const stage1 = (rows: string[][], over: PlanOver = {}) => plan(rows, { ...FREE_NUDGE_STAGE1, ...over });
+const stage2 = (rows: string[][], over: PlanOver = {}) => plan(rows, { ...FREE_NUDGE_STAGE2, ...over });
+
+test("the stage rules are the windows the cron always used, plus who each one is for", () => {
+  assert.deepEqual(FREE_NUDGE_STAGE1, {
+    minAgeHours: FREE_NUDGE_STAGE1_MIN_HOURS, maxAgeDays: FREE_NUDGE_STAGE1_MAX_DAYS, includeNurture: false,
+  });
+  assert.deepEqual(FREE_NUDGE_STAGE2, {
+    minAgeHours: FREE_NUDGE_STAGE2_MIN_HOURS, maxAgeDays: FREE_NUDGE_MAX_AGE_DAYS, includeNurture: true,
+  });
+  assert.equal(FREE_NUDGE_STAGE2.minAgeHours, FREE_NUDGE_STAGE1.maxAgeDays * 24, "no gap, no overlap");
+});
+
+test("a not-now lead never gets the next-morning nudge, at any age inside its window", () => {
+  for (const age of [FREE_NUDGE_STAGE1_MIN_HOURS, 24, 48, FREE_NUDGE_STAGE1_MAX_DAYS * 24 - 1]) {
+    const p = stage1([row({ name: "Test Priya", phone: "9999900001", age, gate: NOT_NOW })]);
+    assert.equal(p.candidates.length, 0, `age ${age}h`);
+    assert.equal(p.skipped.nurtureTiming, 1, `age ${age}h is counted as not now, not lost`);
+  }
+});
+
+test("a not-now lead gets the day-3 nudge, and only from day 3 to day 10", () => {
+  const at = (age: number) => stage2([row({ name: "Test Priya", phone: "9999900001", age, gate: NOT_NOW })]);
+  assert.equal(at(FREE_NUDGE_STAGE2_MIN_HOURS + 1).candidates.length, 1, "just past 72 h");
+  assert.equal(at(96).candidates[0].phone, "9999900001");
+  assert.equal(at(FREE_NUDGE_MAX_AGE_DAYS * 24 - 1).candidates.length, 1, "just before day 10");
+  assert.equal(at(FREE_NUDGE_STAGE2_MIN_HOURS - 1).candidates.length, 0, "not before day 3");
+  assert.equal(at(FREE_NUDGE_STAGE2_MIN_HOURS - 1).skipped.tooNew, 1);
+  assert.equal(at(FREE_NUDGE_MAX_AGE_DAYS * 24 + 1).candidates.length, 0, "not after day 10");
+  assert.equal(at(96).skipped.nurtureTiming, 0, "stage 2 never skips her for the gate");
+});
+
+test("an eligible lead still gets both nudges, exactly as before", () => {
+  for (const gate of ["eligible", ""]) {
+    const r1 = row({ name: "Test Asha", phone: "9999900002", age: 24, gate });
+    const r2 = row({ name: "Test Asha", phone: "9999900002", age: 96, gate });
+    assert.equal(stage1([r1]).candidates.length, 1, `stage 1, gate "${gate}"`);
+    assert.equal(stage2([r2]).candidates.length, 1, `stage 2, gate "${gate}"`);
+    assert.equal(stage1([r1]).skipped.nurtureTiming, 0);
+  }
+});
+
+test("one batch with both kinds: stage 1 picks only the eligible lead, stage 2 picks both", () => {
+  const day1 = [
+    row({ name: "Test Asha", phone: "9999900002", age: 30, gate: "eligible" }),
+    row({ name: "Test Priya", phone: "9999900001", age: 30, gate: NOT_NOW }),
+  ];
+  assert.deepEqual(stage1(day1).candidates.map((c) => c.phone), ["9999900002"]);
+  const day4 = [
+    row({ name: "Test Asha", phone: "9999900002", age: 96, gate: "eligible" }),
+    row({ name: "Test Priya", phone: "9999900001", age: 96, gate: NOT_NOW }),
+  ];
+  assert.deepEqual(stage2(day4).candidates.map((c) => c.phone).sort(), ["9999900001", "9999900002"]);
+});
+
+test("leaving not-now women out is the default, so a new stage cannot reach them by accident", () => {
+  const r = row({ name: "Test Priya", phone: "9999900001", age: 96, gate: NOT_NOW });
+  const p = plan([r], { minAgeHours: FREE_NUDGE_STAGE2_MIN_HOURS, maxAgeDays: FREE_NUDGE_MAX_AGE_DAYS });
+  assert.equal(p.candidates.length, 0);
+  assert.equal(p.skipped.nurtureTiming, 1);
+});
+
+test("without a Gate Outcome column nobody is treated as not now", () => {
+  // The column does not exist until the quiz first writes it, so findCol is -1.
+  const r = row({ name: "Test Priya", phone: "9999900001", age: 24, gate: NOT_NOW });
+  for (const gateOutcome of [-1, undefined]) {
+    const p = stage1([r], { cols: { ...COLS, gateOutcome } });
+    assert.equal(p.candidates.length, 1, String(gateOutcome));
+  }
+});
+
+test("a not-now row that booked still settles her other rows", () => {
+  // She took the quiz twice, "This month" and then "Just exploring", and
+  // booked from the second. Her eligible row must not earn a nudge. Blanking
+  // the not-now row's phone before planning (the old way) hid that booking
+  // from the cross-row check, so this is the case it used to get wrong.
+  const p = stage1([
+    row({ name: "Test Priya", phone: "9999900001", age: 30, gate: "eligible" }),
+    row({ name: "Test Priya", phone: "9999900001", age: 24, gate: NOT_NOW, bookingStatus: "Booked" }),
+  ]);
+  assert.equal(p.candidates.length, 0);
+});
+
+test("a not-now lead who already had the day-3 nudge does not get it twice", () => {
+  const p = stage2([row({ name: "Test Priya", phone: "9999900001", age: 120, gate: NOT_NOW, nudged: "Y" })]);
+  assert.equal(p.candidates.length, 0);
+  assert.equal(p.skipped.alreadyNudged, 1);
+});
+
+test("a not-now lead who booked is never nudged by either stage", () => {
+  const booked = { name: "Test Priya", phone: "9999900001", gate: NOT_NOW, sessionDate: "2026-12-01T10:00:00Z" };
+  assert.equal(stage1([row({ ...booked, age: 24 })]).candidates.length, 0);
+  assert.equal(stage2([row({ ...booked, age: 96 })]).candidates.length, 0);
+  assert.equal(stage2([row({ ...booked, age: 96 })]).skipped.alreadyBooked, 1);
 });

@@ -31,6 +31,7 @@
  *   CAP       A bounded number per run. If a rule is ever wrong, the blast
  *             radius is one batch, not the whole list.
  */
+import { isNurtureGated } from "./decode-gate.ts";
 
 export type ReminderCandidate = {
   /** 1-based sheet row, ready for an A1 range. */
@@ -730,12 +731,18 @@ export type FreeBookingNudgeColumns = {
   email: number;
   /** Per-stage stamp, so stage 1 and stage 2 can never suppress each other. */
   nudgeSent: number;
+  /** "Gate Outcome", written by the /decode quiz. -1 or absent means no row
+   *  is treated as "not now", which is also how a row from before the column
+   *  existed reads. See includeNurture on planFreeBookingNudges. */
+  gateOutcome?: number;
 };
 
 export type FreeBookingNudgeSkips = {
   alreadyBooked: number;
   alreadyNudged: number;
   paid: number;
+  /** Stamped nurture_timing ("not now") and this stage is not for her. */
+  nurtureTiming: number;
   tooNew: number;
   tooOld: number;
   noPhone: number;
@@ -763,6 +770,36 @@ export const FREE_NUDGE_STAGE1_MAX_DAYS = 3;
 export const FREE_NUDGE_STAGE2_MIN_HOURS = FREE_NUDGE_STAGE1_MAX_DAYS * 24;
 export const FREE_NUDGE_MAX_AGE_DAYS = 10;
 export const FREE_NUDGE_LIMIT = 25;
+
+// Who each stage is for (D7, audit/intended-flow.md). A woman who answered
+// "In a month or two" or "Just exploring for now" sees the same free booking,
+// framed as no rush, and gets ONLY the day-3 nudge. The next-morning nudge
+// would ask her to book the day after she told us she is not starting yet,
+// which reads as not having listened. By day 3 a single, unhurried reminder
+// is fair.
+//
+// The cron spreads these into planFreeBookingNudges, and the tests run the
+// same objects, so the windows and the audience cannot drift apart.
+export type FreeNudgeStageRules = {
+  minAgeHours: number;
+  maxAgeDays: number;
+  /** May a lead stamped nurture_timing receive this stage? */
+  includeNurture: boolean;
+};
+
+/** free_booking_nudge_v1, the next morning. Eligible leads only. */
+export const FREE_NUDGE_STAGE1: FreeNudgeStageRules = {
+  minAgeHours: FREE_NUDGE_STAGE1_MIN_HOURS,
+  maxAgeDays: FREE_NUDGE_STAGE1_MAX_DAYS,
+  includeNurture: false,
+};
+
+/** free_booking_nudge_day3_v1, day 3 to day 10. Eligible AND "not now". */
+export const FREE_NUDGE_STAGE2: FreeNudgeStageRules = {
+  minAgeHours: FREE_NUDGE_STAGE2_MIN_HOURS,
+  maxAgeDays: FREE_NUDGE_MAX_AGE_DAYS,
+  includeNurture: true,
+};
 
 /**
  * Is it a civil hour to send a marketing nudge in India?
@@ -801,6 +838,11 @@ export function planFreeBookingNudges(opts: {
    *  columns miss real bookings; without this, the worst message this job can
    *  send is also its most likely one. */
   bookedEmails?: Set<string>;
+  /** Whether a row stamped nurture_timing in cols.gateOutcome may receive
+   *  this stage. OFF unless a stage says otherwise, so a stage added later
+   *  cannot start messaging "not now" women by accident. FREE_NUDGE_STAGE2
+   *  is the only stage that turns it on. */
+  includeNurture?: boolean;
 }): FreeBookingNudgePlan {
   const {
     rows,
@@ -810,12 +852,14 @@ export function planFreeBookingNudges(opts: {
     maxAgeDays = FREE_NUDGE_STAGE1_MAX_DAYS,
     limit = FREE_NUDGE_LIMIT,
     bookedEmails,
+    includeNurture = false,
   } = opts;
 
   const skipped: FreeBookingNudgeSkips = {
     alreadyBooked: 0,
     alreadyNudged: 0,
     paid: 0,
+    nurtureTiming: 0,
     tooNew: 0,
     tooOld: 0,
     noPhone: 0,
@@ -866,6 +910,13 @@ export function planFreeBookingNudges(opts: {
     }
     if (cell(row, cols.paid).toUpperCase() === "Y") {
       skipped.paid++;
+      continue;
+    }
+    // Skipped here rather than by blanking her phone before planning: a
+    // blanked phone also dropped out of settledPhones above, so a "not now"
+    // row that had BOOKED stopped protecting her other rows from a nudge.
+    if (!includeNurture && isNurtureGated(cell(row, cols.gateOutcome ?? -1))) {
+      skipped.nurtureTiming++;
       continue;
     }
 

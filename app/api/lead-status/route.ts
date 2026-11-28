@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       sessionDate: booked ? sessionDate : "",
       // The durable record of the timing gate. Her device may not remember it
       // (new phone, cleared storage, husband's handset), but the sheet does, and
-      // the resume link must not reopen a checkout she was never offered.
+      // the resume link must show a "not now" woman the no-rush screen again.
       gate: isNurtureGated(cell(cGate)) ? "nurture_timing" : "",
       // Her intent score. The booking page sends it to Cal.com as `qscore`,
       // which is the only thing that can turn a Schedule into a
