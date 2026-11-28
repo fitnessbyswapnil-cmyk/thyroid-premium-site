@@ -53,6 +53,9 @@ export type ScheduleClientProps = {
   heading?: string;
   subheading?: React.ReactNode;
   ctaLabel?: string;
+  /** Button colour. Defaults to the coral /schedule has always used; /decode's
+   *  quiz passes its own petrol so the button matches the page around it. */
+  ctaBg?: string;
   rationaleTitle?: string;
   rationaleBody?: React.ReactNode;
   wrapper?: "main" | "div";
@@ -97,6 +100,7 @@ export default function ScheduleClient({
   heading = "Schedule your 1-1 thyroid fat loss session",
   subheading = "60 minutes, one to one with Swapnil. We find what is actually blocking your fat loss and what to do about it.",
   ctaLabel,
+  ctaBg,
   rationaleTitle = `Why this session costs ₹${SESSION_PRICE}`,
   rationaleBody = "So the woman in that slot actually turns up, and so I arrive having read your answers properly. It is adjusted against your plan if you decide to work with me.",
   wrapper = "main",
@@ -398,7 +402,7 @@ export default function ScheduleClient({
             />
             {errs.email && <p style={{ color: CORAL, fontSize: 13, marginTop: 6 }}>{errs.email}</p>}
             <p style={{ fontSize: 12.5, color: INK2, marginTop: 6 }}>
-              So you only type your details once &mdash; the calendar is filled in for you.
+              So you only type your details once. The calendar is filled in for you.
             </p>
           </div>
 
@@ -447,7 +451,7 @@ export default function ScheduleClient({
             type="button" onClick={submit} disabled={busy}
             style={{
               width: "100%", padding: "17px 20px", borderRadius: 999, border: "none",
-              background: busy ? "#d8a49e" : CORAL, color: "#fff", fontSize: 17,
+              background: ctaBg ?? CORAL, opacity: busy ? 0.6 : 1, color: "#fff", fontSize: 17,
               fontWeight: 700, cursor: busy ? "default" : "pointer",
             }}
           >

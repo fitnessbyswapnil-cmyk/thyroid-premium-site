@@ -32,6 +32,7 @@ const SCOPE = [
   "app/globals.css",
   "app/decode/page.tsx",
   "app/decode/DecodeQuiz.tsx",
+  "app/decode/ScoreReport.tsx",
   "app/decode/quiz/page.tsx",
   "app/decode/ShareWithFamily.tsx",
   "app/decode/DecodeStickyCta.tsx",

@@ -39,7 +39,7 @@ export default function DecodeQuizPage() {
           says exactly that, one line below, so the page was telling her twice
           in two different type sizes. */}
       <p className="mx-auto mt-6 max-w-[900px] px-4 text-center text-[length:var(--fs-3xs)] font-semibold uppercase tracking-[var(--ls-caps)] text-[var(--t3)] md:px-6">
-        Scheduling your 1-1 Thyroid Consultation
+        Your free Thyroid Root Cause Session
       </p>
       <DecodeQuiz autostart />
     </main>
