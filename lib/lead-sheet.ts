@@ -85,7 +85,9 @@ export type LeadWritePlan = {
   action: "append" | "update";
   rowNumber?: number; // 1-based, for update
   newHeaders: { index: number; title: string }[];
-  header: string[]; // full header row after any appends (for header write-back)
+  // What row 1 reads once newHeaders land. Never written back as a whole:
+  // only the newHeaders cells are written (headerCellWrites).
+  header: string[];
   appendRow?: string[];
   updateCells?: { index: number; value: string }[];
 };
@@ -279,6 +281,33 @@ export function colLetter(index: number): string {
   return s;
 }
 
+// ── Row 1 (headers): read whole, grow one cell at a time ────────────────────────
+// Row 1 is the only map from a header name to a column, so it is never
+// rewritten as a whole. Writing the row back re-stamps every cell that was
+// read, stray values included, and if the read stopped short of the real width
+// it puts new titles on top of live columns. A missing header is added as ONE
+// cell, after the last column in use, and no existing header cell is written.
+
+export type SheetsClient = ReturnType<typeof google.sheets>;
+
+/** The range for reading headers: all of row 1, however wide the sheet is. */
+export function headerRowRange(sheetName: string): string {
+  return `${sheetName}!1:1`;
+}
+
+/** The range of ONE header cell, e.g. `Leads!CT1`. Header writes use only this. */
+export function headerCellRange(sheetName: string, index: number): string {
+  return `${sheetName}!${colLetter(index)}1`;
+}
+
+/** PURE: one single-cell write per new header, for values.batchUpdate. */
+export function headerCellWrites(
+  sheetName: string,
+  newHeaders: { index: number; title: string }[],
+): { range: string; values: string[][] }[] {
+  return newHeaders.map((h) => ({ range: headerCellRange(sheetName, h.index), values: [[h.title]] }));
+}
+
 // ── IO wrapper ──────────────────────────────────────────────────────────────────
 
 function getSheets() {
@@ -341,10 +370,10 @@ export type LeadWriteResult = { action: "append" | "update"; rowNumber?: number;
 export async function writeLeadRow(fields: LeadFields): Promise<LeadWriteResult> {
   const { sheets, spreadsheetId } = getSheets();
 
-  // Header row.
+  // Header row, all of it: new headers are placed after its last column.
   const headerRes = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: `${SHEET_NAME}!1:1`,
+    range: headerRowRange(SHEET_NAME),
     majorDimension: "ROWS",
   });
   const header = (headerRes.data.values?.[0] ?? []).map((c) => String(c ?? ""));
@@ -369,13 +398,14 @@ export async function writeLeadRow(fields: LeadFields): Promise<LeadWriteResult>
 
   const plan = planLeadWrite({ header, existingRowNumber, fields });
 
-  // Write any appended headers first (rewrite full row 1 — preserves originals).
+  // Write any appended headers first, each as its own cell after the last
+  // column in use. Row 1 is never rewritten as a whole (see headerCellWrites).
+  // The grid has a fixed width, so widen it before writing past the end.
   if (plan.newHeaders.length > 0) {
-    await sheets.spreadsheets.values.update({
+    await ensureGridColumns(sheets, spreadsheetId, SHEET_NAME, Math.max(...plan.newHeaders.map((h) => h.index)));
+    await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId,
-      range: `${SHEET_NAME}!1:1`,
-      valueInputOption: "RAW",
-      requestBody: { values: [plan.header] },
+      requestBody: { valueInputOption: "RAW", data: headerCellWrites(SHEET_NAME, plan.newHeaders) },
     });
   }
 

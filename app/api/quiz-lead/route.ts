@@ -21,8 +21,8 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { sendCAPIEvent, buildUserData, getClientIp, getUserAgent } from "@/lib/server-tracking";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation, sendBookingConfirmedFree } from "@/lib/whatsapp";
-import { checkTurnstile, turnstileConfig, isInternalLeadCall, findOrAddColumn, INTERNAL_LEAD_HEADER, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
-import { colLetter, ensureGridColumns } from "@/lib/lead-sheet";
+import { checkTurnstile, turnstileConfig, isInternalLeadCall, INTERNAL_LEAD_HEADER, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
+import { readHeaderRow, columnPlacer, THYROID_SCORE_HEADER, BLOCKERS_HEADER } from "@/lib/leads-header";
 import { PARTNER_ON_CALL_HEADER, normalizePartnerOnCall } from "@/lib/decode-commitment";
 import { GATE_OUTCOME_HEADER, normalizeGateOutcome } from "@/lib/decode-gate";
 import { QUIZ_TIER_HEADER } from "@/lib/lead-scoring";
@@ -169,52 +169,36 @@ export async function POST(req: NextRequest) {
 
   try {
     const { sheets, sheetId } = await getSheetsClient();
-    const hdrRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range: `${SHEET_NAME}!A1:BC1`,
-    });
-    const hdr = ((hdrRes.data.values?.[0] as string[]) ?? []).map((h) => (h ?? "").trim());
+    // All of row 1. This used to read A1:BC1, which stops at 55 columns on a
+    // sheet that runs to CS. Budget is in BD, so it always looked missing, and
+    // "adding" it rewrote the whole of row 1 on almost every completed quiz.
+    const hdr = await readHeaderRow(sheets, sheetId, SHEET_NAME);
     const idx = (name: string): number | null => {
       const i = hdr.lastIndexOf(name);
       if (i >= 0) return i;
       return name in FALLBACK ? FALLBACK[name] : null;
     };
 
-    // "Budget" and "Decision Maker" are columns the sheet may not have yet.
-    // idx() returns null for headers it has never seen and set() then silently
-    // skips the value — so without this, both answers would be collected,
-    // scored-out, and quietly dropped.
-    //
-    // Both are appended past every existing column so they can never collide
-    // with the reserved Booking columns (17/18) owned by the Cal.com Make
-    // scenario. Written in ONE header update rather than two, so a failure
-    // cannot leave the sheet with one new column and not the other.
-    let budgetIdx = hdr.lastIndexOf("Budget");
-    let decisionIdx = hdr.lastIndexOf("Decision Maker");
-    const needBudget = budgetIdx < 0 && !!str(payload.budget);
-    const needDecision = decisionIdx < 0 && !!str(payload.decisionMaker);
-    if (needBudget || needDecision) {
-      if (needBudget) {
-        budgetIdx = hdr.length;
-        hdr[budgetIdx] = "Budget";
-      }
-      if (needDecision) {
-        decisionIdx = hdr.length;
-        hdr[decisionIdx] = "Decision Maker";
-      }
-      try {
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: sheetId,
-          range: `${SHEET_NAME}!1:1`,
-          valueInputOption: "RAW",
-          requestBody: { values: [hdr] },
-        });
-      } catch (hdrErr) {
-        console.error("[quiz-lead] could not add sales-signal headers:", hdrErr instanceof Error ? hdrErr.message : String(hdrErr));
-        // Fall through: lose these two values, never the lead itself.
-        if (needBudget) budgetIdx = -1;
-        if (needDecision) decisionIdx = -1;
-      }
+    // Find a column by HEADER NAME. If the sheet has never had it, add the
+    // header as one cell after the last column in use. Every late-added column
+    // goes through this, so none of them is a hardcoded index, a column someone
+    // inserted by hand cannot push a value into its neighbour, and no existing
+    // header cell is ever written. Returns -1 when the header cannot be added.
+    const placeColumn = columnPlacer({ sheets, spreadsheetId: sheetId, sheetName: SHEET_NAME, header: hdr });
+
+    // "Budget" and "Decision Maker" have no FALLBACK position, so idx() would
+    // return null if either column were missing and set() would silently drop
+    // the answer. Placing them adds the header instead. A header that cannot
+    // be written loses that one answer, never the lead.
+    let budgetIdx = -1;
+    if (str(payload.budget)) {
+      budgetIdx = await placeColumn("Budget");
+      if (budgetIdx < 0) console.error("[quiz-lead] could not place the Budget column; answer dropped, lead saved");
+    }
+    let decisionIdx = -1;
+    if (str(payload.decisionMaker)) {
+      decisionIdx = await placeColumn("Decision Maker");
+      if (decisionIdx < 0) console.error("[quiz-lead] could not place the Decision Maker column; answer dropped, lead saved");
     }
 
     const cells = new Map<number, string>();
@@ -259,39 +243,20 @@ export async function POST(req: NextRequest) {
     if (typeof payload.leadScore === "number") set("Lead Score", String(payload.leadScore));
     // The number SHE saw on screen, and how many of the seven blockers her
     // answers flagged. Both existed only inside the Weight Struggles sentence
-    // and in the Meta payload, so nothing could read them back as numbers —
+    // and in the Meta payload, so nothing could read them back as numbers,
     // which is why her follow-up message could not quote her own score.
-    if (typeof payload.patternScore === "number") set("Thyroid Score", String(payload.patternScore));
-    if (typeof payload.markersHit === "number") set("Blockers", String(payload.markersHit));
-
-    // Find a column by HEADER NAME, appending it past the true last column when
-    // the live sheet has never had it. Every late-added column goes through
-    // this, so none of them is ever a hardcoded index and a column somebody
-    // inserted by hand cannot shift a value into its neighbour.
-    const placeColumn = async (title: string): Promise<number> => {
-      const at = await findOrAddColumn({
-        known: hdr,
-        title,
-        readFullHeader: async () => {
-          const r = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${SHEET_NAME}!1:1` });
-          return ((r.data.values?.[0] as string[]) ?? []).map((h) => String(h ?? ""));
-        },
-        writeHeaderCell: async (at2, title2) => {
-          // The Leads grid is fixed-width; widen it first or the write fails.
-          await ensureGridColumns(sheets, sheetId, SHEET_NAME, at2);
-          await sheets.spreadsheets.values.update({
-            spreadsheetId: sheetId,
-            range: `${SHEET_NAME}!${colLetter(at2)}1`,
-            valueInputOption: "RAW",
-            requestBody: { values: [[title2]] },
-          });
-        },
-      });
-      // Keep the local header in step, so a second call in the same request
-      // appends after this column rather than on top of it.
-      if (at >= 0) hdr[at] = title;
-      return at;
-    };
+    // Neither header exists on the live sheet and neither has a FALLBACK, so
+    // set() used to drop both values silently. Placing them adds the headers.
+    if (typeof payload.patternScore === "number") {
+      const scoreIdx = await placeColumn(THYROID_SCORE_HEADER);
+      if (scoreIdx >= 0) cells.set(scoreIdx, String(payload.patternScore));
+      else console.error("[quiz-lead] could not place the Thyroid Score column; score dropped, lead saved");
+    }
+    if (typeof payload.markersHit === "number") {
+      const blockersIdx = await placeColumn(BLOCKERS_HEADER);
+      if (blockersIdx >= 0) cells.set(blockersIdx, String(payload.markersHit));
+      else console.error("[quiz-lead] could not place the Blockers column; count dropped, lead saved");
+    }
 
     // Bot check marker. Written ONLY for an unverified submission, so an
     // accepted row is exactly what it was before Turnstile existed. Losing the
