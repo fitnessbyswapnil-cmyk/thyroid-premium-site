@@ -18,7 +18,7 @@
  * 6am and late-night reads, and is a designed variant rather than an inversion.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import Today from "./Today";
 import Pipeline from "./Pipeline";
@@ -30,6 +30,16 @@ const THEME_STORE = "admin_theme";
 
 export default function AdminShell() {
   const [tab, setTab] = useState<Tab>("today");
+  // A tab mounts the first time it is shown, then stays mounted (hidden), so
+  // switching back re-runs nothing. Mounting all three at load fired about 16
+  // admin API calls at once. Each one that landed on a cold worker spent
+  // 1.3-2 s of CPU booting the bundle, and some died with Cloudflare error 1102
+  // (exceededCpu), the Analytics tab's calls among them, unseen behind Today.
+  const [mounted, setMounted] = useState<Record<Tab, boolean>>({ today: false, pipeline: false, analytics: false });
+  const show = useCallback((x: Tab) => {
+    setTab(x);
+    setMounted((m) => (m[x] ? m : { ...m, [x]: true }));
+  }, []);
   const [adminKey, setAdminKey] = useState("");
   const [dark, setDark] = useState(false);
   const t: Tokens = dark ? (DARK as unknown as Tokens) : LIGHT;
@@ -37,7 +47,7 @@ export default function AdminShell() {
   useEffect(() => {
     const read = () => {
       const h = (window.location.hash || "").replace("#", "");
-      setTab(h === "analytics" ? "analytics" : h === "pipeline" ? "pipeline" : "today");
+      show(h === "analytics" ? "analytics" : h === "pipeline" ? "pipeline" : "today");
     };
     read();
     // A bare /admin lands on Today AND says so in the address bar, so the URL
@@ -58,10 +68,10 @@ export default function AdminShell() {
       window.removeEventListener("hashchange", read);
       window.removeEventListener(ADMIN_KEY_EVENT, onKey);
     };
-  }, []);
+  }, [show]);
 
   const go = (x: Tab) => {
-    setTab(x);
+    show(x);
     // replaceState rather than assigning location.hash: it updates the URL
     // without pushing a history entry per tab click, so Back still leaves /admin.
     if (typeof window !== "undefined") window.history.replaceState(null, "", `#${x}`);
@@ -162,20 +172,21 @@ export default function AdminShell() {
       </header>
 
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "18px 18px 90px" }}>
-        {/* Both mount; only one is shown. The analytics tab holds a lot of fetched
-            state and re-mounting it on every tab switch would re-run every call. */}
+        {/* Each tab mounts on its first visit and then stays mounted, only hidden:
+            re-mounting the analytics tab on every switch would re-run every call,
+            and mounting it before he opens it fired those calls on every load. */}
         <div style={{ display: tab === "today" ? "block" : "none" }}>
           {/* Today asks for the key itself. It used to say "open the Pipeline
               tab once to enter your admin key", which made the screen he opens
               most a dead end from a bookmark or a home-screen shortcut — and a
               blank Today is a big part of why outcomes never got marked. */}
-          {adminKey ? <Today adminKey={adminKey} dark={dark} /> : <KeyGate t={t} />}
+          {mounted.today && (adminKey ? <Today adminKey={adminKey} dark={dark} /> : <KeyGate t={t} />)}
         </div>
         <div style={{ display: onPipeline ? "block" : "none" }}>
-          <Pipeline dark={dark} />
+          {mounted.pipeline && <Pipeline dark={dark} />}
         </div>
         <div style={{ display: tab === "analytics" ? "block" : "none" }}>
-          <AnalyticsDashboard dark={dark} />
+          {mounted.analytics && <AnalyticsDashboard dark={dark} />}
         </div>
       </div>
     </main>

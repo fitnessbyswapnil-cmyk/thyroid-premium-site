@@ -46,7 +46,10 @@ function readRange(): number {
 
 /** The shared date range. Setting it on any tab updates all of them. */
 export function useRange(): [number, (d: number) => void] {
-  const [days, setDays] = useState(14);
+  // Start at the stored range, not 14-then-stored: starting at 14 made every
+  // tab fetch twice on load (days=14, then days=7), and on Workers each extra
+  // request can land on a cold isolate that burns ~1.5 s of CPU booting.
+  const [days, setDays] = useState(() => (typeof window === "undefined" ? 14 : readRange()));
   useEffect(() => {
     const sync = () => setDays(readRange());
     sync();

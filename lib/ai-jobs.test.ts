@@ -176,6 +176,16 @@ test("the admin side is behind the admin key; the runner side only behind a job 
   assert.doesNotMatch(read("app/api/ai-runner/jobs/[id]/route.ts"), /[?&]k=/, "the report URL carries a media pass, not the key");
 });
 
+test("client components never import a value from lib/ai-jobs (it pulls node:crypto into the browser)", () => {
+  for (const f of ["app/admin/ReadReportWithClaude.tsx", "app/admin/useAiJob.ts"]) {
+    const src = read(f);
+    for (const m of src.matchAll(/^import\s+(type\s+)?\{[^}]*\}\s+from\s+"@\/lib\/ai-jobs";/gm)) {
+      assert.ok(m[1], `${f}: only \`import type\` from @/lib/ai-jobs: ${m[0]}`);
+    }
+  }
+  assert.doesNotMatch(read("lib/marker-rows.ts"), /^import /m, "lib/marker-rows.ts stays dependency-free");
+});
+
 test("the runner guide keeps Claude to reading numbers and out of the repository", () => {
   const guide = read("docs/ai-runner.md");
   for (const must of [/never print/i, /change nothing in this repository/i, /do not interpret/i, /\/api\/ai-runner\/jobs\/\$JOB_ID\/result/, /\/api\/ai-runner\/jobs\/\$JOB_ID\/fail/, /x-job-token/]) {

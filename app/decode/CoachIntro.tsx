@@ -30,13 +30,29 @@ export default function CoachIntro() {
           <h2 id="coach-heading" className="section-title m-0 text-balance">
             Hey, I&rsquo;m <span className="decode-gold">Coach Swapnil</span>.
           </h2>
-          <p className="mt-4 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-white">
+          <p className="mt-4 text-[length:var(--fs-lg)] font-bold leading-[var(--lh-tight)] text-[var(--t1)]">
             Scientific Thyroid Lean Method for fat loss
           </p>
-          <p className="mt-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-            <span className="decode-gold">ACE</span> &middot; <span className="decode-gold">INFS</span> &middot;{" "}
-            <span className="decode-gold">BLS</span> certified &middot;{" "}
+          {/* Credentials as badges (owner's design doc, 27-Nov). The four are
+              the ones he names himself in the /decode VSL: "an ACE certified,
+              INFS certified and AIHM certified thyroid fat loss specialist,
+              AHA BLS certified coach". Nothing here is added beyond that. */}
+          <ul className="coach-creds mt-4 flex list-none flex-wrap gap-2 p-0" aria-label="Certifications">
+            {["ACE", "INFS", "AIHM", "AHA BLS"].map((c) => (
+              <li key={c} className="cred-badge">
+                {c}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t2)]">
             <span className="decode-gold">100+</span> thyroid women coached
+          </p>
+          {/* 26-Nov, specific authority (Cialdini): his own words from the
+              /decode VSL, "for the last 5 years I have dedicated my practice to
+              helping only one type of client, which is Indian women with
+              hypothyroidism". */}
+          <p className="mt-3 text-[length:var(--fs-sm)] leading-[var(--lh-body)] text-[var(--t1)]">
+            5 years, one kind of client: Indian women with hypothyroidism.
           </p>
           {/* "Your report will show why." was pulled on 08-Nov-2026. Set as a
               gold-ruled blockquote it read as the section's most important

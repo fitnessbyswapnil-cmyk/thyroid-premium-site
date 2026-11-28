@@ -156,18 +156,9 @@ export const MarkersResultSchema = z.object({
 export type MarkerValue = z.infer<typeof Marker>;
 export type MarkersResult = z.infer<typeof MarkersResultSchema>;
 
-/** The pre-call screen's row shape, verbatim from lib/precall.ts (MarkerRow). */
-export type MarkerRow = { marker: string; value: string; range?: string; flag?: string };
-
-/** Units ride inside the value ("5.8 µIU/mL"); empty range and flag are left out. */
-export function toMarkerRows(result: MarkersResult): MarkerRow[] {
-  return result.markers.map((m) => ({
-    marker: m.name,
-    value: m.unit ? `${m.value} ${m.unit}` : m.value,
-    ...(m.refRange ? { range: m.refRange } : {}),
-    ...(m.flag ? { flag: m.flag } : {}),
-  }));
-}
+// The row shape and its conversion live in lib/marker-rows.ts, which the browser
+// can import; this file (node:crypto, zod) must stay server-side.
+export { toMarkerRows, type MarkerRow } from "./marker-rows.ts";
 
 export function parseMarkersResult(input: unknown): { ok: true; value: MarkersResult } | { ok: false; error: string } {
   const r = MarkersResultSchema.safeParse(input);

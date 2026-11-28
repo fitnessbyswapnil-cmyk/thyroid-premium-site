@@ -48,6 +48,8 @@ import { PaymentLinksCard } from "./PaymentLinksCard";
 
 type Data = {
   generatedAt: string;
+  /** Drive bridge status, folded into the feed; null when it could not be read. */
+  drive?: DriveStatus | null;
   window: { days: number };
   acquisition: {
     spend: number | null; consultPayers: number; programmeCloses: number;
@@ -120,6 +122,7 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(true);
   const [notice, setNotice] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true); setErr("");
@@ -159,17 +162,17 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
   // needed. A card whose Drive button meets a script that refuses the stored
   // pairing brings the card back (showConnectCard): every hint for that
   // failure tells him to use the card, so the card has to be there.
-  const [drive, setDrive] = useState<DriveStatus | null>(null);
+  // A fresh read wins (right after he connects); otherwise the status that came
+  // in the today feed. Derived, not copied into state by an effect.
+  const [driveFresh, setDriveFresh] = useState<DriveStatus | null>(null);
   const [bridgeCode, setBridgeCode] = useState("");
   const [driveJustConnected, setDriveJustConnected] = useState(false);
   const loadDrive = useCallback(() => {
-    void readDriveStatus(adminKey).then((s) => { if (s) setDrive(s); });
+    void readDriveStatus(adminKey).then((s) => { if (s) setDriveFresh(s); });
   }, [adminKey]);
-  useEffect(() => {
-    let live = true;
-    void readDriveStatus(adminKey).then((s) => { if (live && s) setDrive(s); });
-    return () => { live = false; };
-  }, [adminKey]);
+  // The status rides in the today feed (one request on load, not two); the
+  // separate read stays for the moment right after he connects.
+  const drive = driveFresh ?? d?.drive ?? null;
   const onBridgeResult = useCallback((code: string) => {
     setBridgeCode(code);
     if (code) setDriveJustConnected(false);
@@ -504,10 +507,19 @@ export default function Today({ adminKey, dark = false }: { adminKey: string; da
 
         {/* The switches: what may go by itself, and the links the follow-ups carry. */}
         <div style={h6}>Settings</div>
-        <div id="payment-links" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12 }}>
-          <div style={box}><AutomationToggles t={t} apiKey={adminKey} /></div>
-          <div style={box}><PaymentLinksCard t={t} apiKey={adminKey} /></div>
-        </div>
+        {/* Mounted on demand: each card reads its own settings, and two more
+            requests on every load cost cold-start CPU for something he opens
+            rarely. */}
+        {showSettings ? (
+          <div id="payment-links" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12 }}>
+            <div style={box}><AutomationToggles t={t} apiKey={adminKey} /></div>
+            <div style={box}><PaymentLinksCard t={t} apiKey={adminKey} /></div>
+          </div>
+        ) : (
+          <Button t={t} variant="secondary" size="md" onClick={() => setShowSettings(true)}>
+            Open settings: automatic messages and payment links
+          </Button>
+        )}
 
         {d?.caveats?.length ? (
           <div style={{ marginTop: 18, fontSize: 11.5, color: t.ink2, lineHeight: 1.6 }}>

@@ -76,6 +76,22 @@ test("every link goes to the quiz, except one privacy link in the footer", () =>
   for (const h of hrefs) if (h !== "/privacy") assert.equal(h, "/decode/quiz");
 });
 
+test("the one-tap start is the quiz's own first question, posted to the quiz", () => {
+  // 26-Nov. The page must not carry its own copy of the wording: every option
+  // is a stored value and a scoring weight.
+  assert.match(PAGE, /<form action="\/decode\/quiz" method="get"/);
+  assert.ok(PAGE.includes("FIRST_QUESTION.options.map"), "options come from the shared module");
+  // The quiz keeps its own literal (lib/decode-quiz-order.test.ts parses it);
+  // this copy must match it exactly, wording and options.
+  const quiz = read("app/decode/DecodeQuiz.tsx");
+  const q1 = quiz.slice(quiz.indexOf("const QUESTIONS: Q[] = ["), quiz.indexOf("id: \"pattern\""));
+  const first = read("app/decode/first-question.ts");
+  for (const piece of [...first.matchAll(/"([^"]+)"/g)].map((m) => m[1])) {
+    assert.ok(q1.includes(`"${piece}"`), `"${piece}" on the page is not in the quiz's first question`);
+  }
+  for (const m of PAGE.matchAll(/<form action="([^"]+)"/g)) assert.equal(m[1], "/decode/quiz");
+});
+
 test("every /decode CTA says the same thing about cost", () => {
   const subs = [...`${PAGE}${STICKY}`.matchAll(/<span className="cta-sub">([^<]+)</g)]
     .map((m) => m[1].trim());
@@ -92,7 +108,9 @@ test("no transformation card carries an occupation nobody confirmed", () => {
   //
   // Adding a name to CONFIRMED is the deliberate act. Do it only after the
   // owner has actually confirmed that client's occupation.
-  const CONFIRMED = new Set(["", "IT Professional"]);
+  // Vaidehi (IT Professional), Surekha (Bank Manager) and Namrata (Homemaker)
+  // confirmed by the owner on 26-Nov-2026.
+  const CONFIRMED = new Set(["", "IT Professional", "Bank Manager", "Homemaker"]);
   const found = [...WALL.matchAll(/occupation:\s*"([^"]*)"/g)].map((m) => m[1]);
   assert.equal(found.length, 4, "every card must declare the field, even empty");
   for (const occupation of found) {
@@ -139,7 +157,8 @@ test("the page keeps its order, and the long argument stays off it", () => {
     // Was SymptomChips. Replaced 23-Sep by the comparison that answers "I have
     // tried five things already" — see the note above CompareSection.
     ["why nothing has worked", "<CompareSection />"],
-    ["proof: transformations", "<TransformationWall compact />"],
+    // 26-Nov: the clinic skin adds countUp; the marker matches with or without it.
+    ["proof: transformations", "<TransformationWall compact"],
     ["proof: videos", "<VideoTestimonial compact />"],
     // Added 25-Sep: prospects ask for Hashimoto's proof by name. Its own
     // guards live in lib/hashimoto-proof.test.ts.
@@ -149,6 +168,8 @@ test("the page keeps its order, and the long argument stays off it", () => {
     ["the method", 'id="method-heading"'],
     ["what you get", 'id="get-heading"'],
     ["how booking works", 'id="steps-heading"'],
+    // Added 26-Nov (owner): urgency from her own life, right before the fit list.
+    ["why now", 'id="now-heading"'],
     ["who this is for", 'id="fit-heading"'],
     ["FAQ", 'id="faq-heading"'],
   ] as const;
@@ -160,8 +181,21 @@ test("the page keeps its order, and the long argument stays off it", () => {
     previous = at;
   }
   const code = rendered("app/decode/page.tsx");
-  for (const gone of ["<DeficitDiagram", "<AbsolveBlock", "<ShareWithFamily", 'id="compare-heading"', "NOT_FOR_YOU"]) {
+  // NOT_FOR_YOU left this list on 26-Nov-2026: the owner asked for the
+  // "not for you" half of the fit section back, as a deliberate push filter.
+  for (const gone of ["<DeficitDiagram", "<AbsolveBlock", "<ShareWithFamily", 'id="compare-heading"']) {
     assert.ok(!code.includes(gone), `${gone} was removed on purpose — it lives on /decode-long`);
+  }
+});
+
+test("the push lists stay honest: no fake urgency, no price or decision filter", () => {
+  // Added 26-Nov with the "Why now" and "not for you" lists. Urgency on this
+  // page comes from her life, never from a slot count or a deadline.
+  for (const name of ["WHY_NOW", "NOT_FOR_YOU"]) {
+    const list = PAGE.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\] as const;`))?.[1] ?? "";
+    assert.ok(list.length > 0, `${name} must exist`);
+    assert.ok(!/limited|slot|spots|deadline|hurry|last chance|only \\d/i.test(list), `${name} must not invent scarcity`);
+    assert.ok(!/invest|₹|cost|afford|decision|husband/i.test(list), `${name} must not filter on money or who decides`);
   }
 });
 
@@ -179,8 +213,9 @@ test("the coach section says only what the owner said, and the hype stays off", 
   // template rather than as him.
   assert.ok(!/no obligation|spots left|limited spots/i.test(rendered("app/decode/page.tsx")));
   assert.ok(COACH.includes("Scientific Thyroid Lean Method for fat loss"));
-  assert.match(COACH, /ACE<\/span> &middot; <span className="decode-gold">INFS<\/span>/);
-  assert.match(COACH, /BLS<\/span> certified/);
+  // 27-Nov: badges. Exactly the four he names in the /decode VSL, no more.
+  const creds = COACH.match(/\{\[([^\]]*)\]\.map\(\(c\) =>/)?.[1] ?? "";
+  assert.deepEqual([...creds.matchAll(/"([^"]+)"/g)].map((m) => m[1]), ["ACE", "INFS", "AIHM", "AHA BLS"]);
   // "50,000+ women trained" and the S.H.A.P.E. framework belong to the page this
   // one is benchmarked against. They are not his and never go on this page.
   // The keep-coaching-free guarantee USED to be banned by this same line; the
@@ -215,7 +250,7 @@ test("the page's own words stay under budget", () => {
 test("proof is capped, and never cut", () => {
   assert.match(PAGE, /<WhatsappProofSection hideCta limit=\{3\} \/>/);
   // Faces and voices: owner's explicit call — never cut.
-  assert.ok(PAGE.includes("<TransformationWall compact />"));
+  assert.match(PAGE, /<TransformationWall compact[^>]*\/>/);
   assert.ok(PAGE.includes("<VideoTestimonial compact />"));
   assert.equal((WALL.match(/src: "\/transformations\//g) ?? []).length, 4);
 });

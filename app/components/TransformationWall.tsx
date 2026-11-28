@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import CountUp from "./CountUp";
 import { useEffect, useState } from "react";
 
 import { useInView } from "../lib/useInView";
@@ -78,7 +79,10 @@ const WALL = [
     before: "/transformations/cards/vaidehi-before.jpg",
     after: "/transformations/cards/vaidehi-after.jpg",
     name: "Vaidehi",
-    occupation: "",
+    // Printed on her own composite: "Vaidehi | Age: 34 years".
+    age: 34,
+    // Confirmed by the owner, 26-Nov-2026.
+    occupation: "IT Professional",
     condition: "Hypothyroidism",
     from: "72 kg",
     to: "60 kg",
@@ -91,7 +95,10 @@ const WALL = [
     before: "/transformations/cards/surekha-before.jpg",
     after: "/transformations/cards/surekha-after.jpg",
     name: "Surekha",
-    occupation: "",
+    // Printed on her own composite: "Surekha | Age: 36 years".
+    age: 36,
+    // Confirmed by the owner, 26-Nov-2026.
+    occupation: "Bank Manager",
     condition: "Hypothyroidism",
     from: "78 kg",
     to: "66 kg",
@@ -104,7 +111,10 @@ const WALL = [
     before: "/transformations/cards/namrata-before.jpg",
     after: "/transformations/cards/namrata-after.jpg",
     name: "Namrata",
-    occupation: "",
+    // Printed on her own composite: "Namrata | Age: 34 years".
+    age: 34,
+    // Confirmed by the owner, 26-Nov-2026.
+    occupation: "Homemaker",
     condition: "Hypothyroidism",
     from: "84 kg",
     to: "68 kg",
@@ -117,6 +127,8 @@ const WALL = [
     before: "/transformations/cards/heenal-before.jpg",
     after: "/transformations/cards/heenal-after.jpg",
     name: "Heenal",
+    // Printed on her own composite: "Heenal | Age: 26 years".
+    age: 26,
     occupation: "IT Professional",
     condition: "Hypothyroidism",
     from: "82 kg",
@@ -135,7 +147,7 @@ type WallEntry = (typeof WALL)[number];
 const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
 const COUNT_WORD = NUMBER_WORDS[WALL.length] ?? String(WALL.length);
 
-function Card({ entry, index }: { entry: WallEntry; index: number }) {
+function Card({ entry, index, countUp = false, showAge = false }: { entry: WallEntry; index: number; countUp?: boolean; showAge?: boolean }) {
   const { ref, visible } = useInView(0.08);
   // Clarity, 14 days to 21-Sep: on /decode mobile both dead-click leaders were
   // these images (4 taps each, 53% of all dead taps between them) and four of
@@ -220,6 +232,7 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="m-0 text-[length:var(--fs-base)] font-bold leading-[var(--lh-heading)] tracking-[var(--ls-heading)] text-[var(--t1)]">
             {entry.name}
+            {showAge ? <span className="font-normal text-[var(--t2)]">, {entry.age}</span> : null}
           </h3>
           {entry.occupation ? <span className="proof-tag">{entry.occupation}</span> : null}
         </div>
@@ -233,7 +246,9 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
           <span className="wall-figure">
             {entry.from} &rarr; {entry.to}
           </span>
-          <span className="wall-delta">&minus;{entry.kg}</span>
+          <span className="wall-delta">
+            &minus;{countUp && /^\d+ kg$/.test(entry.kg) ? <CountUp value={parseInt(entry.kg, 10)} suffix=" kg" /> : entry.kg}
+          </span>
         </p>
 
         <p className="mt-3 text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
@@ -272,9 +287,43 @@ function Card({ entry, index }: { entry: WallEntry; index: number }) {
   );
 }
 
+/**
+ * The results strip under the /decode hero (owner's design doc: Magic UI's
+ * Marquee, CSS only). It reads the wall's own data, so it can never say
+ * anything the cards do not, and it carries the results-vary line inside the
+ * loop: kilograms and a timeframe next to the hero need the qualifier where
+ * they are read (Meta Health and Wellness). Reduced motion: a still,
+ * swipeable row instead.
+ */
+export function ResultsMarquee() {
+  const items = [
+    ...WALL.map((w) => `${w.name}, ${w.age}${w.occupation ? ` \u00b7 ${w.occupation}` : ""} \u00b7 \u2212${w.kg} in 90 days`),
+    "Individual results vary",
+  ];
+  return (
+    <div className="results-marquee mx-auto mt-8 w-full max-w-[760px]" aria-label="Client results">
+      <div className="results-marquee__track">
+        {[0, 1].map((copy) => (
+          <ul key={copy} className="results-marquee__list" aria-hidden={copy === 1}>
+            {items.map((t) => (
+              <li key={t} className="results-marquee__item text-[length:var(--fs-3xs)]">
+                {t}
+              </li>
+            ))}
+          </ul>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** `compact`: drops the line under the heading (the 100+ claim, already in the
  *  /decode hero). The cards and their words are never touched. Default off. */
-export default function TransformationWall({ compact = false }: { compact?: boolean } = {}) {
+export default function TransformationWall({
+  compact = false,
+  countUp = false,
+  showAge = false,
+}: { compact?: boolean; countUp?: boolean; showAge?: boolean } = {}) {
   return (
     <section
       className="cv-auto section-pad-tight relative bg-[var(--bg-elevated)]"
@@ -319,7 +368,7 @@ export default function TransformationWall({ compact = false }: { compact?: bool
             so all four must sit in the vertical scroll path. */}
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
           {WALL.map((entry, i) => (
-            <Card key={entry.src} entry={entry} index={i} />
+            <Card key={entry.src} entry={entry} index={i} countUp={countUp} showAge={showAge} />
           ))}
         </div>
 

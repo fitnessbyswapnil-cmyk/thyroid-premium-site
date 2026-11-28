@@ -2257,3 +2257,450 @@ a {
 /* An accent phrase inside a headline. Resolves green on the deep band and the
    AA-safe dark green on white, because both come from the same token. */
 .hl { color: var(--gold-ink); }
+
+/* ── /decode: the clinic skin (26-Nov-2026) ─────────────────────────────────
+   Owner's Claude Doc "Decode landing page — design repos & direction":
+   warm ivory, white cards, sand every third section, deep-ink text, amber
+   only for marks (rules, icons, step numbers, never body text) and ONE action
+   colour, petrol, so Meta traffic from the petrol/amber/cream Instagram
+   creatives lands on a page that matches the ad.
+
+   Scoped to .theme-clinic, which only /decode and its quiz carry. /decode-long
+   keeps .theme-decode alone and is untouched; so is the home page.
+
+   This replaces the September red button and the near-black band ON THIS PAGE
+   ONLY. The reasons red won in September (continuity with red/white/yellow
+   creatives, see the reference-page skin above) are the same argument applied
+   to the new creatives: the button matches the ad that sent her.
+
+   It works the way .band-deep does: by redefining the ink and surface tokens
+   on the wrapper, so every proof component re-skins with no markup fork. */
+.theme-clinic {
+  --clinic-ivory: #faf7f2;
+  --clinic-sand: #f1ece3;
+  --clinic-ink: #14282d;
+  --clinic-muted: #56676b;
+  --clinic-amber: #e0a042;
+  --clinic-amber-ink: #87580f;
+  --clinic-amber-wash: #fbf1e0;
+  --clinic-petrol: #0e3f49;
+  --clinic-line: rgba(20, 40, 45, 0.1);
+
+  background: var(--clinic-ivory);
+
+  --t1: #14282d;
+  --t2: #56676b;
+  --t3: #56676b;
+  --t4: #56676b;
+  --t5: #56676b;
+  --t2-decode: #56676b;
+
+  --accent-yellow: #e0a042;
+  --accent-wash: #fbf1e0;
+  --accent-ink: #87580f;
+  --gold-ink: #87580f;
+  --p300: #87580f;
+  --p400: #87580f;
+  --p500: #87580f;
+  --p600: #87580f;
+  --p-subtle: rgba(224, 160, 66, 0.1);
+  --p-tint: rgba(224, 160, 66, 0.07);
+  --p-border: rgba(224, 160, 66, 0.45);
+
+  /* One action colour: petrol, white label (11.5:1). */
+  --cta-bg: #0e3f49;
+  --cta-fg: #ffffff;
+  --cta-sub-fg: #ffffff;
+  --cta-sub-opacity: 0.88;
+  --cta-bg-hover: #0a2f37;
+  --cta-bg-active: #082730;
+  --cta-shadow-hover: 0 12px 28px rgba(14, 63, 73, 0.24);
+  --focus-ring: #0e3f49;
+}
+
+/* The light bands that replace .band-deep / .band-deeper on this page. */
+.theme-clinic .band-clinic,
+.theme-clinic .band-sand {
+  --bg-page: #faf7f2;
+  --bg-section: #faf7f2;
+  --bg-elevated: #faf7f2;
+  --surface-page: #faf7f2;
+  --surface-wash: #faf7f2;
+  --surface-wash-strong: #f1ece3;
+  --surface-card: #ffffff;
+  --border-hairline: rgba(20, 40, 45, 0.1);
+  --border-on-wash: rgba(20, 40, 45, 0.12);
+  --border-strong: rgba(20, 40, 45, 0.2);
+  --b-soft: rgba(20, 40, 45, 0.1);
+  --b-mid: rgba(20, 40, 45, 0.18);
+  --s1: rgba(20, 40, 45, 0.03);
+  --s2: rgba(20, 40, 45, 0.05);
+  --s3: rgba(20, 40, 45, 0.07);
+  --shadow-card: 0 1px 2px rgba(20, 40, 45, 0.04), 0 8px 24px rgba(20, 40, 45, 0.06);
+  background: #faf7f2;
+}
+.theme-clinic .band-sand {
+  --bg-page: #f1ece3;
+  --bg-section: #f1ece3;
+  --bg-elevated: #f1ece3;
+  --surface-page: #f1ece3;
+  --surface-wash: #f1ece3;
+  background: #f1ece3;
+}
+.theme-clinic .band-clinic section,
+.theme-clinic .band-sand section {
+  background: transparent;
+}
+
+.theme-clinic .decode-hero {
+  background: #faf7f2;
+}
+
+/* Headings: Newsreader at 500, never bold, in ink. */
+.theme-clinic h1,
+.theme-clinic h2,
+.theme-clinic h3,
+.theme-clinic .section-title {
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: var(--ls-heading);
+  color: var(--t1);
+}
+.theme-clinic .section-title {
+  font-size: var(--fs-2xl);
+}
+
+/* Eyebrow: 13px caps, 0.12em, amber ink; the dash in amber. */
+.theme-clinic .section-label {
+  color: var(--clinic-amber-ink);
+  font-weight: 600;
+}
+.theme-clinic .section-label::before {
+  color: var(--clinic-amber);
+}
+
+/* The heading half that used to be gold: amber ink, italic serif. Amber itself
+   is 2.1:1 on ivory and can never be type. */
+.theme-clinic .decode-gold {
+  color: var(--clinic-amber-ink);
+  font-weight: 600;
+}
+.theme-clinic :is(h1, h2, h3, .section-title) .decode-gold {
+  font-style: italic;
+  font-weight: 500;
+}
+
+.theme-clinic .decode-card {
+  background: #ffffff;
+  border: 1px solid rgba(20, 40, 45, 0.08);
+  box-shadow: 0 1px 2px rgba(20, 40, 45, 0.04), 0 8px 24px rgba(20, 40, 45, 0.05);
+}
+
+/* Sticky bar: a calm ivory bar with one petrol button, clear of the home
+   indicator. Other pages keep the dark scrim in DecodeStickyCta. */
+.theme-clinic .decode-sticky-bar {
+  background: rgba(250, 247, 242, 0.97) !important;
+  border-top: 1px solid rgba(20, 40, 45, 0.1);
+  padding-top: 12px !important;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+}
+.theme-clinic .decode-sticky-bar .cta-button {
+  box-shadow: none !important;
+}
+
+/* FAQ: native <details>, no JavaScript. */
+.theme-clinic .faq-item > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.theme-clinic .faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+.theme-clinic .faq-item[open] .faq-chevron {
+  transform: rotate(180deg);
+}
+.theme-clinic .faq-chevron {
+  transition: transform 0.2s ease;
+}
+
+/* Scroll reveal (BlurFade's behaviour without its runtime): RevealOnScroll
+   marks only what starts BELOW the fold, so nothing on the first screen ever
+   blinks, and a visitor without JavaScript sees everything. Runs once. */
+.theme-clinic [data-reveal] {
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.6s ease;
+}
+.theme-clinic [data-reveal].reveal-wait {
+  opacity: 0;
+  transform: translateY(8px);
+  filter: blur(6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-clinic [data-reveal] {
+    transition: none;
+  }
+  .theme-clinic .faq-chevron {
+    transition: none;
+  }
+}
+
+/* The comparison on /decode: the old way on a quiet translucent card, the
+   thyroid way on a white card with an amber edge. */
+.theme-clinic .compare-col {
+  border: 1px solid rgba(20, 40, 45, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+}
+.theme-clinic .compare-col .compare-tag {
+  color: #8f3f2f;
+  background: rgba(180, 83, 63, 0.09);
+}
+.theme-clinic .compare-col--good {
+  border-color: rgba(224, 160, 66, 0.55);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20, 40, 45, 0.04), 0 10px 28px rgba(20, 40, 45, 0.07);
+}
+.theme-clinic .compare-col--good .compare-tag {
+  color: #87580f;
+  background: rgba(224, 160, 66, 0.14);
+}
+
+/* One-tap start on /decode: quiet white tiles, petrol edge on hover/focus so
+   they read as choices, not as a second button style competing with the CTA. */
+.theme-clinic .one-tap {
+  background: #ffffff;
+  border: 1px solid rgba(20, 40, 45, 0.14);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.theme-clinic .one-tap:hover,
+.theme-clinic .one-tap:focus-visible {
+  border-color: #0e3f49;
+  box-shadow: 0 0 0 1px #0e3f49;
+}
+
+/* ── 27-Nov: finishing the owner's design doc on /decode ───────────────── */
+
+/* Body 16px inside every band, the proof components included: their 14-15px
+   steps resolve to the 16-17px step here and nowhere else. */
+.theme-clinic .band-clinic,
+.theme-clinic .band-sand {
+  --fs-2xs: var(--fs-sm);
+  --fs-xs: var(--fs-sm);
+}
+
+/* Section rhythm 64px mobile / 112px desktop for every content section in a
+   band, the proof components' own sections included. Button rows keep their
+   own tight spacing, and a section that hands straight to a button row gives
+   up most of its bottom padding so the button stays with its proof. */
+.theme-clinic :is(.band-clinic, .band-sand) > section:not(.button-row) {
+  padding-top: clamp(4rem, 9vw, 7rem);
+  padding-bottom: clamp(4rem, 9vw, 7rem);
+}
+.theme-clinic :is(.band-clinic, .band-sand) > section:not(.button-row):has(+ .button-row) {
+  padding-bottom: 2rem;
+}
+
+/* Inter at 400/500 only (the doc): everything set in the body face that was
+   600 or 700 reads at 500 here. Headings are the serif and already 500. */
+.theme-clinic :is(.font-bold, .font-semibold):not(h1, h2, h3, .section-title),
+.theme-clinic .cta-button,
+.theme-clinic .section-label {
+  font-weight: 500;
+}
+
+/* Credential badges in the coach section. */
+.theme-clinic .cred-badge {
+  font-size: var(--fs-3xs);
+  font-weight: 500;
+  letter-spacing: var(--ls-caps);
+  color: #87580f;
+  background: #fbf1e0;
+  border: 1px solid rgba(224, 160, 66, 0.45);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+/* The one petrol band: white ink, amber button with ink label. */
+.theme-clinic .band-petrol {
+  background: #0e3f49;
+  --t1: #ffffff;
+  --t2: rgba(255, 255, 255, 0.78);
+  --t3: rgba(255, 255, 255, 0.78);
+  --cta-bg: #e0a042;
+  --cta-fg: #14282d;
+  --cta-sub-fg: #14282d;
+  --cta-sub-opacity: 0.85;
+  --cta-bg-hover: #eab25e;
+  --cta-bg-active: #d39434;
+  --cta-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.25);
+  --focus-ring: #e0a042;
+}
+.theme-clinic .band-petrol h2 {
+  color: #ffffff;
+}
+
+/* Results strip (Marquee's behaviour, CSS only). Two copies of the list
+   slide one width to the left and loop; hover pauses it. */
+.theme-clinic .results-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.theme-clinic .results-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: results-marquee 48s linear infinite;
+}
+.theme-clinic .results-marquee:hover .results-marquee__track {
+  animation-play-state: paused;
+}
+.theme-clinic .results-marquee__list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.theme-clinic .results-marquee__item {
+  white-space: nowrap;
+  color: var(--t2);
+  padding: 8px 14px;
+  margin-right: 10px;
+  border: 1px solid rgba(20, 40, 45, 0.1);
+  border-radius: 999px;
+  background: #ffffff;
+}
+@keyframes results-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-clinic .results-marquee {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .theme-clinic .results-marquee__track {
+    animation: none;
+  }
+}
+
+/* ── Score report (28-Nov-2026) ─────────────────────────────────────────────
+   The quiz result as a short report: a petrol head with the gauge, an ivory
+   sheet with the signs found in her answers, then the three next steps.
+   Scoped to .theme-clinic like everything else on /decode. */
+.theme-clinic .score-report {
+  border-radius: 22px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid var(--clinic-line);
+  box-shadow: 0 1px 2px rgba(20, 40, 45, 0.06), 0 18px 44px rgba(20, 40, 45, 0.12);
+}
+.theme-clinic .score-report__head {
+  padding: 26px 22px 24px;
+  text-align: center;
+  color: #faf7f2;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(224, 160, 66, 0.16), rgba(224, 160, 66, 0) 60%),
+    linear-gradient(180deg, #0e3f49 0%, #14282d 100%);
+}
+.theme-clinic .score-report__body {
+  padding: 22px 22px 20px;
+  background: #ffffff;
+}
+.theme-clinic .score-report__row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.theme-clinic .score-report__row > svg {
+  margin-top: 1px;
+}
+.theme-clinic .score-report__chip {
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: var(--t2);
+  background: var(--clinic-ivory);
+  border: 1px solid var(--clinic-line);
+}
+.theme-clinic .score-gauge {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.theme-clinic .score-arc {
+  transition: stroke-dashoffset 1.1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-clinic .score-arc {
+    transition: none;
+  }
+}
+@media (min-width: 640px) {
+  .theme-clinic .score-report__head {
+    padding: 30px 32px 28px;
+  }
+  .theme-clinic .score-report__body {
+    padding: 26px 32px 24px;
+  }
+}
+
+/* The three next steps: a numbered rail, step 1 lit. Numbered because it IS
+   a sequence: book, send the report, have the call. */
+.theme-clinic .next-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+.theme-clinic .next-steps__item {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 0 0 22px;
+}
+.theme-clinic .next-steps__item:last-child {
+  padding-bottom: 0;
+}
+.theme-clinic .next-steps__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 34px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--clinic-line);
+}
+.theme-clinic .next-steps__num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  color: var(--t2);
+  background: #ffffff;
+  border: 1.5px solid var(--clinic-line);
+}
+.theme-clinic .next-steps__item.is-now .next-steps__num {
+  color: #ffffff;
+  background: var(--clinic-petrol);
+  border-color: var(--clinic-petrol);
+  box-shadow: 0 0 0 5px rgba(14, 63, 73, 0.12);
+}
+.theme-clinic .next-steps__now {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: var(--fs-3xs);
+  font-weight: 500;
+  vertical-align: 1px;
+  color: var(--clinic-amber-ink);
+  background: var(--clinic-amber-wash);
+}
+.theme-clinic .score-bands {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}

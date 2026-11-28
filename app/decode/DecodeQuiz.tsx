@@ -45,7 +45,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { generateEventId, pushDL, trackLead } from "@/app/lib/analytics";
 import { persistUserIdentity } from "@/app/components/tracking/UserIdentityTracker";
 import { getUtmParams, getFbclid, getVisitorId, getFbc, getFbp } from "@/lib/tracking";
-import InAppBrowserNotice from "@/app/components/InAppBrowserNotice";
+import ScoreReport, { NextSteps } from "./ScoreReport";
 import { useTurnstile, TurnstileBox, postWithBotCheck, leadCounted, loadTurnstile } from "@/app/components/TurnstileWidget";
 import { scoreLead } from "@/lib/lead-scoring";
 import {
@@ -83,6 +83,8 @@ type Q = { id: string; q: string; options: string[] };
 // reordered freely, and the wording and options must NOT be edited to suit an
 // order — every option label is a stored value and a scoring weight.
 const QUESTIONS: Q[] = [
+  // Also offered on /decode as a one-tap start (./first-question.ts). A test
+  // holds the two copies identical; change both or neither.
   {
     id: "stuck",
     q: "How long has your weight been stuck?",
@@ -337,6 +339,22 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     [i],
   );
 
+  // One-tap start from /decode (26-Nov): the page's first-question buttons
+  // submit ?stuck=<option>. Recorded through pick() itself, so it is the same
+  // state change and the same decode_quiz_answer event as tapping it here; an
+  // unknown value is ignored and she simply starts at question 1. The param is
+  // then dropped so a refresh cannot answer it twice.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current || !autostart || i !== 0) return;
+    prefilled.current = true;
+    const first = QUESTIONS[0];
+    const v = new URLSearchParams(window.location.search).get(first.id);
+    if (!v || !first.options.includes(v)) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    pick(first, v);
+  }, [autostart, i, pick]);
+
   /** The follow-up's answer. It gates nothing: all three advance identically.
    *  Deliberately not wrapped in useCallback — the compiler already declines to
    *  optimise this component, and a second unpreservable memo just adds noise. */
@@ -369,6 +387,18 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
   // black box.
   const score100 = resumeScore ?? Math.round((hits / 7) * 100);
   const lead = done ? scoreLead(toLeadAnswers(a)) : null;
+  // Back from the WhatsApp link she has her score but not her taps, so the
+  // count is read back off the score (seven equal markers) rather than shown
+  // as "0 of 7" under a number that says otherwise.
+  const shownHits = resumeScore != null ? Math.round((resumeScore / 100) * 7) : hits;
+  const booking = done && !already && !gatedOut;
+  const meaning = !booking ? undefined : hasReport ? (
+    score100 >= 57
+      ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 60 minutes I read yours line by line and tell you <strong>which</strong> of these signs are real, and <strong>what to change first</strong>.</>
+      : <>Your report will show which of these are real and which are not. That is the whole job of the session. And if the answer is that you do not need me, you will hear that too.</>
+  ) : (
+    <>You do not have a blood report yet, and that is fine. In the session I tell you <strong>exactly which tests to get</strong> and why, and we work from your answers until the results are in.</>
+  );
 
   const submitGate = useCallback(async () => {
     if (gateBusy) return;
@@ -464,7 +494,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
         <p className="section-label">Last step before your score</p>
         <h2 className="section-title mx-auto text-balance">Where should I send it?</h2>
         <p className="mx-auto mt-3 max-w-[520px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-          Your score shows here now, and I WhatsApp it to you so you keep it &mdash; with the one thing to do next.
+          Your score shows here now. I also WhatsApp it to you, with the one thing to do next.
         </p>
         <div className="mx-auto mt-6 w-full max-w-[420px] text-left">
           <label className="block text-[length:var(--fs-3xs)] font-medium text-[var(--t1)]" htmlFor="gate-name">Your name</label>
@@ -480,7 +510,7 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           <TurnstileBox bot={bot} hint="One quick check. Tap the box to see your score." hintColor="var(--t2)" />
           <button type="button" onClick={submitGate} disabled={gateBusy} className="cta-button mt-5 w-full" style={{ opacity: gateBusy ? 0.7 : 1 }}>
             {gateBusy ? "One moment…" : "Show my score"}
-            <span className="cta-sub">I&rsquo;ll WhatsApp your score. No spam &mdash; reply stop any time.</span>
+            <span className="cta-sub">I&rsquo;ll WhatsApp your score. No spam, reply stop any time.</span>
           </button>
           <p className="mt-3 text-center text-[length:var(--fs-3xs)] leading-[var(--lh-body)] text-[var(--t2)]">
             How I use your answers and your number:{" "}
@@ -530,28 +560,14 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
     return (
       <Shell>
         <p className="section-label">Your score</p>
-        <div
-          className="mx-auto mt-2 max-w-[560px] rounded-2xl px-6 py-7"
-          style={{ background: "#0b1120", color: "#fff" }}
-        >
-          <div className="text-[length:var(--fs-3xs)] font-bold uppercase tracking-[var(--ls-caps)]" style={{ color: "var(--accent-yellow)" }}>
-            Markers of a stalled thyroid metabolism
-          </div>
-          <div className="mt-2 text-[length:var(--fs-3xl)] font-bold leading-[var(--lh-display)] tracking-[var(--ls-display)]" data-tabular>
-            {score100}<span className="text-[length:var(--fs-xl)] font-medium" style={{ color: "#9a9890" }}> / 100</span>
-          </div>
-          <div className="mt-2 text-[length:var(--fs-3xs)]" style={{ color: "#9a9890" }}>
-            {hits} of 7 markers present
-          </div>
-          {resumeScore == null && (<ul className="mt-5 flex list-none flex-col gap-2 p-0 text-left">
-            {ms.map((m) => (
-              <li key={m.label} className="flex items-start gap-3 text-[length:var(--fs-2xs)] leading-[var(--lh-tight)]" style={{ color: m.hit ? "#fff" : "#6b7280" }}>
-                <span aria-hidden="true" className="mt-[3px] inline-block h-4 w-4 flex-none rounded-full" style={{ background: m.hit ? "var(--accent-yellow)" : "transparent", border: m.hit ? "0" : "1.5px solid #4b5563" }} />
-                {m.label}
-              </li>
-            ))}
-          </ul>)}
-        </div>
+        <ScoreReport
+          name={resumeInit?.name || gate.name}
+          score100={score100}
+          hits={shownHits}
+          markers={resumeScore == null ? ms : null}
+          meaning={meaning}
+          next={booking ? { href: "#next-step", label: "Book my free session", sub: "Your next step \u00b7 about a minute" } : undefined}
+        />
 
         {already ? (
           <div className="mx-auto mt-8 max-w-[560px] rounded-2xl p-6 text-left"
@@ -564,12 +580,12 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
             {already.booked ? (
               <>
                 <p className="mt-2 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-                  Your 1-1 Thyroid Consultation is confirmed &mdash; 60 minutes, one to one with Swapnil.
+                  Your Thyroid Root Cause Session is confirmed: 60 minutes, one to one with Swapnil.
                   {already.sessionDate ? <> Your slot: <strong>{already.sessionDate}</strong>.</> : null}
                 </p>
                 <p className="mt-3 text-[length:var(--fs-2xs)] leading-[var(--lh-body)] text-[var(--t2)]">
                   Nothing more to pay and nothing more to book. Before we speak, send your latest
-                  thyroid report (TSH, T3, T4) on WhatsApp &mdash; I read every report before the call.
+                  thyroid report (TSH, T3, T4) on WhatsApp. I read every report before the call.
                 </p>
                 <a href="https://cal.com/swapnilumbarkarfitness/60min"
                    className="mt-5 inline-block text-[length:var(--fs-3xs)] font-bold underline"
@@ -627,19 +643,15 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           </div>
         ) : hasReport ? (
           <>
-            <p className="mx-auto mt-6 max-w-[580px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              {score100 >= 57
-                ? <>Most women who score this high have the answer sitting in a report that was read as &ldquo;normal&rdquo;. In 60 minutes I read yours line by line and tell you <strong>which</strong> of these markers already happened, and <strong>when</strong>.</>
-                : <>Your report will show which of these are real and which are not. That is the whole job of the session &mdash; and if the answer is that you do not need me, you will hear that too.</>}
-            </p>
-            <div className="mt-8 text-left">
-              <InAppBrowserNotice />
+            <NextSteps hasReport />
+            <div className="mt-6 text-left">
               <ScheduleClient
                 wrapper="div"
-                eyebrow={`Your score: ${score100} / 100`}
-                heading="Schedule your 1-1 Thyroid Consultation"
-                subheading="The Premium Thyroid Fat Loss Session. 60 minutes, one to one with Swapnil. Your own blood report read line by line, and the exact reason your weight is not moving. No card, no payment, just pick your time."
+                eyebrow="Step 1 of 3"
+                heading="Pick your time"
+                subheading="Check your name and number. Your calendar opens next, with them already filled in. Free, no card."
                 ctaLabel={"Book my free session"}
+                ctaBg="var(--clinic-petrol)"
                 free
                 rationaleTitle="Why it is free"
                 rationaleBody="It used to be ₹299, to keep the slot honest. I would rather the money was never the reason you did not come. Bring your report and turn up on time, that is the whole price. Only a few slots open each week, and I read every report before the call."
@@ -669,16 +681,15 @@ export default function DecodeQuiz({ autostart = false }: { autostart?: boolean 
           </>
         ) : (
           <>
-            <p className="mx-auto mt-6 max-w-[580px] text-[length:var(--fs-xs)] leading-[var(--lh-body)] text-[var(--t2)]">
-              You do not have a blood report yet &mdash; that is fine. In the session I tell you <strong>exactly which tests to get</strong> and why (the ones most labs leave out), and we work from your answers above until the results are in.
-            </p>
-            <div className="mt-8 text-left">
+            <NextSteps hasReport={false} />
+            <div className="mt-6 text-left">
               <ScheduleClient
                 wrapper="div"
-                eyebrow={`Your score: ${score100} / 100`}
-                heading="Schedule your 1-1 Thyroid Consultation"
-                subheading="The Premium Thyroid Fat Loss Session. 60 minutes, one to one with Swapnil. Which tests to get, what your answers already point to, and the plan to start on. No card, no payment, just pick your time."
+                eyebrow="Step 1 of 3"
+                heading="Pick your time"
+                subheading="Check your name and number. Your calendar opens next, with them already filled in. Free, no card."
                 ctaLabel={"Book my free session"}
+                ctaBg="var(--clinic-petrol)"
                 free
                 rationaleTitle="Why it is free"
                 rationaleBody="It used to be ₹299, to keep the slot honest. I would rather the money was never the reason you did not come. Turn up on time and come ready to talk, that is the whole price. Only a few slots open each week, and I prepare from your answers before we speak."
