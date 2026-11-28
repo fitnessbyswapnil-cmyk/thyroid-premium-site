@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { planReminders, planCallReminders, parseSheetTime, firstNameOf, phoneKey, type ReminderColumns, type CallReminderColumns,
   istCalendarDate,
   istMinutesOfDay,
+  sessionInstant,
+  callReminderGateFrom,
+  calBookingPhoneKeys,
+  CAL_SAME_SLOT_TOLERANCE_MS,
+  type CallReminderCalGate,
 } from "./reminder-plan.ts";
 
 const COLS: ReminderColumns = { timestamp: 0, leadId: 1, name: 2, phone: 3, paid: 40, reminderSent: 44 };
@@ -610,22 +615,40 @@ function callRow(o: { session?: string; time?: string; phone?: string; status?: 
 }
 const inHrs = (h: number) => new Date(NOW + h * 3600000).toISOString();
 
+/**
+ * Cal.com confirming every row's slot under her phone: the state a healthy
+ * booking is in. The timing tests in this section are about the sheet's
+ * clock, not about Cal.com, so they run through planConfirmed. The Cal.com
+ * gate itself has its own tests further down, which call planCallReminders.
+ */
+function calConfirming(rows: string[][], cols: CallReminderColumns = CRCOLS): CallReminderCalGate {
+  const activeStarts = new Map<string, number[]>();
+  for (const r of rows) {
+    const at = sessionInstant(r[cols.sessionDate], r[cols.sessionTime]);
+    const key = phoneKey(r[cols.phone]);
+    if (at !== null && key) activeStarts.set(key, [...(activeStarts.get(key) ?? []), at]);
+  }
+  return { activeStarts, cancelled: new Set() };
+}
+const planConfirmed = (o: Omit<Parameters<typeof planCallReminders>[0], "cal">) =>
+  planCallReminders({ ...o, cal: calConfirming(o.rows, o.cols) });
+
 test("a call 23 hours out gets the 24h reminder", () => {
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: inHrs(23) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
   });
   assert.equal(plan.candidates.length, 1);
 });
 
 test("a call three days out is not reminded yet", () => {
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: inHrs(72) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
   });
   assert.equal(plan.skipped.notYetDue, 1);
 });
 
 test("a reminder never fires late — a call already past is skipped, not sent", () => {
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: inHrs(-1) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 0,
   });
   assert.equal(plan.candidates.length, 0);
@@ -633,21 +656,21 @@ test("a reminder never fires late — a call already past is skipped, not sent",
 });
 
 test("the 24h stage cannot fire minutes before the call", () => {
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: inHrs(0.5) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
   });
   assert.equal(plan.skipped.tooLate, 1, "inside the 1h stage's territory, not the 24h stage's");
 });
 
 test("a cancelled booking is never reminded", () => {
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: inHrs(5), status: "Cancelled" })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
   });
   assert.equal(plan.skipped.cancelled, 1);
 });
 
 test("an unreadable session date is counted, never guessed at", () => {
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: "sometime thursday" })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
   });
   assert.equal(plan.skipped.unparseableTime, 1);
@@ -655,7 +678,7 @@ test("an unreadable session date is counted, never guessed at", () => {
 
 test("each stage stamps its own column, so 24h and 1h never suppress each other", () => {
   const rows = [callRow({ session: inHrs(0.5), sent: "" })];
-  const oneHour = planCallReminders({ rows, cols: CRCOLS, now: NOW, withinHours: 1, notWithinHours: 0 });
+  const oneHour = planConfirmed({ rows, cols: CRCOLS, now: NOW, withinHours: 1, notWithinHours: 0 });
   assert.equal(oneHour.candidates.length, 1, "the 1h stage still fires for a call 30 min out");
 });
 
@@ -677,7 +700,7 @@ test("a date-only row takes its time from the time column, as IST", () => {
   // 12:00 IST on 26-Sep. At 11:15 IST the 1h stage is due; at 05:30 — where
   // the old code fired — it is 6h30 away and must not be.
   const row = [callRow({ session: "Saturday, 26 September 2026", time: "12:00" })];
-  const due = planCallReminders({
+  const due = planConfirmed({
     rows: row, cols: CRCOLS, now: IST(2026, 8, 26, 11, 15), withinHours: 1, notWithinHours: 0,
   });
   assert.equal(due.candidates.length, 1, "due 45 minutes before the slot");
@@ -687,7 +710,7 @@ test("a date-only row takes its time from the time column, as IST", () => {
     "the instant is 12:00 IST, not midnight",
   );
 
-  const old = planCallReminders({
+  const old = planConfirmed({
     rows: row, cols: CRCOLS, now: IST(2026, 8, 26, 5, 30), withinHours: 1, notWithinHours: 0,
   });
   assert.equal(old.candidates.length, 0, "04:30 to 05:30 IST is not one hour before noon");
@@ -697,7 +720,7 @@ test("a date-only row takes its time from the time column, as IST", () => {
 test("a date string that already carries a time is still read as IST", () => {
   // "30 Sep 2026 9:00 PM" parsed as UTC put the reminder after the real call.
   const row = [callRow({ session: "30 Sep 2026 9:00 PM", time: "21:00" })];
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: row, cols: CRCOLS, now: IST(2026, 8, 30, 20, 15), withinHours: 1, notWithinHours: 0,
   });
   assert.equal(plan.candidates.length, 1);
@@ -709,7 +732,7 @@ test("a date string that already carries a time is still read as IST", () => {
 
 test("the time column wins when the two cells disagree", () => {
   // The sheet has two writers. The dedicated column is the one Cal.com fills.
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: "30 Sep 2026 9:00 AM", time: "21:00" })],
     cols: CRCOLS, now: IST(2026, 8, 30, 20, 15), withinHours: 1, notWithinHours: 0,
   });
@@ -722,15 +745,15 @@ test("a booking made the same morning still gets its reminders", () => {
   const row = [callRow({ session: "Tuesday, 29 September 2026", time: "21:00" })];
   const bookedAt = IST(2026, 8, 29, 10, 0);
   assert.equal(
-    planCallReminders({ rows: row, cols: CRCOLS, now: bookedAt, withinHours: 24, notWithinHours: 2 })
+    planConfirmed({ rows: row, cols: CRCOLS, now: bookedAt, withinHours: 24, notWithinHours: 2 })
       .candidates.length, 1, "the 24h stage covers a same-day booking");
   assert.equal(
-    planCallReminders({ rows: row, cols: CRCOLS, now: IST(2026, 8, 29, 20, 30), withinHours: 1, notWithinHours: 0 })
+    planConfirmed({ rows: row, cols: CRCOLS, now: IST(2026, 8, 29, 20, 30), withinHours: 1, notWithinHours: 0 })
       .candidates.length, 1, "and the 1h stage fires half an hour before");
 });
 
 test("a date with no time at all is skipped, and counted apart from a bad date", () => {
-  const noTime = planCallReminders({
+  const noTime = planConfirmed({
     rows: [callRow({ session: "Saturday, 26 September 2026", time: "" })],
     cols: CRCOLS, now: IST(2026, 8, 26, 11, 15), withinHours: 24, notWithinHours: 2,
   });
@@ -738,7 +761,7 @@ test("a date with no time at all is skipped, and counted apart from a bad date",
   assert.equal(noTime.skipped.noTime, 1);
   assert.equal(noTime.skipped.unparseableTime, 0, "the date was readable; only the time was missing");
 
-  const badDate = planCallReminders({
+  const badDate = planConfirmed({
     rows: [callRow({ session: "sometime thursday", time: "12:00" })],
     cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
   });
@@ -747,7 +770,7 @@ test("a date with no time at all is skipped, and counted apart from a bad date",
 });
 
 test("a value carrying its own zone is passed through untouched", () => {
-  const plan = planCallReminders({
+  const plan = planConfirmed({
     rows: [callRow({ session: inHrs(23) })], cols: CRCOLS, now: NOW, withinHours: 24, notWithinHours: 2,
   });
   assert.equal(plan.candidates.length, 1, "an ISO instant needs no time column");
@@ -767,4 +790,200 @@ test("istCalendarDate and istMinutesOfDay read every live format", () => {
   assert.equal(istMinutesOfDay("12:30 PM"), 12 * 60 + 30);
   assert.equal(istMinutesOfDay(""), null);
   assert.equal(istMinutesOfDay("evening"), null);
+});
+
+// ── the Cal.com gate on the call reminders ──────────────────────────────────
+//
+// Make is retired and /api/cal-webhook does not record cancels or reschedules
+// yet, so the sheet's Session Date outlives both. A reminder goes out only for
+// a slot Cal.com itself still has live; everything else is held and counted.
+// Fake identities only.
+
+const EMAIL_COL = 4;
+const GCOLS: CallReminderColumns = { ...CRCOLS, email: EMAIL_COL };
+const TEST_PHONE = "9999900001";
+const TEST_EMAIL = "test.priya@example.com";
+const at = (h: number) => NOW + h * 3600000;
+
+function gateRow(o: { at: number; phone?: string; email?: string }): string[] {
+  const r = new Array<string>(50).fill("");
+  r[GCOLS.name] = "Test Priya";
+  r[GCOLS.phone] = o.phone ?? TEST_PHONE;
+  r[EMAIL_COL] = o.email ?? "";
+  r[GCOLS.sessionDate] = new Date(o.at).toISOString();
+  r[GCOLS.bookingStatus] = "Booked";
+  return r;
+}
+
+function gate(o: { live?: [string, number][]; cancelled?: string[] } = {}): CallReminderCalGate {
+  const activeStarts = new Map<string, number[]>();
+  for (const [key, start] of o.live ?? []) activeStarts.set(key, [...(activeStarts.get(key) ?? []), start]);
+  return { activeStarts, cancelled: new Set(o.cancelled ?? []) };
+}
+
+const STAGE_24H = { cols: GCOLS, now: NOW, withinHours: 24, notWithinHours: 2 };
+const STAGE_1H = { cols: GCOLS, now: NOW, withinHours: 1, notWithinHours: 0 };
+
+test("a woman who cancelled in Cal.com gets no call reminder, though the sheet still shows her slot", () => {
+  const cancelled = gate({ cancelled: [TEST_PHONE] });
+  const h24 = planCallReminders({ rows: [gateRow({ at: at(5) })], ...STAGE_24H, cal: cancelled });
+  assert.equal(h24.candidates.length, 0);
+  assert.equal(h24.skipped.calCancelled, 1);
+
+  const h1 = planCallReminders({ rows: [gateRow({ at: at(0.5) })], ...STAGE_1H, cal: cancelled });
+  assert.equal(h1.candidates.length, 0);
+  assert.equal(h1.skipped.calCancelled, 1);
+
+  // Found by email when the phone she gave Cal.com differs from the quiz one.
+  const byEmail = planCallReminders({
+    rows: [gateRow({ at: at(5), phone: "9999900002", email: TEST_EMAIL })],
+    ...STAGE_24H,
+    cal: gate({ cancelled: [TEST_EMAIL] }),
+  });
+  assert.equal(byEmail.candidates.length, 0);
+  assert.equal(byEmail.skipped.calCancelled, 1);
+});
+
+test("a woman whose Cal.com booking is live at the sheet's slot is still reminded, found by phone or email", () => {
+  const byPhone = planCallReminders({
+    rows: [gateRow({ at: at(5), phone: "+91 99999 00001" })],
+    ...STAGE_24H,
+    cal: gate({ live: [[TEST_PHONE, at(5)]] }),
+  });
+  assert.equal(byPhone.candidates.length, 1, "the sheet's +91 formatting still matches Cal.com's number");
+  assert.equal(byPhone.candidates[0].sessionAt, at(5));
+
+  const byEmail = planCallReminders({
+    rows: [gateRow({ at: at(5), phone: "9999900003", email: "Test.Priya@Example.com" })],
+    ...STAGE_24H,
+    cal: gate({ live: [[TEST_EMAIL, at(5)]] }),
+  });
+  assert.equal(byEmail.candidates.length, 1, "email matches regardless of case");
+
+  const h1 = planCallReminders({
+    rows: [gateRow({ at: at(0.5) })],
+    ...STAGE_1H,
+    cal: gate({ live: [[TEST_PHONE, at(0.5)]] }),
+  });
+  assert.equal(h1.candidates.length, 1, "and the 1h stage fires the same way");
+});
+
+test("when Cal.com cannot be read, no call reminder goes out at all, and each held one is counted", () => {
+  const rows = [gateRow({ at: at(5) }), gateRow({ at: at(0.5), phone: "9999900002" })];
+  const h24 = planCallReminders({ rows, ...STAGE_24H, cal: null });
+  const h1 = planCallReminders({ rows, ...STAGE_1H, cal: null });
+  assert.equal(h24.candidates.length, 0);
+  assert.equal(h1.candidates.length, 0);
+  assert.equal(h24.skipped.calUnavailable, 1, "the row due in 5h, held");
+  assert.equal(h1.skipped.calUnavailable, 1, "the row due in 30 min, held");
+});
+
+test("the gate is closed whenever Cal.com's answer cannot be trusted", () => {
+  const healthy = {
+    state: {
+      activeStarts: new Map([[TEST_PHONE, [at(5)]]]),
+      cancelled: new Set([TEST_EMAIL]),
+      cancelledPhones: new Set(["9999900002"]),
+    },
+    status: { source: "v2", error: "" },
+  };
+  const open = callReminderGateFrom(healthy);
+  assert.ok(open, "a clean v2 read opens the gate");
+  assert.ok(open.cancelled.has(TEST_EMAIL), "cancelled emails are carried");
+  assert.ok(open.cancelled.has("9999900002"), "cancelled phones are carried");
+  assert.equal(open.activeStarts.get(TEST_PHONE)?.[0], at(5));
+
+  assert.equal(callReminderGateFrom(null), null, "the fetch threw");
+  assert.equal(callReminderGateFrom(undefined), null);
+  assert.equal(
+    callReminderGateFrom({ ...healthy, status: { source: "none", error: "CAL_API_KEY not set" } }),
+    null,
+    "no API answered, or the key is unset",
+  );
+  assert.equal(
+    callReminderGateFrom({ ...healthy, status: { source: "v2", error: "bookings found but no meeting URL/email extracted" } }),
+    null,
+    "a read that came back with an error",
+  );
+});
+
+test("a rescheduled call is held while the sheet still shows the old slot", () => {
+  // She moved her 5h-away call to tomorrow. Cal.com cancels the old booking
+  // and the new one is live; fetchCalBookingState drops her from the
+  // cancelled set because she is live again, so the gate sees only the new
+  // start. The sheet's old slot must not be announced.
+  const moved = gate({ live: [[TEST_PHONE, at(29)]] });
+  const h24 = planCallReminders({ rows: [gateRow({ at: at(5) })], ...STAGE_24H, cal: moved });
+  assert.equal(h24.candidates.length, 0, "never name the wrong time");
+  assert.equal(h24.skipped.calRescheduled, 1);
+
+  const h1 = planCallReminders({ rows: [gateRow({ at: at(0.5) })], ...STAGE_1H, cal: gate({ live: [[TEST_PHONE, at(48)]] }) });
+  assert.equal(h1.skipped.calRescheduled, 1);
+
+  // Moved by half an hour is still moved; a minute of drift is the same slot.
+  const halfHour = planCallReminders({
+    rows: [gateRow({ at: at(5) })], ...STAGE_24H, cal: gate({ live: [[TEST_PHONE, at(5) + 30 * 60000]] }),
+  });
+  assert.equal(halfHour.skipped.calRescheduled, 1);
+  const drift = planCallReminders({
+    rows: [gateRow({ at: at(5) })], ...STAGE_24H, cal: gate({ live: [[TEST_PHONE, at(5) + 60000]] }),
+  });
+  assert.equal(drift.candidates.length, 1);
+  assert.ok(CAL_SAME_SLOT_TOLERANCE_MS < 15 * 60000, "tighter than any Cal.com slot interval");
+
+  // Once the sheet shows the new slot, the reminder for it goes out.
+  const caughtUp = planCallReminders({ rows: [gateRow({ at: at(20) })], ...STAGE_24H, cal: gate({ live: [[TEST_PHONE, at(20)]] }) });
+  assert.equal(caughtUp.candidates.length, 1);
+});
+
+test("she cancelled and booked again: reminded for the live booking only", () => {
+  // Her phone in BOTH sets, as the raw Cal.com pages hold it. The live booking
+  // at the sheet's slot outranks the old cancellation.
+  const both = gate({ live: [[TEST_PHONE, at(6)]], cancelled: [TEST_PHONE] });
+  const one = planCallReminders({ rows: [gateRow({ at: at(6) })], ...STAGE_24H, cal: both });
+  assert.equal(one.candidates.length, 1);
+  assert.equal(one.candidates[0].sessionAt, at(6));
+
+  // Two rows for her: the old (cancelled) slot and the new one. Only the new
+  // row is reminded, and it is not lost to the duplicate-phone rule.
+  const twoRows = planCallReminders({
+    rows: [gateRow({ at: at(4) }), gateRow({ at: at(6) })],
+    ...STAGE_24H,
+    cal: both,
+  });
+  assert.equal(twoRows.candidates.length, 1);
+  assert.equal(twoRows.candidates[0].rowNumber, 3, "the second data row, the live slot");
+  assert.equal(twoRows.skipped.calRescheduled, 1, "the old slot is held");
+  assert.equal(twoRows.skipped.duplicatePhone, 0);
+});
+
+test("a call Cal.com has no live booking for is held, not guessed at", () => {
+  const plan = planCallReminders({ rows: [gateRow({ at: at(5), email: TEST_EMAIL })], ...STAGE_24H, cal: gate() });
+  assert.equal(plan.candidates.length, 0);
+  assert.equal(plan.skipped.calNoBooking, 1);
+
+  // An Email cell that is not an email is never used as a key.
+  const junk = planCallReminders({
+    rows: [gateRow({ at: at(5), phone: "9999900005", email: TEST_PHONE })],
+    ...STAGE_24H,
+    cal: gate({ live: [[TEST_PHONE, at(5)]] }),
+  });
+  assert.equal(junk.skipped.calNoBooking, 1);
+});
+
+test("calBookingPhoneKeys reads the booker's phone from every field Cal.com uses, never a guest's", () => {
+  assert.deepEqual(
+    calBookingPhoneKeys({ attendees: [{ phoneNumber: "+919999900001" }, { phoneNumber: "+919999900009" }] }),
+    [TEST_PHONE],
+    "attendees[0] only",
+  );
+  assert.deepEqual(calBookingPhoneKeys({ bookingFieldsResponses: { attendeePhoneNumber: "+91 99999 00001" } }), [TEST_PHONE]);
+  assert.deepEqual(calBookingPhoneKeys({ responses: { attendeePhoneNumber: { value: "+919999900001" } } }), [TEST_PHONE]);
+  assert.deepEqual(
+    calBookingPhoneKeys({ attendees: [{ phoneNumber: "+919999900001" }], responses: { attendeePhoneNumber: "+919999900001", phone: "9999900002" } }),
+    [TEST_PHONE, "9999900002"],
+    "every distinct number, each once",
+  );
+  assert.deepEqual(calBookingPhoneKeys({}), []);
+  assert.deepEqual(calBookingPhoneKeys({ responses: { attendeePhoneNumber: "12345" } }), [], "too short to be a number");
 });

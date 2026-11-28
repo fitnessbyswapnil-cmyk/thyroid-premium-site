@@ -8,6 +8,7 @@
 import { NextRequest } from "next/server";
 import { google } from "googleapis";
 import { googleClientOptions } from "@/lib/google-fetch";
+import { calBookingPhoneKeys } from "@/lib/reminder-plan";
 
 export const SHEET_NAME = "Leads";
 
@@ -113,7 +114,7 @@ type CalBooking = {
   location?: string;
   metadata?: { videoCallUrl?: string };
   references?: { meetingUrl?: string }[];
-  attendees?: { email?: string }[];
+  attendees?: { email?: string; phoneNumber?: string }[];
   responses?: Record<string, unknown>;
   // v2 (cal-api-version 2024-08-13)
   start?: string;
@@ -164,6 +165,19 @@ export type CalState = {
    * follow-up. See lib/lead-score.
    */
   answers: Map<string, Record<string, unknown>>;
+  /**
+   * The same two sets keyed by her phone (phoneKey: the last ten digits), for
+   * the WhatsApp call reminders. Quiz rows carry her WhatsApp number and often
+   * no email, so the email sets alone would not find most of them.
+   */
+  activePhones: Set<string>;
+  cancelledPhones: Set<string>;
+  /**
+   * Start instant (epoch ms) of every live booking, keyed by email AND by
+   * phone key, so the call reminders can tell "her call is at the sheet's
+   * time" from "she moved it". See CallReminderCalGate in lib/reminder-plan.
+   */
+  activeStarts: Map<string, number[]>;
 };
 
 /**
@@ -179,7 +193,8 @@ function collect(bookings: CalBooking[], state: CalState): number {
     fetched++;
     const status = (b.status ?? "").toLowerCase();
     const emails = extractEmails(b).filter((e) => e && e !== PLACEHOLDER_EMAIL);
-    if (!emails.length) continue;
+    const phones = calBookingPhoneKeys(b);
+    if (!emails.length && !phones.length) continue;
 
     // Captured before the status branches so a cancelled booking keeps its
     // answers — she still needs ranking for follow-up.
@@ -190,6 +205,7 @@ function collect(bookings: CalBooking[], state: CalState): number {
 
     if (CANCELLED_STATUSES.has(status)) {
       for (const email of emails) state.cancelled.add(email);
+      for (const phone of phones) state.cancelledPhones.add(phone);
       continue;
     }
     if (status && !ACTIVE_STATUSES.has(status)) continue;
@@ -199,6 +215,14 @@ function collect(bookings: CalBooking[], state: CalState): number {
     if (start && start < now - 3600000) continue; // skip bookings well in the past
 
     for (const email of emails) state.active.add(email);
+    for (const phone of phones) state.activePhones.add(phone);
+    if (Number.isFinite(start) && start > 0) {
+      for (const key of [...emails, ...phones]) {
+        const list = state.activeStarts.get(key);
+        if (list) list.push(start);
+        else state.activeStarts.set(key, [start]);
+      }
+    }
     const url = extractMeetingUrl(b);
     if (url) {
       for (const email of emails) if (!state.meetLinks.has(email)) state.meetLinks.set(email, url);
@@ -241,7 +265,15 @@ async function fetchV2Page(apiKey: string, calStatus: "upcoming" | "cancelled"):
  */
 export async function fetchCalBookingState(): Promise<{ state: CalState; status: CalStatus }> {
   const apiKey = process.env.CAL_API_KEY;
-  const state: CalState = { meetLinks: new Map(), active: new Set(), cancelled: new Set(), answers: new Map() };
+  const state: CalState = {
+    meetLinks: new Map(),
+    active: new Set(),
+    cancelled: new Set(),
+    answers: new Map(),
+    activePhones: new Set(),
+    cancelledPhones: new Set(),
+    activeStarts: new Map(),
+  };
   const status: CalStatus = { keySet: !!apiKey, source: "none", fetched: 0, matched: 0, cancelled: 0, error: "", sample: [] };
   if (!apiKey) {
     status.error = "CAL_API_KEY not set (add it in Vercel, then redeploy)";
@@ -261,6 +293,7 @@ export async function fetchCalBookingState(): Promise<{ state: CalState; status:
       if (list.length > 0) status.sample = Object.keys(list[0]).slice(0, 20);
       status.fetched = collect(list, state);
       for (const email of state.active) state.cancelled.delete(email); // rebooked wins
+      for (const phone of state.activePhones) state.cancelledPhones.delete(phone);
       status.matched = state.meetLinks.size;
       status.cancelled = state.cancelled.size;
       status.source = "v2";
@@ -292,6 +325,7 @@ export async function fetchCalBookingState(): Promise<{ state: CalState; status:
     if (list.length > 0) status.sample = Object.keys(list[0]).slice(0, 20);
     status.fetched = collect(list, state);
     for (const email of state.active) state.cancelled.delete(email);
+    for (const phone of state.activePhones) state.cancelledPhones.delete(phone);
     status.matched = state.meetLinks.size;
     status.cancelled = state.cancelled.size;
     status.source = "v1";
