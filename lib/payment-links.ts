@@ -19,10 +19,11 @@
  *  - Stored values are checked again on the way out, so a bad row can never
  *    reach a message.
  *
- * KNOWN, NOT HANDLED HERE: /api/cashfree-webhook (a Meta sender, untouched)
- * treats any LINK payment as the ₹299 consultation fee: MicroPurchase with
- * content_name thyroid_session_fee at the full amount, and payment_receipt_v2
- * (the slot-picker message) to her. Decide that before these links go out.
+ * WHAT HAPPENS WHEN SHE PAYS (not handled here): /api/cashfree-webhook records
+ * every Cashfree payment as a programme payment, in her Leads row and the D1
+ * payments ledger, and sends nothing to Meta and nothing on WhatsApp (PR #194,
+ * 28-Nov-2026). The sale reaches Meta as Purchase only when he marks it in
+ * Today.
  *
  * Client components must not import this file (it reaches the D1 binding
  * through lib/ledger); they take the tiers from GET /api/admin/payment-links.
