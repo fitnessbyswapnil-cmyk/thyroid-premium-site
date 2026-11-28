@@ -156,6 +156,31 @@ export function isWhatsAppConfigured(): boolean {
 }
 
 /**
+ * Templates approved with a STATIC "Visit website" button, read from WhatsApp
+ * Manager on 28-Nov-2026: both free booking nudges link to /decode with no
+ * {{1}} suffix. Meta rejects the whole send when a button parameter arrives
+ * for a button that declares none, and the cron treats that rejection as
+ * "template not sendable yet" and halts the stage — so every nudge to a woman
+ * with a lead id failed and was retried, unstamped, forever. 0 delivered.
+ */
+export const STATIC_BUTTON_TEMPLATES: ReadonlySet<string> = new Set([
+  'free_booking_nudge_v1',
+  'free_booking_nudge_day3_v1',
+])
+
+/**
+ * The dynamic-URL button value to actually send: dropped for a template whose
+ * button is static, passed through for every other template.
+ */
+export function buttonParamFor(
+  templateName: string,
+  buttonUrlParam?: string,
+): string | undefined {
+  if (!buttonUrlParam) return undefined
+  return STATIC_BUTTON_TEMPLATES.has(templateName) ? undefined : buttonUrlParam
+}
+
+/**
  * Send one pre-approved template.
  *
  * @param to          recipient, any Indian format — normalized here
@@ -214,6 +239,7 @@ export async function sendWhatsAppTemplate(
   }
 
   const language = languageOverride || process.env.WHATSAPP_TEMPLATE_LANG || 'en'
+  const buttonParam = buttonParamFor(templateName, buttonUrlParam)
 
   const components = [
     ...(bodyParams.length
@@ -224,13 +250,13 @@ export async function sendWhatsAppTemplate(
           },
         ]
       : []),
-    ...(buttonUrlParam
+    ...(buttonParam
       ? [
           {
             type: 'button',
             sub_type: 'url',
             index: '0',
-            parameters: [{ type: 'text', text: buttonUrlParam }],
+            parameters: [{ type: 'text', text: buttonParam }],
           },
         ]
       : []),

@@ -6,6 +6,8 @@ import {
   formatBookingWhen,
   BOOKING_CONFIRMED_TEMPLATE,
   BOOKING_CONFIRMED_PARTNER_TEMPLATE,
+  STATIC_BUTTON_TEMPLATES,
+  buttonParamFor,
 } from "./whatsapp.ts";
 
 const WHEN = "Friday, 19 September 2026 at 06:00 pm";
@@ -111,4 +113,25 @@ test("newlines and tabs never reach a body parameter", () => {
   const plan = planBookingConfirmation({ ...ON, partnerOnCall: "yes", sessionWhen: "Friday\n\n6 pm" });
   assert.equal(plan.params[0], "Friday 6 pm");
   assert.ok(!/[\n\t]/.test(plan.params[0]));
+});
+
+// free_booking_nudge_v1 and _day3_v1 were approved with a STATIC button to
+// /decode (WhatsApp Manager, 28-Nov-2026). The cron passes her lead id as a
+// button value; Meta rejects any send that carries a button parameter the
+// template does not declare, so neither nudge ever delivered.
+test("a static-button template never gets a button parameter", () => {
+  for (const name of ["free_booking_nudge_v1", "free_booking_nudge_day3_v1"]) {
+    assert.equal(STATIC_BUTTON_TEMPLATES.has(name), true, name);
+    assert.equal(buttonParamFor(name, "dq_1764300000000_ab12"), undefined, name);
+  }
+});
+
+// The other direction: welcome_lead_score_v2 has a DYNAMIC button
+// (/decode/quiz?leadId={{1}}), and dropping its value would break the resume
+// link, so every template not on the static list keeps what the caller passed.
+test("a dynamic-button template keeps its button parameter", () => {
+  assert.equal(STATIC_BUTTON_TEMPLATES.has("welcome_lead_score_v2"), false);
+  assert.equal(buttonParamFor("welcome_lead_score_v2", "dq_1764300000000_ab12"), "dq_1764300000000_ab12");
+  assert.equal(buttonParamFor("welcome_lead_score_v2", undefined), undefined);
+  assert.equal(buttonParamFor("welcome_lead_score_v2", ""), undefined);
 });
