@@ -18,7 +18,7 @@
  * sequence picks up quiz leads exactly like native-form leads.
  */
 import { NextRequest, NextResponse, after } from "next/server";
-import { sendCAPIEvent, buildUserData, getClientIp, getUserAgent } from "@/lib/server-tracking";
+import { sendCAPIEvent, buildUserData, getClientIp, getUserAgent, getTestEventCode } from "@/lib/server-tracking";
 import { getSheetsClient, SHEET_NAME } from "../admin/_lib";
 import { sendWelcomeLead, sendWelcomeLeadWithLink, sendTryingLanguages, isTemplateConfigError, sendBookingConfirmation, sendBookingConfirmedFree } from "@/lib/whatsapp";
 import { checkTurnstile, turnstileConfig, isInternalLeadCall, findOrAddColumn, INTERNAL_LEAD_HEADER, BOT_CHECK_HEADER, UNVERIFIED } from "@/lib/turnstile";
@@ -127,6 +127,9 @@ export async function POST(req: NextRequest) {
   // request object is no longer safe to read.
   const clientIp = getClientIp(req);
   const userAgent = getUserAgent(req);
+  // Meta Test Events code from the owner's own short-lived cookie
+  // (GET /api/admin/test-events), or undefined for every real visitor.
+  const testCode = getTestEventCode(req);
   let payload: QuizLeadPayload;
   try {
     payload = (await req.json()) as QuizLeadPayload;
@@ -476,6 +479,7 @@ export async function POST(req: NextRequest) {
               // value/currency are here for Meta's data-quality check, not
               // because a quiz completion earns anything — LEAD_VALUE is 0.
               customData: { value: LEAD_VALUE, currency: CURRENCY, score: payload.patternScore, tier: str(payload.leadTier), decides_alone: payload.decidesAlone ? 1 : 0 },
+              ...(testCode ? { testCode } : {}),
             });
             console.log(`[quiz-lead] QuizComplete → Meta leadId=${leadId} score=${payload.patternScore} result=${JSON.stringify(r).slice(0, 160)}`);
           } catch (e) {
@@ -519,6 +523,7 @@ export async function POST(req: NextRequest) {
               // (PRODUCT carries FREE_CALL_VALUE and "INR"), so the two halves
               // of the dedup pair do not disagree about what a Lead is worth.
               customData: { value: LEAD_VALUE, currency: CURRENCY },
+              ...(testCode ? { testCode } : {}),
             });
             console.log(`[quiz-lead] Lead → Meta event_id=${leadEventId} leadId=${leadId} result=${JSON.stringify(r).slice(0, 160)}`);
           } catch (e) {

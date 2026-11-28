@@ -4,6 +4,7 @@ import "./globals.css";
 import { ScarcityProvider } from "./context/ScarcityProvider";
 import { GTMScript, GTMNoScript } from "./components/tracking/GTM";
 import { MetaPixelHead } from "./components/tracking/MetaPixel";
+import { PageViewServerLeg } from "./components/tracking/PageViewServerLeg";
 import { RouteTracker } from "./components/tracking/RouteTracker";
 import { UserIdentityTracker } from "./components/tracking/UserIdentityTracker";
 // InputCookieCapture removed — lead data goes to Make webhook in BookingFlow.tsx
@@ -103,6 +104,9 @@ export default function RootLayout({
                   className={`${newsreader.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
                 >
                 <head>
+                        {/* FIRST in <head>: sets window._pageViewId before GTM reads it, then sends the
+                            server PageView with that id (lib/pageview-beacon.ts). Keep it above GTMScript. */}
+                        <PageViewServerLeg />
                         {/* Renders nothing unless NEXT_PUBLIC_DIRECT_PIXEL is on — see docs/tracking-cutover-plan.md */}
                         <MetaPixelHead />
                         <GTMScript />

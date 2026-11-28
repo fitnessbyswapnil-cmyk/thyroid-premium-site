@@ -2,7 +2,7 @@
  * lib/server-tracking.ts  — SERVER-SIDE Meta CAPI utilities
  *
  * Use from:
- *  - app/api/events/route.ts     (generic event endpoint)
+ *  - lib/browser-events.ts       (the /api/events browser bridge)
  *  - app/api/tally-webhook/route.ts
  *  - app/api/cal-webhook/route.ts
  *  - app/api/cashfree-webhook/route.ts
@@ -25,6 +25,8 @@ import {
 // Same explicit-extension rule as ledger.ts above: tracking-host.ts imports
 // nothing, so it loads cleanly under the --experimental-strip-types test runner.
 import { isTrackingUrl, PRODUCTION_HOST } from './tracking-host.ts'
+// Imports nothing either; same explicit-extension rule.
+import { testEventCodeFromCookieHeader } from './test-event-cookie.ts'
 
 // Placeholder email Cashfree requires when the customer gave none. It must
 // NEVER be sent to Meta CAPI — a uniform fake email hash across all buyers
@@ -310,4 +312,18 @@ export function getCookieFromReq(req: Request, name: string): string {
   const cookieHeader = req.headers.get('cookie') || ''
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
   return match ? decodeURIComponent(match[1]) : ''
+}
+
+/**
+ * The Meta Test Events code for THIS request, or undefined.
+ *
+ * It comes only from the short-lived HttpOnly cookie that
+ * GET /api/admin/test-events sets in the owner's own browser
+ * (lib/test-event-cookie.ts), never from an env var: a global code turns every
+ * visitor's events into test events. Pass the result as `testCode` to
+ * sendCAPIEvent from routes that a browser calls. A webhook or cron request has
+ * no such cookie, so this returns undefined there and the event counts.
+ */
+export function getTestEventCode(req: Request): string | undefined {
+  return testEventCodeFromCookieHeader(req.headers.get('cookie'))
 }
