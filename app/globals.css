@@ -2582,3 +2582,125 @@ a {
     animation: none;
   }
 }
+
+/* ── Score report (28-Nov-2026) ─────────────────────────────────────────────
+   The quiz result as a short report: a petrol head with the gauge, an ivory
+   sheet with the signs found in her answers, then the three next steps.
+   Scoped to .theme-clinic like everything else on /decode. */
+.theme-clinic .score-report {
+  border-radius: 22px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid var(--clinic-line);
+  box-shadow: 0 1px 2px rgba(20, 40, 45, 0.06), 0 18px 44px rgba(20, 40, 45, 0.12);
+}
+.theme-clinic .score-report__head {
+  padding: 26px 22px 24px;
+  text-align: center;
+  color: #faf7f2;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(224, 160, 66, 0.16), rgba(224, 160, 66, 0) 60%),
+    linear-gradient(180deg, #0e3f49 0%, #14282d 100%);
+}
+.theme-clinic .score-report__body {
+  padding: 22px 22px 20px;
+  background: #ffffff;
+}
+.theme-clinic .score-report__row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.theme-clinic .score-report__row > svg {
+  margin-top: 1px;
+}
+.theme-clinic .score-report__chip {
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: var(--t2);
+  background: var(--clinic-ivory);
+  border: 1px solid var(--clinic-line);
+}
+.theme-clinic .score-gauge {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.theme-clinic .score-arc {
+  transition: stroke-dashoffset 1.1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-clinic .score-arc {
+    transition: none;
+  }
+}
+@media (min-width: 640px) {
+  .theme-clinic .score-report__head {
+    padding: 30px 32px 28px;
+  }
+  .theme-clinic .score-report__body {
+    padding: 26px 32px 24px;
+  }
+}
+
+/* The three next steps: a numbered rail, step 1 lit. Numbered because it IS
+   a sequence: book, send the report, have the call. */
+.theme-clinic .next-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+.theme-clinic .next-steps__item {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 0 0 22px;
+}
+.theme-clinic .next-steps__item:last-child {
+  padding-bottom: 0;
+}
+.theme-clinic .next-steps__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 34px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--clinic-line);
+}
+.theme-clinic .next-steps__num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  color: var(--t2);
+  background: #ffffff;
+  border: 1.5px solid var(--clinic-line);
+}
+.theme-clinic .next-steps__item.is-now .next-steps__num {
+  color: #ffffff;
+  background: var(--clinic-petrol);
+  border-color: var(--clinic-petrol);
+  box-shadow: 0 0 0 5px rgba(14, 63, 73, 0.12);
+}
+.theme-clinic .next-steps__now {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: var(--fs-3xs);
+  font-weight: 500;
+  vertical-align: 1px;
+  color: var(--clinic-amber-ink);
+  background: var(--clinic-amber-wash);
+}
+.theme-clinic .score-bands {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
