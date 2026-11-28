@@ -62,3 +62,6 @@ add-cal-webhook.sh
 _client_reports/
 _media_export/
 .claude/settings.local.json
+
+# Local audit snapshot of external configs (may contain secrets) — never commit
+/audit/
